@@ -65,6 +65,8 @@ nav:
       - "1. Why a Multi-Level IR at All": part1/01-why-a-multi-level-ir-at-all.md
   - "Part 1 -- A Minimal Dialect From Scratch":
       - "2. A Minimal Dialect From Scratch: Mountain Goat's Own mg Dialect": part2/02-a-minimal-dialect-from-scratch.md
+  - "Part 2 -- The Pass Infrastructure":
+      - "3. The Real Pass Infrastructure: Canonicalizing Mountain Goat": part3/03-the-pass-infrastructure.md
 
 extra:
   social: []

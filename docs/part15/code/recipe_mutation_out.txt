@@ -1,0 +1,16 @@
+MUTATION 1: index-bitwidth=64 -> 32
+   FAIL: gpu/ptx-default.mlir
+MUTATION 2: target chip sm_70 -> sm_80
+   FAIL: gpu/ptx-default.mlir
+MUTATION 3: bare-pointer option dropped (5 -> 23 params)
+   FAIL: gpu/ptx-bare-pointers.mlir
+MUTATION 4: bare-pointer option added to the host test
+   FAIL: gpu/host-runtime-calls.mlir
+MUTATION 5: gpu-map-parallel-loops left out of the recipe
+   FAIL: gpu/kernel-outlining.mlir
+MUTATION 6: tile-size 1 -> 2
+   FAIL: loops/tiling.mlir
+MUTATION 7: second full-unroll pass removed
+   FAIL: loops/unroll-full.mlir
+MUTATION 8: stub runtime's kernel computes a-b, not a+b
+   FAIL: execution/gpu-host-with-stub-runtime.mlir

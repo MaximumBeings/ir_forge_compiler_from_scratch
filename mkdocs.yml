@@ -84,6 +84,7 @@ nav:
       - "13. Dynamic Shapes: Closing Chapter 12's Biggest Unknown": part13/13-dynamic-shapes.md
       - "14. A Runtime Shape Check: Closing Chapter 13's Memory-Safety Hole": part14/14-runtime-shape-checks.md
       - "15. A Real Test Suite: lit, FileCheck, and Proof That the Tests Can Fail": part15/15-a-real-test-suite.md
+      - "16. Testing the GPU Path and the Loop Transforms": part16/16-testing-the-gpu-path-and-loop-transforms.md
 
 extra:
   social: []

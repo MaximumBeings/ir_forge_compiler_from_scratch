@@ -1,0 +1,18 @@
+##### MUTATION 1: canonicalizer's exact-type guard removed
+  Failed:  1 (4.55%)
+  Passed: 21 (95.45%)
+FAIL: canonicalize/transpose-twice-dynamic-mixed.mlir
+
+##### MUTATION 2: runtime check only covers dimension 0
+  Failed:  3 (13.64%)
+  Passed: 19 (86.36%)
+FAIL: execution/mismatch-columns-aborts.mlir
+FAIL: lowering/bufferize-dynamic-add.mlir
+FAIL: lowering/dynamic-add-affine.mlir
+
+##### MUTATION 3: bufferization path forgets to emit the check
+  Failed:  3 (13.64%)
+  Passed: 19 (86.36%)
+FAIL: execution/mismatch-aborts.mlir
+FAIL: execution/mismatch-columns-aborts.mlir
+FAIL: lowering/bufferize-dynamic-add.mlir

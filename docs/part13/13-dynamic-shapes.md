@@ -103,7 +103,7 @@ Also still open:
 - **Only rank 2.** The verifiers and loops are hard-wired to two dimensions; a rank-3 tensor is rejected by the verifier, which is correct but means dynamic *rank* is out of scope.
 - **`mg.constant` stays static.** A literal's shape is always known, so this is by design, not a gap.
 - **Chapter 7's loop transforms and Chapters 10 through 12's GPU path were not re-run on dynamic shapes.** Fusion, tiling and unrolling with a `?` bound are untested; full unrolling in particular cannot work without a constant trip count. The GPU path's `bare-ptr` option requires static shapes (Chapter 12), so dynamic-shape GPU lowering was not attempted.
-- **No automated tests.** As Chapter 12 found, this repository has none; `code/run_tests.sh` is a script that prints results for a human to read, not an assertion-based suite. Writing real `lit`/`FileCheck` tests remains an open candidate chapter.
+- **No automated tests.** *(Update, added after Chapter 15: now a `lit`/`FileCheck` suite; see Chapter 15.)* As Chapter 12 found, this repository has none; `code/run_tests.sh` is a script that prints results for a human to read, not an assertion-based suite. Writing real `lit`/`FileCheck` tests remains an open candidate chapter.
 
 ## Reproducing this chapter
 

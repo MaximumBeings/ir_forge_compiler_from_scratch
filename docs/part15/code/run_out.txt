@@ -1,0 +1,28 @@
+-- Testing: 22 tests, 4 workers --
+PASS: IR Forge / Mountain Goat :: canonicalize/fold-constant-add.mlir (1 of 22)
+PASS: IR Forge / Mountain Goat :: canonicalize/transpose-twice-dynamic-mixed.mlir (2 of 22)
+PASS: IR Forge / Mountain Goat :: canonicalize/transpose-twice.mlir (3 of 22)
+PASS: IR Forge / Mountain Goat :: canonicalize/transpose-twice-dynamic-exact.mlir (4 of 22)
+PASS: IR Forge / Mountain Goat :: execution/mixed-static-dynamic.mlir (5 of 22)
+PASS: IR Forge / Mountain Goat :: execution/dynamic-shapes-run.mlir (6 of 22)
+PASS: IR Forge / Mountain Goat :: execution/mismatch-columns-aborts.mlir (7 of 22)
+PASS: IR Forge / Mountain Goat :: execution/mismatch-aborts.mlir (8 of 22)
+PASS: IR Forge / Mountain Goat :: loops/fusion.mlir (9 of 22)
+PASS: IR Forge / Mountain Goat :: lowering/dynamic-add-affine.mlir (10 of 22)
+PASS: IR Forge / Mountain Goat :: verifier/transpose-bad-shape.mlir (11 of 22)
+PASS: IR Forge / Mountain Goat :: verifier/dynamic-accepted.mlir (12 of 22)
+PASS: IR Forge / Mountain Goat :: lowering/static-add-affine.mlir (13 of 22)
+PASS: IR Forge / Mountain Goat :: verifier/transpose-rank3.mlir (14 of 22)
+PASS: IR Forge / Mountain Goat :: lowering/bufferize-dynamic-add.mlir (15 of 22)
+PASS: IR Forge / Mountain Goat :: lowering/mixed-add-one-check.mlir (16 of 22)
+PASS: IR Forge / Mountain Goat :: lowering/dynamic-transpose-no-check.mlir (17 of 22)
+PASS: IR Forge / Mountain Goat :: verifier/unranked-rejected.mlir (18 of 22)
+PASS: IR Forge / Mountain Goat :: lowering/bufferize-static-add.mlir (19 of 22)
+PASS: IR Forge / Mountain Goat :: verifier/add-static-mismatch.mlir (20 of 22)
+PASS: IR Forge / Mountain Goat :: execution/static-add-runs.mlir (21 of 22)
+PASS: IR Forge / Mountain Goat :: execution/strided-view.mlir (22 of 22)
+
+Testing Time: 0.42s
+
+Total Discovered Tests: 22
+  Passed: 22 (100.00%)

@@ -64,7 +64,7 @@ In every abort case the harness never reached its `printf` of the result: the ch
 - **Only `mg.add` is checked,** the one op with two shaped operands. Allocation failure (`memref.alloc` returning null for a huge size), integer overflow in `rows * cols`, and negative sizes in a descriptor are not examined.
 - **The GPU path has no check.** Chapters 10 through 12's kernels were static-shape; dynamic-shape GPU lowering was never attempted, so nothing here applies there.
 - **Chapter 7's loop transforms on dynamic bounds** are still untested, as are any new passes' interactions with the assert (for example, whether `--canonicalize` or fusion preserves it across a transformation).
-- **Still no assertion-based test suite.** `run_tests.sh` now does compare two outputs automatically and prints exit codes, which is more than Chapter 13's script, but it prints results for a human to read rather than failing on a mismatch. Real `lit`/`FileCheck` tests remain an open candidate.
+- **Still no assertion-based test suite.** *(Update, added after Chapter 15: written there, with a test that mismatches only the columns, which this chapter's own scripts never exercised.)* `run_tests.sh` now does compare two outputs automatically and prints exit codes, which is more than Chapter 13's script, but it prints results for a human to read rather than failing on a mismatch. Real `lit`/`FileCheck` tests remain an open candidate.
 
 ## Reproducing this chapter
 

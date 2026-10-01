@@ -73,6 +73,8 @@ nav:
   - "Part 4 -- Optimization Across Levels":
       - "6. Real Bufferization: Closing Chapter 4's Own Honest Gap": part6/06-real-bufferization.md
       - "7. Real Loop Transforms: Fusion, Tiling, and Unrolling at the affine Level": part7/07-real-loop-transforms.md
+  - "Part 5 -- Code Generation via LLVM":
+      - "8. A Standalone Native Executable: Mountain Goat Without MLIR At Runtime": part8/08-a-standalone-native-executable.md
 
 extra:
   social: []

@@ -1,0 +1,160 @@
+--- ../../part3/code/MgDialect.cpp	2026-10-01 21:21:01.991785523 +0000
++++ MgDialect.cpp	2026-10-01 22:53:13.160361103 +0000
+@@ -1,5 +1,6 @@
+ #include "mg/MgDialect.h"
+ #include "mg/MgOps.h"
++#include "mg/DynamicShapes.h"
+ 
+ #include "mlir/IR/Builders.h"
+ #include "mlir/IR/Matchers.h"
+@@ -43,23 +44,34 @@
+ mlir::OpFoldResult ConstantOp::fold(FoldAdaptor adaptor) { return getValueAttr(); }
+ 
+ mlir::LogicalResult TransposeOp::verify() {
+-  auto inputType = llvm::cast<mlir::RankedTensorType>(getInput().getType());
+-  auto resultType = llvm::cast<mlir::RankedTensorType>(getResult().getType());
++  auto inputType = llvm::dyn_cast<mlir::RankedTensorType>(getInput().getType());
++  auto resultType = llvm::dyn_cast<mlir::RankedTensorType>(getResult().getType());
++  if (!inputType || !resultType)
++    return emitOpError("mg.transpose only supports ranked tensors");
+   if (inputType.getRank() != 2 || resultType.getRank() != 2)
+     return emitOpError("mg.transpose only supports rank-2 tensors");
+   auto inShape = inputType.getShape();
+   auto outShape = resultType.getShape();
+-  if (inShape[0] != outShape[1] || inShape[1] != outShape[0])
++  if (!mg::dyn::compatibleDim(inShape[0], outShape[1]) ||
++      !mg::dyn::compatibleDim(inShape[1], outShape[0]))
+     return emitOpError("mg.transpose result shape must be the input shape reversed");
+   return mlir::success();
+ }
+ 
+ mlir::LogicalResult AddOp::verify() {
+-  auto lhsType = llvm::cast<mlir::RankedTensorType>(getLhs().getType());
+-  auto rhsType = llvm::cast<mlir::RankedTensorType>(getRhs().getType());
+-  if (lhsType.getShape() != rhsType.getShape())
+-    return emitOpError("mg.add operands must have the same shape, got ")
+-           << lhsType << " and " << rhsType;
++  auto lhsType = llvm::dyn_cast<mlir::RankedTensorType>(getLhs().getType());
++  auto rhsType = llvm::dyn_cast<mlir::RankedTensorType>(getRhs().getType());
++  auto resType = llvm::dyn_cast<mlir::RankedTensorType>(getResult().getType());
++  if (!lhsType || !rhsType || !resType)
++    return emitOpError("mg.add only supports ranked tensors");
++  if (lhsType.getRank() != rhsType.getRank() || lhsType.getRank() != resType.getRank())
++    return emitOpError("mg.add operands and result must have the same rank");
++  for (int64_t d = 0; d < lhsType.getRank(); ++d)
++    if (!mg::dyn::compatibleDim(lhsType.getDimSize(d), rhsType.getDimSize(d)) ||
++        !mg::dyn::compatibleDim(lhsType.getDimSize(d), resType.getDimSize(d)) ||
++        !mg::dyn::compatibleDim(rhsType.getDimSize(d), resType.getDimSize(d)))
++      return emitOpError("mg.add operands must have compatible shapes, got ")
++             << lhsType << " and " << rhsType << " -> " << resType;
+   return mlir::success();
+ }
+ 
+@@ -92,6 +104,11 @@
+     auto innerTranspose = op.getInput().getDefiningOp<TransposeOp>();
+     if (!innerTranspose)
+       return mlir::failure();
++    // With dynamic shapes the inner input's type can differ from this op's
++    // result type (`tensor<?x2xf64>` vs `tensor<?x?xf64>`); replacing one
++    // with the other would produce invalid IR, so only fire on an exact match.
++    if (innerTranspose.getInput().getType() != op.getType())
++      return mlir::failure();
+     rewriter.replaceOp(op, innerTranspose.getInput());
+     return mlir::success();
+   }
+--- ../../part5/code/LowerToAffine.cpp	2026-10-01 21:21:01.993681169 +0000
++++ LowerToAffine.cpp	2026-10-01 22:53:13.160390133 +0000
+@@ -1,5 +1,6 @@
+ #include "mg/MgDialect.h"
+ #include "mg/MgOps.h"
++#include "mg/DynamicShapes.h"
+ 
+ #include "mlir/Dialect/Affine/IR/AffineOps.h"
+ #include "mlir/Dialect/Arith/IR/Arith.h"
+@@ -81,14 +82,16 @@
+     auto loc = op.getLoc();
+     auto tensorType = llvm::cast<RankedTensorType>(op.getResult().getType());
+     auto memrefType = convertTensorToMemref(tensorType);
+-    auto alloc = rewriter.create<memref::AllocOp>(loc, memrefType);
+-    auto shape = tensorType.getShape();
+ 
+     Value lhs = adaptor.getLhs();
+     Value rhs = adaptor.getRhs();
++    llvm::SmallVector<Value, 2> extents;
++    for (int64_t d = 0; d < 2; ++d)
++      extents.push_back(tensorType.isDynamicDim(d) ? mg::dyn::extentOf(rewriter, loc, lhs, d) : Value());
++    auto alloc = mg::dyn::allocFor(rewriter, loc, memrefType, extents);
+ 
+-    affine::buildAffineLoopNest(
+-        rewriter, loc, {0, 0}, {shape[0], shape[1]}, {1, 1},
++    mg::dyn::nest2D(
++        rewriter, loc, tensorType, extents,
+         [&](OpBuilder &nestedBuilder, Location nestedLoc, ValueRange ivs) {
+           Value lhsVal =
+               nestedBuilder.create<affine::AffineLoadOp>(nestedLoc, lhs, ivs);
+@@ -115,13 +118,16 @@
+     auto loc = op.getLoc();
+     auto tensorType = llvm::cast<RankedTensorType>(op.getResult().getType());
+     auto memrefType = convertTensorToMemref(tensorType);
+-    auto alloc = rewriter.create<memref::AllocOp>(loc, memrefType);
+-    auto shape = tensorType.getShape();
+ 
+     Value input = adaptor.getInput();
++    // The result's extent along d is the input's extent along 1 - d.
++    llvm::SmallVector<Value, 2> extents;
++    for (int64_t d = 0; d < 2; ++d)
++      extents.push_back(tensorType.isDynamicDim(d) ? mg::dyn::extentOf(rewriter, loc, input, 1 - d) : Value());
++    auto alloc = mg::dyn::allocFor(rewriter, loc, memrefType, extents);
+ 
+-    affine::buildAffineLoopNest(
+-        rewriter, loc, {0, 0}, {shape[0], shape[1]}, {1, 1},
++    mg::dyn::nest2D(
++        rewriter, loc, tensorType, extents,
+         [&](OpBuilder &nestedBuilder, Location nestedLoc, ValueRange ivs) {
+           Value i = ivs[0];
+           Value j = ivs[1];
+--- ../../part6/code/MgBufferizableOpInterfaceImpl.cpp	2026-10-01 21:21:01.994519969 +0000
++++ MgBufferizableOpInterfaceImpl.cpp	2026-10-01 22:53:13.160415833 +0000
+@@ -1,5 +1,6 @@
+ #include "mg/MgDialect.h"
+ #include "mg/MgOps.h"
++#include "mg/DynamicShapes.h"
+ 
+ #include "mlir/Dialect/Affine/IR/AffineOps.h"
+ #include "mlir/Dialect/Arith/IR/Arith.h"
+@@ -122,11 +123,13 @@
+     auto tensorType = cast<RankedTensorType>(addOp.getResult().getType());
+     auto memrefType =
+         MemRefType::get(tensorType.getShape(), tensorType.getElementType());
+-    auto alloc = rewriter.create<memref::AllocOp>(loc, memrefType);
+-    auto shape = tensorType.getShape();
++    llvm::SmallVector<Value, 2> extents;
++    for (int64_t d = 0; d < 2; ++d)
++      extents.push_back(tensorType.isDynamicDim(d) ? mg::dyn::extentOf(rewriter, loc, *lhsBuffer, d) : Value());
++    auto alloc = mg::dyn::allocFor(rewriter, loc, memrefType, extents);
+ 
+-    affine::buildAffineLoopNest(
+-        rewriter, loc, {0, 0}, {shape[0], shape[1]}, {1, 1},
++    mg::dyn::nest2D(
++        rewriter, loc, tensorType, extents,
+         [&](OpBuilder &nestedBuilder, Location nestedLoc, ValueRange ivs) {
+           Value lhsVal = nestedBuilder.create<affine::AffineLoadOp>(
+               nestedLoc, *lhsBuffer, ivs);
+@@ -179,11 +182,13 @@
+         cast<RankedTensorType>(transposeOp.getResult().getType());
+     auto memrefType =
+         MemRefType::get(tensorType.getShape(), tensorType.getElementType());
+-    auto alloc = rewriter.create<memref::AllocOp>(loc, memrefType);
+-    auto shape = tensorType.getShape();
++    llvm::SmallVector<Value, 2> extents;
++    for (int64_t d = 0; d < 2; ++d)
++      extents.push_back(tensorType.isDynamicDim(d) ? mg::dyn::extentOf(rewriter, loc, *inputBuffer, 1 - d) : Value());
++    auto alloc = mg::dyn::allocFor(rewriter, loc, memrefType, extents);
+ 
+-    affine::buildAffineLoopNest(
+-        rewriter, loc, {0, 0}, {shape[0], shape[1]}, {1, 1},
++    mg::dyn::nest2D(
++        rewriter, loc, tensorType, extents,
+         [&](OpBuilder &nestedBuilder, Location nestedLoc, ValueRange ivs) {
+           Value i = ivs[0];
+           Value j = ivs[1];

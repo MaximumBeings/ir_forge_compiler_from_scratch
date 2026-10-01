@@ -81,6 +81,7 @@ nav:
       - "11. The GPU Host Side: Device Memory, Real Runtime Calls, and a Stub Device": part11/11-the-gpu-host-side.md
   - "Part 7 -- Case Studies":
       - "12. Reading MLIR's Own Production Pipelines: What This Book's Compiler Is Missing": part12/12-reading-the-production-pipelines.md
+      - "13. Dynamic Shapes: Closing Chapter 12's Biggest Unknown": part13/13-dynamic-shapes.md
 
 extra:
   social: []

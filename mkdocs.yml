@@ -78,6 +78,7 @@ nav:
       - "9. MLIR's Own Real C++ ExecutionEngine API, Called In-Process": part9/09-the-execution-engine-api.md
   - "Part 6 -- GPU Lowering":
       - "10. GPU Lowering: Mountain Goat to the gpu Dialect, NVVM, and Real PTX": part10/10-gpu-lowering-to-ptx.md
+      - "11. The GPU Host Side: Device Memory, Real Runtime Calls, and a Stub Device": part11/11-the-gpu-host-side.md
 
 extra:
   social: []

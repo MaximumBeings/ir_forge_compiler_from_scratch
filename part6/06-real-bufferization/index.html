@@ -1090,6 +1090,95 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 6 -- GPU Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 6 -- GPU Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part10/10-gpu-lowering-to-ptx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10. GPU Lowering: Mountain Goat to the gpu Dialect, NVVM, and Real PTX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1480,7 +1569,7 @@
 <p>Chapter 4's own hand-written <code>--convert-mg-to-affine</code> genuinely folded the <code>mg.add</code> of two constants away before ever emitting a loop, because MLIR's dialect-conversion driver tries an operation's own <code>fold()</code> hook before reaching for a <code>ConversionPattern</code>. The real captured output directly above shows a genuine <code>affine.for</code> loop nest for the exact same constant-operand <code>mg.add</code> -- meaning One-Shot Bufferize's own driver did not fold it away first. This is a real, structural difference between the two real frameworks, not a bug in either: dialect conversion (<code>applyPartialConversion</code>) is built around <em>legalizing</em> operations, for which trying a cheaper <code>fold()</code> first is a natural optimization; One-Shot Bufferize's own driver is built around a <em>bufferization</em> analysis and rewrite, which has no equivalent reason to also attempt unrelated constant folding along the way. Running <code>--canonicalize</code> before <code>--one-shot-bufferize</code> would fold the add away here too -- the two passes' own real responsibilities simply do not overlap the same way dialect conversion's own legalization does.</p>
 <h2 id="a-second-real-honest-difference-function-argument-buffer-types">A second real, honest difference: function-argument buffer types<a class="headerlink" href="#a-second-real-honest-difference-function-argument-buffer-types" title="Permanent link">&para;</a></h2>
 <p>Bufferizing a function taking real tensor arguments surfaces one more real, concrete difference between the two approaches:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>./mg-opt mountain_goat_run.mlir --one-shot-bufferize="bufferize-function-boundaries"
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>./mg-opt mountain_goat_run.mlir --one-shot-bufferize=&quot;bufferize-function-boundaries&quot;
 </code></pre></div>
 <p><strong>Real captured output (excerpt):</strong>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>func.func @add_tensors(%arg0: memref&lt;2x2xf64, strided&lt;[?, ?], offset: ?&gt;&gt;,
@@ -1505,7 +1594,7 @@
 <a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>}
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>./mg-opt mountain_goat_run.mlir \
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>  --one-shot-bufferize="bufferize-function-boundaries" \
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>  --one-shot-bufferize=&quot;bufferize-function-boundaries&quot; \
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>  --lower-affine --convert-scf-to-cf --convert-arith-to-llvm \
 <a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>  --finalize-memref-to-llvm --convert-func-to-llvm \
 <a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>  --reconcile-unrealized-casts \

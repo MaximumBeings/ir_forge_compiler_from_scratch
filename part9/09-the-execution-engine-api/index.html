@@ -16,6 +16,8 @@
         <link rel="prev" href="../../part8/08-a-standalone-native-executable/">
       
       
+        <link rel="next" href="../../part10/10-gpu-lowering-to-ptx/">
+      
       
         
       
@@ -1027,6 +1029,95 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 6 -- GPU Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 6 -- GPU Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part10/10-gpu-lowering-to-ptx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10. GPU Lowering: Mountain Goat to the gpu Dialect, NVVM, and Real PTX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1153,17 +1244,17 @@
 <h2 id="the-real-question-this-chapter-answers">The real question this chapter answers<a class="headerlink" href="#the-real-question-this-chapter-answers" title="Permanent link">&para;</a></h2>
 <p><code>mlir-cpu-runner-18</code> and Chapter 8's own standalone executable are both real, but neither one is C++ code calling into a JIT-compiled Mountain Goat function <em>from inside the same process</em>, the way a real embedding application -- a database engine JIT-compiling a query plan, a numerical library JIT-compiling a kernel -- would actually use MLIR. This chapter answers directly: what does that real, embedded use look like in actual C++, using <code>mlir::ExecutionEngine</code> itself rather than a pre-built tool?</p>
 <h2 id="a-real-minimal-c-host-program">A real, minimal C++ host program<a class="headerlink" href="#a-real-minimal-c-host-program" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/Dialect/Func/IR/FuncOps.h"</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/Dialect/LLVMIR/LLVMDialect.h"</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/ExecutionEngine/CRunnerUtils.h"</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/ExecutionEngine/ExecutionEngine.h"</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/IR/BuiltinOps.h"</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/IR/MLIRContext.h"</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/Parser/Parser.h"</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/Target/LLVMIR/Dialect/Builtin/BuiltinToLLVMIRTranslation.h"</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/Target/LLVMIR/Dialect/LLVMIR/LLVMToLLVMIRTranslation.h"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/Func/IR/FuncOps.h&quot;</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/LLVMIR/LLVMDialect.h&quot;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/ExecutionEngine/CRunnerUtils.h&quot;</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/ExecutionEngine/ExecutionEngine.h&quot;</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/IR/BuiltinOps.h&quot;</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/IR/MLIRContext.h&quot;</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Parser/Parser.h&quot;</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Target/LLVMIR/Dialect/Builtin/BuiltinToLLVMIRTranslation.h&quot;</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Target/LLVMIR/Dialect/LLVMIR/LLVMToLLVMIRTranslation.h&quot;</span>
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"llvm/Support/TargetSelect.h"</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;llvm/Support/TargetSelect.h&quot;</span>
 <a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>
 <a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">**</span><span class="n">argv</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">  </span><span class="n">llvm</span><span class="o">::</span><span class="n">InitializeNativeTarget</span><span class="p">();</span>
@@ -1188,7 +1279,7 @@
 <p>Real, necessary setup this chapter's own program needs that neither prior execution path required directly: <code>llvm::InitializeNativeTarget()</code>/<code>InitializeNativeTargetAsmPrinter()</code> (ORC's own JIT needs the host's real native backend registered before it can compile anything), and <code>mlir::registerLLVMDialectTranslation</code>/<code>registerBuiltinDialectTranslation</code> -- real, specific translation interfaces <code>mlir::ExecutionEngine::create</code> needs to convert the parsed <code>ModuleOp</code> to real LLVM IR internally, the same real conversion Chapter 1's own <code>mlir-translate-18</code> performs as a separate command-line step.</p>
 <h2 id="real-honest-debugging-three-crashes-three-real-fixes">Real, honest debugging: three crashes, three real fixes<a class="headerlink" href="#real-honest-debugging-three-crashes-three-real-fixes" title="Permanent link">&para;</a></h2>
 <p>This chapter's own first real attempt to invoke <code>add_tensors</code> -- passing <code>lhs</code>, <code>rhs</code>, and a <code>result()</code>-wrapped output directly, mirroring <code>ExecutionEngine.h</code>'s own documented example for a plain scalar function -- genuinely crashed:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Thread 1 "run_engine" received signal SIGSEGV, Segmentation fault.
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Thread 1 &quot;run_engine&quot; received signal SIGSEGV, Segmentation fault.
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>0x00007ffff7fb9060 in add_tensors ()
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>#0  0x00007ffff7fb9060 in add_tensors ()
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>#1  0x00007ffff7fb9115 in _mlir_ciface_add_tensors ()
@@ -1198,22 +1289,22 @@
 <p>Genuinely real, non-obvious information in that one backtrace: a <em>third</em> function, <code>_mlir__mlir_ciface_add_tensors</code>, exists -- neither <code>add_tensors</code> (Chapter 4's own lowered function) nor <code>_mlir_ciface_add_tensors</code> (Chapter 8's own real C-interface wrapper), but a separate, generic "packed" adapter <code>mlir::ExecutionEngine::invokePacked</code> synthesizes internally, at JIT time, specifically to support <code>invoke&lt;&gt;</code>'s own generic, templated calling convention. Inspecting registers at the crash site (<code>r14 = 0x4000000000000000</code>, the exact real IEEE-754 bit pattern of <code>2.0</code>) revealed real, concrete evidence: a value from the <em>input array itself</em> had ended up in a register meant to hold a <em>pointer</em>.</p>
 <p><strong>Real fix 1 -- memref arguments need one real, extra level of indirection.</strong> <code>Argument&lt;T&gt;::pack</code>'s own real default pushes <code>&amp;val</code> -- the address of the argument itself. For a plain scalar (this chapter's own first, simpler test, <code>scale(x: f64)</code>, confirmed working with this default), that is exactly what <code>_mlir_ciface_scale</code> expects: a pointer <em>to</em> the <code>f64</code> value. But a memref's own real <code>_mlir_ciface_</code> parameter type is already <code>!llvm.ptr</code> -- a pointer to the descriptor struct. The generic packed convention needs <code>args[i]</code> to point to <em>whatever the real ciface parameter's own type already is</em>, so for a memref, that means <code>args[i]</code> must be the address of a <em>pointer</em> variable holding <code>&amp;descriptor</code>, not the address of the descriptor struct directly:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">// Wrong -- one level short:</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">engine</span><span class="o">-&gt;</span><span class="n">invoke</span><span class="p">(</span><span class="s">"sum_memref"</span><span class="p">,</span><span class="w"> </span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="p">...);</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1">// Right -- m's own address, not m itself:</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">engine</span><span class="o">-&gt;</span><span class="n">invoke</span><span class="p">(</span><span class="s">"sum_memref"</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="p">...);</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">engine</span><span class="o">-&gt;</span><span class="n">invoke</span><span class="p">(</span><span class="s">&quot;sum_memref&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="p">...);</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1">// Right -- m&#39;s own address, not m itself:</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">engine</span><span class="o">-&gt;</span><span class="n">invoke</span><span class="p">(</span><span class="s">&quot;sum_memref&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="p">...);</span>
 </code></pre></div>
 <p>Confirmed directly on an isolated, minimal real test (<code>sum_memref</code>, one memref argument, scalar result): <code>sum_memref([1,2,3,4]) = 10</code>, genuinely correct.</p>
 <p><strong>Real fix 2 -- a struct-typed result needs the same real extra indirection.</strong> An isolated test returning a memref with no arguments at all (<code>make_ones() -&gt; memref&lt;4xf64&gt;</code>) crashed the same real way, inside <code>_mlir_ciface_make_ones</code> itself this time -- the real <code>sret</code> destination pointer it received was invalid. The fix is the same real principle applied to the result side: <code>mlir::ExecutionEngine::result(...)</code> must wrap a <em>pointer</em> variable, not the descriptor struct directly:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">StridedMemRefType</span><span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="o">&gt;</span><span class="w"> </span><span class="n">result</span><span class="p">{...};</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">StridedMemRefType</span><span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="o">&gt;</span><span class="w"> </span><span class="o">*</span><span class="n">resultPtr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">result</span><span class="p">;</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">engine</span><span class="o">-&gt;</span><span class="n">invoke</span><span class="p">(</span><span class="s">"make_ones"</span><span class="p">,</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">ExecutionEngine</span><span class="o">::</span><span class="n">result</span><span class="p">(</span><span class="n">resultPtr</span><span class="p">));</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">engine</span><span class="o">-&gt;</span><span class="n">invoke</span><span class="p">(</span><span class="s">&quot;make_ones&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">ExecutionEngine</span><span class="o">::</span><span class="n">result</span><span class="p">(</span><span class="n">resultPtr</span><span class="p">));</span>
 </code></pre></div>
 <p>Confirmed directly: <code>make_ones() = [1, 1, 1, 1]</code>, genuinely correct.</p>
 <p><strong>Real fix 3 -- combining both needs the result wrapper placed first, not last.</strong> With both real fixes applied, <code>add_tensors</code> (two memref arguments <em>and</em> a memref result) still produced silently wrong output -- no crash, but <code>[[0, 0], [0, 0]]</code>, with <code>result.data</code> still pointing at this chapter's own original, untouched stack buffer rather than a freshly-allocated one. <code>_mlir_ciface_add_tensors</code>'s own real, fixed parameter order (confirmed directly in Chapter 8) places the <code>sret</code> result pointer <em>first</em>, ahead of the real arguments -- and the real packed convention, it turns out, mirrors that same real positional order rather than the documented scalar-return example's own "arguments, then result" order:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1">// Silently wrong -- result last, doesn't match ciface's own real sret-first order:</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">engine</span><span class="o">-&gt;</span><span class="n">invoke</span><span class="p">(</span><span class="s">"add_tensors"</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">lhs</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">rhs</span><span class="p">,</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">ExecutionEngine</span><span class="o">::</span><span class="n">result</span><span class="p">(</span><span class="n">resultPtr</span><span class="p">));</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1">// Right -- result first, matching _mlir_ciface_add_tensors's own real parameter order:</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="n">engine</span><span class="o">-&gt;</span><span class="n">invoke</span><span class="p">(</span><span class="s">"add_tensors"</span><span class="p">,</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">ExecutionEngine</span><span class="o">::</span><span class="n">result</span><span class="p">(</span><span class="n">resultPtr</span><span class="p">),</span><span class="w"> </span><span class="o">&amp;</span><span class="n">lhs</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">rhs</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1">// Silently wrong -- result last, doesn&#39;t match ciface&#39;s own real sret-first order:</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">engine</span><span class="o">-&gt;</span><span class="n">invoke</span><span class="p">(</span><span class="s">&quot;add_tensors&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">lhs</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">rhs</span><span class="p">,</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">ExecutionEngine</span><span class="o">::</span><span class="n">result</span><span class="p">(</span><span class="n">resultPtr</span><span class="p">));</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1">// Right -- result first, matching _mlir_ciface_add_tensors&#39;s own real parameter order:</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="n">engine</span><span class="o">-&gt;</span><span class="n">invoke</span><span class="p">(</span><span class="s">&quot;add_tensors&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">ExecutionEngine</span><span class="o">::</span><span class="n">result</span><span class="p">(</span><span class="n">resultPtr</span><span class="p">),</span><span class="w"> </span><span class="o">&amp;</span><span class="n">lhs</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">rhs</span><span class="p">);</span>
 </code></pre></div>
 <p>None of these three real rules are stated directly in <code>ExecutionEngine.h</code>'s own comments for the memref/struct case -- each one was found exactly the way this book's own stated discipline requires: by running real code, hitting a real failure, inspecting it directly (<code>gdb</code>, register values, backtraces), and fixing it, not by assuming the API's own scalar-case documentation generalizes without changes.</p>
 <h2 id="real-worked-example-the-complete-correctly-invoked-program">Real worked example: the complete, correctly-invoked program<a class="headerlink" href="#real-worked-example-the-complete-correctly-invoked-program" title="Permanent link">&para;</a></h2>
@@ -1222,24 +1313,24 @@
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>  func.return %0 : tensor&lt;2x2xf64&gt;
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>}
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/Dialect/Func/IR/FuncOps.h"</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/Dialect/LLVMIR/LLVMDialect.h"</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/ExecutionEngine/CRunnerUtils.h"</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/ExecutionEngine/ExecutionEngine.h"</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/ExecutionEngine/OptUtils.h"</span>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/IR/BuiltinOps.h"</span>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/IR/MLIRContext.h"</span>
-<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/Parser/Parser.h"</span>
-<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/Target/LLVMIR/Dialect/Builtin/BuiltinToLLVMIRTranslation.h"</span>
-<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/Target/LLVMIR/Dialect/LLVMIR/LLVMToLLVMIRTranslation.h"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/Func/IR/FuncOps.h&quot;</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/LLVMIR/LLVMDialect.h&quot;</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/ExecutionEngine/CRunnerUtils.h&quot;</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/ExecutionEngine/ExecutionEngine.h&quot;</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/ExecutionEngine/OptUtils.h&quot;</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/IR/BuiltinOps.h&quot;</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/IR/MLIRContext.h&quot;</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Parser/Parser.h&quot;</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Target/LLVMIR/Dialect/Builtin/BuiltinToLLVMIRTranslation.h&quot;</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Target/LLVMIR/Dialect/LLVMIR/LLVMToLLVMIRTranslation.h&quot;</span>
 <a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>
-<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"llvm/Support/TargetSelect.h"</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;llvm/Support/TargetSelect.h&quot;</span>
 <a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>
 <a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;iostream&gt;</span>
 <a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>
 <a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">**</span><span class="n">argv</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">argc</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cerr</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">"usage: run_engine &lt;llvm-dialect.mlir&gt;</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cerr</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;usage: run_engine &lt;llvm-dialect.mlir&gt;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
 <a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 <a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a><span class="w">  </span><span class="p">}</span>
 <a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a>
@@ -1257,15 +1348,15 @@
 <a id="__codelineno-6-33" name="__codelineno-6-33" href="#__codelineno-6-33"></a><span class="w">  </span><span class="n">mlir</span><span class="o">::</span><span class="n">OwningOpRef</span><span class="o">&lt;</span><span class="n">mlir</span><span class="o">::</span><span class="n">ModuleOp</span><span class="o">&gt;</span><span class="w"> </span><span class="k">module</span><span class="w"> </span><span class="o">=</span>
 <a id="__codelineno-6-34" name="__codelineno-6-34" href="#__codelineno-6-34"></a><span class="w">      </span><span class="n">mlir</span><span class="o">::</span><span class="n">parseSourceFile</span><span class="o">&lt;</span><span class="n">mlir</span><span class="o">::</span><span class="n">ModuleOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="o">&amp;</span><span class="n">context</span><span class="p">);</span>
 <a id="__codelineno-6-35" name="__codelineno-6-35" href="#__codelineno-6-35"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="k">module</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-6-36" name="__codelineno-6-36" href="#__codelineno-6-36"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cerr</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">"failed to parse "</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+<a id="__codelineno-6-36" name="__codelineno-6-36" href="#__codelineno-6-36"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cerr</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;failed to parse &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
 <a id="__codelineno-6-37" name="__codelineno-6-37" href="#__codelineno-6-37"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 <a id="__codelineno-6-38" name="__codelineno-6-38" href="#__codelineno-6-38"></a><span class="w">  </span><span class="p">}</span>
 <a id="__codelineno-6-39" name="__codelineno-6-39" href="#__codelineno-6-39"></a>
 <a id="__codelineno-6-40" name="__codelineno-6-40" href="#__codelineno-6-40"></a><span class="w">  </span><span class="n">mlir</span><span class="o">::</span><span class="n">ExecutionEngineOptions</span><span class="w"> </span><span class="n">options</span><span class="p">;</span>
 <a id="__codelineno-6-41" name="__codelineno-6-41" href="#__codelineno-6-41"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">maybeEngine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">ExecutionEngine</span><span class="o">::</span><span class="n">create</span><span class="p">(</span><span class="k">module</span><span class="p">.</span><span class="n">get</span><span class="p">(),</span><span class="w"> </span><span class="n">options</span><span class="p">);</span>
 <a id="__codelineno-6-42" name="__codelineno-6-42" href="#__codelineno-6-42"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">maybeEngine</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-6-43" name="__codelineno-6-43" href="#__codelineno-6-43"></a><span class="w">    </span><span class="n">llvm</span><span class="o">::</span><span class="n">errs</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">"failed to construct an execution engine: "</span>
-<a id="__codelineno-6-44" name="__codelineno-6-44" href="#__codelineno-6-44"></a><span class="w">                 </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">maybeEngine</span><span class="p">.</span><span class="n">takeError</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+<a id="__codelineno-6-43" name="__codelineno-6-43" href="#__codelineno-6-43"></a><span class="w">    </span><span class="n">llvm</span><span class="o">::</span><span class="n">errs</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;failed to construct an execution engine: &quot;</span>
+<a id="__codelineno-6-44" name="__codelineno-6-44" href="#__codelineno-6-44"></a><span class="w">                 </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">maybeEngine</span><span class="p">.</span><span class="n">takeError</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
 <a id="__codelineno-6-45" name="__codelineno-6-45" href="#__codelineno-6-45"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 <a id="__codelineno-6-46" name="__codelineno-6-46" href="#__codelineno-6-46"></a><span class="w">  </span><span class="p">}</span>
 <a id="__codelineno-6-47" name="__codelineno-6-47" href="#__codelineno-6-47"></a><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">mlir</span><span class="o">::</span><span class="n">ExecutionEngine</span><span class="o">&gt;</span><span class="w"> </span><span class="n">engine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="o">*</span><span class="n">maybeEngine</span><span class="p">);</span>
@@ -1282,20 +1373,20 @@
 <a id="__codelineno-6-58" name="__codelineno-6-58" href="#__codelineno-6-58"></a><span class="w">      </span><span class="n">resultData</span><span class="p">,</span><span class="w"> </span><span class="n">resultData</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">},</span><span class="w"> </span><span class="p">{</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">}};</span>
 <a id="__codelineno-6-59" name="__codelineno-6-59" href="#__codelineno-6-59"></a>
 <a id="__codelineno-6-60" name="__codelineno-6-60" href="#__codelineno-6-60"></a><span class="w">  </span><span class="n">StridedMemRefType</span><span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="o">&gt;</span><span class="w"> </span><span class="o">*</span><span class="n">resultPtr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">result</span><span class="p">;</span>
-<a id="__codelineno-6-61" name="__codelineno-6-61" href="#__codelineno-6-61"></a><span class="w">  </span><span class="n">llvm</span><span class="o">::</span><span class="n">Error</span><span class="w"> </span><span class="n">error</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">engine</span><span class="o">-&gt;</span><span class="n">invoke</span><span class="p">(</span><span class="s">"add_tensors"</span><span class="p">,</span>
+<a id="__codelineno-6-61" name="__codelineno-6-61" href="#__codelineno-6-61"></a><span class="w">  </span><span class="n">llvm</span><span class="o">::</span><span class="n">Error</span><span class="w"> </span><span class="n">error</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">engine</span><span class="o">-&gt;</span><span class="n">invoke</span><span class="p">(</span><span class="s">&quot;add_tensors&quot;</span><span class="p">,</span>
 <a id="__codelineno-6-62" name="__codelineno-6-62" href="#__codelineno-6-62"></a><span class="w">                                     </span><span class="n">mlir</span><span class="o">::</span><span class="n">ExecutionEngine</span><span class="o">::</span><span class="n">result</span><span class="p">(</span><span class="n">resultPtr</span><span class="p">),</span>
 <a id="__codelineno-6-63" name="__codelineno-6-63" href="#__codelineno-6-63"></a><span class="w">                                     </span><span class="o">&amp;</span><span class="n">lhs</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">rhs</span><span class="p">);</span>
 <a id="__codelineno-6-64" name="__codelineno-6-64" href="#__codelineno-6-64"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-6-65" name="__codelineno-6-65" href="#__codelineno-6-65"></a><span class="w">    </span><span class="n">llvm</span><span class="o">::</span><span class="n">errs</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">"JIT invocation failed: "</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">error</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+<a id="__codelineno-6-65" name="__codelineno-6-65" href="#__codelineno-6-65"></a><span class="w">    </span><span class="n">llvm</span><span class="o">::</span><span class="n">errs</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;JIT invocation failed: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">error</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
 <a id="__codelineno-6-66" name="__codelineno-6-66" href="#__codelineno-6-66"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 <a id="__codelineno-6-67" name="__codelineno-6-67" href="#__codelineno-6-67"></a><span class="w">  </span><span class="p">}</span>
 <a id="__codelineno-6-68" name="__codelineno-6-68" href="#__codelineno-6-68"></a>
-<a id="__codelineno-6-69" name="__codelineno-6-69" href="#__codelineno-6-69"></a><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">"add_tensors([[1,2],[3,4]], [[5,6],[7,8]]) =</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+<a id="__codelineno-6-69" name="__codelineno-6-69" href="#__codelineno-6-69"></a><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;add_tensors([[1,2],[3,4]], [[5,6],[7,8]]) =</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
 <a id="__codelineno-6-70" name="__codelineno-6-70" href="#__codelineno-6-70"></a><span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int64_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-6-71" name="__codelineno-6-71" href="#__codelineno-6-71"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int64_t</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">j</span><span class="p">)</span>
 <a id="__codelineno-6-72" name="__codelineno-6-72" href="#__codelineno-6-72"></a><span class="w">      </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="n">strides</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="n">strides</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
-<a id="__codelineno-6-73" name="__codelineno-6-73" href="#__codelineno-6-73"></a><span class="w">                 </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">" "</span><span class="p">;</span>
-<a id="__codelineno-6-74" name="__codelineno-6-74" href="#__codelineno-6-74"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+<a id="__codelineno-6-73" name="__codelineno-6-73" href="#__codelineno-6-73"></a><span class="w">                 </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; &quot;</span><span class="p">;</span>
+<a id="__codelineno-6-74" name="__codelineno-6-74" href="#__codelineno-6-74"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
 <a id="__codelineno-6-75" name="__codelineno-6-75" href="#__codelineno-6-75"></a><span class="w">  </span><span class="p">}</span>
 <a id="__codelineno-6-76" name="__codelineno-6-76" href="#__codelineno-6-76"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
 <a id="__codelineno-6-77" name="__codelineno-6-77" href="#__codelineno-6-77"></a><span class="p">}</span>
@@ -1380,6 +1471,22 @@
             </div>
           </a>
         
+        
+          
+          <a href="../../part10/10-gpu-lowering-to-ptx/" class="md-footer__link md-footer__link--next" aria-label="Next: 10. GPU Lowering: Mountain Goat to the gpu Dialect, NVVM, and Real PTX">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                10. GPU Lowering: Mountain Goat to the gpu Dialect, NVVM, and Real PTX
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
         
       </nav>
     

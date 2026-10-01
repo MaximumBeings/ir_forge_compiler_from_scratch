@@ -1090,6 +1090,95 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 6 -- GPU Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 6 -- GPU Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part10/10-gpu-lowering-to-ptx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10. GPU Lowering: Mountain Goat to the gpu Dialect, NVVM, and Real PTX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1299,77 +1388,77 @@
 </blockquote>
 <p>Concretely, this means: a dialect and its operations are written once as declarative records in a <code>.td</code> file, and a real tool -- <code>mlir-tblgen-18</code>, installed alongside <code>mlir-opt-18</code> since Chapter 1 -- reads that file and genuinely generates the C++ classes (<code>.h.inc</code>/<code>.cpp.inc</code> files) that implement parsing, printing, verification boilerplate, and accessor methods for every operation. This chapter writes two real <code>.td</code> files: one declaring the <code>mg</code> dialect itself, one declaring its four operations.</p>
 <h3 id="the-dialects-own-td-file">The dialect's own <code>.td</code> file<a class="headerlink" href="#the-dialects-own-td-file" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="cp">#ifndef</span><span class="w"> </span><span class="n">MG_DIALECT_TD</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="cp">#define</span><span class="w"> </span><span class="n">MG_DIALECT_TD</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>#ifndef MG_DIALECT_TD
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>#define MG_DIALECT_TD
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="k">include</span><span class="w"> </span><span class="s">"mlir/IR/OpBase.td"</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>include &quot;mlir/IR/OpBase.td&quot;
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="k">def</span><span class="w"> </span><span class="n">Mg_Dialect</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">Dialect</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">"mg"</span><span class="p">;</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">summary</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">"Mountain Goat: a minimal tensor/array-expression dialect"</span><span class="p">;</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">description</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[{</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span><span class="n">The</span><span class="w"> </span><span class="n">Mountain</span><span class="w"> </span><span class="n">Goat</span><span class="w"> </span><span class="p">(</span><span class="err">`</span><span class="n">mg</span><span class="err">`</span><span class="p">)</span><span class="w"> </span><span class="n">dialect</span><span class="w"> </span><span class="n">represents</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">small</span><span class="w"> </span><span class="n">subset</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">the</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">    </span><span class="n">Mountain</span><span class="w"> </span><span class="n">Goat</span><span class="w"> </span><span class="n">toy</span><span class="w"> </span><span class="n">language</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="n">specific</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">it</span><span class="o">:</span><span class="w"> </span><span class="n">dense</span><span class="w"> </span><span class="n">tensor</span>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">    </span><span class="n">constants</span><span class="p">,</span><span class="w"> </span><span class="n">elementwise</span><span class="w"> </span><span class="n">addition</span><span class="p">,</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="mi">2</span><span class="o">-</span><span class="n">D</span><span class="w"> </span><span class="n">transpose</span><span class="p">.</span><span class="w"> </span><span class="n">Function</span>
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">    </span><span class="n">definitions</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">calls</span><span class="w"> </span><span class="n">are</span><span class="w"> </span><span class="n">deliberately</span><span class="w"> </span><span class="n">represented</span><span class="w"> </span><span class="n">with</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">real</span>
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">    </span><span class="n">builtin</span><span class="w"> </span><span class="err">`</span><span class="n">func</span><span class="err">`</span><span class="w"> </span><span class="n">dialect</span><span class="w"> </span><span class="n">instead</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">reinvented</span><span class="w"> </span><span class="err">`</span><span class="n">mg</span><span class="p">.</span><span class="n">func</span><span class="err">`</span><span class="w"> </span><span class="o">--</span><span class="w"> </span><span class="n">Mountain</span>
-<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">    </span><span class="n">Goat</span><span class="err">'</span><span class="n">s</span><span class="w"> </span><span class="n">own</span><span class="w"> </span><span class="n">dialect</span><span class="w"> </span><span class="n">stays</span><span class="w"> </span><span class="n">minimal</span><span class="p">,</span><span class="w"> </span><span class="n">covering</span><span class="w"> </span><span class="n">only</span><span class="w"> </span><span class="n">what</span><span class="w"> </span><span class="err">`</span><span class="n">func</span><span class="err">`</span><span class="w"> </span><span class="n">does</span><span class="w"> </span><span class="k">not</span>
-<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">    </span><span class="n">already</span><span class="w"> </span><span class="n">cover</span><span class="p">.</span>
-<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">  </span><span class="p">}];</span>
-<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">cppNamespace</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">"::mg"</span><span class="p">;</span>
-<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="p">}</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>def Mg_Dialect : Dialect {
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>  let name = &quot;mg&quot;;
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>  let summary = &quot;Mountain Goat: a minimal tensor/array-expression dialect&quot;;
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>  let description = [{
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    The Mountain Goat (`mg`) dialect represents the small subset of the
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    Mountain Goat toy language that is specific to it: dense tensor
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    constants, elementwise addition, and 2-D transpose. Function
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    definitions and calls are deliberately represented with the real
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>    builtin `func` dialect instead of a reinvented `mg.func` -- Mountain
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>    Goat&#39;s own dialect stays minimal, covering only what `func` does not
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>    already cover.
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>  }];
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>  let cppNamespace = &quot;::mg&quot;;
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>}
 <a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>
-<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="k">class</span><span class="w"> </span><span class="n">Mg_Op</span><span class="p">&lt;</span><span class="kt">string</span><span class="w"> </span><span class="n">mnemonic</span><span class="p">,</span><span class="w"> </span><span class="kt">list</span><span class="p">&lt;</span><span class="n">Trait</span><span class="p">&gt;</span><span class="w"> </span><span class="n">traits</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[]&gt;</span><span class="w"> </span><span class="p">:</span>
-<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="w">    </span><span class="n">Op</span><span class="p">&lt;</span><span class="n">Mg_Dialect</span><span class="p">,</span><span class="w"> </span><span class="n">mnemonic</span><span class="p">,</span><span class="w"> </span><span class="n">traits</span><span class="p">&gt;;</span>
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>class Mg_Op&lt;string mnemonic, list&lt;Trait&gt; traits = []&gt; :
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>    Op&lt;Mg_Dialect, mnemonic, traits&gt;;
 <a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>
-<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="cp">#endif</span><span class="w"> </span><span class="c1">// MG_DIALECT_TD</span>
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>#endif // MG_DIALECT_TD
 </code></pre></div>
 <p><code>Dialect</code> is a real TableGen class MLIR itself ships (<code>mlir/IR/OpBase.td</code>); <code>Mg_Dialect</code> is this chapter's own real specialization of it, naming the dialect <code>mg</code> and the C++ namespace it generates into (<code>::mg</code>). <code>Mg_Op</code>, defined just below it, is a small real convenience: every one of Mountain Goat's own operations is declared as <code>Mg_Op&lt;"name", [traits]&gt;</code> rather than repeating <code>Op&lt;Mg_Dialect, "name", [traits]&gt;</code> four separate times.</p>
 <h3 id="the-operations-own-td-file">The operations' own <code>.td</code> file<a class="headerlink" href="#the-operations-own-td-file" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="cp">#ifndef</span><span class="w"> </span><span class="n">MG_OPS_TD</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="cp">#define</span><span class="w"> </span><span class="n">MG_OPS_TD</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>#ifndef MG_OPS_TD
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>#define MG_OPS_TD
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="k">include</span><span class="w"> </span><span class="s">"mg/MgDialect.td"</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="k">include</span><span class="w"> </span><span class="s">"mlir/Interfaces/SideEffectInterfaces.td"</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="k">include</span><span class="w"> </span><span class="s">"mlir/Interfaces/InferTypeOpInterface.td"</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="k">include</span><span class="w"> </span><span class="s">"mlir/IR/BuiltinAttributeInterfaces.td"</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>include &quot;mg/MgDialect.td&quot;
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>include &quot;mlir/Interfaces/SideEffectInterfaces.td&quot;
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>include &quot;mlir/Interfaces/InferTypeOpInterface.td&quot;
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>include &quot;mlir/IR/BuiltinAttributeInterfaces.td&quot;
 <a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="k">def</span><span class="w"> </span><span class="n">ConstantOp</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">Mg_Op</span><span class="p">&lt;</span><span class="s">"constant"</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="n">Pure</span><span class="p">,</span><span class="w"> </span><span class="n">DeclareOpInterfaceMethods</span><span class="p">&lt;</span><span class="n">InferTypeOpInterface</span><span class="p">&gt;]&gt;</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">summary</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">"dense tensor constant, Mountain Goat's own array literal"</span><span class="p">;</span>
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">description</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[{</span>
-<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">    </span><span class="n">The</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="n">never</span><span class="w"> </span><span class="n">written</span><span class="w"> </span><span class="n">out</span><span class="w"> </span><span class="n">separately</span><span class="o">:</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="n">inferred</span>
-<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">    </span><span class="n">straight</span><span class="w"> </span><span class="n">from</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">dense</span><span class="w"> </span><span class="n">attribute</span><span class="err">'</span><span class="n">s</span><span class="w"> </span><span class="n">own</span><span class="w"> </span><span class="n">type</span><span class="p">,</span><span class="w"> </span><span class="n">since</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">constant</span><span class="err">'</span><span class="n">s</span><span class="w"> </span><span class="n">shape</span>
-<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">    </span><span class="n">is</span><span class="w"> </span><span class="n">already</span><span class="w"> </span><span class="n">fully</span><span class="w"> </span><span class="n">determined</span><span class="w"> </span><span class="n">by</span><span class="w"> </span><span class="n">its</span><span class="w"> </span><span class="n">literal</span><span class="w"> </span><span class="n">value</span><span class="p">.</span><span class="w"> </span><span class="err">`</span><span class="n">dense</span><span class="o">&lt;</span><span class="p">[[</span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">2.0</span><span class="p">],</span>
-<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">    </span><span class="p">[</span><span class="mf">3.0</span><span class="p">,</span><span class="w"> </span><span class="mf">4.0</span><span class="p">]]</span><span class="o">&gt;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">tensor</span><span class="o">&lt;</span><span class="mi">2</span><span class="n">x2xf64</span><span class="o">&gt;</span><span class="err">`</span><span class="w"> </span><span class="n">carries</span><span class="w"> </span><span class="n">its</span><span class="w"> </span><span class="n">own</span><span class="w"> </span><span class="n">type</span><span class="p">,</span><span class="w"> </span><span class="n">so</span><span class="w"> </span><span class="n">repeating</span><span class="w"> </span><span class="n">it</span>
-<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">    </span><span class="n">after</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">op</span><span class="w"> </span><span class="n">would</span><span class="w"> </span><span class="n">just</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">same</span><span class="w"> </span><span class="n">fact</span><span class="w"> </span><span class="n">spelled</span><span class="w"> </span><span class="n">twice</span><span class="p">.</span>
-<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">  </span><span class="p">}];</span>
-<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">arguments</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">(</span><span class="n">ins</span><span class="w"> </span><span class="n">F64ElementsAttr</span><span class="p">:</span><span class="nv">$value</span><span class="p">);</span>
-<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">results</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">(</span><span class="n">outs</span><span class="w"> </span><span class="n">F64Tensor</span><span class="p">:</span><span class="nv">$result</span><span class="p">);</span>
-<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">assemblyFormat</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">"$value attr-dict"</span><span class="p">;</span>
-<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="p">}</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>def ConstantOp : Mg_Op&lt;&quot;constant&quot;, [Pure, DeclareOpInterfaceMethods&lt;InferTypeOpInterface&gt;]&gt; {
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>  let summary = &quot;dense tensor constant, Mountain Goat&#39;s own array literal&quot;;
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>  let description = [{
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>    The result type is never written out separately: it is inferred
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>    straight from the dense attribute&#39;s own type, since a constant&#39;s shape
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>    is already fully determined by its literal value. `dense&lt;[[1.0, 2.0],
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>    [3.0, 4.0]]&gt; : tensor&lt;2x2xf64&gt;` carries its own type, so repeating it
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>    after the op would just be the same fact spelled twice.
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>  }];
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>  let arguments = (ins F64ElementsAttr:$value);
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>  let results = (outs F64Tensor:$result);
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>  let assemblyFormat = &quot;$value attr-dict&quot;;
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>}
 <a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a>
-<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="k">def</span><span class="w"> </span><span class="n">AddOp</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">Mg_Op</span><span class="p">&lt;</span><span class="s">"add"</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="n">Pure</span><span class="p">]&gt;</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">summary</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">"elementwise add of two equal-shaped tensors"</span><span class="p">;</span>
-<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">arguments</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">(</span><span class="n">ins</span><span class="w"> </span><span class="n">F64Tensor</span><span class="p">:</span><span class="nv">$lhs</span><span class="p">,</span><span class="w"> </span><span class="n">F64Tensor</span><span class="p">:</span><span class="nv">$rhs</span><span class="p">);</span>
-<a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">results</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">(</span><span class="n">outs</span><span class="w"> </span><span class="n">F64Tensor</span><span class="p">:</span><span class="nv">$result</span><span class="p">);</span>
-<a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">assemblyFormat</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">"$lhs `,` $rhs attr-dict `:` type($lhs) `,` type($rhs) `-&gt;` type($result)"</span><span class="p">;</span>
-<a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="p">}</span>
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a>def AddOp : Mg_Op&lt;&quot;add&quot;, [Pure]&gt; {
+<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a>  let summary = &quot;elementwise add of two equal-shaped tensors&quot;;
+<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a>  let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
+<a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a>  let results = (outs F64Tensor:$result);
+<a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a>  let assemblyFormat = &quot;$lhs `,` $rhs attr-dict `:` type($lhs) `,` type($rhs) `-&gt;` type($result)&quot;;
+<a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a>}
 <a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a>
-<a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a><span class="k">def</span><span class="w"> </span><span class="n">TransposeOp</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">Mg_Op</span><span class="p">&lt;</span><span class="s">"transpose"</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="n">Pure</span><span class="p">]&gt;</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">summary</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">"transpose of a 2-D tensor"</span><span class="p">;</span>
-<a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">arguments</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">(</span><span class="n">ins</span><span class="w"> </span><span class="n">F64Tensor</span><span class="p">:</span><span class="nv">$input</span><span class="p">);</span>
-<a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">results</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">(</span><span class="n">outs</span><span class="w"> </span><span class="n">F64Tensor</span><span class="p">:</span><span class="nv">$result</span><span class="p">);</span>
-<a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">assemblyFormat</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">"$input attr-dict `:` type($input) `to` type($result)"</span><span class="p">;</span>
-<a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">hasVerifier</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
-<a id="__codelineno-2-36" name="__codelineno-2-36" href="#__codelineno-2-36"></a><span class="p">}</span>
+<a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a>def TransposeOp : Mg_Op&lt;&quot;transpose&quot;, [Pure]&gt; {
+<a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a>  let summary = &quot;transpose of a 2-D tensor&quot;;
+<a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a>  let arguments = (ins F64Tensor:$input);
+<a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a>  let results = (outs F64Tensor:$result);
+<a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a>  let assemblyFormat = &quot;$input attr-dict `:` type($input) `to` type($result)&quot;;
+<a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a>  let hasVerifier = 1;
+<a id="__codelineno-2-36" name="__codelineno-2-36" href="#__codelineno-2-36"></a>}
 <a id="__codelineno-2-37" name="__codelineno-2-37" href="#__codelineno-2-37"></a>
-<a id="__codelineno-2-38" name="__codelineno-2-38" href="#__codelineno-2-38"></a><span class="k">def</span><span class="w"> </span><span class="n">PrintOp</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">Mg_Op</span><span class="p">&lt;</span><span class="s">"print"</span><span class="p">&gt;</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-39" name="__codelineno-2-39" href="#__codelineno-2-39"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">summary</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">"print a tensor at runtime"</span><span class="p">;</span>
-<a id="__codelineno-2-40" name="__codelineno-2-40" href="#__codelineno-2-40"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">arguments</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">(</span><span class="n">ins</span><span class="w"> </span><span class="n">F64Tensor</span><span class="p">:</span><span class="nv">$input</span><span class="p">);</span>
-<a id="__codelineno-2-41" name="__codelineno-2-41" href="#__codelineno-2-41"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">assemblyFormat</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">"$input attr-dict `:` type($input)"</span><span class="p">;</span>
-<a id="__codelineno-2-42" name="__codelineno-2-42" href="#__codelineno-2-42"></a><span class="p">}</span>
+<a id="__codelineno-2-38" name="__codelineno-2-38" href="#__codelineno-2-38"></a>def PrintOp : Mg_Op&lt;&quot;print&quot;&gt; {
+<a id="__codelineno-2-39" name="__codelineno-2-39" href="#__codelineno-2-39"></a>  let summary = &quot;print a tensor at runtime&quot;;
+<a id="__codelineno-2-40" name="__codelineno-2-40" href="#__codelineno-2-40"></a>  let arguments = (ins F64Tensor:$input);
+<a id="__codelineno-2-41" name="__codelineno-2-41" href="#__codelineno-2-41"></a>  let assemblyFormat = &quot;$input attr-dict `:` type($input)&quot;;
+<a id="__codelineno-2-42" name="__codelineno-2-42" href="#__codelineno-2-42"></a>}
 <a id="__codelineno-2-43" name="__codelineno-2-43" href="#__codelineno-2-43"></a>
-<a id="__codelineno-2-44" name="__codelineno-2-44" href="#__codelineno-2-44"></a><span class="cp">#endif</span><span class="w"> </span><span class="c1">// MG_OPS_TD</span>
+<a id="__codelineno-2-44" name="__codelineno-2-44" href="#__codelineno-2-44"></a>#endif // MG_OPS_TD
 </code></pre></div>
 <p>Four real things are genuinely worth pointing out in this one file, each a real decision this dialect actually had to make:</p>
 <ul>
@@ -1405,48 +1494,48 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="cp">#ifndef MG_MGDIALECT_H</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="cp">#define MG_MGDIALECT_H</span>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/IR/Dialect.h"</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/IR/Dialect.h&quot;</span>
 <a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mg/MgOpsDialect.h.inc"</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mg/MgOpsDialect.h.inc&quot;</span>
 <a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>
 <a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="cp">#endif </span><span class="c1">// MG_MGDIALECT_H</span>
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="cp">#ifndef MG_MGOPS_H</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="cp">#define MG_MGOPS_H</span>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/Bytecode/BytecodeOpInterface.h"</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/IR/BuiltinTypes.h"</span>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/IR/Dialect.h"</span>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/IR/OpDefinition.h"</span>
-<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/Interfaces/InferTypeOpInterface.h"</span>
-<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/Interfaces/SideEffectInterfaces.h"</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Bytecode/BytecodeOpInterface.h&quot;</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/IR/BuiltinTypes.h&quot;</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/IR/Dialect.h&quot;</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/IR/OpDefinition.h&quot;</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Interfaces/InferTypeOpInterface.h&quot;</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Interfaces/SideEffectInterfaces.h&quot;</span>
 <a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>
-<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mg/MgDialect.h"</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mg/MgDialect.h&quot;</span>
 <a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>
 <a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="cp">#define GET_OP_CLASSES</span>
-<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mg/MgOps.h.inc"</span>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mg/MgOps.h.inc&quot;</span>
 <a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>
 <a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="cp">#endif </span><span class="c1">// MG_MGOPS_H</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mg/MgDialect.h"</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mg/MgOps.h"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mg/MgDialect.h&quot;</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mg/MgOps.h&quot;</span>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/IR/Builders.h"</span>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/IR/OpImplementation.h"</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/IR/Builders.h&quot;</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/IR/OpImplementation.h&quot;</span>
 <a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>
 <a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="k">using</span><span class="w"> </span><span class="k">namespace</span><span class="w"> </span><span class="nn">mg</span><span class="p">;</span>
 <a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>
-<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mg/MgOpsDialect.cpp.inc"</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mg/MgOpsDialect.cpp.inc&quot;</span>
 <a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>
 <a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="kt">void</span><span class="w"> </span><span class="nf">MgDialect::initialize</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="w">  </span><span class="n">addOperations</span><span class="o">&lt;</span>
 <a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="cp">#define GET_OP_LIST</span>
-<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mg/MgOps.cpp.inc"</span>
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mg/MgOps.cpp.inc&quot;</span>
 <a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="w">      </span><span class="o">&gt;</span><span class="p">();</span>
 <a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="p">}</span>
 <a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>
 <a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a><span class="cp">#define GET_OP_CLASSES</span>
-<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mg/MgOps.cpp.inc"</span>
+<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mg/MgOps.cpp.inc&quot;</span>
 <a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a>
 <a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a><span class="n">mlir</span><span class="o">::</span><span class="n">LogicalResult</span><span class="w"> </span><span class="nf">ConstantOp::inferReturnTypes</span><span class="p">(</span>
 <a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a><span class="w">    </span><span class="n">mlir</span><span class="o">::</span><span class="n">MLIRContext</span><span class="w"> </span><span class="o">*</span><span class="n">context</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">optional</span><span class="o">&lt;</span><span class="n">mlir</span><span class="o">::</span><span class="n">Location</span><span class="o">&gt;</span><span class="w"> </span><span class="n">location</span><span class="p">,</span>
@@ -1462,30 +1551,30 @@
 <a id="__codelineno-7-32" name="__codelineno-7-32" href="#__codelineno-7-32"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">inputType</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">llvm</span><span class="o">::</span><span class="n">cast</span><span class="o">&lt;</span><span class="n">mlir</span><span class="o">::</span><span class="n">RankedTensorType</span><span class="o">&gt;</span><span class="p">(</span><span class="n">getInput</span><span class="p">().</span><span class="n">getType</span><span class="p">());</span>
 <a id="__codelineno-7-33" name="__codelineno-7-33" href="#__codelineno-7-33"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">resultType</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">llvm</span><span class="o">::</span><span class="n">cast</span><span class="o">&lt;</span><span class="n">mlir</span><span class="o">::</span><span class="n">RankedTensorType</span><span class="o">&gt;</span><span class="p">(</span><span class="n">getResult</span><span class="p">().</span><span class="n">getType</span><span class="p">());</span>
 <a id="__codelineno-7-34" name="__codelineno-7-34" href="#__codelineno-7-34"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">inputType</span><span class="p">.</span><span class="n">getRank</span><span class="p">()</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">resultType</span><span class="p">.</span><span class="n">getRank</span><span class="p">()</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span>
-<a id="__codelineno-7-35" name="__codelineno-7-35" href="#__codelineno-7-35"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">emitOpError</span><span class="p">(</span><span class="s">"mg.transpose only supports rank-2 tensors"</span><span class="p">);</span>
+<a id="__codelineno-7-35" name="__codelineno-7-35" href="#__codelineno-7-35"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">emitOpError</span><span class="p">(</span><span class="s">&quot;mg.transpose only supports rank-2 tensors&quot;</span><span class="p">);</span>
 <a id="__codelineno-7-36" name="__codelineno-7-36" href="#__codelineno-7-36"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">inShape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">inputType</span><span class="p">.</span><span class="n">getShape</span><span class="p">();</span>
 <a id="__codelineno-7-37" name="__codelineno-7-37" href="#__codelineno-7-37"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">outShape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">resultType</span><span class="p">.</span><span class="n">getShape</span><span class="p">();</span>
 <a id="__codelineno-7-38" name="__codelineno-7-38" href="#__codelineno-7-38"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">inShape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">outShape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">inShape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">outShape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-<a id="__codelineno-7-39" name="__codelineno-7-39" href="#__codelineno-7-39"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">emitOpError</span><span class="p">(</span><span class="s">"mg.transpose result shape must be the input shape reversed"</span><span class="p">);</span>
+<a id="__codelineno-7-39" name="__codelineno-7-39" href="#__codelineno-7-39"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">emitOpError</span><span class="p">(</span><span class="s">&quot;mg.transpose result shape must be the input shape reversed&quot;</span><span class="p">);</span>
 <a id="__codelineno-7-40" name="__codelineno-7-40" href="#__codelineno-7-40"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">success</span><span class="p">();</span>
 <a id="__codelineno-7-41" name="__codelineno-7-41" href="#__codelineno-7-41"></a><span class="p">}</span>
 </code></pre></div>
 <p><code>TransposeOp::verify()</code> is genuine, real shape-checking C++: it reads both the input's and result's real <code>RankedTensorType</code>, confirms both are rank 2, and confirms the result's own dimensions are the input's own dimensions reversed -- exactly the relationship <code>hasVerifier = 1</code> exists for. <code>ConstantOp::inferReturnTypes</code> is the other half of the <code>InferTypeOpInterface</code> promise from <code>MgOps.td</code>: given the operation's real operands and attributes (wrapped in a real <code>Adaptor</code>), it reads the <code>value</code> attribute's own real type straight off and hands it back as the one inferred result type.</p>
 <h2 id="a-real-tool-to-parse-and-verify-mountain-goat-mg-opt">A real tool to parse and verify Mountain Goat: <code>mg-opt</code><a class="headerlink" href="#a-real-tool-to-parse-and-verify-mountain-goat-mg-opt" title="Permanent link">&para;</a></h2>
 <p>A dialect by itself is a library, not something runnable from the command line. This chapter builds one more small real thing: <code>mg-opt</code>, a genuine standalone tool built on MLIR's own real <code>MlirOptMain</code> entry point (<code>mlir/Tools/mlir-opt/MlirOptMain.h</code>) -- the same real machinery <code>mlir-opt-18</code> itself is built on -- registering Mountain Goat's own <code>mg</code> dialect alongside the built-in <code>func</code> dialect.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mg/MgDialect.h"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mg/MgDialect.h&quot;</span>
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/Dialect/Func/IR/FuncOps.h"</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/IR/DialectRegistry.h"</span>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/InitAllDialects.h"</span>
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/Tools/mlir-opt/MlirOptMain.h"</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/Func/IR/FuncOps.h&quot;</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/IR/DialectRegistry.h&quot;</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/InitAllDialects.h&quot;</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Tools/mlir-opt/MlirOptMain.h&quot;</span>
 <a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>
 <a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">**</span><span class="n">argv</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="w">  </span><span class="n">mlir</span><span class="o">::</span><span class="n">DialectRegistry</span><span class="w"> </span><span class="n">registry</span><span class="p">;</span>
 <a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="w">  </span><span class="n">registry</span><span class="p">.</span><span class="n">insert</span><span class="o">&lt;</span><span class="n">mlir</span><span class="o">::</span><span class="n">func</span><span class="o">::</span><span class="n">FuncDialect</span><span class="o">&gt;</span><span class="p">();</span>
 <a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="w">  </span><span class="n">registry</span><span class="p">.</span><span class="n">insert</span><span class="o">&lt;</span><span class="n">mg</span><span class="o">::</span><span class="n">MgDialect</span><span class="o">&gt;</span><span class="p">();</span>
 <a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">asMainReturnCode</span><span class="p">(</span>
-<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="w">      </span><span class="n">mlir</span><span class="o">::</span><span class="n">MlirOptMain</span><span class="p">(</span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="n">argv</span><span class="p">,</span><span class="w"> </span><span class="s">"Mountain Goat (mg) dialect driver</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span><span class="w"> </span><span class="n">registry</span><span class="p">));</span>
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="w">      </span><span class="n">mlir</span><span class="o">::</span><span class="n">MlirOptMain</span><span class="p">(</span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="n">argv</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Mountain Goat (mg) dialect driver</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">registry</span><span class="p">));</span>
 <a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="p">}</span>
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nb">cmake_minimum_required</span><span class="p">(</span><span class="s">VERSION</span><span class="w"> </span><span class="s">3.20</span><span class="p">)</span>
@@ -1493,8 +1582,8 @@
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
 <a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="nb">find_package</span><span class="p">(</span><span class="s">MLIR</span><span class="w"> </span><span class="s">REQUIRED</span><span class="w"> </span><span class="s">CONFIG</span><span class="p">)</span>
 <a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="nb">list</span><span class="p">(</span><span class="s">APPEND</span><span class="w"> </span><span class="s">CMAKE_MODULE_PATH</span><span class="w"> </span><span class="s2">"${MLIR_CMAKE_DIR}"</span><span class="p">)</span>
-<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="nb">list</span><span class="p">(</span><span class="s">APPEND</span><span class="w"> </span><span class="s">CMAKE_MODULE_PATH</span><span class="w"> </span><span class="s2">"${LLVM_CMAKE_DIR}"</span><span class="p">)</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="nb">list</span><span class="p">(</span><span class="s">APPEND</span><span class="w"> </span><span class="s">CMAKE_MODULE_PATH</span><span class="w"> </span><span class="s2">&quot;${MLIR_CMAKE_DIR}&quot;</span><span class="p">)</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="nb">list</span><span class="p">(</span><span class="s">APPEND</span><span class="w"> </span><span class="s">CMAKE_MODULE_PATH</span><span class="w"> </span><span class="s2">&quot;${LLVM_CMAKE_DIR}&quot;</span><span class="p">)</span>
 <a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="nb">include</span><span class="p">(</span><span class="s">TableGen</span><span class="p">)</span>
 <a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="nb">include</span><span class="p">(</span><span class="s">AddLLVM</span><span class="p">)</span>
 <a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="nb">include</span><span class="p">(</span><span class="s">AddMLIR</span><span class="p">)</span>
@@ -1592,10 +1681,10 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>./mg-opt bad_transpose.mlir
 </code></pre></div>
 <p><strong>Real captured output:</strong>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>bad_transpose.mlir:3:8: error: 'mg.transpose' op mg.transpose result shape must be the input shape reversed
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>bad_transpose.mlir:3:8: error: &#39;mg.transpose&#39; op mg.transpose result shape must be the input shape reversed
 <a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>  %1 = mg.transpose %0 : tensor&lt;2x3xf64&gt; to tensor&lt;2x3xf64&gt;
 <a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>       ^
-<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>bad_transpose.mlir:3:8: note: see current operation: %1 = "mg.transpose"(%0) : (tensor&lt;2x3xf64&gt;) -&gt; tensor&lt;2x3xf64&gt;
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>bad_transpose.mlir:3:8: note: see current operation: %1 = &quot;mg.transpose&quot;(%0) : (tensor&lt;2x3xf64&gt;) -&gt; tensor&lt;2x3xf64&gt;
 </code></pre></div></p>
 <p><code>mg-opt</code> genuinely refuses this input and prints nothing but the real diagnostic -- the exact same real contract Chapter 1 relied on for <code>mlir-opt-18</code> itself: a verifier that fails stops the tool from pretending the IR is valid.</p>
 <h2 id="an-honest-gap-mgadd-does-not-yet-check-its-own-operand-shapes">An honest gap: <code>mg.add</code> does not yet check its own operand shapes<a class="headerlink" href="#an-honest-gap-mgadd-does-not-yet-check-its-own-operand-shapes" title="Permanent link">&para;</a></h2>

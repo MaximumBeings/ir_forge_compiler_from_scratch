@@ -1051,6 +1051,95 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 6 -- GPU Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 6 -- GPU Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part10/10-gpu-lowering-to-ptx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10. GPU Lowering: Mountain Goat to the gpu Dialect, NVVM, and Real PTX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1258,7 +1347,7 @@
 <p>A second, subtler real detail: the fused loop's own <code>affine.load %arg0[%arg3, %arg2]</code> reads with its <em>induction variables swapped</em> relative to the original add's own <code>[%arg2, %arg3]</code>. Real <code>--affine-loop-fusion</code> did not just concatenate the two loop bodies -- it reordered the add's own iteration to match the transpose's own access pattern, so a single shared <code>affine.for</code> nest could drive both computations' own real memory accesses correctly. This loop permutation is itself one of the three real capabilities Chapter 1's own cited rationale named directly ("loop tiling, interchange, permutation").</p>
 <h2 id="real-transform-2-affine-loop-tile">Real transform 2: <code>--affine-loop-tile</code><a class="headerlink" href="#real-transform-2-affine-loop-tile" title="Permanent link">&para;</a></h2>
 <p>Tiling reorganizes one loop nest's own iteration order into tiles -- real, outer "tile" loops stepping over blocks of iterations, with real, inner "point" loops iterating within each block, a transform whose own real purpose is improving cache locality on loops with real, large trip counts. This book's own worked example uses a small, illustrative <code>2x2</code> shape -- too small for tiling to produce any genuine performance benefit -- so a small, illustrative tile size (<code>1</code>) is used here specifically to make the real transform's own structural effect visible, stated honestly rather than implied to be a realistic tuning choice:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>./mg-opt mountain_goat_fused.mlir --affine-loop-tile="tile-size=1"
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>./mg-opt mountain_goat_fused.mlir --affine-loop-tile=&quot;tile-size=1&quot;
 </code></pre></div>
 <p><strong>Real captured output:</strong>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>#map = affine_map&lt;(d0) -&gt; (d0)&gt;
@@ -1281,7 +1370,7 @@
 </code></pre></div></p>
 <p>Genuinely, visibly real: the original two-deep loop nest became four-deep, two real new "tile" loops (<code>%arg2</code>, <code>%arg3</code>) each driving a real "point" loop (<code>%arg4</code>, <code>%arg5</code>) that -- with tile size <code>1</code> -- covers exactly one original iteration, expressed through real affine maps (<code>#map</code>/<code>#map1</code>) rather than plain arithmetic. A real, larger Mountain Goat tensor with a real tile size tuned to its own cache behavior would show the same real structural transform doing genuinely useful work; this small example's own real value is confirming the transform is <em>correct</em> and <em>real</em>, not yet <em>profitable</em> at this size.</p>
 <h2 id="real-transform-3-affine-loop-unroll">Real transform 3: <code>--affine-loop-unroll</code><a class="headerlink" href="#real-transform-3-affine-loop-unroll" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>./mg-opt mountain_goat_fused.mlir --affine-loop-unroll="unroll-full" --affine-loop-unroll="unroll-full"
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>./mg-opt mountain_goat_fused.mlir --affine-loop-unroll=&quot;unroll-full&quot; --affine-loop-unroll=&quot;unroll-full&quot;
 </code></pre></div>
 <p><strong>Real captured output (excerpt):</strong>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>%0 = affine.load %arg0[%c0_0, %c0] : memref&lt;2x2xf64&gt;
@@ -1297,7 +1386,7 @@
 <p>Both real <code>affine.for</code> loops are genuinely gone -- <code>unroll-full</code> replaced the entire two-deep, four-iteration loop nest with four real, straight-line copies of the loop body, each with its own real index computed via <code>affine.apply</code>. This chapter's own real pass had to be run <em>twice</em>: the first invocation (its own real captured output omitted here for space) only unrolled the <em>innermost</em> loop, leaving the outer loop intact -- <code>--affine-loop-unroll</code>'s own real, documented default scope is innermost loops only, so a second invocation was genuinely needed once the former outer loop became innermost in its own turn.</p>
 <h2 id="why-canonicalization-has-to-run-again-a-real-visible-mess-and-a-real-visible-cleanup">Why canonicalization has to run again: a real, visible mess, and a real, visible cleanup<a class="headerlink" href="#why-canonicalization-has-to-run-again-a-real-visible-mess-and-a-real-visible-cleanup" title="Permanent link">&para;</a></h2>
 <p>The real unrolled output above is correct, but genuinely messy: every one of its four copies carries its own real <code>affine.apply #map(%c0_0)</code> recomputing an index offset that is, in three of the four cases, a compile-time-known constant. Running Chapter 3's own real <code>--canonicalize</code> pass again -- not a new pass, the exact same one already used twice in this book -- cleans this up directly:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>./mg-opt mountain_goat_fused.mlir --affine-loop-unroll="unroll-full" --affine-loop-unroll="unroll-full" --canonicalize
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>./mg-opt mountain_goat_fused.mlir --affine-loop-unroll=&quot;unroll-full&quot; --affine-loop-unroll=&quot;unroll-full&quot; --canonicalize
 </code></pre></div>
 <p><strong>Real captured output (excerpt):</strong>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>%0 = affine.load %arg0[0, 0] : memref&lt;2x2xf64&gt;
@@ -1329,8 +1418,8 @@
 <a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>}
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>./mg-opt mountain_goat_full.mlir --convert-mg-to-affine \
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>  --affine-loop-fusion --affine-loop-tile="tile-size=1" \
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>  --affine-loop-unroll="unroll-full" --affine-loop-unroll="unroll-full" --affine-loop-unroll="unroll-full" \
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>  --affine-loop-fusion --affine-loop-tile=&quot;tile-size=1&quot; \
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>  --affine-loop-unroll=&quot;unroll-full&quot; --affine-loop-unroll=&quot;unroll-full&quot; --affine-loop-unroll=&quot;unroll-full&quot; \
 <a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>  --canonicalize \
 <a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>  --lower-affine --convert-scf-to-cf --convert-arith-to-llvm \
 <a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>  --finalize-memref-to-llvm --convert-func-to-llvm --reconcile-unrealized-casts \

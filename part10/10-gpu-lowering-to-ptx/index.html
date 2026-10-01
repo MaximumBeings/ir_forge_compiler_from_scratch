@@ -1,0 +1,1649 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A Toy Language Compiled Through a Real MLIR Dialect, Down to Real Native Machine Code">
+      
+      
+        <meta name="author" content="Oluwaseyi Awoga">
+      
+      
+      
+        <link rel="prev" href="../../part9/09-the-execution-engine-api/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>10. GPU Lowering: Mountain Goat to the gpu Dialect, NVVM, and Real PTX - IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#10-gpu-lowering-mountain-goat-to-the-gpu-dialect-nvvm-and-real-ptx" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-header__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              10. GPU Lowering: Mountain Goat to the gpu Dialect, NVVM, and Real PTX
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-nav__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part1/01-why-a-multi-level-ir-at-all/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1. Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part2/02-a-minimal-dialect-from-scratch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2. A Minimal Dialect From Scratch: Mountain Goat's Own mg Dialect
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part3/03-the-pass-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3. The Real Pass Infrastructure: Canonicalizing Mountain Goat
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 3 -- Progressive Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 3 -- Progressive Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part4/04-progressive-lowering-to-affine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4. Progressive Lowering: Mountain Goat to affine, Two Real Ways
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part5/05-affine-to-scf-to-llvm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5. Finishing Progressive Lowering: affine to scf to llvm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 4 -- Optimization Across Levels
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 4 -- Optimization Across Levels
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/06-real-bufferization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6. Real Bufferization: Closing Chapter 4's Own Honest Gap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part7/07-real-loop-transforms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    7. Real Loop Transforms: Fusion, Tiling, and Unrolling at the affine Level
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 5 -- Code Generation via LLVM
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 5 -- Code Generation via LLVM
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part8/08-a-standalone-native-executable/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    8. A Standalone Native Executable: Mountain Goat Without MLIR At Runtime
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part9/09-the-execution-engine-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    9. MLIR's Own Real C++ ExecutionEngine API, Called In-Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 6 -- GPU Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 6 -- GPU Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10. GPU Lowering: Mountain Goat to the gpu Dialect, NVVM, and Real PTX
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10. GPU Lowering: Mountain Goat to the gpu Dialect, NVVM, and Real PTX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-this-sandbox-can-and-cannot-do-checked-not-assumed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What this sandbox can and cannot do (checked, not assumed)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-1-the-same-mgadd-as-before-lowered-to-affine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1: the same mg.add as before, lowered to affine
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-2-a-real-false-start-then-the-route-that-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2: a real false start, then the route that works
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-3-lowering-the-kernel-to-the-nvvm-dialect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3: lowering the kernel to the nvvm dialect
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-4-real-ptx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 4: real PTX
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-5-the-same-kernel-as-cuda-compiled-by-clang-18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 5: the same kernel as CUDA, compiled by clang-18
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-real-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The real comparison
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-still-missing-from-a-real-gpu-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is still missing from a real GPU path
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducing-this-chapter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducing this chapter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-this-chapter-does-not-cite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What this chapter does not cite
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-this-sandbox-can-and-cannot-do-checked-not-assumed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What this sandbox can and cannot do (checked, not assumed)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-1-the-same-mgadd-as-before-lowered-to-affine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1: the same mg.add as before, lowered to affine
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-2-a-real-false-start-then-the-route-that-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2: a real false start, then the route that works
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-3-lowering-the-kernel-to-the-nvvm-dialect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3: lowering the kernel to the nvvm dialect
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-4-real-ptx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 4: real PTX
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-5-the-same-kernel-as-cuda-compiled-by-clang-18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 5: the same kernel as CUDA, compiled by clang-18
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-real-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The real comparison
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-still-missing-from-a-real-gpu-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is still missing from a real GPU path
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducing-this-chapter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducing this chapter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-this-chapter-does-not-cite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What this chapter does not cite
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="10-gpu-lowering-mountain-goat-to-the-gpu-dialect-nvvm-and-real-ptx">10. GPU Lowering: Mountain Goat to the <code>gpu</code> Dialect, NVVM, and Real PTX<a class="headerlink" href="#10-gpu-lowering-mountain-goat-to-the-gpu-dialect-nvvm-and-real-ptx" title="Permanent link">&para;</a></h1>
+<p><strong>What you will understand:</strong> how a real Mountain Goat program (<code>mg.add</code>) is carried from Chapter 4's own <code>affine</code> loops, through MLIR's own real <code>gpu</code> dialect and its real <code>nvvm</code> dialect, down to real PTX text emitted by LLVM's own NVPTX backend -- and how that real, machine-generated PTX compares, instruction for instruction, against a real hand-written CUDA-style kernel compiled by <code>clang-18</code>. This chapter also says plainly what it could <strong>not</strong> do: launch the kernel. This book's own sandbox has no GPU.</p>
+<p><strong>What you need to know first:</strong> Chapter 4's own <code>--convert-mg-to-affine</code> output, Chapter 7's own <code>affine</code> loop passes, and Chapter 5's own memref-descriptor calling convention (each <code>memref</code> argument becomes several scalar parameters). New ground here: the <code>gpu</code> dialect's host/device split (<code>gpu.module</code>, <code>gpu.launch_func</code>) and PTX as an assembly language.</p>
+<h2 id="what-this-sandbox-can-and-cannot-do-checked-not-assumed">What this sandbox can and cannot do (checked, not assumed)<a class="headerlink" href="#what-this-sandbox-can-and-cannot-do-checked-not-assumed" title="Permanent link">&para;</a></h2>
+<p>Before writing a single pass, this chapter's own environment was probed directly:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>$ which nvcc nvidia-smi          # (no output: neither exists)
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>$ ls /dev | grep -i nvidia       # (no output)
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>$ nvptx-arch
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>Failed to &#39;dlopen&#39; libcuda.so.1
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>$ llc-18 --version | grep -iE &quot;nvptx|amdgcn&quot;
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    amdgcn      - AMD GCN GPUs
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    nvptx       - NVIDIA PTX 32-bit
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    nvptx64     - NVIDIA PTX 64-bit
+</code></pre></div>
+<p>So: <strong>no GPU, no CUDA driver (<code>libcuda.so.1</code>), no <code>nvcc</code>, no CUDA SDK.</strong> But the real <code>nvptx64</code> code generator <em>is</em> compiled into this LLVM, and <code>mlir-opt-18</code> really does carry the <code>gpu</code>, <code>nvvm</code> and <code>rocdl</code> dialects and the passes between them (<code>--convert-gpu-to-nvvm</code>, <code>--nvvm-attach-target</code>, <code>--gpu-module-to-binary</code>, all confirmed present in <code>mlir-opt-18 --help</code>). That decides this chapter's honest scope:</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Done here?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lower <code>mg</code> to a real <code>gpu.module</code> with a real kernel</td>
+<td><strong>Yes</strong>, real output below</td>
+</tr>
+<tr>
+<td>Lower the kernel to the real <code>nvvm</code> dialect</td>
+<td><strong>Yes</strong></td>
+</tr>
+<tr>
+<td>Emit real PTX with LLVM's NVPTX backend</td>
+<td><strong>Yes</strong></td>
+</tr>
+<tr>
+<td>Compile an equivalent CUDA-style kernel with <code>clang-18</code> and compare</td>
+<td><strong>Yes</strong> (without the CUDA SDK; see below)</td>
+</tr>
+<tr>
+<td>Assemble PTX to a cubin (<code>ptxas</code>), launch it, read results back</td>
+<td><strong>No</strong> -- no GPU, no <code>ptxas</code>, no driver</td>
+</tr>
+</tbody>
+</table>
+<p>Because nothing here was executed on a GPU, <strong>this chapter does not claim the PTX computes the right answer on hardware.</strong> What it establishes is that real MLIR and real LLVM accept every stage and produce the PTX shown. The numeric <code>[[6, 8], [10, 12]]</code> check Chapters 5 through 9 ended with has no equivalent in this chapter, and that absence is the chapter's most important caveat. The <code>-nocudainc -nocudalib</code> CUDA kernel below is likewise compiled, not run.</p>
+<h2 id="step-1-the-same-mgadd-as-before-lowered-to-affine">Step 1: the same <code>mg.add</code> as before, lowered to <code>affine</code><a class="headerlink" href="#step-1-the-same-mgadd-as-before-lowered-to-affine" title="Permanent link">&para;</a></h2>
+<p>The input is Chapter 8's own unmodified <code>add_tensors.mlir</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>func.func @add_tensors(%a: tensor&lt;2x2xf64&gt;, %b: tensor&lt;2x2xf64&gt;) -&gt; tensor&lt;2x2xf64&gt; {
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  %0 = mg.add %a, %b : tensor&lt;2x2xf64&gt;, tensor&lt;2x2xf64&gt; -&gt; tensor&lt;2x2xf64&gt;
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  func.return %0 : tensor&lt;2x2xf64&gt;
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>}
+</code></pre></div>
+<p><code>mg-opt</code> was rebuilt from this book's own published sources (Chapter 3's dialect files, Chapter 5's <code>LowerToAffine.cpp</code>, Chapter 6's bufferization model, Chapter 7's <code>mg-opt.cpp</code> and <code>CMakeLists.txt</code>) and run:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>./mg-opt<span class="w"> </span>add_tensors.mlir<span class="w"> </span>--convert-mg-to-affine<span class="w"> </span>-o<span class="w"> </span>add_affine.mlir
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>func.func @add_tensors(%arg0: memref&lt;2x2xf64&gt;, %arg1: memref&lt;2x2xf64&gt;) -&gt; memref&lt;2x2xf64&gt; {
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  %alloc = memref.alloc() : memref&lt;2x2xf64&gt;
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  affine.for %arg2 = 0 to 2 {
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    affine.for %arg3 = 0 to 2 {
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>      %0 = affine.load %arg0[%arg2, %arg3] : memref&lt;2x2xf64&gt;
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>      %1 = affine.load %arg1[%arg2, %arg3] : memref&lt;2x2xf64&gt;
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>      %2 = arith.addf %0, %1 : f64
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>      affine.store %2, %alloc[%arg2, %arg3] : memref&lt;2x2xf64&gt;
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    }
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>  }
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>  return %alloc : memref&lt;2x2xf64&gt;
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>}
+</code></pre></div>
+<h2 id="step-2-a-real-false-start-then-the-route-that-works">Step 2: a real false start, then the route that works<a class="headerlink" href="#step-2-a-real-false-start-then-the-route-that-works" title="Permanent link">&para;</a></h2>
+<p>The obvious pass for this job is <code>--convert-affine-for-to-gpu</code>. The first attempt failed twice, in two different ways:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>$ mlir-opt-18 add_affine.mlir --convert-affine-for-to-gpu=&quot;gpu-block-dims=1 gpu-thread-dims=1&quot;
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>&lt;unknown&gt;:0: error: unable to schedule pass &#39;ConvertAffineForToGPU&#39; on a PassManager
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>intended to run on &#39;builtin.module&#39;!
+</code></pre></div>
+<p>It is a <code>func.func</code> pass, so it has to be nested (<code>--pass-pipeline='builtin.module(func.func(...))'</code>). Nested, it fails differently:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>add_affine.mlir:6:14: error: &#39;affine.load&#39; op index must be a valid dimension or symbol identifier
+</code></pre></div>
+<p>That pass leaves <code>affine.load</code> inside the new kernel body indexed by values (the GPU block/thread ids) that are not valid affine dimensions or symbols, so the result does not verify. This chapter did not dig into why further than that, and does not claim this is a bug in the pass as opposed to a use this chapter got wrong; it simply abandoned that route.</p>
+<p>The route that worked goes through loop <em>parallelism</em> rather than loop <em>conversion</em>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>mlir-opt-18<span class="w"> </span>add_affine.mlir<span class="w"> </span>--pass-pipeline<span class="o">=</span><span class="s1">&#39;builtin.module(</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="s1">  func.func(affine-parallelize, lower-affine, gpu-map-parallel-loops,</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="s1">            convert-parallel-loops-to-gpu),</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="s1">  gpu-kernel-outlining)&#39;</span><span class="w"> </span>-o<span class="w"> </span>add_gpu.mlir
+</code></pre></div>
+<p><code>affine-parallelize</code> proves the two <code>affine.for</code> loops have no loop-carried dependence and rewrites them as <code>affine.parallel</code>; <code>lower-affine</code> (Chapter 5's own pass) turns that into <code>scf.parallel</code>; <code>gpu-map-parallel-loops</code> assigns the outer loop to GPU <em>blocks</em> and the inner loop to GPU <em>threads</em>; <code>convert-parallel-loops-to-gpu</code> builds a <code>gpu.launch</code>; and <code>gpu-kernel-outlining</code> moves its body into a real <code>gpu.module</code>/<code>gpu.func</code>. Real output:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>module attributes {gpu.container_module} {
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  func.func @add_tensors(%arg0: memref&lt;2x2xf64&gt;, %arg1: memref&lt;2x2xf64&gt;) -&gt; memref&lt;2x2xf64&gt; {
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>    %alloc = memref.alloc() : memref&lt;2x2xf64&gt;
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>    ...
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    gpu.launch_func  @add_tensors_kernel::@add_tensors_kernel
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>        blocks in (%0, %c1_0, %c1_0) threads in (%1, %c1_0, %c1_0)
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>        args(%c1 : index, %c0 : index, %arg0 : memref&lt;2x2xf64&gt;,
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>             %arg1 : memref&lt;2x2xf64&gt;, %alloc : memref&lt;2x2xf64&gt;)
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>    return %alloc : memref&lt;2x2xf64&gt;
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>  }
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>  gpu.module @add_tensors_kernel {
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>    gpu.func @add_tensors_kernel(%arg0: index, %arg1: index, %arg2: memref&lt;2x2xf64&gt;,
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>        %arg3: memref&lt;2x2xf64&gt;, %arg4: memref&lt;2x2xf64&gt;) kernel {
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>      %0 = gpu.block_id  x
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>      ...
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>      %3 = gpu.thread_id  x
+<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>      ...
+<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a>      %14 = memref.load %arg2[%12, %13] : memref&lt;2x2xf64&gt;
+<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a>      %15 = memref.load %arg3[%12, %13] : memref&lt;2x2xf64&gt;
+<a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a>      %16 = arith.addf %14, %15 : f64
+<a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a>      memref.store %16, %arg4[%12, %13] : memref&lt;2x2xf64&gt;
+<a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a>      gpu.return
+<a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a>    }
+<a id="__codelineno-7-24" name="__codelineno-7-24" href="#__codelineno-7-24"></a>  }
+<a id="__codelineno-7-25" name="__codelineno-7-25" href="#__codelineno-7-25"></a>}
+</code></pre></div>
+<p>(<code>...</code> marks lines elided for length; the full file is <code>code/add_gpu.mlir</code>.) The real shape of the launch: <strong>2 blocks of 2 threads, one thread per matrix element</strong>, block id as the row and thread id as the column. The kernel's first two arguments (<code>%c1</code>, <code>%c0</code>) are the original loop's step and lower bound, which the generated index math reuses as <code>block_id * step + lb</code>.</p>
+<h2 id="step-3-lowering-the-kernel-to-the-nvvm-dialect">Step 3: lowering the kernel to the <code>nvvm</code> dialect<a class="headerlink" href="#step-3-lowering-the-kernel-to-the-nvvm-dialect" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>mlir-opt-18<span class="w"> </span>add_gpu.mlir<span class="w"> </span>--pass-pipeline<span class="o">=</span><span class="s1">&#39;builtin.module(</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="s1">  lower-affine,</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="s1">  nvvm-attach-target{chip=sm_70 features=+ptx60},</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="s1">  gpu.module(convert-gpu-to-nvvm{index-bitwidth=64}, reconcile-unrealized-casts))&#39;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">  </span>-o<span class="w"> </span>add_nvvm.mlir
+</code></pre></div>
+<p><code>nvvm-attach-target</code> stamps the <code>gpu.module</code> with <code>#nvvm.target&lt;chip = "sm_70"&gt;</code> (a Volta-generation target, chosen arbitrarily since nothing here runs); <code>convert-gpu-to-nvvm</code> rewrites <code>gpu.block_id x</code> into <code>nvvm.read.ptx.sreg.ctaid.x</code> and <code>gpu.thread_id x</code> into <code>nvvm.read.ptx.sreg.tid.x</code>, and converts the body into the <code>llvm</code> dialect. Real excerpt:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>gpu.module @add_tensors_kernel [#nvvm.target&lt;chip = &quot;sm_70&quot;&gt;]  {
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>  llvm.func @add_tensors_kernel(%arg0: i64, %arg1: i64, %arg2: !llvm.ptr, %arg3: !llvm.ptr,
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>      %arg4: i64, %arg5: i64, %arg6: i64, %arg7: i64, %arg8: i64, %arg9: !llvm.ptr, ...
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>      %arg22: i64) attributes {gpu.kernel, nvvm.kernel} {
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>    ...
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>    %24 = nvvm.read.ptx.sreg.ctaid.x : i32
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>    %25 = llvm.sext %24 : i32 to i64
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>    %26 = nvvm.read.ptx.sreg.tid.x : i32
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>    %27 = llvm.sext %26 : i32 to i64
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>    ...
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>    %40 = llvm.fadd %34, %39  : f64
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>    llvm.store %40, %44 : f64, !llvm.ptr
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a>    llvm.return
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a>  }
+<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a>}
+</code></pre></div>
+<p>Notice the kernel's signature: <strong>23 parameters.</strong> Each of the three <code>memref&lt;2x2xf64&gt;</code> arguments was expanded by Chapter 1's own descriptor rule into 7 scalars (allocated pointer, aligned pointer, offset, two sizes, two strides), plus the 2 index arguments: 2 + 3 x 7 = 23. The kernel then spends 21 <code>llvm.insertvalue</code> operations rebuilding descriptor structs it barely uses.</p>
+<h2 id="step-4-real-ptx">Step 4: real PTX<a class="headerlink" href="#step-4-real-ptx" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>mlir-opt-18<span class="w"> </span>add_nvvm.mlir<span class="w"> </span>--gpu-module-to-binary<span class="o">=</span><span class="s2">&quot;format=isa&quot;</span><span class="w"> </span>-o<span class="w"> </span>add_bin.mlir
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>python3<span class="w"> </span>decode_ptx.py<span class="w"> </span>add_bin.mlir<span class="w"> </span>&gt;<span class="w"> </span>add_tensors_mlir.ptx
+</code></pre></div>
+<p><code>--gpu-module-to-binary</code> with <code>format=isa</code> runs LLVM's NVPTX backend and stores the PTX as a string attribute on a <code>gpu.binary</code> op, escaped as hex (<code>\0A</code> for a newline), which is why <code>decode_ptx.py</code> exists; the first attempt at decoding it with a naive <code>unicode_escape</code> produced garbled text, caught only by looking at the output. After removing the 23 <code>.param</code> declarations for length, the real body is:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>ld.param.u64    %rd1, [add_tensors_kernel_param_0];
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>ld.param.u64    %rd2, [add_tensors_kernel_param_17];
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>cvta.to.global.u64  %rd3, %rd2;
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>ld.param.u64    %rd4, [add_tensors_kernel_param_1];
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>ld.param.u64    %rd5, [add_tensors_kernel_param_10];
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>cvta.to.global.u64  %rd6, %rd5;
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>ld.param.u64    %rd7, [add_tensors_kernel_param_3];
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>cvta.to.global.u64  %rd8, %rd7;
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>mov.u32     %r1, %ctaid.x;
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>cvt.s64.s32     %rd9, %r1;
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>mov.u32     %r2, %tid.x;
+<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>cvt.s64.s32     %rd10, %r2;
+<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>mul.lo.s64  %rd11, %rd9, %rd1;
+<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a>add.s64     %rd12, %rd11, %rd4;
+<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a>shl.b64     %rd13, %rd12, 1;
+<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a>add.s64     %rd14, %rd13, %rd10;
+<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a>shl.b64     %rd15, %rd14, 3;
+<a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a>add.s64     %rd16, %rd8, %rd15;
+<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a>ld.global.f64   %fd1, [%rd16];
+<a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a>add.s64     %rd17, %rd6, %rd15;
+<a id="__codelineno-11-21" name="__codelineno-11-21" href="#__codelineno-11-21"></a>ld.global.f64   %fd2, [%rd17];
+<a id="__codelineno-11-22" name="__codelineno-11-22" href="#__codelineno-11-22"></a>add.rn.f64  %fd3, %fd1, %fd2;
+<a id="__codelineno-11-23" name="__codelineno-11-23" href="#__codelineno-11-23"></a>add.s64     %rd18, %rd3, %rd15;
+<a id="__codelineno-11-24" name="__codelineno-11-24" href="#__codelineno-11-24"></a>st.global.f64   [%rd18], %fd3;
+<a id="__codelineno-11-25" name="__codelineno-11-25" href="#__codelineno-11-25"></a>ret;
+</code></pre></div>
+<p>You can read the program in it: two special-register reads (<code>%ctaid.x</code>, <code>%tid.x</code>), index arithmetic, two <code>ld.global.f64</code>, one <code>add.rn.f64</code>, one <code>st.global.f64</code>. The backend also deleted everything the kernel never used without being asked: the <code>block_id y</code>/<code>z</code>, <code>grid_dim</code> and <code>block_dim</code> reads and all the rebuilt descriptor structs are gone, and of the 23 declared parameters the body loads only 5 (<code>param_0</code>, <code>_1</code>, <code>_3</code>, <code>_10</code>, <code>_17</code>: the loop step, the lower bound, and the three aligned data pointers).</p>
+<h2 id="step-5-the-same-kernel-as-cuda-compiled-by-clang-18">Step 5: the same kernel as CUDA, compiled by <code>clang-18</code><a class="headerlink" href="#step-5-the-same-kernel-as-cuda-compiled-by-clang-18" title="Permanent link">&para;</a></h2>
+<p><code>nvcc</code> is unavailable, but <code>clang-18</code> can compile CUDA's device side itself. The CUDA headers that define <code>threadIdx</code>/<code>blockIdx</code> are also absent, so the kernel calls the NVVM builtins those names expand to (the first attempt spelled them <code>__builtin_nvvm_...</code> and clang's own error suggested the real name, <code>__nvvm_...</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="k">extern</span><span class="w"> </span><span class="s">&quot;C&quot;</span><span class="w"> </span><span class="n">__attribute__</span><span class="p">((</span><span class="n">global</span><span class="p">))</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">add_cuda</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">row</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">__nvvm_read_ptx_sreg_ctaid_x</span><span class="p">();</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">__nvvm_read_ptx_sreg_tid_x</span><span class="p">();</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">row</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">col</span><span class="p">;</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">  </span><span class="n">c</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="p">}</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>clang-18<span class="w"> </span>-x<span class="w"> </span>cuda<span class="w"> </span>--cuda-device-only<span class="w"> </span>--cuda-gpu-arch<span class="o">=</span>sm_70<span class="w"> </span>-nocudainc<span class="w"> </span>-nocudalib<span class="w"> </span>-S<span class="w"> </span>-O1<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span>cuda_add.cu<span class="w"> </span>-o<span class="w"> </span>cuda_add.ptx
+</code></pre></div>
+<p>Real PTX body:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>ld.param.u64    %rd1, [add_cuda_param_0];
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>ld.param.u64    %rd2, [add_cuda_param_2];
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>cvta.to.global.u64  %rd3, %rd2;
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>ld.param.u64    %rd4, [add_cuda_param_1];
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>cvta.to.global.u64  %rd5, %rd4;
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>cvta.to.global.u64  %rd6, %rd1;
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>mov.u32     %r1, %ctaid.x;
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a>mov.u32     %r2, %tid.x;
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a>shl.b32     %r3, %r1, 1;
+<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a>add.s32     %r4, %r3, %r2;
+<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a>mul.wide.s32    %rd7, %r4, 8;
+<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a>add.s64     %rd8, %rd6, %rd7;
+<a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a>ld.global.f64   %fd1, [%rd8];
+<a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a>add.s64     %rd9, %rd5, %rd7;
+<a id="__codelineno-14-15" name="__codelineno-14-15" href="#__codelineno-14-15"></a>ld.global.f64   %fd2, [%rd9];
+<a id="__codelineno-14-16" name="__codelineno-14-16" href="#__codelineno-14-16"></a>add.f64     %fd3, %fd1, %fd2;
+<a id="__codelineno-14-17" name="__codelineno-14-17" href="#__codelineno-14-17"></a>add.s64     %rd10, %rd3, %rd7;
+<a id="__codelineno-14-18" name="__codelineno-14-18" href="#__codelineno-14-18"></a>st.global.f64   [%rd10], %fd3;
+<a id="__codelineno-14-19" name="__codelineno-14-19" href="#__codelineno-14-19"></a>ret;
+</code></pre></div>
+<h2 id="the-real-comparison">The real comparison<a class="headerlink" href="#the-real-comparison" title="Permanent link">&para;</a></h2>
+<p>Counts taken by <code>grep</code> over the three <code>.ptx</code> files in <code>code/</code>: <code>.param</code> lines are declarations (the 64-bit run's <code>add_tensors_mlir.ptx</code>, the <code>index-bitwidth=32</code> run's <code>add_tensors_mlir_idx32.ptx</code>, and <code>cuda_add.ptx</code>); instructions counts the <code>ld</code>/<code>st</code>/<code>mul</code>/<code>add</code>/<code>shl</code>/<code>cvt</code>/<code>mad</code>/<code>cvta</code>/<code>mov</code>/<code>ret</code> lines.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>MLIR, <code>index-bitwidth=64</code></th>
+<th>MLIR, <code>index-bitwidth=32</code></th>
+<th>CUDA via <code>clang-18</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>kernel <code>.param</code>s</td>
+<td>23</td>
+<td>23</td>
+<td>3</td>
+</tr>
+<tr>
+<td>instructions</td>
+<td>25</td>
+<td>22</td>
+<td>19</td>
+</tr>
+<tr>
+<td>index arithmetic</td>
+<td>64-bit (<code>mul.lo.s64</code>, <code>add.s64</code>, <code>shl.b64</code>)</td>
+<td>32-bit (<code>mad.lo.s32</code>, <code>shl.b32</code>, <code>add.s32</code>)</td>
+<td>32-bit (<code>shl.b32</code>, <code>add.s32</code>)</td>
+</tr>
+<tr>
+<td>memory ops</td>
+<td>2 <code>ld.global.f64</code>, 1 <code>st.global.f64</code></td>
+<td>same</td>
+<td>same</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>index-bitwidth=32</code> column came from a second real run (<code>add_gpu.mlir</code> through <code>canonicalize</code>, then <code>convert-gpu-to-nvvm{index-bitwidth=32}</code>); it is also in <code>pipeline.sh</code>. What the table honestly shows:</p>
+<ul>
+<li><strong>The memory traffic is identical.</strong> Both artifacts do exactly two 8-byte global loads, one <code>add</code> and one 8-byte global store. The mathematical work Mountain Goat's <code>mg.add</code> expresses survived the whole pipeline intact.</li>
+<li><strong>The gap is the calling convention and index width, not the arithmetic.</strong> MLIR's kernel takes 23 parameters against CUDA's 3 because Chapter 1's memref-descriptor ABI carries sizes, strides and offsets the CUDA kernel simply hard-codes (<code>row * 2 + col</code>). Narrowing the index to 32 bits closes most of the instruction-count gap (25 to 22 against CUDA's 19) but does nothing about the parameter count: that is a property of the <code>memref</code> type, not a pass option this chapter found to turn off.</li>
+<li><strong>What this comparison cannot tell you:</strong> which kernel is faster. Neither was run, and a 4-element add is dominated by launch overhead anyway. Instruction counts are a static proxy, not a measurement.</li>
+<li><strong>The CUDA kernel is not a fair "idiomatic CUDA" sample.</strong> It was written to match the MLIR kernel's launch shape (2 blocks x 2 threads) and uses raw builtins because the CUDA headers are missing.</li>
+</ul>
+<h2 id="what-is-still-missing-from-a-real-gpu-path">What is still missing from a real GPU path<a class="headerlink" href="#what-is-still-missing-from-a-real-gpu-path" title="Permanent link">&para;</a></h2>
+<p><code>gpu.launch_func</code> still sits in the host function, unlowered. Turning it into real driver calls needs <code>--gpu-to-llvm</code>, which emits calls into a GPU runtime (<code>mgpuModuleLoad</code>, <code>mgpuLaunchKernel</code>, ...), and this machine has no such runtime library installed (<code>ls /usr/lib/llvm-18/lib | grep -iE "cuda|rocm"</code> found nothing GPU-related besides a Vulkan-transform static library). The host side also needs the memrefs to live somewhere the device can reach: right now <code>memref.alloc</code> is ordinary host memory, so on a real GPU this program would need <code>gpu.alloc</code>/<code>gpu.memcpy</code> or unified memory, which this chapter did not attempt. Those are the concrete steps between this chapter's PTX and a real launch, left open rather than papered over.</p>
+<h2 id="reproducing-this-chapter">Reproducing this chapter<a class="headerlink" href="#reproducing-this-chapter" title="Permanent link">&para;</a></h2>
+<p>Everything above is regenerated by <code>code/pipeline.sh</code> (verified here by running it in an empty directory and byte-comparing every output against the files in <code>code/</code>). It needs a built <code>mg-opt</code> (<code>MG=/path/to/mg-opt ./pipeline.sh</code>) plus <code>mlir-opt-18</code> and <code>clang-18</code>. Packages beyond Chapter 1's own: <code>mlir-18-tools libmlir-18-dev</code> as before, and in this chapter's sandbox <code>llvm-18-dev</code> also had to be installed (after an <code>apt-get update</code>) before CMake could find LLVM for rebuilding <code>mg-opt</code>.</p>
+<h2 id="what-this-chapter-does-not-cite">What this chapter does not cite<a class="headerlink" href="#what-this-chapter-does-not-cite" title="Permanent link">&para;</a></h2>
+<p>Chapters 1 through 9 cite the <code>llvm/llvm-project</code> repository's own <code>mlir/docs/</code> for claims about MLIR's design. This chapter does not: every statement above about what a pass does is taken from running it and reading its output (and <code>mlir-opt-18 --help</code> descriptions), not from the project's documentation, which was not read for this chapter. Treat the explanations of <em>why</em> <code>convert-affine-for-to-gpu</code> failed, and of the ABI cost of memref descriptors, as observations from this one small example.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../../part9/09-the-execution-engine-api/" class="md-footer__link md-footer__link--prev" aria-label="Previous: 9. MLIR&#39;s Own Real C++ ExecutionEngine API, Called In-Process">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                9. MLIR's Own Real C++ ExecutionEngine API, Called In-Process
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 Oluwaseyi Awoga
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

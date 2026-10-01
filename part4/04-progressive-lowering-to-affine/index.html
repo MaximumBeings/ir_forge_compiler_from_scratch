@@ -1090,6 +1090,95 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 6 -- GPU Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 6 -- GPU Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part10/10-gpu-lowering-to-ptx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10. GPU Lowering: Mountain Goat to the gpu Dialect, NVVM, and Real PTX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1407,10 +1496,10 @@
 <p><code>mg.print</code> is deliberately erased rather than lowered to a real print call -- wiring it to an actual runtime print function needs real native execution machinery this book has not built yet (Part 5's own real subject). Stated honestly rather than silently dropped without comment.</p>
 <h3 id="a-real-gap-this-chapters-own-first-attempt-hit-directly-function-signatures">A real gap this chapter's own first attempt hit directly: function signatures<a class="headerlink" href="#a-real-gap-this-chapters-own-first-attempt-hit-directly-function-signatures" title="Permanent link">&para;</a></h3>
 <p>The first real version of this chapter's own pass made every <code>mg</code> operation illegal and ran it. It failed, with a genuine, instructive error:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>error: failed to legalize unresolved materialization from 'tensor&lt;2x2xf64&gt;' to 'memref&lt;2x2xf64&gt;' that remained live after conversion
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>error: failed to legalize unresolved materialization from &#39;tensor&lt;2x2xf64&gt;&#39; to &#39;memref&lt;2x2xf64&gt;&#39; that remained live after conversion
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>  %0 = mg.add %a, %b : tensor&lt;2x2xf64&gt;, tensor&lt;2x2xf64&gt; -&gt; tensor&lt;2x2xf64&gt;
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>       ^
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>note: see current operation: %0 = "builtin.unrealized_conversion_cast"(%arg1) : (tensor&lt;2x2xf64&gt;) -&gt; memref&lt;2x2xf64&gt;
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>note: see current operation: %0 = &quot;builtin.unrealized_conversion_cast&quot;(%arg1) : (tensor&lt;2x2xf64&gt;) -&gt; memref&lt;2x2xf64&gt;
 </code></pre></div>
 <p>The real cause: marking <code>mg.add</code>'s own <em>operation</em> illegal says nothing about a <em>function's own block arguments</em> -- <code>%a: tensor&lt;2x2xf64&gt;</code> is a <code>func.func</code> argument, never touched by patterns that only match <code>mg</code> ops. The real, correct fix needs <code>func.func</code>'s own signature to be converted too, using MLIR's own real, built-in utility for exactly this:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kt">void</span><span class="w"> </span><span class="nf">runOnOperation</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span>
@@ -1441,24 +1530,24 @@
 </code></pre></div>
 <p><code>target.addDynamicallyLegalOp&lt;func::FuncOp&gt;</code> is the real, precise statement of the fix: a <code>func.func</code> is only legal once its own signature is <em>already</em> in terms of the converted (memref) types -- and <code>populateFunctionOpInterfaceTypeConversionPattern</code>, MLIR's own real, built-in utility, is what actually performs that conversion, rewriting every block argument's own type in place.</p>
 <h3 id="wiring-the-real-pass-into-mg-opt">Wiring the real pass into <code>mg-opt</code><a class="headerlink" href="#wiring-the-real-pass-into-mg-opt" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mg/MgDialect.h"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mg/MgDialect.h&quot;</span>
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/Dialect/Affine/IR/AffineOps.h"</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/Dialect/Arith/IR/Arith.h"</span>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/Dialect/Bufferization/IR/Bufferization.h"</span>
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/Dialect/Bufferization/Transforms/Passes.h"</span>
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/Dialect/Func/IR/FuncOps.h"</span>
-<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/Dialect/MemRef/IR/MemRef.h"</span>
-<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/IR/DialectRegistry.h"</span>
-<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/InitAllDialects.h"</span>
-<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/Tools/mlir-opt/MlirOptMain.h"</span>
-<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/Transforms/Passes.h"</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/Affine/IR/AffineOps.h&quot;</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/Arith/IR/Arith.h&quot;</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/Bufferization/IR/Bufferization.h&quot;</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/Bufferization/Transforms/Passes.h&quot;</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/Func/IR/FuncOps.h&quot;</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/MemRef/IR/MemRef.h&quot;</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/IR/DialectRegistry.h&quot;</span>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/InitAllDialects.h&quot;</span>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Tools/mlir-opt/MlirOptMain.h&quot;</span>
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Transforms/Passes.h&quot;</span>
 <a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>
 <a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="k">namespace</span><span class="w"> </span><span class="nn">mg</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="kt">void</span><span class="w"> </span><span class="nf">registerConvertMgToAffinePass</span><span class="p">();</span>
 <a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="p">}</span>
 <a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>
-<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">**</span><span class="n">argv</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a><span class="kt">int</span><span class="w"> </span><span class="n">main</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">**</span><span class="n">argv</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a><span class="w">  </span><span class="n">mlir</span><span class="o">::</span><span class="n">registerCanonicalizerPass</span><span class="p">();</span>
 <a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a><span class="w">  </span><span class="n">mlir</span><span class="o">::</span><span class="n">registerCSEPass</span><span class="p">();</span>
 <a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a><span class="w">  </span><span class="n">mg</span><span class="o">::</span><span class="n">registerConvertMgToAffinePass</span><span class="p">();</span>
@@ -1470,7 +1559,7 @@
 <a id="__codelineno-7-27" name="__codelineno-7-27" href="#__codelineno-7-27"></a><span class="w">                  </span><span class="n">mlir</span><span class="o">::</span><span class="n">bufferization</span><span class="o">::</span><span class="n">BufferizationDialect</span><span class="o">&gt;</span><span class="p">();</span>
 <a id="__codelineno-7-28" name="__codelineno-7-28" href="#__codelineno-7-28"></a><span class="w">  </span><span class="n">registry</span><span class="p">.</span><span class="n">insert</span><span class="o">&lt;</span><span class="n">mg</span><span class="o">::</span><span class="n">MgDialect</span><span class="o">&gt;</span><span class="p">();</span>
 <a id="__codelineno-7-29" name="__codelineno-7-29" href="#__codelineno-7-29"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">asMainReturnCode</span><span class="p">(</span>
-<a id="__codelineno-7-30" name="__codelineno-7-30" href="#__codelineno-7-30"></a><span class="w">      </span><span class="n">mlir</span><span class="o">::</span><span class="n">MlirOptMain</span><span class="p">(</span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="n">argv</span><span class="p">,</span><span class="w"> </span><span class="s">"Mountain Goat (mg) dialect driver</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span><span class="w"> </span><span class="n">registry</span><span class="p">));</span>
+<a id="__codelineno-7-30" name="__codelineno-7-30" href="#__codelineno-7-30"></a><span class="w">      </span><span class="n">mlir</span><span class="o">::</span><span class="n">MlirOptMain</span><span class="p">(</span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="n">argv</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Mountain Goat (mg) dialect driver</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">registry</span><span class="p">));</span>
 <a id="__codelineno-7-31" name="__codelineno-7-31" href="#__codelineno-7-31"></a><span class="p">}</span>
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nb">add_library</span><span class="p">(</span><span class="s">MgLowerToAffine</span><span class="w"> </span><span class="s">lib/LowerToAffine.cpp</span><span class="p">)</span>
@@ -1607,7 +1696,7 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>mountain_goat.mlir:2:8: error: op was not bufferized
 <a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>  %0 = mg.constant dense&lt;[[1.0, 2.0], [3.0, 4.0]]&gt; : tensor&lt;2x2xf64&gt;
 <a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>       ^
-<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>mountain_goat.mlir:2:8: note: see current operation: %0 = "mg.constant"() &lt;{value = dense&lt;[[1.000000e+00, 2.000000e+00], [3.000000e+00, 4.000000e+00]]&gt; : tensor&lt;2x2xf64&gt;}&gt; : () -&gt; tensor&lt;2x2xf64&gt;
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>mountain_goat.mlir:2:8: note: see current operation: %0 = &quot;mg.constant&quot;() &lt;{value = dense&lt;[[1.000000e+00, 2.000000e+00], [3.000000e+00, 4.000000e+00]]&gt; : tensor&lt;2x2xf64&gt;}&gt; : () -&gt; tensor&lt;2x2xf64&gt;
 </code></pre></div></p>
 <p>This is a real, honest negative result, not a workaround or a hidden failure: MLIR's own documentation states plainly what Approach A's own hand-written patterns had to do manually -- that One-Shot Bufferize can only bufferize an operation that genuinely implements <code>BufferizableOpInterface</code>, and nothing about <code>mg.constant</code>'s own real ODS definition (Chapter 2) does. The real, official extension path exists and is named directly in the same documentation:</p>
 <blockquote>

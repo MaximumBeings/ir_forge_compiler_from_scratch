@@ -996,6 +996,95 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 6 -- GPU Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 6 -- GPU Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part10/10-gpu-lowering-to-ptx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10. GPU Lowering: Mountain Goat to the gpu Dialect, NVVM, and Real PTX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1088,8 +1177,8 @@
 <h2 id="installing-a-toolchain">Installing a toolchain<a class="headerlink" href="#installing-a-toolchain" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>clang-18<span class="w"> </span>--version<span class="w">          </span><span class="c1"># the real LLVM/Clang frontend and backend, needed from Chapter 1 onward</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>mlir-opt-18<span class="w"> </span>--version<span class="w">        </span><span class="c1"># the real MLIR optimizer/pass driver</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>mlir-translate-18<span class="w"> </span>--version<span class="w">   </span><span class="c1"># translates between MLIR's own LLVM dialect and real LLVM IR text</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>llvm-config-18<span class="w"> </span>--version<span class="w">       </span><span class="c1"># reports this toolchain's own real installed version/paths</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>mlir-translate-18<span class="w"> </span>--version<span class="w">   </span><span class="c1"># translates between MLIR&#39;s own LLVM dialect and real LLVM IR text</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>llvm-config-18<span class="w"> </span>--version<span class="w">       </span><span class="c1"># reports this toolchain&#39;s own real installed version/paths</span>
 </code></pre></div>
 <p>On Debian/Ubuntu (this book's own confirmed authoring platform, Ubuntu 24.04 "noble"), the base LLVM/Clang toolchain is <code>apt-get install clang llvm</code>; the real MLIR tools are a separate package, not pulled in automatically: <code>apt-get install mlir-18-tools libmlir-18-dev</code>. Ubuntu's own packaging keeps several real LLVM major versions installable side by side, which is why every tool in this book is invoked with its own explicit version suffix (<code>mlir-opt-18</code>, not a bare <code>mlir-opt</code>) -- confirmed directly in this book's own authoring environment, where <code>mlir-opt</code> alone resolves to nothing at all.</p>
 <h2 id="the-honesty-discipline-this-book-follows">The honesty discipline this book follows<a class="headerlink" href="#the-honesty-discipline-this-book-follows" title="Permanent link">&para;</a></h2>

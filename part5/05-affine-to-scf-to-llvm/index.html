@@ -1029,6 +1029,95 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 6 -- GPU Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 6 -- GPU Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part10/10-gpu-lowering-to-ptx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10. GPU Lowering: Mountain Goat to the gpu Dialect, NVVM, and Real PTX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1182,12 +1271,12 @@
 <h2 id="giving-mgprint-a-real-working-implementation">Giving <code>mg.print</code> a real, working implementation<a class="headerlink" href="#giving-mgprint-a-real-working-implementation" title="Permanent link">&para;</a></h2>
 <p>Chapter 4 deliberately erased <code>mg.print</code>. This chapter gives it a real one, using MLIR's own pre-existing runtime support library (<code>libmlir_runner_utils.so</code>, already confirmed installed alongside <code>mlir-opt-18</code> since Chapter 1) rather than inventing a print mechanism from nothing. Its real, official header states the function this chapter's own lowering targets directly:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">// mlir/ExecutionEngine/RunnerUtils.h</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="k">extern</span><span class="w"> </span><span class="s">"C"</span><span class="w"> </span><span class="n">MLIR_RUNNERUTILS_EXPORT</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">printMemrefF64</span><span class="p">(</span><span class="kt">int64_t</span><span class="w"> </span><span class="n">rank</span><span class="p">,</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">ptr</span><span class="p">);</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="k">extern</span><span class="w"> </span><span class="s">&quot;C&quot;</span><span class="w"> </span><span class="n">MLIR_RUNNERUTILS_EXPORT</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">printMemrefF64</span><span class="p">(</span><span class="kt">int64_t</span><span class="w"> </span><span class="n">rank</span><span class="p">,</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">ptr</span><span class="p">);</span>
 </code></pre></div>
 <p>Calling it correctly from generated MLIR needs one real, specific mechanism: declaring the function with MLIR's own <code>llvm.emit_c_interface</code> attribute, which tells <code>--convert-func-to-llvm</code> to emit a call to the real <code>_mlir_ciface_printMemrefF64</code> C-interface wrapper -- the one whose real ABI actually matches an unranked memref descriptor -- rather than to a plain, mismatched symbol. This same real idiom (declare a runtime function, mark it <code>llvm.emit_c_interface</code>, <code>memref.cast</code> to unranked, call it) is what MLIR's own official Toy tutorial's own later chapters use for the identical real job, cited here as precedent for the general technique, even though Toy's own chosen runtime call is a hand-rolled <code>printf</code> loop rather than this chapter's own choice to reuse <code>printMemrefF64</code> directly:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">static</span><span class="w"> </span><span class="n">FlatSymbolRefAttr</span><span class="w"> </span><span class="nf">getOrInsertPrintMemrefF64</span><span class="p">(</span><span class="n">OpBuilder</span><span class="w"> </span><span class="o">&amp;</span><span class="n">builder</span><span class="p">,</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">                                                   </span><span class="n">ModuleOp</span><span class="w"> </span><span class="k">module</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"printMemrefF64"</span><span class="p">;</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;printMemrefF64&quot;</span><span class="p">;</span>
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="k">module</span><span class="p">.</span><span class="n">lookupSymbol</span><span class="o">&lt;</span><span class="n">func</span><span class="o">::</span><span class="n">FuncOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
 <a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">SymbolRefAttr</span><span class="o">::</span><span class="n">get</span><span class="p">(</span><span class="n">builder</span><span class="p">.</span><span class="n">getContext</span><span class="p">(),</span><span class="w"> </span><span class="n">name</span><span class="p">);</span>
 <a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
@@ -1199,7 +1288,7 @@
 <a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="w">  </span><span class="n">builder</span><span class="p">.</span><span class="n">setInsertionPointToStart</span><span class="p">(</span><span class="k">module</span><span class="p">.</span><span class="n">getBody</span><span class="p">());</span>
 <a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">printFunc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">builder</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">func</span><span class="o">::</span><span class="n">FuncOp</span><span class="o">&gt;</span><span class="p">(</span><span class="k">module</span><span class="p">.</span><span class="n">getLoc</span><span class="p">(),</span><span class="w"> </span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="n">fnType</span><span class="p">);</span>
 <a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">  </span><span class="n">printFunc</span><span class="p">.</span><span class="n">setPrivate</span><span class="p">();</span>
-<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">  </span><span class="n">printFunc</span><span class="o">-&gt;</span><span class="n">setAttr</span><span class="p">(</span><span class="s">"llvm.emit_c_interface"</span><span class="p">,</span><span class="w"> </span><span class="n">builder</span><span class="p">.</span><span class="n">getUnitAttr</span><span class="p">());</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">  </span><span class="n">printFunc</span><span class="o">-&gt;</span><span class="n">setAttr</span><span class="p">(</span><span class="s">&quot;llvm.emit_c_interface&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">builder</span><span class="p">.</span><span class="n">getUnitAttr</span><span class="p">());</span>
 <a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">SymbolRefAttr</span><span class="o">::</span><span class="n">get</span><span class="p">(</span><span class="n">builder</span><span class="p">.</span><span class="n">getContext</span><span class="p">(),</span><span class="w"> </span><span class="n">name</span><span class="p">);</span>
 <a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="p">}</span>
 <a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>
@@ -1260,7 +1349,7 @@
 <p><strong>Real captured output (excerpt -- full output is longer, real LLVM-dialect IR throughout):</strong>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>module {
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  llvm.func @malloc(i64) -&gt; !llvm.ptr
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  llvm.func private @printMemrefF64(%arg0: i64, %arg1: !llvm.ptr) attributes {llvm.emit_c_interface, sym_visibility = "private"} {
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  llvm.func private @printMemrefF64(%arg0: i64, %arg1: !llvm.ptr) attributes {llvm.emit_c_interface, sym_visibility = &quot;private&quot;} {
 <a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>    %0 = llvm.mlir.undef : !llvm.struct&lt;(i64, ptr)&gt;
 <a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    %1 = llvm.insertvalue %arg0, %0[0] : !llvm.struct&lt;(i64, ptr)&gt;
 <a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>    %2 = llvm.insertvalue %arg1, %1[1] : !llvm.struct&lt;(i64, ptr)&gt;
@@ -1270,7 +1359,7 @@
 <a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>    llvm.call @_mlir_ciface_printMemrefF64(%4) : (!llvm.ptr) -&gt; ()
 <a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>    llvm.return
 <a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>  }
-<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>  llvm.func @_mlir_ciface_printMemrefF64(!llvm.ptr) attributes {llvm.emit_c_interface, sym_visibility = "private"}
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>  llvm.func @_mlir_ciface_printMemrefF64(!llvm.ptr) attributes {llvm.emit_c_interface, sym_visibility = &quot;private&quot;}
 <a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>  llvm.func @add_tensors(%arg0: !llvm.ptr, %arg1: !llvm.ptr, %arg2: i64, %arg3: i64, %arg4: i64, %arg5: i64, %arg6: i64, %arg7: !llvm.ptr, %arg8: !llvm.ptr, %arg9: i64, %arg10: i64, %arg11: i64, %arg12: i64, %arg13: i64) {
 <a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>    ...
 <a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>    %23 = llvm.call @malloc(%22) : (i64) -&gt; !llvm.ptr

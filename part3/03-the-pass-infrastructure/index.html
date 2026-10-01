@@ -1062,6 +1062,95 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 6 -- GPU Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 6 -- GPU Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part10/10-gpu-lowering-to-ptx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10. GPU Lowering: Mountain Goat to the gpu Dialect, NVVM, and Real PTX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1222,18 +1311,18 @@
 <p>Chapter 2 built a dialect that can be <em>checked</em> -- <code>mlir-tblgen-18</code>-generated verifiers reject malformed IR. This chapter answers a different real question: how does MLIR actually <em>rewrite</em> IR into a better, equivalent form? Two genuinely different real mechanisms exist for this in MLIR, and conflating them is a real, common confusion this chapter resolves directly: a <strong>folder</strong> (<code>fold()</code>) collapses an operation into a plain value or attribute when its operands are already known constants, cheaply, without needing a full pattern-match infrastructure; a <strong><code>RewritePattern</code></strong> matches a more general shape in the IR -- not just "are my operands constant" -- and replaces it with something else entirely. This chapter builds one real example of each, directly in Mountain Goat's own dialect, and runs both through the real, built-in <code>--canonicalize</code> pass.</p>
 <h2 id="first-closing-a-real-stated-gap-from-chapter-2">First, closing a real, stated gap from Chapter 2<a class="headerlink" href="#first-closing-a-real-stated-gap-from-chapter-2" title="Permanent link">&para;</a></h2>
 <p>Chapter 2 ended by showing, honestly, that <code>mg.add %0, %1 : tensor&lt;2x2xf64&gt;, tensor&lt;3xf64&gt; -&gt; tensor&lt;2x2xf64&gt;</code> was silently accepted despite its two operands genuinely disagreeing in shape -- <code>AddOp</code> had no <code>hasVerifier</code>. This chapter closes that gap first, before adding anything new, using exactly the same real pattern <code>TransposeOp::verify()</code> already established:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">def</span><span class="w"> </span><span class="n">AddOp</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">Mg_Op</span><span class="p">&lt;</span><span class="s">"add"</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="n">Pure</span><span class="p">]&gt;</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="p">...</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">hasVerifier</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">hasFolder</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w">   </span><span class="c1">// this chapter's own next real addition</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>def AddOp : Mg_Op&lt;&quot;add&quot;, [Pure]&gt; {
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  ...
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  let hasVerifier = 1;
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>  let hasFolder = 1;   // this chapter&#39;s own next real addition
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>}
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">mlir</span><span class="o">::</span><span class="n">LogicalResult</span><span class="w"> </span><span class="nf">AddOp::verify</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">lhsType</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">llvm</span><span class="o">::</span><span class="n">cast</span><span class="o">&lt;</span><span class="n">mlir</span><span class="o">::</span><span class="n">RankedTensorType</span><span class="o">&gt;</span><span class="p">(</span><span class="n">getLhs</span><span class="p">().</span><span class="n">getType</span><span class="p">());</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">rhsType</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">llvm</span><span class="o">::</span><span class="n">cast</span><span class="o">&lt;</span><span class="n">mlir</span><span class="o">::</span><span class="n">RankedTensorType</span><span class="o">&gt;</span><span class="p">(</span><span class="n">getRhs</span><span class="p">().</span><span class="n">getType</span><span class="p">());</span>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">lhsType</span><span class="p">.</span><span class="n">getShape</span><span class="p">()</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">rhsType</span><span class="p">.</span><span class="n">getShape</span><span class="p">())</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">emitOpError</span><span class="p">(</span><span class="s">"mg.add operands must have the same shape, got "</span><span class="p">)</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">           </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">lhsType</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">" and "</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">rhsType</span><span class="p">;</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">emitOpError</span><span class="p">(</span><span class="s">&quot;mg.add operands must have the same shape, got &quot;</span><span class="p">)</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">           </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">lhsType</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; and &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">rhsType</span><span class="p">;</span>
 <a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">success</span><span class="p">();</span>
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="p">}</span>
 </code></pre></div>
@@ -1241,10 +1330,10 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>./mg-opt mismatched_add.mlir
 </code></pre></div>
 <p><strong>Real captured output (cloud sandbox, this chapter's own rebuilt <code>mg-opt</code>):</strong>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>mismatched_add.mlir:4:8: error: 'mg.add' op mg.add operands must have the same shape, got 'tensor&lt;2x2xf64&gt;' and 'tensor&lt;3xf64&gt;'
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>mismatched_add.mlir:4:8: error: &#39;mg.add&#39; op mg.add operands must have the same shape, got &#39;tensor&lt;2x2xf64&gt;&#39; and &#39;tensor&lt;3xf64&gt;&#39;
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  %2 = mg.add %0, %1 : tensor&lt;2x2xf64&gt;, tensor&lt;3xf64&gt; -&gt; tensor&lt;2x2xf64&gt;
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>       ^
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>mismatched_add.mlir:4:8: note: see current operation: %2 = "mg.add"(%0, %1) : (tensor&lt;2x2xf64&gt;, tensor&lt;3xf64&gt;) -&gt; tensor&lt;2x2xf64&gt;
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>mismatched_add.mlir:4:8: note: see current operation: %2 = &quot;mg.add&quot;(%0, %1) : (tensor&lt;2x2xf64&gt;, tensor&lt;3xf64&gt;) -&gt; tensor&lt;2x2xf64&gt;
 </code></pre></div></p>
 <p>The gap is genuinely closed, confirmed by actually re-running the exact input that previously slipped through, not by assertion.</p>
 <h2 id="mlirs-own-real-constant-folding-hook-fold">MLIR's own real constant-folding hook: <code>fold()</code><a class="headerlink" href="#mlirs-own-real-constant-folding-hook-fold" title="Permanent link">&para;</a></h2>
@@ -1254,11 +1343,11 @@
 </blockquote>
 <p>Making <code>mg.add</code> of two <code>mg.constant</code> operands fold into a single <code>mg.constant</code> needs two real, separate pieces, not one:</p>
 <p><strong>First</strong>, <code>ConstantOp</code> itself needs MLIR's real <code>ConstantLike</code> trait -- without it, the generic folding machinery has no way to recognize an <code>mg.constant</code> <em>result</em> as a foldable attribute when it appears as another operation's operand:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">def</span><span class="w"> </span><span class="n">ConstantOp</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">Mg_Op</span><span class="p">&lt;</span><span class="s">"constant"</span><span class="p">,</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="p">[</span><span class="n">Pure</span><span class="p">,</span><span class="w"> </span><span class="n">ConstantLike</span><span class="p">,</span><span class="w"> </span><span class="n">DeclareOpInterfaceMethods</span><span class="p">&lt;</span><span class="n">InferTypeOpInterface</span><span class="p">&gt;]&gt;</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="p">...</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">hasFolder</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>def ConstantOp : Mg_Op&lt;&quot;constant&quot;,
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    [Pure, ConstantLike, DeclareOpInterfaceMethods&lt;InferTypeOpInterface&gt;]&gt; {
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>  ...
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>  let hasFolder = 1;
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>}
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">mlir</span><span class="o">::</span><span class="n">OpFoldResult</span><span class="w"> </span><span class="nf">ConstantOp::fold</span><span class="p">(</span><span class="n">FoldAdaptor</span><span class="w"> </span><span class="n">adaptor</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">getValueAttr</span><span class="p">();</span><span class="w"> </span><span class="p">}</span>
 </code></pre></div>
@@ -1268,7 +1357,7 @@
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">lhsAttr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">llvm</span><span class="o">::</span><span class="n">dyn_cast_if_present</span><span class="o">&lt;</span><span class="n">mlir</span><span class="o">::</span><span class="n">DenseElementsAttr</span><span class="o">&gt;</span><span class="p">(</span><span class="n">adaptor</span><span class="p">.</span><span class="n">getLhs</span><span class="p">());</span>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">rhsAttr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">llvm</span><span class="o">::</span><span class="n">dyn_cast_if_present</span><span class="o">&lt;</span><span class="n">mlir</span><span class="o">::</span><span class="n">DenseElementsAttr</span><span class="o">&gt;</span><span class="p">(</span><span class="n">adaptor</span><span class="p">.</span><span class="n">getRhs</span><span class="p">());</span>
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">lhsAttr</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">!</span><span class="n">rhsAttr</span><span class="p">)</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">nullptr</span><span class="p">;</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="k">nullptr</span><span class="p">;</span>
 <a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>
 <a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">lhsValues</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lhsAttr</span><span class="p">.</span><span class="n">getValues</span><span class="o">&lt;</span><span class="n">llvm</span><span class="o">::</span><span class="n">APFloat</span><span class="o">&gt;</span><span class="p">();</span>
 <a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">rhsValues</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rhsAttr</span><span class="p">.</span><span class="n">getValues</span><span class="o">&lt;</span><span class="n">llvm</span><span class="o">::</span><span class="n">APFloat</span><span class="o">&gt;</span><span class="p">();</span>
@@ -1281,10 +1370,10 @@
 </code></pre></div>
 <p><code>adaptor.getLhs()</code>/<code>adaptor.getRhs()</code> genuinely return <code>Attribute</code>, not <code>Value</code> -- the real <code>FoldAdaptor</code> machinery has already done the work of checking whether each operand is itself a known constant before this function is even called; returning <code>nullptr</code> here means "no, I cannot fold this," a real, explicit, honest signal rather than a crash or a wrong answer.</p>
 <p>A third real piece turned out to be necessary, discovered directly by running this chapter's own code rather than assumed in advance: when <code>fold()</code> returns an <code>Attribute</code> instead of a <code>Value</code>, MLIR's own folding driver needs a way to turn that attribute back into a genuine new operation in the IR -- a new <code>mg.constant</code>, holding the summed result. That real hook is <code>Dialect::materializeConstant</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">def</span><span class="w"> </span><span class="n">Mg_Dialect</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">Dialect</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="p">...</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">hasConstantMaterializer</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>def Mg_Dialect : Dialect {
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  ...
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  let hasConstantMaterializer = 1;
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>}
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">mlir</span><span class="o">::</span><span class="n">Operation</span><span class="w"> </span><span class="o">*</span><span class="nf">MgDialect::materializeConstant</span><span class="p">(</span><span class="n">mlir</span><span class="o">::</span><span class="n">OpBuilder</span><span class="w"> </span><span class="o">&amp;</span><span class="n">builder</span><span class="p">,</span>
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">                                                </span><span class="n">mlir</span><span class="o">::</span><span class="n">Attribute</span><span class="w"> </span><span class="n">value</span><span class="p">,</span>
@@ -1292,18 +1381,18 @@
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">                                                </span><span class="n">mlir</span><span class="o">::</span><span class="n">Location</span><span class="w"> </span><span class="n">loc</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">elements</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">llvm</span><span class="o">::</span><span class="n">dyn_cast</span><span class="o">&lt;</span><span class="n">mlir</span><span class="o">::</span><span class="n">DenseElementsAttr</span><span class="o">&gt;</span><span class="p">(</span><span class="n">value</span><span class="p">);</span>
 <a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">elements</span><span class="p">)</span>
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">nullptr</span><span class="p">;</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="k">nullptr</span><span class="p">;</span>
 <a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">builder</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">ConstantOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="p">,</span><span class="w"> </span><span class="n">elements</span><span class="p">);</span>
 <a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="p">}</span>
 </code></pre></div>
 <p>Leaving this out was this chapter's own first real attempt at <code>AddOp::fold</code> -- it compiled and ran, but <code>--canonicalize</code> silently left <code>mg.add</code> of two constants unfolded, with no error at all, because the driver had a real new attribute in hand but genuinely no way to materialize it back into the IR as an operation. Adding <code>materializeConstant</code> is what made the fold actually take effect, confirmed directly below.</p>
 <h2 id="mlirs-own-real-pattern-rewrite-infrastructure-rewritepattern">MLIR's own real pattern-rewrite infrastructure: <code>RewritePattern</code><a class="headerlink" href="#mlirs-own-real-pattern-rewrite-infrastructure-rewritepattern" title="Permanent link">&para;</a></h2>
 <p>A folder only ever looks at one operation's own operands. <code>TransposeOp</code>'s own new canonicalization -- <code>mg.transpose(mg.transpose(%x))</code> collapsing straight to <code>%x</code>, since transposing a 2-D tensor twice is the identity -- needs to look at a <em>second</em> operation (the inner transpose), which is exactly what the heavier, more general <code>RewritePattern</code> framework exists for:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">def</span><span class="w"> </span><span class="n">TransposeOp</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">Mg_Op</span><span class="p">&lt;</span><span class="s">"transpose"</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="n">Pure</span><span class="p">]&gt;</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="p">...</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">hasVerifier</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">hasCanonicalizer</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>def TransposeOp : Mg_Op&lt;&quot;transpose&quot;, [Pure]&gt; {
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>  ...
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>  let hasVerifier = 1;
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>  let hasCanonicalizer = 1;
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>}
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="k">namespace</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="k">struct</span><span class="w"> </span><span class="nc">SimplifyRedundantTranspose</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">OpRewritePattern</span><span class="o">&lt;</span><span class="n">TransposeOp</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
@@ -1328,7 +1417,7 @@
 <p>This chapter's own <code>SimplifyRedundantTranspose</code> mirrors the same real idea MLIR's own official Toy tutorial demonstrates for its own transpose operation -- cited here as real precedent for <em>why</em> this is a standard first canonicalization example, not copied from it; every line above is this chapter's own, written fresh against Mountain Goat's own <code>TransposeOp</code>. <code>matchAndRewrite</code> is the one real method every <code>RewritePattern</code> must implement: <code>op.getInput().getDefiningOp&lt;TransposeOp&gt;()</code> is the "match" half (is my own input itself the result of another <code>mg.transpose</code>?), and <code>rewriter.replaceOp(op, innerTranspose.getInput())</code> is the "rewrite" half (if so, every use of the outer transpose's result is redirected straight to the innermost tensor, skipping both transposes entirely).</p>
 <h2 id="wiring-both-into-mg-opts-own-real-canonicalize">Wiring both into <code>mg-opt</code>'s own real <code>--canonicalize</code><a class="headerlink" href="#wiring-both-into-mg-opts-own-real-canonicalize" title="Permanent link">&para;</a></h2>
 <p>MLIR's own canonicalizer is itself a real, ordinary pass -- not special-cased machinery -- so <code>mg-opt</code> needs to genuinely register it, the same way <code>mlir-opt-18</code> itself does:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/Transforms/Passes.h"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Transforms/Passes.h&quot;</span>
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">**</span><span class="n">argv</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">  </span><span class="n">mlir</span><span class="o">::</span><span class="n">registerCanonicalizerPass</span><span class="p">();</span>
@@ -1347,8 +1436,8 @@
 <a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="p">)</span>
 </code></pre></div>
 <p><code>MLIRTransforms</code> is the one real library this chapter's own build needed to add -- without it, the real <code>mlir::createCanonicalizerPass()</code>/<code>mlir::createCSEPass()</code> symbols the registration functions reference are genuinely undefined at link time, caught directly by <code>ld</code>'s own real error, not guessed at:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>undefined reference to `mlir::createCanonicalizerPass()'
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>undefined reference to `mlir::createCSEPass()'
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>undefined reference to `mlir::createCanonicalizerPass()&#39;
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>undefined reference to `mlir::createCSEPass()&#39;
 </code></pre></div>
 <p>Rebuilding cleanly after adding <code>MLIRTransforms</code>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>cmake --build build -j4

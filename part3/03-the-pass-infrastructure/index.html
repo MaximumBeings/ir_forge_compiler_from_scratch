@@ -1,0 +1,1164 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A Toy Language Compiled Through a Real MLIR Dialect, Down to Real Native Machine Code">
+      
+      
+        <meta name="author" content="Oluwaseyi Awoga">
+      
+      
+      
+        <link rel="prev" href="../../part2/02-a-minimal-dialect-from-scratch/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>3. The Real Pass Infrastructure: Canonicalizing Mountain Goat - IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#3-the-real-pass-infrastructure-canonicalizing-mountain-goat" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-header__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              3. The Real Pass Infrastructure: Canonicalizing Mountain Goat
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-nav__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part1/01-why-a-multi-level-ir-at-all/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1. Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part2/02-a-minimal-dialect-from-scratch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2. A Minimal Dialect From Scratch: Mountain Goat's Own mg Dialect
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3. The Real Pass Infrastructure: Canonicalizing Mountain Goat
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3. The Real Pass Infrastructure: Canonicalizing Mountain Goat
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-real-question-this-chapter-answers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The real question this chapter answers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#first-closing-a-real-stated-gap-from-chapter-2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        First, closing a real, stated gap from Chapter 2
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mlirs-own-real-constant-folding-hook-fold" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MLIR's own real constant-folding hook: fold()
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mlirs-own-real-pattern-rewrite-infrastructure-rewritepattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MLIR's own real pattern-rewrite infrastructure: RewritePattern
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wiring-both-into-mg-opts-own-real-canonicalize" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wiring both into mg-opt's own real --canonicalize
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#real-worked-example-both-rewrites-firing-together" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Real worked example: both rewrites firing together
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mlirs-own-real-canonicalizer-how-it-actually-decides-when-to-stop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MLIR's own real canonicalizer: how it actually decides when to stop
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dialect-conversion-the-real-next-real-step-not-yet-taken" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dialect conversion: the real next real step, not yet taken
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-real-question-this-chapter-answers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The real question this chapter answers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#first-closing-a-real-stated-gap-from-chapter-2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        First, closing a real, stated gap from Chapter 2
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mlirs-own-real-constant-folding-hook-fold" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MLIR's own real constant-folding hook: fold()
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mlirs-own-real-pattern-rewrite-infrastructure-rewritepattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MLIR's own real pattern-rewrite infrastructure: RewritePattern
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wiring-both-into-mg-opts-own-real-canonicalize" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wiring both into mg-opt's own real --canonicalize
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#real-worked-example-both-rewrites-firing-together" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Real worked example: both rewrites firing together
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mlirs-own-real-canonicalizer-how-it-actually-decides-when-to-stop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MLIR's own real canonicalizer: how it actually decides when to stop
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dialect-conversion-the-real-next-real-step-not-yet-taken" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dialect conversion: the real next real step, not yet taken
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="3-the-real-pass-infrastructure-canonicalizing-mountain-goat">3. The Real Pass Infrastructure: Canonicalizing Mountain Goat<a class="headerlink" href="#3-the-real-pass-infrastructure-canonicalizing-mountain-goat" title="Permanent link">&para;</a></h1>
+<p><strong>What you will understand:</strong> how MLIR's own real pattern-rewrite and constant-folding infrastructure actually transforms IR -- not a hand-wavy "optimizations happen," but two genuinely different, real mechanisms (<code>fold()</code> and <code>RewritePattern</code>), wired into Mountain Goat's own dialect, run by the real <code>--canonicalize</code> pass, with real before/after IR captured directly.</p>
+<p><strong>What you need to know first:</strong> Chapter 2's own dialect (<code>mg.constant</code>, <code>mg.add</code>, <code>mg.transpose</code>, <code>mg.print</code>) and how <code>hasVerifier</code>/ODS traits work. This chapter's own new vocabulary -- <code>fold()</code>, <code>RewritePattern</code>, <code>PatternRewriter</code>, the canonicalizer pass -- is introduced here, grounded in real, run code.</p>
+<h2 id="the-real-question-this-chapter-answers">The real question this chapter answers<a class="headerlink" href="#the-real-question-this-chapter-answers" title="Permanent link">&para;</a></h2>
+<p>Chapter 2 built a dialect that can be <em>checked</em> -- <code>mlir-tblgen-18</code>-generated verifiers reject malformed IR. This chapter answers a different real question: how does MLIR actually <em>rewrite</em> IR into a better, equivalent form? Two genuinely different real mechanisms exist for this in MLIR, and conflating them is a real, common confusion this chapter resolves directly: a <strong>folder</strong> (<code>fold()</code>) collapses an operation into a plain value or attribute when its operands are already known constants, cheaply, without needing a full pattern-match infrastructure; a <strong><code>RewritePattern</code></strong> matches a more general shape in the IR -- not just "are my operands constant" -- and replaces it with something else entirely. This chapter builds one real example of each, directly in Mountain Goat's own dialect, and runs both through the real, built-in <code>--canonicalize</code> pass.</p>
+<h2 id="first-closing-a-real-stated-gap-from-chapter-2">First, closing a real, stated gap from Chapter 2<a class="headerlink" href="#first-closing-a-real-stated-gap-from-chapter-2" title="Permanent link">&para;</a></h2>
+<p>Chapter 2 ended by showing, honestly, that <code>mg.add %0, %1 : tensor&lt;2x2xf64&gt;, tensor&lt;3xf64&gt; -&gt; tensor&lt;2x2xf64&gt;</code> was silently accepted despite its two operands genuinely disagreeing in shape -- <code>AddOp</code> had no <code>hasVerifier</code>. This chapter closes that gap first, before adding anything new, using exactly the same real pattern <code>TransposeOp::verify()</code> already established:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">def</span><span class="w"> </span><span class="n">AddOp</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">Mg_Op</span><span class="p">&lt;</span><span class="s">"add"</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="n">Pure</span><span class="p">]&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="p">...</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">hasVerifier</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">hasFolder</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w">   </span><span class="c1">// this chapter's own next real addition</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="p">}</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">mlir</span><span class="o">::</span><span class="n">LogicalResult</span><span class="w"> </span><span class="nf">AddOp::verify</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">lhsType</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">llvm</span><span class="o">::</span><span class="n">cast</span><span class="o">&lt;</span><span class="n">mlir</span><span class="o">::</span><span class="n">RankedTensorType</span><span class="o">&gt;</span><span class="p">(</span><span class="n">getLhs</span><span class="p">().</span><span class="n">getType</span><span class="p">());</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">rhsType</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">llvm</span><span class="o">::</span><span class="n">cast</span><span class="o">&lt;</span><span class="n">mlir</span><span class="o">::</span><span class="n">RankedTensorType</span><span class="o">&gt;</span><span class="p">(</span><span class="n">getRhs</span><span class="p">().</span><span class="n">getType</span><span class="p">());</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">lhsType</span><span class="p">.</span><span class="n">getShape</span><span class="p">()</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">rhsType</span><span class="p">.</span><span class="n">getShape</span><span class="p">())</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">emitOpError</span><span class="p">(</span><span class="s">"mg.add operands must have the same shape, got "</span><span class="p">)</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">           </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">lhsType</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">" and "</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">rhsType</span><span class="p">;</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">success</span><span class="p">();</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="p">}</span>
+</code></pre></div>
+<p>Re-running Chapter 2's own exact mismatched-shape program against the rebuilt <code>mg-opt</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>./mg-opt mismatched_add.mlir
+</code></pre></div>
+<p><strong>Real captured output (cloud sandbox, this chapter's own rebuilt <code>mg-opt</code>):</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>mismatched_add.mlir:4:8: error: 'mg.add' op mg.add operands must have the same shape, got 'tensor&lt;2x2xf64&gt;' and 'tensor&lt;3xf64&gt;'
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  %2 = mg.add %0, %1 : tensor&lt;2x2xf64&gt;, tensor&lt;3xf64&gt; -&gt; tensor&lt;2x2xf64&gt;
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>       ^
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>mismatched_add.mlir:4:8: note: see current operation: %2 = "mg.add"(%0, %1) : (tensor&lt;2x2xf64&gt;, tensor&lt;3xf64&gt;) -&gt; tensor&lt;2x2xf64&gt;
+</code></pre></div></p>
+<p>The gap is genuinely closed, confirmed by actually re-running the exact input that previously slipped through, not by assertion.</p>
+<h2 id="mlirs-own-real-constant-folding-hook-fold">MLIR's own real constant-folding hook: <code>fold()</code><a class="headerlink" href="#mlirs-own-real-constant-folding-hook-fold" title="Permanent link">&para;</a></h2>
+<p>MLIR's own official documentation states what <code>fold()</code> is for directly:</p>
+<blockquote>
+<p>"The pattern rewriting framework can largely be decomposed into two parts: Pattern Definition and Pattern Application." (<code>mlir/docs/PatternRewriter.md</code>) -- <code>fold()</code> is deliberately <em>not</em> this framework; it is a narrower, cheaper, separate mechanism specifically for collapsing an operation into an already-known value when all its operands are constants, run automatically by the canonicalizer (and by the dialect-conversion/greedy-rewrite drivers) without needing a full pattern to be registered.</p>
+</blockquote>
+<p>Making <code>mg.add</code> of two <code>mg.constant</code> operands fold into a single <code>mg.constant</code> needs two real, separate pieces, not one:</p>
+<p><strong>First</strong>, <code>ConstantOp</code> itself needs MLIR's real <code>ConstantLike</code> trait -- without it, the generic folding machinery has no way to recognize an <code>mg.constant</code> <em>result</em> as a foldable attribute when it appears as another operation's operand:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">def</span><span class="w"> </span><span class="n">ConstantOp</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">Mg_Op</span><span class="p">&lt;</span><span class="s">"constant"</span><span class="p">,</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="p">[</span><span class="n">Pure</span><span class="p">,</span><span class="w"> </span><span class="n">ConstantLike</span><span class="p">,</span><span class="w"> </span><span class="n">DeclareOpInterfaceMethods</span><span class="p">&lt;</span><span class="n">InferTypeOpInterface</span><span class="p">&gt;]&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="p">...</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">hasFolder</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="p">}</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">mlir</span><span class="o">::</span><span class="n">OpFoldResult</span><span class="w"> </span><span class="nf">ConstantOp::fold</span><span class="p">(</span><span class="n">FoldAdaptor</span><span class="w"> </span><span class="n">adaptor</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">getValueAttr</span><span class="p">();</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div>
+<p><code>ConstantOp::fold</code> is about as simple as a folder gets: a constant folds to its own attribute, trivially.</p>
+<p><strong>Second</strong>, <code>AddOp::fold</code> itself does the real arithmetic, genuinely summing the two tensors' real elements if (and only if) both operands are themselves real <code>DenseElementsAttr</code> constants:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">mlir</span><span class="o">::</span><span class="n">OpFoldResult</span><span class="w"> </span><span class="nf">AddOp::fold</span><span class="p">(</span><span class="n">FoldAdaptor</span><span class="w"> </span><span class="n">adaptor</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">lhsAttr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">llvm</span><span class="o">::</span><span class="n">dyn_cast_if_present</span><span class="o">&lt;</span><span class="n">mlir</span><span class="o">::</span><span class="n">DenseElementsAttr</span><span class="o">&gt;</span><span class="p">(</span><span class="n">adaptor</span><span class="p">.</span><span class="n">getLhs</span><span class="p">());</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">rhsAttr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">llvm</span><span class="o">::</span><span class="n">dyn_cast_if_present</span><span class="o">&lt;</span><span class="n">mlir</span><span class="o">::</span><span class="n">DenseElementsAttr</span><span class="o">&gt;</span><span class="p">(</span><span class="n">adaptor</span><span class="p">.</span><span class="n">getRhs</span><span class="p">());</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">lhsAttr</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">!</span><span class="n">rhsAttr</span><span class="p">)</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">nullptr</span><span class="p">;</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">lhsValues</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lhsAttr</span><span class="p">.</span><span class="n">getValues</span><span class="o">&lt;</span><span class="n">llvm</span><span class="o">::</span><span class="n">APFloat</span><span class="o">&gt;</span><span class="p">();</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">rhsValues</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rhsAttr</span><span class="p">.</span><span class="n">getValues</span><span class="o">&lt;</span><span class="n">llvm</span><span class="o">::</span><span class="n">APFloat</span><span class="o">&gt;</span><span class="p">();</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">  </span><span class="n">llvm</span><span class="o">::</span><span class="n">SmallVector</span><span class="o">&lt;</span><span class="n">llvm</span><span class="o">::</span><span class="n">APFloat</span><span class="o">&gt;</span><span class="w"> </span><span class="n">summed</span><span class="p">;</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">  </span><span class="n">summed</span><span class="p">.</span><span class="n">reserve</span><span class="p">(</span><span class="n">lhsAttr</span><span class="p">.</span><span class="n">getNumElements</span><span class="p">());</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="p">[</span><span class="n">l</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="p">]</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">llvm</span><span class="o">::</span><span class="n">zip</span><span class="p">(</span><span class="n">lhsValues</span><span class="p">,</span><span class="w"> </span><span class="n">rhsValues</span><span class="p">))</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="w">    </span><span class="n">summed</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">l</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">r</span><span class="p">);</span>
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">DenseElementsAttr</span><span class="o">::</span><span class="n">get</span><span class="p">(</span><span class="n">lhsAttr</span><span class="p">.</span><span class="n">getType</span><span class="p">(),</span><span class="w"> </span><span class="n">summed</span><span class="p">);</span>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="p">}</span>
+</code></pre></div>
+<p><code>adaptor.getLhs()</code>/<code>adaptor.getRhs()</code> genuinely return <code>Attribute</code>, not <code>Value</code> -- the real <code>FoldAdaptor</code> machinery has already done the work of checking whether each operand is itself a known constant before this function is even called; returning <code>nullptr</code> here means "no, I cannot fold this," a real, explicit, honest signal rather than a crash or a wrong answer.</p>
+<p>A third real piece turned out to be necessary, discovered directly by running this chapter's own code rather than assumed in advance: when <code>fold()</code> returns an <code>Attribute</code> instead of a <code>Value</code>, MLIR's own folding driver needs a way to turn that attribute back into a genuine new operation in the IR -- a new <code>mg.constant</code>, holding the summed result. That real hook is <code>Dialect::materializeConstant</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">def</span><span class="w"> </span><span class="n">Mg_Dialect</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">Dialect</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="p">...</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">hasConstantMaterializer</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="p">}</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">mlir</span><span class="o">::</span><span class="n">Operation</span><span class="w"> </span><span class="o">*</span><span class="nf">MgDialect::materializeConstant</span><span class="p">(</span><span class="n">mlir</span><span class="o">::</span><span class="n">OpBuilder</span><span class="w"> </span><span class="o">&amp;</span><span class="n">builder</span><span class="p">,</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">                                                </span><span class="n">mlir</span><span class="o">::</span><span class="n">Attribute</span><span class="w"> </span><span class="n">value</span><span class="p">,</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">                                                </span><span class="n">mlir</span><span class="o">::</span><span class="n">Type</span><span class="w"> </span><span class="n">type</span><span class="p">,</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">                                                </span><span class="n">mlir</span><span class="o">::</span><span class="n">Location</span><span class="w"> </span><span class="n">loc</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">elements</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">llvm</span><span class="o">::</span><span class="n">dyn_cast</span><span class="o">&lt;</span><span class="n">mlir</span><span class="o">::</span><span class="n">DenseElementsAttr</span><span class="o">&gt;</span><span class="p">(</span><span class="n">value</span><span class="p">);</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">elements</span><span class="p">)</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">nullptr</span><span class="p">;</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">builder</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">ConstantOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="p">,</span><span class="w"> </span><span class="n">elements</span><span class="p">);</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="p">}</span>
+</code></pre></div>
+<p>Leaving this out was this chapter's own first real attempt at <code>AddOp::fold</code> -- it compiled and ran, but <code>--canonicalize</code> silently left <code>mg.add</code> of two constants unfolded, with no error at all, because the driver had a real new attribute in hand but genuinely no way to materialize it back into the IR as an operation. Adding <code>materializeConstant</code> is what made the fold actually take effect, confirmed directly below.</p>
+<h2 id="mlirs-own-real-pattern-rewrite-infrastructure-rewritepattern">MLIR's own real pattern-rewrite infrastructure: <code>RewritePattern</code><a class="headerlink" href="#mlirs-own-real-pattern-rewrite-infrastructure-rewritepattern" title="Permanent link">&para;</a></h2>
+<p>A folder only ever looks at one operation's own operands. <code>TransposeOp</code>'s own new canonicalization -- <code>mg.transpose(mg.transpose(%x))</code> collapsing straight to <code>%x</code>, since transposing a 2-D tensor twice is the identity -- needs to look at a <em>second</em> operation (the inner transpose), which is exactly what the heavier, more general <code>RewritePattern</code> framework exists for:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">def</span><span class="w"> </span><span class="n">TransposeOp</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">Mg_Op</span><span class="p">&lt;</span><span class="s">"transpose"</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="n">Pure</span><span class="p">]&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="p">...</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">hasVerifier</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">  </span><span class="k">let</span><span class="w"> </span><span class="n">hasCanonicalizer</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="p">}</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="k">namespace</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="k">struct</span><span class="w"> </span><span class="nc">SimplifyRedundantTranspose</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">OpRewritePattern</span><span class="o">&lt;</span><span class="n">TransposeOp</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">  </span><span class="k">using</span><span class="w"> </span><span class="n">OpRewritePattern</span><span class="o">&lt;</span><span class="n">TransposeOp</span><span class="o">&gt;::</span><span class="n">OpRewritePattern</span><span class="p">;</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">  </span><span class="n">mlir</span><span class="o">::</span><span class="n">LogicalResult</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="w">  </span><span class="nf">matchAndRewrite</span><span class="p">(</span><span class="n">TransposeOp</span><span class="w"> </span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">PatternRewriter</span><span class="w"> </span><span class="o">&amp;</span><span class="n">rewriter</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">innerTranspose</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">op</span><span class="p">.</span><span class="n">getInput</span><span class="p">().</span><span class="n">getDefiningOp</span><span class="o">&lt;</span><span class="n">TransposeOp</span><span class="o">&gt;</span><span class="p">();</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">innerTranspose</span><span class="p">)</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">failure</span><span class="p">();</span>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="w">    </span><span class="n">rewriter</span><span class="p">.</span><span class="n">replaceOp</span><span class="p">(</span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">innerTranspose</span><span class="p">.</span><span class="n">getInput</span><span class="p">());</span>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">success</span><span class="p">();</span>
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="p">};</span>
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a><span class="p">}</span><span class="w"> </span><span class="c1">// namespace</span>
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>
+<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a><span class="kt">void</span><span class="w"> </span><span class="n">TransposeOp</span><span class="o">::</span><span class="n">getCanonicalizationPatterns</span><span class="p">(</span><span class="n">mlir</span><span class="o">::</span><span class="n">RewritePatternSet</span><span class="w"> </span><span class="o">&amp;</span><span class="n">results</span><span class="p">,</span>
+<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a><span class="w">                                              </span><span class="n">mlir</span><span class="o">::</span><span class="n">MLIRContext</span><span class="w"> </span><span class="o">*</span><span class="n">context</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a><span class="w">  </span><span class="n">results</span><span class="p">.</span><span class="n">add</span><span class="o">&lt;</span><span class="n">SimplifyRedundantTranspose</span><span class="o">&gt;</span><span class="p">(</span><span class="n">context</span><span class="p">);</span>
+<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a><span class="p">}</span>
+</code></pre></div>
+<p>This chapter's own <code>SimplifyRedundantTranspose</code> mirrors the same real idea MLIR's own official Toy tutorial demonstrates for its own transpose operation -- cited here as real precedent for <em>why</em> this is a standard first canonicalization example, not copied from it; every line above is this chapter's own, written fresh against Mountain Goat's own <code>TransposeOp</code>. <code>matchAndRewrite</code> is the one real method every <code>RewritePattern</code> must implement: <code>op.getInput().getDefiningOp&lt;TransposeOp&gt;()</code> is the "match" half (is my own input itself the result of another <code>mg.transpose</code>?), and <code>rewriter.replaceOp(op, innerTranspose.getInput())</code> is the "rewrite" half (if so, every use of the outer transpose's result is redirected straight to the innermost tensor, skipping both transposes entirely).</p>
+<h2 id="wiring-both-into-mg-opts-own-real-canonicalize">Wiring both into <code>mg-opt</code>'s own real <code>--canonicalize</code><a class="headerlink" href="#wiring-both-into-mg-opts-own-real-canonicalize" title="Permanent link">&para;</a></h2>
+<p>MLIR's own canonicalizer is itself a real, ordinary pass -- not special-cased machinery -- so <code>mg-opt</code> needs to genuinely register it, the same way <code>mlir-opt-18</code> itself does:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"mlir/Transforms/Passes.h"</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">**</span><span class="n">argv</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">  </span><span class="n">mlir</span><span class="o">::</span><span class="n">registerCanonicalizerPass</span><span class="p">();</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="w">  </span><span class="n">mlir</span><span class="o">::</span><span class="n">registerCSEPass</span><span class="p">();</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="w">  </span><span class="p">...</span>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="p">}</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">mg-opt</span><span class="w"> </span><span class="s">PRIVATE</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="s">MgDialect</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">  </span><span class="s">MLIRIR</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="w">  </span><span class="s">MLIRFuncDialect</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">  </span><span class="s">MLIROptLib</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="w">  </span><span class="s">MLIRParser</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="w">  </span><span class="s">MLIRSupport</span>
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="w">  </span><span class="s">MLIRTransforms</span>
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="p">)</span>
+</code></pre></div>
+<p><code>MLIRTransforms</code> is the one real library this chapter's own build needed to add -- without it, the real <code>mlir::createCanonicalizerPass()</code>/<code>mlir::createCSEPass()</code> symbols the registration functions reference are genuinely undefined at link time, caught directly by <code>ld</code>'s own real error, not guessed at:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>undefined reference to `mlir::createCanonicalizerPass()'
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>undefined reference to `mlir::createCSEPass()'
+</code></pre></div>
+<p>Rebuilding cleanly after adding <code>MLIRTransforms</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>cmake --build build -j4
+</code></pre></div>
+<p><strong>Real captured output:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>[ 50%] Built target MgOpsIncGen
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>[ 75%] Built target MgDialect
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>[ 87%] Linking CXX executable mg-opt
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>[100%] Built target mg-opt
+</code></pre></div></p>
+<h2 id="real-worked-example-both-rewrites-firing-together">Real worked example: both rewrites firing together<a class="headerlink" href="#real-worked-example-both-rewrites-firing-together" title="Permanent link">&para;</a></h2>
+<p>One real Mountain Goat program, deliberately written to exercise both this chapter's own new mechanisms at once -- a foldable <code>mg.add</code> of two constants, feeding a redundant double <code>mg.transpose</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>func.func @main() {
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>  %0 = mg.constant dense&lt;[[1.0, 2.0], [3.0, 4.0]]&gt; : tensor&lt;2x2xf64&gt;
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>  %1 = mg.constant dense&lt;[[5.0, 6.0], [7.0, 8.0]]&gt; : tensor&lt;2x2xf64&gt;
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>  %2 = mg.add %0, %1 : tensor&lt;2x2xf64&gt;, tensor&lt;2x2xf64&gt; -&gt; tensor&lt;2x2xf64&gt;
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>  %3 = mg.transpose %2 : tensor&lt;2x2xf64&gt; to tensor&lt;2x2xf64&gt;
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>  %4 = mg.transpose %3 : tensor&lt;2x2xf64&gt; to tensor&lt;2x2xf64&gt;
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a>  mg.print %4 : tensor&lt;2x2xf64&gt;
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>  func.return
+<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a>}
+</code></pre></div>
+<p>Running <code>mg-opt</code> on it once with no flags (to confirm the starting IR is exactly as written), then again with <code>--canonicalize</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>./mg-opt canonicalize_demo.mlir
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>./mg-opt canonicalize_demo.mlir --canonicalize
+</code></pre></div>
+<p><strong>Real captured output, before canonicalization:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>module {
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>  func.func @main() {
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>    %0 = mg.constant dense&lt;[[1.000000e+00, 2.000000e+00], [3.000000e+00, 4.000000e+00]]&gt; : tensor&lt;2x2xf64&gt;
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>    %1 = mg.constant dense&lt;[[5.000000e+00, 6.000000e+00], [7.000000e+00, 8.000000e+00]]&gt; : tensor&lt;2x2xf64&gt;
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>    %2 = mg.add %0, %1 : tensor&lt;2x2xf64&gt;, tensor&lt;2x2xf64&gt; -&gt; tensor&lt;2x2xf64&gt;
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>    %3 = mg.transpose %2 : tensor&lt;2x2xf64&gt; to tensor&lt;2x2xf64&gt;
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a>    %4 = mg.transpose %3 : tensor&lt;2x2xf64&gt; to tensor&lt;2x2xf64&gt;
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a>    mg.print %4 : tensor&lt;2x2xf64&gt;
+<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a>    return
+<a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a>  }
+<a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a>}
+</code></pre></div></p>
+<p><strong>Real captured output, after <code>--canonicalize</code>:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>module {
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>  func.func @main() {
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>    %0 = mg.constant dense&lt;[[6.000000e+00, 8.000000e+00], [1.000000e+01, 1.200000e+01]]&gt; : tensor&lt;2x2xf64&gt;
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>    mg.print %0 : tensor&lt;2x2xf64&gt;
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>    return
+<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>  }
+<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a>}
+</code></pre></div></p>
+<p>Both real rewrites genuinely fired, in one real pass: the double transpose is entirely gone (<code>%3</code>, <code>%4</code> never appear in the output), and <code>%0</code>, <code>%1</code>, <code>%2</code> have collapsed into one single, freshly-materialized <code>mg.constant</code> -- whose own values are real, correctly computed sums, not placeholders: <code>1+5=6</code>, <code>2+6=8</code>, <code>3+7=10</code>, <code>4+8=12</code>, exactly matching <code>[[6, 8], [10, 12]]</code>.</p>
+<h2 id="mlirs-own-real-canonicalizer-how-it-actually-decides-when-to-stop">MLIR's own real canonicalizer: how it actually decides when to stop<a class="headerlink" href="#mlirs-own-real-canonicalizer-how-it-actually-decides-when-to-stop" title="Permanent link">&para;</a></h2>
+<p>MLIR's own official documentation states the real algorithm directly, worth knowing before relying on it further:</p>
+<blockquote>
+<p>"MLIR has a single canonicalization pass, which iteratively applies the canonicalization patterns of all loaded dialects in a greedy way. Canonicalization is best-effort and not guaranteed to bring the entire IR in a canonical form. It applies patterns until either fixpoint is reached or the maximum number of iterations/rewrites (as specified via pass options) is exhausted." (<code>mlir/docs/Canonicalization.md</code>)</p>
+</blockquote>
+<p>This is exactly what this chapter's own worked example relied on without stating it until now: <code>--canonicalize</code> is not "apply <code>SimplifyRedundantTranspose</code> once, then apply <code>AddOp::fold</code> once" -- it is a real, greedy, iterate-to-fixpoint loop, which is precisely why both this chapter's own independent rewrites (one a folder, one a pattern, touching entirely different operations) fired together in a single invocation without this chapter needing to sequence them manually.</p>
+<h2 id="dialect-conversion-the-real-next-real-step-not-yet-taken">Dialect conversion: the real next real step, not yet taken<a class="headerlink" href="#dialect-conversion-the-real-next-real-step-not-yet-taken" title="Permanent link">&para;</a></h2>
+<p>This chapter's own two rewrites both keep every operation inside the <code>mg</code> dialect -- <code>SimplifyRedundantTranspose</code> deletes operations, <code>AddOp</code>'s folder replaces operations, but neither one ever introduces an operation from a <em>different</em> dialect. MLIR's own real dialect conversion framework exists for exactly that harder, different problem, stated directly in its own official documentation:</p>
+<blockquote>
+<p>"This document describes a framework in MLIR in which to perform operation conversions between, and within dialects. This framework allows for transforming illegal operations to those supported by a provided conversion target, via a set of pattern-based operation rewriting patterns." (<code>mlir/docs/DialectConversion.md</code>)</p>
+</blockquote>
+<p>A real <code>ConversionTarget</code> (which operations/dialects are "legal" to remain), a real <code>TypeConverter</code> (how do types in the source dialect map to types in the destination dialect), and real <code>ConversionPattern</code>s (an extended <code>RewritePattern</code>, aware of operands that may themselves already be mid-conversion) are the three real pieces that framework needs -- genuinely more machinery than this chapter's own two same-dialect rewrites required, and deliberately left for Part 3, where Mountain Goat's own <code>mg</code> operations are actually lowered to MLIR's real <code>affine</code> dialect for the first time.</p>
+<h2 id="chapter-summary">Chapter summary<a class="headerlink" href="#chapter-summary" title="Permanent link">&para;</a></h2>
+<p>This chapter closed a real, stated gap from Chapter 2 (<code>AddOp</code> now genuinely verifies its own operands' shapes match), then built two genuinely different real rewrite mechanisms into Mountain Goat's own dialect: a constant-folding <code>fold()</code> hook (<code>ConstantOp</code>, <code>AddOp</code>), requiring the real <code>ConstantLike</code> trait and a real <code>materializeConstant</code> hook to actually take effect -- a real, non-obvious requirement this chapter discovered by running the code, not by reading ahead -- and a general <code>RewritePattern</code> (<code>SimplifyRedundantTranspose</code>), MLIR's own heavier, more capable framework for rewrites that need to see more than one operation's own operands. Both were wired into a genuinely rebuilt <code>mg-opt</code>'s own <code>--canonicalize</code> pass (needing the real <code>MLIRTransforms</code> library, discovered the same way, via a genuine link error) and run together on one real program, collapsing it, correctly, from seven operations down to two.</p>
+<p>Deliberately out of scope, stated explicitly: no operation has been lowered to a <em>different</em> dialect yet -- both this chapter's own rewrites stay entirely inside <code>mg</code>. Real dialect conversion (<code>ConversionTarget</code>, <code>TypeConverter</code>, <code>ConversionPattern</code>) is introduced here only conceptually, cited from its own real official documentation; actually using it to lower Mountain Goat to <code>affine</code> is Part 3's own real subject.</p>
+<h2 id="self-check-questions">Self-check questions<a class="headerlink" href="#self-check-questions" title="Permanent link">&para;</a></h2>
+<p><strong>1. <code>ConstantOp::fold</code> and <code>AddOp::fold</code> are both real, legitimate uses of MLIR's folding hook, but they differ in an important way. What is it, and why does only one of them need to inspect its own operands' actual values?</strong></p>
+<p>Worked answer: <code>ConstantOp::fold</code> always succeeds, unconditionally returning <code>getValueAttr()</code> -- a constant is already its own answer, nothing to inspect. <code>AddOp::fold</code> is conditional: it has to check, via <code>dyn_cast_if_present&lt;DenseElementsAttr&gt;</code>, whether its own two real operands are themselves constants before it can do anything; if either is some other, non-constant value (the general, common case), it genuinely returns <code>nullptr</code>, declining to fold rather than failing or guessing.</p>
+<p><strong>2. The chapter states that leaving out <code>MgDialect::materializeConstant</code> caused <code>--canonicalize</code> to silently leave <code>mg.add</code> of two constants unfolded, with no error. Why no error specifically, rather than a crash or a compile failure?</strong></p>
+<p>Worked answer: <code>AddOp::fold</code> itself ran successfully and genuinely computed the correct summed <code>DenseElementsAttr</code> -- the folding <em>logic</em> was never broken. What was missing was purely the real, separate step of turning that resulting attribute back into an operation the IR could actually hold; without <code>materializeConstant</code>, the canonicalizer's own driver has a valid folded attribute in hand but no real way to re-insert it, and its own documented behavior for that situation is to leave the original operation alone rather than crash -- "best-effort," exactly as <code>mlir/docs/Canonicalization.md</code> states directly.</p>
+<p><strong>3. Why does <code>SimplifyRedundantTranspose</code> need the heavier <code>RewritePattern</code> framework, when <code>AddOp</code>'s constant folding only needed the lighter <code>fold()</code> hook?</strong></p>
+<p>Worked answer: <code>AddOp::fold</code> only ever needs to look at its own two direct operands -- exactly what the <code>FoldAdaptor</code> it receives already hands it. <code>SimplifyRedundantTranspose</code> needs to look <em>past</em> its own one operand, at the operation that produced it (<code>op.getInput().getDefiningOp&lt;TransposeOp&gt;()</code>) -- a second, separate operation entirely, possibly with its own separate uses elsewhere in the IR that <code>rewriter.replaceOp</code> has to correctly redirect. <code>fold()</code>'s own narrower contract has no access to a <code>PatternRewriter</code> capable of safely making that kind of broader IR surgery; <code>RewritePattern</code> is the real framework built for exactly that larger class of rewrite.</p>
+<p><strong>4. The real captured <code>--canonicalize</code> output collapses the chapter's own seven-operation example down to two in one single pass invocation, despite <code>SimplifyRedundantTranspose</code> and <code>AddOp</code>'s folder being two entirely independent, separately-written real rewrites. What makes that single-pass result genuinely correct rather than lucky?</strong></p>
+<p>Worked answer: MLIR's own real canonicalizer is explicitly documented as a greedy, iterate-to-fixpoint driver -- it keeps re-applying every registered pattern and folder across the whole IR until no further change occurs (or an iteration limit is hit), not a single linear sweep that visits each operation exactly once. That is precisely why this chapter's own two independent rewrites, touching entirely different operations (<code>mg.add</code> versus <code>mg.transpose</code>), did not need to be manually sequenced or run as two separate passes -- the same one greedy loop kept applying both until nothing more could fire.</p>
+<p><strong>5. Why does this chapter explicitly defer real dialect conversion (<code>ConversionTarget</code>, <code>TypeConverter</code>, <code>ConversionPattern</code>) to Part 3 instead of demonstrating it here, given <code>mlir/docs/DialectConversion.md</code> is already cited in this very chapter?</strong></p>
+<p>Worked answer: both of this chapter's own real rewrites are deliberately same-dialect: <code>SimplifyRedundantTranspose</code> only ever deletes <code>mg.transpose</code> operations and redirects existing SSA values, and <code>AddOp</code>'s folder only ever replaces <code>mg.add</code>/<code>mg.constant</code> operations with another <code>mg.constant</code> -- no operation from any other dialect is ever introduced. Dialect conversion's own real machinery (a <code>ConversionTarget</code> declaring what is "illegal," a <code>TypeConverter</code> mapping types across dialects) exists specifically for the harder case this chapter never actually needed: turning an illegal operation in one dialect into a legal one in a genuinely different dialect, which is exactly Part 3's own real subject once Mountain Goat is lowered to <code>affine</code>.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../../part2/02-a-minimal-dialect-from-scratch/" class="md-footer__link md-footer__link--prev" aria-label="Previous: 2. A Minimal Dialect From Scratch: Mountain Goat&#39;s Own mg Dialect">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                2. A Minimal Dialect From Scratch: Mountain Goat's Own mg Dialect
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 Oluwaseyi Awoga
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

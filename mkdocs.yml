@@ -69,6 +69,7 @@ nav:
       - "3. The Real Pass Infrastructure: Canonicalizing Mountain Goat": part3/03-the-pass-infrastructure.md
   - "Part 3 -- Progressive Lowering":
       - "4. Progressive Lowering: Mountain Goat to affine, Two Real Ways": part4/04-progressive-lowering-to-affine.md
+      - "5. Finishing Progressive Lowering: affine to scf to llvm": part5/05-affine-to-scf-to-llvm.md
 
 extra:
   social: []

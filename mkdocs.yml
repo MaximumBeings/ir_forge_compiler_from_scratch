@@ -72,6 +72,7 @@ nav:
       - "5. Finishing Progressive Lowering: affine to scf to llvm": part5/05-affine-to-scf-to-llvm.md
   - "Part 4 -- Optimization Across Levels":
       - "6. Real Bufferization: Closing Chapter 4's Own Honest Gap": part6/06-real-bufferization.md
+      - "7. Real Loop Transforms: Fusion, Tiling, and Unrolling at the affine Level": part7/07-real-loop-transforms.md
 
 extra:
   social: []

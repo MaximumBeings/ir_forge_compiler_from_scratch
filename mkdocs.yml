@@ -79,6 +79,8 @@ nav:
   - "Part 6 -- GPU Lowering":
       - "10. GPU Lowering: Mountain Goat to the gpu Dialect, NVVM, and Real PTX": part10/10-gpu-lowering-to-ptx.md
       - "11. The GPU Host Side: Device Memory, Real Runtime Calls, and a Stub Device": part11/11-the-gpu-host-side.md
+  - "Part 7 -- Case Studies":
+      - "12. Reading MLIR's Own Production Pipelines: What This Book's Compiler Is Missing": part12/12-reading-the-production-pipelines.md
 
 extra:
   social: []

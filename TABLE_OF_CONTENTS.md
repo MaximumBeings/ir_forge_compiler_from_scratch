@@ -12,7 +12,7 @@ Chapter 1 (DONE, commit 299cff3): "Why a Multi-Level IR at All" -- the real cost
 
 ## Part 1 -- A Minimal Dialect From Scratch (queued, not yet scoped)
 
-Representing a small toy source language as a real custom MLIR dialect (ops, types, attributes, traits) using MLIR's own real TableGen-based dialect definition system; a small real frontend parsing source text into that dialect; shape inference and verification; tooling to print and visualize the dialect's own IR while developing it.
+Representing **Mountain Goat** -- this book's own small toy source language (tensor/array expressions and functions) -- as a real custom MLIR dialect (ops, types, attributes, traits) using MLIR's own real TableGen-based dialect definition system; a small real frontend parsing Mountain Goat source text into that dialect; shape inference and verification; tooling to print and visualize the dialect's own IR while developing it.
 
 ## Part 2 -- The Pass Infrastructure (queued, not yet scoped)
 
@@ -32,7 +32,7 @@ Translating the `llvm` dialect to real LLVM IR (Chapter 1's own real `mlir-trans
 
 ## Part 6 -- GPU Lowering (queued, not yet scoped)
 
-Lowering to the real `gpu` dialect; generating real NVVM IR; JIT-compiling and launching an actual GPU kernel from the same one pipeline.
+Lowering Mountain Goat to the real `gpu` dialect; generating real NVVM IR; JIT-compiling and launching an actual GPU kernel from the same one pipeline -- and, as a direct real comparison, writing and compiling an equivalent genuine CUDA C++ kernel with `nvcc`/`clang` and setting its real generated code beside Mountain Goat's own GPU-lowered output, so the comparison is between two real compiled artifacts, not a description of one against a memory of the other.
 
 ## Part 7 -- Case Studies (queued, not yet scoped)
 

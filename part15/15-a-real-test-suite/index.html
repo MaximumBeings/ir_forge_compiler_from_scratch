@@ -16,6 +16,8 @@
         <link rel="prev" href="../../part14/14-runtime-shape-checks/">
       
       
+        <link rel="next" href="../../part16/16-testing-the-gpu-path-and-loop-transforms/">
+      
       
         
       
@@ -1327,6 +1329,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part16/16-testing-the-gpu-path-and-loop-transforms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    16. Testing the GPU Path and the Loop Transforms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1573,7 +1603,7 @@
 <h2 id="what-the-suite-does-not-cover">What the suite does not cover<a class="headerlink" href="#what-the-suite-does-not-cover" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>No CI.</strong> Nothing runs these tests automatically on a push; they run when someone executes <code>./run_lit.sh</code>. A GitHub Actions workflow is the natural next step and is not written here, partly because it would need the MLIR 18 packages installed on the runner, which this sandbox cannot test.</li>
-<li><strong>Chapters 1, 2, 9, 10, 11 and 12 are untested here.</strong> The dialect's own build (Chapter 2), the <code>ExecutionEngine</code> host (Chapter 9), and the GPU pipeline (Chapters 10 through 12) have no tests in this suite. The GPU lowering up to PTX needs no GPU, so it could be tested with <code>mlir-opt-18</code> and <code>FileCheck</code>; this chapter did not do it.</li>
+<li><strong>Chapters 1, 2, 9, 10, 11 and 12 are untested here.</strong> <em>(Update, added after Chapter 16: Chapters 10 through 12 and Chapter 7's tiling and unrolling are now covered, taking the suite to 34 tests; Chapters 1, 2 and 9 are still untested. The totals recorded in this chapter's <code>older_out.txt</code> and <code>mutation_out.txt</code> are for the 22-test suite; Chapter 16 re-ran them as <code>older_out_34.txt</code> and <code>mutation_out_34.txt</code>.)</em> The dialect's own build (Chapter 2), the <code>ExecutionEngine</code> host (Chapter 9), and the GPU pipeline (Chapters 10 through 12) have no tests in this suite. The GPU lowering up to PTX needs no GPU, so it could be tested with <code>mlir-opt-18</code> and <code>FileCheck</code>; this chapter did not do it.</li>
 <li><strong>Loop transforms: one test.</strong> Fusion is covered; tiling and unrolling (Chapter 7) are not.</li>
 <li><strong>Tests encode current behavior.</strong> They show the compiler behaves as it does now, not that it is <em>correct</em>; the expected values were taken from outputs Chapters 3 through 14 had already validated by hand.</li>
 <li><strong>The abort message</strong> is only checked under <code>stdbuf -oL</code>, because Chapter 14 found it is lost when stdout is a pipe: a test that failed on that would be testing the C library, not <code>mg</code>.</li>
@@ -1638,6 +1668,22 @@
             </div>
           </a>
         
+        
+          
+          <a href="../../part16/16-testing-the-gpu-path-and-loop-transforms/" class="md-footer__link md-footer__link--next" aria-label="Next: 16. Testing the GPU Path and the Loop Transforms">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                16. Testing the GPU Path and the Loop Transforms
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
         
       </nav>
     

@@ -1,0 +1,10 @@
+[stub] stream create
+[stub] alloc 32 bytes
+[stub] alloc 32 bytes
+[stub] alloc 32 bytes
+[stub] memcpy 32 bytes
+[stub] memcpy 32 bytes
+[stub] module load: optLevel=2, PTX has .entry add_tensors_kernel: yes
+[stub] launch add_tensors_kernel: grid=(2,1,1) block=(2,1,1) nparams=5
+[stub] stream create
+[stub] memcpy 32 bytes

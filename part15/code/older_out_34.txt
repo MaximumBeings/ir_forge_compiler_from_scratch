@@ -1,0 +1,26 @@
+[100%] Built target mg-opt
+=================== Chapter 7 build (no dynamic shapes)
+  Failed: 13 (38.24%)
+  Passed: 21 (61.76%)
+FAIL: canonicalize/transpose-twice-dynamic-mixed.mlir
+FAIL: execution/dynamic-shapes-run.mlir
+FAIL: execution/mismatch-aborts.mlir
+FAIL: execution/mismatch-columns-aborts.mlir
+FAIL: execution/mixed-static-dynamic.mlir
+FAIL: execution/strided-view.mlir
+FAIL: lowering/bufferize-dynamic-add.mlir
+FAIL: lowering/dynamic-add-affine.mlir
+FAIL: lowering/dynamic-transpose-no-check.mlir
+FAIL: lowering/mixed-add-one-check.mlir
+FAIL: verifier/add-static-mismatch.mlir
+FAIL: verifier/dynamic-accepted.mlir
+FAIL: verifier/unranked-rejected.mlir
+=================== Chapter 13 build (dynamic shapes, no runtime check)
+  Failed:  6 (17.65%)
+  Passed: 28 (82.35%)
+FAIL: execution/mismatch-aborts.mlir
+FAIL: execution/mismatch-columns-aborts.mlir
+FAIL: execution/mixed-static-dynamic.mlir
+FAIL: lowering/bufferize-dynamic-add.mlir
+FAIL: lowering/dynamic-add-affine.mlir
+FAIL: lowering/mixed-add-one-check.mlir

@@ -1,0 +1,1482 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A Toy Language Compiled Through a Real MLIR Dialect, Down to Real Native Machine Code">
+      
+      
+        <meta name="author" content="Oluwaseyi Awoga">
+      
+      
+      
+        <link rel="prev" href="../../part5/05-affine-to-scf-to-llvm/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>6. Real Bufferization: Closing Chapter 4's Own Honest Gap - IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#6-real-bufferization-closing-chapter-4s-own-honest-gap" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-header__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              6. Real Bufferization: Closing Chapter 4's Own Honest Gap
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-nav__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part1/01-why-a-multi-level-ir-at-all/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1. Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part2/02-a-minimal-dialect-from-scratch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2. A Minimal Dialect From Scratch: Mountain Goat's Own mg Dialect
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part3/03-the-pass-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3. The Real Pass Infrastructure: Canonicalizing Mountain Goat
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 3 -- Progressive Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 3 -- Progressive Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part4/04-progressive-lowering-to-affine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4. Progressive Lowering: Mountain Goat to affine, Two Real Ways
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part5/05-affine-to-scf-to-llvm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5. Finishing Progressive Lowering: affine to scf to llvm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 4 -- Optimization Across Levels
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 4 -- Optimization Across Levels
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6. Real Bufferization: Closing Chapter 4's Own Honest Gap
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6. Real Bufferization: Closing Chapter 4's Own Honest Gap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-real-question-this-chapter-answers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The real question this chapter answers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#four-real-external-models-one-per-operation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Four real external models, one per operation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Four real external models, one per operation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mgconstant-the-simplest-real-case" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mg.constant: the simplest real case
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mgadd-and-mgtranspose-real-answers-about-reading-writing-and-aliasing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mg.add and mg.transpose: real answers about reading, writing, and aliasing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mgprint-reusing-chapter-5s-own-real-mechanism-not-reinventing-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mg.print: reusing Chapter 5's own real mechanism, not reinventing it
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#registering-the-four-real-external-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Registering the four real external models
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#real-worked-example-the-negative-result-from-chapter-4-reversed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Real worked example: the negative result from Chapter 4, reversed
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-real-honest-surprise-no-constant-folding-this-time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A real, honest surprise: no constant-folding this time
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-second-real-honest-difference-function-argument-buffer-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A second real, honest difference: function-argument buffer types
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#real-worked-example-genuinely-re-running-the-full-pipeline-to-the-same-real-answer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Real worked example: genuinely re-running the full pipeline to the same real answer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-real-question-this-chapter-answers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The real question this chapter answers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#four-real-external-models-one-per-operation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Four real external models, one per operation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Four real external models, one per operation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mgconstant-the-simplest-real-case" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mg.constant: the simplest real case
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mgadd-and-mgtranspose-real-answers-about-reading-writing-and-aliasing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mg.add and mg.transpose: real answers about reading, writing, and aliasing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mgprint-reusing-chapter-5s-own-real-mechanism-not-reinventing-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mg.print: reusing Chapter 5's own real mechanism, not reinventing it
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#registering-the-four-real-external-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Registering the four real external models
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#real-worked-example-the-negative-result-from-chapter-4-reversed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Real worked example: the negative result from Chapter 4, reversed
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-real-honest-surprise-no-constant-folding-this-time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A real, honest surprise: no constant-folding this time
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-second-real-honest-difference-function-argument-buffer-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A second real, honest difference: function-argument buffer types
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#real-worked-example-genuinely-re-running-the-full-pipeline-to-the-same-real-answer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Real worked example: genuinely re-running the full pipeline to the same real answer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="6-real-bufferization-closing-chapter-4s-own-honest-gap">6. Real Bufferization: Closing Chapter 4's Own Honest Gap<a class="headerlink" href="#6-real-bufferization-closing-chapter-4s-own-honest-gap" title="Permanent link">&para;</a></h1>
+<p><strong>What you will understand:</strong> how to make MLIR's own real, built-in <code>--one-shot-bufferize</code> pass genuinely succeed on a custom dialect, by implementing the real <code>BufferizableOpInterface</code> -- the exact extension point Chapter 4 named but did not use, when it ran into a real, honest failure (<code>error: op was not bufferized</code>) and deferred the fix. This chapter closes that gap for real, and the result is a second, entirely independent way to get Mountain Goat's own tensor IR down to memrefs -- not a replacement for Chapter 4's hand-written pass, a second real path, compared directly against the first.</p>
+<p><strong>What you need to know first:</strong> Chapter 4's own <code>ConvertMgToAffinePass</code> and its real negative result against <code>--one-shot-bufferize</code>; Chapter 3's own constant-folding discussion; Chapter 5's own <code>printMemrefF64</code> mechanism, reused directly in this chapter rather than reinvented.</p>
+<h2 id="the-real-question-this-chapter-answers">The real question this chapter answers<a class="headerlink" href="#the-real-question-this-chapter-answers" title="Permanent link">&para;</a></h2>
+<p>Chapter 4 cited MLIR's own real documentation stating plainly what <code>BufferizableOpInterface</code> requires (<code>bufferizesToMemoryRead</code>, <code>bufferizesToMemoryWrite</code>, at minimum) and predicted, without yet testing it, that implementing the real interface would be <em>more</em> work than the hand-written <code>ConvertMgToAffinePass</code> -- because One-Shot Bufferize's own whole-function analysis asks each op to correctly answer questions about aliasing and in-place reuse that a simple, always-allocate-fresh pass never has to consider. This chapter tests that prediction directly: implement the real interface for all four <code>mg</code> operations, and find out, by actually running it, whether <code>--one-shot-bufferize</code> now succeeds -- and what, concretely, the extra work turned out to be.</p>
+<h2 id="four-real-external-models-one-per-operation">Four real external models, one per operation<a class="headerlink" href="#four-real-external-models-one-per-operation" title="Permanent link">&para;</a></h2>
+<p>MLIR's own real mechanism for attaching an interface to an operation <em>after</em> it is already defined -- exactly Mountain Goat's own situation, since <code>mg</code>'s ODS definitions (Chapter 2) were written before this chapter existed -- is an "external model," registered once via a <code>DialectRegistry</code> extension rather than baked into the <code>.td</code> file itself.</p>
+<h3 id="mgconstant-the-simplest-real-case"><code>mg.constant</code>: the simplest real case<a class="headerlink" href="#mgconstant-the-simplest-real-case" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">struct</span><span class="w"> </span><span class="nc">ConstantOpInterface</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">BufferizableOpInterface</span><span class="o">::</span><span class="n">ExternalModel</span><span class="o">&lt;</span><span class="n">ConstantOpInterface</span><span class="p">,</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">                                                     </span><span class="n">mg</span><span class="o">::</span><span class="n">ConstantOp</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="kt">bool</span><span class="w"> </span><span class="nf">bufferizesToAllocation</span><span class="p">(</span><span class="n">Operation</span><span class="w"> </span><span class="o">*</span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">Value</span><span class="w"> </span><span class="n">value</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="n">LogicalResult</span><span class="w"> </span><span class="nf">bufferize</span><span class="p">(</span><span class="n">Operation</span><span class="w"> </span><span class="o">*</span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">RewriterBase</span><span class="w"> </span><span class="o">&amp;</span><span class="n">rewriter</span><span class="p">,</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">                          </span><span class="k">const</span><span class="w"> </span><span class="n">BufferizationOptions</span><span class="w"> </span><span class="o">&amp;</span><span class="n">options</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">constantOp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cast</span><span class="o">&lt;</span><span class="n">mg</span><span class="o">::</span><span class="n">ConstantOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">op</span><span class="p">);</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">loc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">op</span><span class="o">-&gt;</span><span class="n">getLoc</span><span class="p">();</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">tensorType</span><span class="w"> </span><span class="o">=</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">        </span><span class="n">cast</span><span class="o">&lt;</span><span class="n">RankedTensorType</span><span class="o">&gt;</span><span class="p">(</span><span class="n">constantOp</span><span class="p">.</span><span class="n">getResult</span><span class="p">().</span><span class="n">getType</span><span class="p">());</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">memrefType</span><span class="w"> </span><span class="o">=</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">        </span><span class="n">MemRefType</span><span class="o">::</span><span class="n">get</span><span class="p">(</span><span class="n">tensorType</span><span class="p">.</span><span class="n">getShape</span><span class="p">(),</span><span class="w"> </span><span class="n">tensorType</span><span class="p">.</span><span class="n">getElementType</span><span class="p">());</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">alloc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rewriter</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">memref</span><span class="o">::</span><span class="n">AllocOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span><span class="w"> </span><span class="n">memrefType</span><span class="p">);</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">    </span><span class="n">llvm</span><span class="o">::</span><span class="n">SmallVector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="w"> </span><span class="n">values</span><span class="p">;</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="n">v</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">constantOp</span><span class="p">.</span><span class="n">getValue</span><span class="p">().</span><span class="n">getValues</span><span class="o">&lt;</span><span class="n">llvm</span><span class="o">::</span><span class="n">APFloat</span><span class="o">&gt;</span><span class="p">())</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">      </span><span class="n">values</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">v</span><span class="p">.</span><span class="n">convertToDouble</span><span class="p">());</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">shape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tensorType</span><span class="p">.</span><span class="n">getShape</span><span class="p">();</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">    </span><span class="kt">int64_t</span><span class="w"> </span><span class="n">idx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int64_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="w">      </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int64_t</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span><span class="w"> </span><span class="o">++</span><span class="n">j</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="w">        </span><span class="n">Value</span><span class="w"> </span><span class="n">cst</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rewriter</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">arith</span><span class="o">::</span><span class="n">ConstantOp</span><span class="o">&gt;</span><span class="p">(</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="w">            </span><span class="n">loc</span><span class="p">,</span><span class="w"> </span><span class="n">rewriter</span><span class="p">.</span><span class="n">getF64FloatAttr</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="n">idx</span><span class="o">++</span><span class="p">]));</span>
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="w">        </span><span class="n">Value</span><span class="w"> </span><span class="n">iIdx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rewriter</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">arith</span><span class="o">::</span><span class="n">ConstantIndexOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">);</span>
+<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a><span class="w">        </span><span class="n">Value</span><span class="w"> </span><span class="n">jIdx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rewriter</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">arith</span><span class="o">::</span><span class="n">ConstantIndexOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span><span class="w"> </span><span class="n">j</span><span class="p">);</span>
+<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a><span class="w">        </span><span class="n">rewriter</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">affine</span><span class="o">::</span><span class="n">AffineStoreOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span><span class="w"> </span><span class="n">cst</span><span class="p">,</span><span class="w"> </span><span class="n">alloc</span><span class="p">,</span>
+<a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a><span class="w">                                               </span><span class="n">ValueRange</span><span class="p">{</span><span class="n">iIdx</span><span class="p">,</span><span class="w"> </span><span class="n">jIdx</span><span class="p">});</span>
+<a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a><span class="w">      </span><span class="p">}</span>
+<a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a>
+<a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a><span class="w">    </span><span class="n">replaceOpWithBufferizedValues</span><span class="p">(</span><span class="n">rewriter</span><span class="p">,</span><span class="w"> </span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">alloc</span><span class="p">.</span><span class="n">getResult</span><span class="p">());</span>
+<a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">success</span><span class="p">();</span>
+<a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a><span class="p">};</span>
+</code></pre></div>
+<p><code>mg.constant</code> has no tensor <em>operands</em> at all -- only a result, produced from an attribute it already owns outright. <code>bufferizesToAllocation</code> returning <code>true</code> is this chapter's own first real, required answer: it tells One-Shot Bufferize's own analysis that this value is a genuinely fresh buffer, never aliasing anything else in the function. The <code>bufferize()</code> body itself is, element for element, the same real logic as Chapter 4's own <code>ConstantOpLowering</code> -- a different real entry point into MLIR's own machinery, not different work.</p>
+<h3 id="mgadd-and-mgtranspose-real-answers-about-reading-writing-and-aliasing"><code>mg.add</code> and <code>mg.transpose</code>: real answers about reading, writing, and aliasing<a class="headerlink" href="#mgadd-and-mgtranspose-real-answers-about-reading-writing-and-aliasing" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">struct</span><span class="w"> </span><span class="nc">AddOpInterface</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">BufferizableOpInterface</span><span class="o">::</span><span class="n">ExternalModel</span><span class="o">&lt;</span><span class="n">AddOpInterface</span><span class="p">,</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">                                                     </span><span class="n">mg</span><span class="o">::</span><span class="n">AddOp</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="kt">bool</span><span class="w"> </span><span class="nf">bufferizesToMemoryRead</span><span class="p">(</span><span class="n">Operation</span><span class="w"> </span><span class="o">*</span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">OpOperand</span><span class="w"> </span><span class="o">&amp;</span><span class="n">opOperand</span><span class="p">,</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">                              </span><span class="k">const</span><span class="w"> </span><span class="n">AnalysisState</span><span class="w"> </span><span class="o">&amp;</span><span class="n">state</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">  </span><span class="kt">bool</span><span class="w"> </span><span class="nf">bufferizesToMemoryWrite</span><span class="p">(</span><span class="n">Operation</span><span class="w"> </span><span class="o">*</span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">OpOperand</span><span class="w"> </span><span class="o">&amp;</span><span class="n">opOperand</span><span class="p">,</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">                               </span><span class="k">const</span><span class="w"> </span><span class="n">AnalysisState</span><span class="w"> </span><span class="o">&amp;</span><span class="n">state</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">  </span><span class="kt">bool</span><span class="w"> </span><span class="nf">bufferizesToAllocation</span><span class="p">(</span><span class="n">Operation</span><span class="w"> </span><span class="o">*</span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">Value</span><span class="w"> </span><span class="n">value</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">  </span><span class="n">AliasingValueList</span><span class="w"> </span><span class="nf">getAliasingValues</span><span class="p">(</span><span class="n">Operation</span><span class="w"> </span><span class="o">*</span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">OpOperand</span><span class="w"> </span><span class="o">&amp;</span><span class="n">opOperand</span><span class="p">,</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">                                      </span><span class="k">const</span><span class="w"> </span><span class="n">AnalysisState</span><span class="w"> </span><span class="o">&amp;</span><span class="n">state</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">{};</span>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="w">  </span><span class="n">LogicalResult</span><span class="w"> </span><span class="nf">bufferize</span><span class="p">(</span><span class="n">Operation</span><span class="w"> </span><span class="o">*</span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">RewriterBase</span><span class="w"> </span><span class="o">&amp;</span><span class="n">rewriter</span><span class="p">,</span>
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="w">                          </span><span class="k">const</span><span class="w"> </span><span class="n">BufferizationOptions</span><span class="w"> </span><span class="o">&amp;</span><span class="n">options</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">addOp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cast</span><span class="o">&lt;</span><span class="n">mg</span><span class="o">::</span><span class="n">AddOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">op</span><span class="p">);</span>
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">loc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">op</span><span class="o">-&gt;</span><span class="n">getLoc</span><span class="p">();</span>
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>
+<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="w">    </span><span class="n">FailureOr</span><span class="o">&lt;</span><span class="n">Value</span><span class="o">&gt;</span><span class="w"> </span><span class="n">lhsBuffer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getBuffer</span><span class="p">(</span><span class="n">rewriter</span><span class="p">,</span><span class="w"> </span><span class="n">addOp</span><span class="p">.</span><span class="n">getLhs</span><span class="p">(),</span><span class="w"> </span><span class="n">options</span><span class="p">);</span>
+<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">failed</span><span class="p">(</span><span class="n">lhsBuffer</span><span class="p">))</span>
+<a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="n">failure</span><span class="p">();</span>
+<a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="w">    </span><span class="n">FailureOr</span><span class="o">&lt;</span><span class="n">Value</span><span class="o">&gt;</span><span class="w"> </span><span class="n">rhsBuffer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getBuffer</span><span class="p">(</span><span class="n">rewriter</span><span class="p">,</span><span class="w"> </span><span class="n">addOp</span><span class="p">.</span><span class="n">getRhs</span><span class="p">(),</span><span class="w"> </span><span class="n">options</span><span class="p">);</span>
+<a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">failed</span><span class="p">(</span><span class="n">rhsBuffer</span><span class="p">))</span>
+<a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="n">failure</span><span class="p">();</span>
+<a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a>
+<a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">tensorType</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cast</span><span class="o">&lt;</span><span class="n">RankedTensorType</span><span class="o">&gt;</span><span class="p">(</span><span class="n">addOp</span><span class="p">.</span><span class="n">getResult</span><span class="p">().</span><span class="n">getType</span><span class="p">());</span>
+<a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">memrefType</span><span class="w"> </span><span class="o">=</span>
+<a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a><span class="w">        </span><span class="n">MemRefType</span><span class="o">::</span><span class="n">get</span><span class="p">(</span><span class="n">tensorType</span><span class="p">.</span><span class="n">getShape</span><span class="p">(),</span><span class="w"> </span><span class="n">tensorType</span><span class="p">.</span><span class="n">getElementType</span><span class="p">());</span>
+<a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">alloc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rewriter</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">memref</span><span class="o">::</span><span class="n">AllocOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span><span class="w"> </span><span class="n">memrefType</span><span class="p">);</span>
+<a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">shape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tensorType</span><span class="p">.</span><span class="n">getShape</span><span class="p">();</span>
+<a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a>
+<a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a><span class="w">    </span><span class="n">affine</span><span class="o">::</span><span class="n">buildAffineLoopNest</span><span class="p">(</span>
+<a id="__codelineno-1-39" name="__codelineno-1-39" href="#__codelineno-1-39"></a><span class="w">        </span><span class="n">rewriter</span><span class="p">,</span><span class="w"> </span><span class="n">loc</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">},</span><span class="w"> </span><span class="p">{</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="w"> </span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]},</span><span class="w"> </span><span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">},</span>
+<a id="__codelineno-1-40" name="__codelineno-1-40" href="#__codelineno-1-40"></a><span class="w">        </span><span class="p">[</span><span class="o">&amp;</span><span class="p">](</span><span class="n">OpBuilder</span><span class="w"> </span><span class="o">&amp;</span><span class="n">nestedBuilder</span><span class="p">,</span><span class="w"> </span><span class="n">Location</span><span class="w"> </span><span class="n">nestedLoc</span><span class="p">,</span><span class="w"> </span><span class="n">ValueRange</span><span class="w"> </span><span class="n">ivs</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-41" name="__codelineno-1-41" href="#__codelineno-1-41"></a><span class="w">          </span><span class="n">Value</span><span class="w"> </span><span class="n">lhsVal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nestedBuilder</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">affine</span><span class="o">::</span><span class="n">AffineLoadOp</span><span class="o">&gt;</span><span class="p">(</span>
+<a id="__codelineno-1-42" name="__codelineno-1-42" href="#__codelineno-1-42"></a><span class="w">              </span><span class="n">nestedLoc</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">lhsBuffer</span><span class="p">,</span><span class="w"> </span><span class="n">ivs</span><span class="p">);</span>
+<a id="__codelineno-1-43" name="__codelineno-1-43" href="#__codelineno-1-43"></a><span class="w">          </span><span class="n">Value</span><span class="w"> </span><span class="n">rhsVal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nestedBuilder</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">affine</span><span class="o">::</span><span class="n">AffineLoadOp</span><span class="o">&gt;</span><span class="p">(</span>
+<a id="__codelineno-1-44" name="__codelineno-1-44" href="#__codelineno-1-44"></a><span class="w">              </span><span class="n">nestedLoc</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">rhsBuffer</span><span class="p">,</span><span class="w"> </span><span class="n">ivs</span><span class="p">);</span>
+<a id="__codelineno-1-45" name="__codelineno-1-45" href="#__codelineno-1-45"></a><span class="w">          </span><span class="n">Value</span><span class="w"> </span><span class="n">sum</span><span class="w"> </span><span class="o">=</span>
+<a id="__codelineno-1-46" name="__codelineno-1-46" href="#__codelineno-1-46"></a><span class="w">              </span><span class="n">nestedBuilder</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">arith</span><span class="o">::</span><span class="n">AddFOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">nestedLoc</span><span class="p">,</span><span class="w"> </span><span class="n">lhsVal</span><span class="p">,</span><span class="w"> </span><span class="n">rhsVal</span><span class="p">);</span>
+<a id="__codelineno-1-47" name="__codelineno-1-47" href="#__codelineno-1-47"></a><span class="w">          </span><span class="n">nestedBuilder</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">affine</span><span class="o">::</span><span class="n">AffineStoreOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">nestedLoc</span><span class="p">,</span><span class="w"> </span><span class="n">sum</span><span class="p">,</span><span class="w"> </span><span class="n">alloc</span><span class="p">,</span>
+<a id="__codelineno-1-48" name="__codelineno-1-48" href="#__codelineno-1-48"></a><span class="w">                                                      </span><span class="n">ivs</span><span class="p">);</span>
+<a id="__codelineno-1-49" name="__codelineno-1-49" href="#__codelineno-1-49"></a><span class="w">        </span><span class="p">});</span>
+<a id="__codelineno-1-50" name="__codelineno-1-50" href="#__codelineno-1-50"></a>
+<a id="__codelineno-1-51" name="__codelineno-1-51" href="#__codelineno-1-51"></a><span class="w">    </span><span class="n">replaceOpWithBufferizedValues</span><span class="p">(</span><span class="n">rewriter</span><span class="p">,</span><span class="w"> </span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">alloc</span><span class="p">.</span><span class="n">getResult</span><span class="p">());</span>
+<a id="__codelineno-1-52" name="__codelineno-1-52" href="#__codelineno-1-52"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">success</span><span class="p">();</span>
+<a id="__codelineno-1-53" name="__codelineno-1-53" href="#__codelineno-1-53"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-1-54" name="__codelineno-1-54" href="#__codelineno-1-54"></a><span class="p">};</span>
+</code></pre></div>
+<p>Four real, specific claims, each one load-bearing for the analysis, not boilerplate: <code>bufferizesToMemoryRead</code> (true -- <code>mg.add</code> genuinely reads through both operands), <code>bufferizesToMemoryWrite</code> (false -- it never writes through either operand's own buffer), <code>bufferizesToAllocation</code> (true -- its result is always a fresh buffer), and <code>getAliasingValues</code> (empty -- the result aliases neither operand). One real, concrete consequence of getting any of these wrong: a <code>false</code> answer where <code>true</code> was required could let One-Shot Bufferize's own analysis permit an in-place reuse that silently corrupts a buffer still needed elsewhere -- exactly why MLIR's own documentation, cited in Chapter 3, insists these methods "must be implemented conservatively."</p>
+<p><code>getBuffer(rewriter, addOp.getLhs(), options)</code> is the one real, new API this chapter needed that Chapter 4's own <code>ConversionPatternRewriter</code>-based code never did -- Chapter 4's <code>adaptor.getLhs()</code> already handed back the converted operand directly, a convenience of the dialect-conversion framework specifically; One-Shot Bufferize's own <code>bufferize()</code> hook has to ask explicitly for each operand's own buffer.</p>
+<p><code>mg.transpose</code>'s own real interface implementation is the same shape, with one operand instead of two and the same index-swap between load and store Chapter 4 already established -- omitted here for space, included in full in this chapter's own real code.</p>
+<h3 id="mgprint-reusing-chapter-5s-own-real-mechanism-not-reinventing-it"><code>mg.print</code>: reusing Chapter 5's own real mechanism, not reinventing it<a class="headerlink" href="#mgprint-reusing-chapter-5s-own-real-mechanism-not-reinventing-it" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">struct</span><span class="w"> </span><span class="nc">PrintOpInterface</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">BufferizableOpInterface</span><span class="o">::</span><span class="n">ExternalModel</span><span class="o">&lt;</span><span class="n">PrintOpInterface</span><span class="p">,</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">                                                     </span><span class="n">mg</span><span class="o">::</span><span class="n">PrintOp</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">  </span><span class="kt">bool</span><span class="w"> </span><span class="nf">bufferizesToMemoryRead</span><span class="p">(</span><span class="n">Operation</span><span class="w"> </span><span class="o">*</span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">OpOperand</span><span class="w"> </span><span class="o">&amp;</span><span class="n">opOperand</span><span class="p">,</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">                              </span><span class="k">const</span><span class="w"> </span><span class="n">AnalysisState</span><span class="w"> </span><span class="o">&amp;</span><span class="n">state</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">  </span><span class="kt">bool</span><span class="w"> </span><span class="nf">bufferizesToMemoryWrite</span><span class="p">(</span><span class="n">Operation</span><span class="w"> </span><span class="o">*</span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">OpOperand</span><span class="w"> </span><span class="o">&amp;</span><span class="n">opOperand</span><span class="p">,</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">                               </span><span class="k">const</span><span class="w"> </span><span class="n">AnalysisState</span><span class="w"> </span><span class="o">&amp;</span><span class="n">state</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">  </span><span class="n">AliasingValueList</span><span class="w"> </span><span class="nf">getAliasingValues</span><span class="p">(</span><span class="n">Operation</span><span class="w"> </span><span class="o">*</span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">OpOperand</span><span class="w"> </span><span class="o">&amp;</span><span class="n">opOperand</span><span class="p">,</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">                                      </span><span class="k">const</span><span class="w"> </span><span class="n">AnalysisState</span><span class="w"> </span><span class="o">&amp;</span><span class="n">state</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">{};</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">  </span><span class="n">LogicalResult</span><span class="w"> </span><span class="nf">bufferize</span><span class="p">(</span><span class="n">Operation</span><span class="w"> </span><span class="o">*</span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">RewriterBase</span><span class="w"> </span><span class="o">&amp;</span><span class="n">rewriter</span><span class="p">,</span>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">                          </span><span class="k">const</span><span class="w"> </span><span class="n">BufferizationOptions</span><span class="w"> </span><span class="o">&amp;</span><span class="n">options</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">printOp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cast</span><span class="o">&lt;</span><span class="n">mg</span><span class="o">::</span><span class="n">PrintOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">op</span><span class="p">);</span>
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">loc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">op</span><span class="o">-&gt;</span><span class="n">getLoc</span><span class="p">();</span>
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="w">    </span><span class="n">FailureOr</span><span class="o">&lt;</span><span class="n">Value</span><span class="o">&gt;</span><span class="w"> </span><span class="n">inputBuffer</span><span class="w"> </span><span class="o">=</span>
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="w">        </span><span class="n">getBuffer</span><span class="p">(</span><span class="n">rewriter</span><span class="p">,</span><span class="w"> </span><span class="n">printOp</span><span class="p">.</span><span class="n">getInput</span><span class="p">(),</span><span class="w"> </span><span class="n">options</span><span class="p">);</span>
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">failed</span><span class="p">(</span><span class="n">inputBuffer</span><span class="p">))</span>
+<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="n">failure</span><span class="p">();</span>
+<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a>
+<a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="k">module</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">op</span><span class="o">-&gt;</span><span class="n">getParentOfType</span><span class="o">&lt;</span><span class="n">ModuleOp</span><span class="o">&gt;</span><span class="p">();</span>
+<a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">printRef</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getOrInsertPrintMemrefF64</span><span class="p">(</span><span class="n">rewriter</span><span class="p">,</span><span class="w"> </span><span class="k">module</span><span class="p">);</span>
+<a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">memrefType</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cast</span><span class="o">&lt;</span><span class="n">MemRefType</span><span class="o">&gt;</span><span class="p">(</span><span class="n">inputBuffer</span><span class="o">-&gt;</span><span class="n">getType</span><span class="p">());</span>
+<a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">unrankedType</span><span class="w"> </span><span class="o">=</span>
+<a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a><span class="w">        </span><span class="n">UnrankedMemRefType</span><span class="o">::</span><span class="n">get</span><span class="p">(</span><span class="n">memrefType</span><span class="p">.</span><span class="n">getElementType</span><span class="p">(),</span><span class="w"> </span><span class="cm">/*memorySpace=*/</span><span class="mi">0</span><span class="p">);</span>
+<a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a><span class="w">    </span><span class="n">Value</span><span class="w"> </span><span class="n">cast</span><span class="w"> </span><span class="o">=</span>
+<a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a><span class="w">        </span><span class="n">rewriter</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">memref</span><span class="o">::</span><span class="n">CastOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span><span class="w"> </span><span class="n">unrankedType</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">inputBuffer</span><span class="p">);</span>
+<a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a><span class="w">    </span><span class="n">rewriter</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">func</span><span class="o">::</span><span class="n">CallOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span><span class="w"> </span><span class="n">printRef</span><span class="p">,</span><span class="w"> </span><span class="n">TypeRange</span><span class="p">{},</span><span class="w"> </span><span class="n">ValueRange</span><span class="p">{</span><span class="n">cast</span><span class="p">});</span>
+<a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a><span class="w">    </span><span class="n">rewriter</span><span class="p">.</span><span class="n">eraseOp</span><span class="p">(</span><span class="n">op</span><span class="p">);</span>
+<a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">success</span><span class="p">();</span>
+<a id="__codelineno-2-36" name="__codelineno-2-36" href="#__codelineno-2-36"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-2-37" name="__codelineno-2-37" href="#__codelineno-2-37"></a><span class="p">};</span>
+</code></pre></div>
+<p><code>getOrInsertPrintMemrefF64</code> is, verbatim, Chapter 5's own real helper -- declaring <code>@printMemrefF64</code> with the real <code>llvm.emit_c_interface</code> attribute. Reaching for it again here, rather than writing a second version, is itself the real point: once a real mechanism for calling into MLIR's own runtime support library exists, any later real pass -- hand-written conversion or interface-based bufferization alike -- can reuse it directly.</p>
+<h2 id="registering-the-four-real-external-models">Registering the four real external models<a class="headerlink" href="#registering-the-four-real-external-models" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">namespace</span><span class="w"> </span><span class="nn">mg</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="kt">void</span><span class="w"> </span><span class="nf">registerBufferizableOpInterfaceExternalModels</span><span class="p">(</span><span class="n">DialectRegistry</span><span class="w"> </span><span class="o">&amp;</span><span class="n">registry</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="n">registry</span><span class="p">.</span><span class="n">addExtension</span><span class="p">(</span><span class="o">+</span><span class="p">[](</span><span class="n">MLIRContext</span><span class="w"> </span><span class="o">*</span><span class="n">ctx</span><span class="p">,</span><span class="w"> </span><span class="n">MgDialect</span><span class="w"> </span><span class="o">*</span><span class="n">dialect</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span><span class="n">ConstantOp</span><span class="o">::</span><span class="n">attachInterface</span><span class="o">&lt;</span><span class="n">ConstantOpInterface</span><span class="o">&gt;</span><span class="p">(</span><span class="o">*</span><span class="n">ctx</span><span class="p">);</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="n">AddOp</span><span class="o">::</span><span class="n">attachInterface</span><span class="o">&lt;</span><span class="n">AddOpInterface</span><span class="o">&gt;</span><span class="p">(</span><span class="o">*</span><span class="n">ctx</span><span class="p">);</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">    </span><span class="n">TransposeOp</span><span class="o">::</span><span class="n">attachInterface</span><span class="o">&lt;</span><span class="n">TransposeOpInterface</span><span class="o">&gt;</span><span class="p">(</span><span class="o">*</span><span class="n">ctx</span><span class="p">);</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="n">PrintOp</span><span class="o">::</span><span class="n">attachInterface</span><span class="o">&lt;</span><span class="n">PrintOpInterface</span><span class="o">&gt;</span><span class="p">(</span><span class="o">*</span><span class="n">ctx</span><span class="p">);</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">  </span><span class="p">});</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="p">}</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="p">}</span><span class="w"> </span><span class="c1">// namespace mg</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">mg</span><span class="o">::</span><span class="n">registerBufferizableOpInterfaceExternalModels</span><span class="p">(</span><span class="n">registry</span><span class="p">);</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">mlir</span><span class="o">::</span><span class="n">bufferization</span><span class="o">::</span><span class="n">func_ext</span><span class="o">::</span><span class="n">registerBufferizableOpInterfaceExternalModels</span><span class="p">(</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="n">registry</span><span class="p">);</span>
+</code></pre></div>
+<p>The second line is a real gap this chapter hit directly, the same way Chapter 4 hit the <code>func.func</code> signature-conversion gap: registering <code>mg</code>'s own four interfaces was not enough to bufferize a function taking real tensor <em>arguments</em> -- <code>func.func</code> itself needs its own real external model too, which MLIR already ships, in <code>mlir/Dialect/Bufferization/Transforms/FuncBufferizableOpInterfaceImpl.h</code>, simply not registered by default.</p>
+<h2 id="real-worked-example-the-negative-result-from-chapter-4-reversed">Real worked example: the negative result from Chapter 4, reversed<a class="headerlink" href="#real-worked-example-the-negative-result-from-chapter-4-reversed" title="Permanent link">&para;</a></h2>
+<p>Chapter 4's own exact real test, re-run against this chapter's own rebuilt <code>mg-opt</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>func.func @main() {
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>  %0 = mg.constant dense&lt;[[1.0, 2.0], [3.0, 4.0]]&gt; : tensor&lt;2x2xf64&gt;
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>  %1 = mg.constant dense&lt;[[5.0, 6.0], [7.0, 8.0]]&gt; : tensor&lt;2x2xf64&gt;
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>  %2 = mg.add %0, %1 : tensor&lt;2x2xf64&gt;, tensor&lt;2x2xf64&gt; -&gt; tensor&lt;2x2xf64&gt;
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>  %3 = mg.transpose %2 : tensor&lt;2x2xf64&gt; to tensor&lt;2x2xf64&gt;
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>  mg.print %3 : tensor&lt;2x2xf64&gt;
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>  func.return
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>}
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>./mg-opt mountain_goat_const.mlir --one-shot-bufferize
+</code></pre></div>
+<p><strong>Real captured output (relevant excerpt -- full output is longer):</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>module {
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  func.func @main() {
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>    %alloc = memref.alloc() : memref&lt;2x2xf64&gt;
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>    ... (four affine.store ops writing 1.0, 2.0, 3.0, 4.0)
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    %alloc_9 = memref.alloc() : memref&lt;2x2xf64&gt;
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>    ... (four affine.store ops writing 5.0, 6.0, 7.0, 8.0)
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>    %alloc_22 = memref.alloc() : memref&lt;2x2xf64&gt;
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>    affine.for %arg0 = 0 to 2 {
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>      affine.for %arg1 = 0 to 2 {
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>        %0 = affine.load %alloc[%arg0, %arg1] : memref&lt;2x2xf64&gt;
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>        %1 = affine.load %alloc_9[%arg0, %arg1] : memref&lt;2x2xf64&gt;
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>        %2 = arith.addf %0, %1 : f64
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>        affine.store %2, %alloc_22[%arg0, %arg1] : memref&lt;2x2xf64&gt;
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>      }
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>    }
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>    %alloc_23 = memref.alloc() : memref&lt;2x2xf64&gt;
+<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>    affine.for %arg0 = 0 to 2 {
+<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a>      affine.for %arg1 = 0 to 2 {
+<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a>        %0 = affine.load %alloc_22[%arg1, %arg0] : memref&lt;2x2xf64&gt;
+<a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a>        affine.store %0, %alloc_23[%arg0, %arg1] : memref&lt;2x2xf64&gt;
+<a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a>      }
+<a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a>    }
+<a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a>    return
+<a id="__codelineno-7-24" name="__codelineno-7-24" href="#__codelineno-7-24"></a>  }
+<a id="__codelineno-7-25" name="__codelineno-7-25" href="#__codelineno-7-25"></a>}
+</code></pre></div></p>
+<p>Where Chapter 4 reported <code>error: op was not bufferized</code>, this chapter's own rebuilt tool now genuinely succeeds -- the real, documented fix (implement <code>BufferizableOpInterface</code>) genuinely closes the real gap it was named for.</p>
+<h2 id="a-real-honest-surprise-no-constant-folding-this-time">A real, honest surprise: no constant-folding this time<a class="headerlink" href="#a-real-honest-surprise-no-constant-folding-this-time" title="Permanent link">&para;</a></h2>
+<p>Chapter 4's own hand-written <code>--convert-mg-to-affine</code> genuinely folded the <code>mg.add</code> of two constants away before ever emitting a loop, because MLIR's dialect-conversion driver tries an operation's own <code>fold()</code> hook before reaching for a <code>ConversionPattern</code>. The real captured output directly above shows a genuine <code>affine.for</code> loop nest for the exact same constant-operand <code>mg.add</code> -- meaning One-Shot Bufferize's own driver did not fold it away first. This is a real, structural difference between the two real frameworks, not a bug in either: dialect conversion (<code>applyPartialConversion</code>) is built around <em>legalizing</em> operations, for which trying a cheaper <code>fold()</code> first is a natural optimization; One-Shot Bufferize's own driver is built around a <em>bufferization</em> analysis and rewrite, which has no equivalent reason to also attempt unrelated constant folding along the way. Running <code>--canonicalize</code> before <code>--one-shot-bufferize</code> would fold the add away here too -- the two passes' own real responsibilities simply do not overlap the same way dialect conversion's own legalization does.</p>
+<h2 id="a-second-real-honest-difference-function-argument-buffer-types">A second real, honest difference: function-argument buffer types<a class="headerlink" href="#a-second-real-honest-difference-function-argument-buffer-types" title="Permanent link">&para;</a></h2>
+<p>Bufferizing a function taking real tensor arguments surfaces one more real, concrete difference between the two approaches:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>./mg-opt mountain_goat_run.mlir --one-shot-bufferize="bufferize-function-boundaries"
+</code></pre></div>
+<p><strong>Real captured output (excerpt):</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>func.func @add_tensors(%arg0: memref&lt;2x2xf64, strided&lt;[?, ?], offset: ?&gt;&gt;,
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>                       %arg1: memref&lt;2x2xf64, strided&lt;[?, ?], offset: ?&gt;&gt;) {
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>  ...
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>}
+</code></pre></div></p>
+<p>Chapter 4's own hand-written <code>MgToAffineTypeConverter</code> always produced a plain <code>memref&lt;2x2xf64&gt;</code> for a converted argument. One-Shot Bufferize's own real function-boundary conversion instead produces a <code>memref&lt;2x2xf64, strided&lt;[?, ?], offset: ?&gt;&gt;</code> -- a real, more general layout, because its own whole-program analysis cannot assume every real caller will pass a plain, contiguous buffer, and must allow for one that does not.</p>
+<h2 id="real-worked-example-genuinely-re-running-the-full-pipeline-to-the-same-real-answer">Real worked example: genuinely re-running the full pipeline to the same real answer<a class="headerlink" href="#real-worked-example-genuinely-re-running-the-full-pipeline-to-the-same-real-answer" title="Permanent link">&para;</a></h2>
+<p>The real test program designed, in Chapter 5, so the add's own loop survives (two functions, so no same-function constant folding chain exists regardless) -- carried this time through the entirely new bufferization path, then Chapter 5's own exact real <code>affine</code>-to-<code>llvm</code> pipeline, unmodified:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>func.func @add_tensors(%a: tensor&lt;2x2xf64&gt;, %b: tensor&lt;2x2xf64&gt;) {
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>  %0 = mg.add %a, %b : tensor&lt;2x2xf64&gt;, tensor&lt;2x2xf64&gt; -&gt; tensor&lt;2x2xf64&gt;
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>  mg.print %0 : tensor&lt;2x2xf64&gt;
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>  func.return
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>}
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>func.func @main() {
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>  %0 = mg.constant dense&lt;[[1.0, 2.0], [3.0, 4.0]]&gt; : tensor&lt;2x2xf64&gt;
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>  %1 = mg.constant dense&lt;[[5.0, 6.0], [7.0, 8.0]]&gt; : tensor&lt;2x2xf64&gt;
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>  func.call @add_tensors(%0, %1) : (tensor&lt;2x2xf64&gt;, tensor&lt;2x2xf64&gt;) -&gt; ()
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>  func.return
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>}
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>./mg-opt mountain_goat_run.mlir \
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>  --one-shot-bufferize="bufferize-function-boundaries" \
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>  --lower-affine --convert-scf-to-cf --convert-arith-to-llvm \
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>  --finalize-memref-to-llvm --convert-func-to-llvm \
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>  --reconcile-unrealized-casts \
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>  -o mountain_goat_llvm.mlir
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>mlir-cpu-runner-18 mountain_goat_llvm.mlir \
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>  --shared-libs=/usr/lib/llvm-18/lib/libmlir_runner_utils.so \
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>  --shared-libs=/usr/lib/llvm-18/lib/libmlir_c_runner_utils.so \
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>  -e main -entry-point-result=void
+</code></pre></div>
+<p><strong>Real captured output:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>Unranked Memref base@ = 0x559b27f1d1f0 rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data =
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>[[6,   8],
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a> [10,   12]]
+</code></pre></div></p>
+<p>The identical real, correct answer Chapter 5 produced through its own entirely different, hand-written <code>ConvertMgToAffinePass</code> -- genuinely confirmed here through a second, independent real path (MLIR's own production <code>--one-shot-bufferize</code>, Mountain Goat's own real <code>BufferizableOpInterface</code> implementations), reusing every later real stage of the pipeline (<code>--lower-affine</code> onward) completely unchanged.</p>
+<h2 id="chapter-summary">Chapter summary<a class="headerlink" href="#chapter-summary" title="Permanent link">&para;</a></h2>
+<p>This chapter closed Chapter 4's own honestly-stated gap: <code>BufferizableOpInterface</code> is now genuinely implemented for all four <code>mg</code> operations, via real external models (<code>ConstantOpInterface</code>, <code>AddOpInterface</code>, <code>TransposeOpInterface</code>, <code>PrintOpInterface</code>), and MLIR's own real, built-in <code>--one-shot-bufferize</code> pass now genuinely succeeds where it previously, honestly, failed. Chapter 4's own prediction -- that this would be more work than the hand-written pass, not less -- held up directly: four real methods per operation (<code>bufferizesToMemoryRead</code>/<code>Write</code>, <code>bufferizesToAllocation</code>, <code>getAliasingValues</code>), each a specific, conservative claim the whole-function analysis depends on, plus a second real gap (<code>func.func</code>'s own external model, not registered by default) this chapter hit the same way Chapter 4 hit its own signature-conversion gap. Two real, honest differences from Chapter 4's own hand-written path emerged directly from running the code, not predicted in advance: One-Shot Bufferize does not fold constant adds away the way dialect conversion did, and its own function-boundary conversion produces a more general, strided memref layout rather than a plain contiguous one. The chapter closed by running this entirely new path through Chapter 5's own unmodified <code>affine</code>-to-<code>llvm</code> pipeline and <code>mlir-cpu-runner-18</code>, producing the identical, real, correct answer Chapter 5 obtained through a completely different route.</p>
+<p>Deliberately out of scope, stated explicitly: no real loop-level transform (fusion, tiling, unrolling) has been applied to any of Mountain Goat's own <code>affine.for</code> loops yet -- that, and the real reason canonicalization/CSE needs to run again at every IR level, remain Part 4's own next real subject.</p>
+<h2 id="self-check-questions">Self-check questions<a class="headerlink" href="#self-check-questions" title="Permanent link">&para;</a></h2>
+<p><strong>1. <code>mg.add</code>'s own <code>getAliasingValues</code> returns an empty <code>AliasingValueList</code>, yet <code>bufferizesToAllocation</code> returns <code>true</code> for its result. Why are both of these the correct, specific answers, rather than one implying the other?</strong></p>
+<p>Worked answer: <code>getAliasingValues</code> answers "does this result alias one of my own <em>operands</em>' buffers" -- for <code>mg.add</code>, genuinely no, since a fresh buffer is always allocated for the sum. <code>bufferizesToAllocation</code> answers a different real question entirely: "may this value bufferize to a new allocation at all," independent of what it does or doesn't alias. Both being set the way this chapter set them is exactly what tells One-Shot Bufferize's own analysis that <code>mg.add</code>'s result is a genuinely new, non-aliasing buffer -- getting either one wrong independently would misinform a different part of the same real analysis.</p>
+<p><strong>2. The chapter needed <code>getBuffer(rewriter, addOp.getLhs(), options)</code> inside <code>AddOpInterface::bufferize</code>, while Chapter 4's own <code>AddOpLowering::matchAndRewrite</code> just used <code>adaptor.getLhs()</code> directly. Why the difference?</strong></p>
+<p>Worked answer: Chapter 4's own pattern ran inside MLIR's dialect-conversion framework, where <code>OpAdaptor</code> is built specifically to hand back each operand already in its <em>converted</em> (memref) form -- the framework had already done that substitution before the pattern's own body ever ran. One-Shot Bufferize's own <code>bufferize()</code> hook receives the <em>original</em> operation, still referring to its own original tensor-typed operands; <code>getBuffer</code> is the real, explicit call needed to ask, "what buffer does this specific tensor value's own bufferization produce" -- a real difference in how the two frameworks hand operands to a pattern, not an arbitrary API inconsistency.</p>
+<p><strong>3. Running <code>--one-shot-bufferize</code> alone (no <code>--canonicalize</code> first) on a program adding two <code>mg.constant</code>s produced a genuine <code>affine.for</code> loop, while Chapter 4's own <code>--convert-mg-to-affine</code> alone folded the same real operation away. What, precisely, differs between the two drivers that explains this?</strong></p>
+<p>Worked answer: dialect conversion's own <code>applyPartialConversion</code> driver is built to <em>legalize</em> operations, and trying a cheaper, already-registered <code>fold()</code> hook before reaching for a full <code>ConversionPattern</code> is a natural, real optimization within that specific job. One-Shot Bufferize's own driver exists to answer a different real question (how should each tensor value be bufferized), and has no comparable reason to also run unrelated constant-folding logic along the way -- the two frameworks' own real responsibilities simply do not overlap in that specific way, even though both, in this book's own experience, end up processing the exact same operations.</p>
+<p><strong>4. Why did <code>mlir::bufferization::func_ext::registerBufferizableOpInterfaceExternalModels(registry)</code> need to be called explicitly, rather than being automatically included whenever <code>mg</code>'s own four external models are registered?</strong></p>
+<p>Worked answer: <code>mg</code>'s own <code>registerBufferizableOpInterfaceExternalModels</code> only ever attaches interfaces to <code>mg</code>'s own four operations (<code>ConstantOp</code>, <code>AddOp</code>, <code>TransposeOp</code>, <code>PrintOp</code>) -- it has no reason to know or care about <code>func.func</code>, an operation from an entirely separate, built-in dialect. MLIR ships a real, separate external model specifically for <code>func.func</code>'s own bufferization behavior precisely because dialects are meant to be independently extensible; registering <code>mg</code>'s own models was never going to implicitly pull in <code>func</code>'s own, any more than linking <code>MgDialect</code> implicitly linked <code>MLIRFuncDialect</code>'s own unrelated features.</p>
+<p><strong>5. The chapter's own real captured output shows <code>func.func @add_tensors</code> taking <code>memref&lt;2x2xf64, strided&lt;[?, ?], offset: ?&gt;&gt;</code> arguments under One-Shot Bufferize, versus plain <code>memref&lt;2x2xf64&gt;</code> under Chapter 4's own hand-written pass. Does this real difference mean one of the two approaches is wrong?</strong></p>
+<p>Worked answer: no -- both are genuinely correct for what each approach actually knows. Chapter 4's own <code>MgToAffineTypeConverter</code> was written assuming every real argument this book's own examples pass is a plain, contiguous buffer, which happens to be true for every example in this book. One-Shot Bufferize's own function-boundary conversion is real, general-purpose infrastructure that cannot make that same real assumption about every possible real caller of a public function, so it conservatively produces a strided, dynamic-offset memref type instead -- a real, more general answer to a real, more general problem than this book's own narrow <code>TypeConverter</code> ever had to solve.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../../part5/05-affine-to-scf-to-llvm/" class="md-footer__link md-footer__link--prev" aria-label="Previous: 5. Finishing Progressive Lowering: affine to scf to llvm">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                5. Finishing Progressive Lowering: affine to scf to llvm
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 Oluwaseyi Awoga
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

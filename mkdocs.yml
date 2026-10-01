@@ -82,6 +82,7 @@ nav:
   - "Part 7 -- Case Studies":
       - "12. Reading MLIR's Own Production Pipelines: What This Book's Compiler Is Missing": part12/12-reading-the-production-pipelines.md
       - "13. Dynamic Shapes: Closing Chapter 12's Biggest Unknown": part13/13-dynamic-shapes.md
+      - "14. A Runtime Shape Check: Closing Chapter 13's Memory-Safety Hole": part14/14-runtime-shape-checks.md
 
 extra:
   social: []

@@ -1,0 +1,145 @@
+--- ../../part13/code/DynamicShapes.h	2026-10-01 22:53:13.158342568 +0000
++++ DynamicShapes.h	2026-10-01 23:01:57.025915584 +0000
+@@ -3,6 +3,7 @@
+ 
+ #include "mlir/Dialect/Affine/IR/AffineOps.h"
+ #include "mlir/Dialect/Arith/IR/Arith.h"
++#include "mlir/Dialect/ControlFlow/IR/ControlFlowOps.h"
+ #include "mlir/Dialect/MemRef/IR/MemRef.h"
+ #include "mlir/IR/BuiltinTypes.h"
+ #include "llvm/ADT/STLFunctionalExtras.h"
+@@ -23,6 +24,29 @@
+   return b.create<mlir::memref::DimOp>(loc, memref, d);
+ }
+ 
++/// Runtime check that two equal-rank operand buffers have the same extent
++/// along every dimension. Compile-time checks (the verifier) can only
++/// compare extents known statically; where either side is `?`, the only
++/// place left to look is runtime. Emits a `cf.assert` per such dimension,
++/// which the book's existing five-pass pipeline already lowers to a
++/// message plus `abort()`. A dimension static on both sides is skipped: the
++/// verifier already rejected any static mismatch.
++inline void assertSameShape(mlir::OpBuilder &b, mlir::Location loc,
++                            mlir::Value lhsBuf, mlir::Value rhsBuf,
++                            mlir::RankedTensorType lhsType,
++                            mlir::RankedTensorType rhsType,
++                            llvm::StringRef opName) {
++  for (int64_t d = 0; d < lhsType.getRank(); ++d) {
++    if (!lhsType.isDynamicDim(d) && !rhsType.isDynamicDim(d))
++      continue;
++    mlir::Value l = b.create<mlir::memref::DimOp>(loc, lhsBuf, d);
++    mlir::Value r = b.create<mlir::memref::DimOp>(loc, rhsBuf, d);
++    mlir::Value eq = b.create<mlir::arith::CmpIOp>(loc, mlir::arith::CmpIPredicate::eq, l, r);
++    std::string msg = (opName + ": operand shapes differ at runtime in dimension " + llvm::Twine(d)).str();
++    b.create<mlir::cf::AssertOp>(loc, eq, b.getStringAttr(msg));
++  }
++}
++
+ /// Allocate a buffer of type `type`, taking every dynamic dimension's size
+ /// from `extents[d]` (entries for static dimensions are ignored).
+ inline mlir::memref::AllocOp allocFor(mlir::OpBuilder &b, mlir::Location loc,
+--- ../../part13/code/LowerToAffine.cpp	2026-10-01 22:53:13.160390133 +0000
++++ LowerToAffine.cpp	2026-10-01 23:01:57.028331238 +0000
+@@ -85,6 +85,9 @@
+ 
+     Value lhs = adaptor.getLhs();
+     Value rhs = adaptor.getRhs();
++    mg::dyn::assertSameShape(rewriter, loc, lhs, rhs,
++                             llvm::cast<RankedTensorType>(op.getLhs().getType()),
++                             llvm::cast<RankedTensorType>(op.getRhs().getType()), "mg.add");
+     llvm::SmallVector<Value, 2> extents;
+     for (int64_t d = 0; d < 2; ++d)
+       extents.push_back(tensorType.isDynamicDim(d) ? mg::dyn::extentOf(rewriter, loc, lhs, d) : Value());
+@@ -206,14 +209,14 @@
+ 
+   void getDependentDialects(DialectRegistry &registry) const override {
+     registry.insert<affine::AffineDialect, memref::MemRefDialect,
+-                    arith::ArithDialect>();
++                    arith::ArithDialect, cf::ControlFlowDialect>();
+   }
+ 
+   void runOnOperation() override {
+     MgToAffineTypeConverter typeConverter;
+     ConversionTarget target(getContext());
+     target.addLegalDialect<affine::AffineDialect, memref::MemRefDialect,
+-                           arith::ArithDialect>();
++                           arith::ArithDialect, cf::ControlFlowDialect>();
+     target.addIllegalDialect<mg::MgDialect>();
+ 
+     // A real, genuine gap this chapter's own first attempt hit directly:
+--- ../../part13/code/MgBufferizableOpInterfaceImpl.cpp	2026-10-01 22:53:13.160415833 +0000
++++ MgBufferizableOpInterfaceImpl.cpp	2026-10-01 23:01:57.028362847 +0000
+@@ -6,6 +6,7 @@
+ #include "mlir/Dialect/Arith/IR/Arith.h"
+ #include "mlir/Dialect/Bufferization/IR/BufferizableOpInterface.h"
+ #include "mlir/Dialect/Bufferization/IR/Bufferization.h"
++#include "mlir/Dialect/ControlFlow/IR/ControlFlowOps.h"
+ #include "mlir/Dialect/Func/IR/FuncOps.h"
+ #include "mlir/Dialect/MemRef/IR/MemRef.h"
+ #include "mlir/IR/Dialect.h"
+@@ -123,6 +124,9 @@
+     auto tensorType = cast<RankedTensorType>(addOp.getResult().getType());
+     auto memrefType =
+         MemRefType::get(tensorType.getShape(), tensorType.getElementType());
++    mg::dyn::assertSameShape(rewriter, loc, *lhsBuffer, *rhsBuffer,
++                             cast<RankedTensorType>(addOp.getLhs().getType()),
++                             cast<RankedTensorType>(addOp.getRhs().getType()), "mg.add");
+     llvm::SmallVector<Value, 2> extents;
+     for (int64_t d = 0; d < 2; ++d)
+       extents.push_back(tensorType.isDynamicDim(d) ? mg::dyn::extentOf(rewriter, loc, *lhsBuffer, d) : Value());
+@@ -251,6 +255,10 @@
+ namespace mg {
+ void registerBufferizableOpInterfaceExternalModels(DialectRegistry &registry) {
+   registry.addExtension(+[](MLIRContext *ctx, MgDialect *dialect) {
++    // AddOpInterface::bufferize creates `cf.assert`; dialects load lazily,
++    // so without this the first bufferization of a dynamic mg.add aborts with
++    // "Building op `cf.assert` but it isn't known in this MLIRContext".
++    ctx->loadDialect<cf::ControlFlowDialect>();
+     ConstantOp::attachInterface<ConstantOpInterface>(*ctx);
+     AddOp::attachInterface<AddOpInterface>(*ctx);
+     TransposeOp::attachInterface<TransposeOpInterface>(*ctx);
+--- ../../part7/code/mg-opt.cpp	2026-10-01 21:21:01.994964588 +0000
++++ mg-opt.cpp	2026-10-01 23:01:57.030167769 +0000
+@@ -5,6 +5,7 @@
+ #include "mlir/Dialect/Affine/Passes.h"
+ #include "mlir/Dialect/Arith/IR/Arith.h"
+ #include "mlir/Dialect/Bufferization/IR/Bufferization.h"
++#include "mlir/Dialect/ControlFlow/IR/ControlFlowOps.h"
+ #include "mlir/Dialect/Bufferization/Transforms/FuncBufferizableOpInterfaceImpl.h"
+ #include "mlir/Dialect/Bufferization/Transforms/Passes.h"
+ #include "mlir/Dialect/Func/IR/FuncOps.h"
+@@ -33,7 +34,7 @@
+   registry.insert<mlir::func::FuncDialect, mlir::affine::AffineDialect,
+                   mlir::memref::MemRefDialect, mlir::arith::ArithDialect,
+                   mlir::bufferization::BufferizationDialect,
+-                  mlir::LLVM::LLVMDialect>();
++                  mlir::cf::ControlFlowDialect, mlir::LLVM::LLVMDialect>();
+   registry.insert<mg::MgDialect>();
+   mg::registerBufferizableOpInterfaceExternalModels(registry);
+   mlir::bufferization::func_ext::registerBufferizableOpInterfaceExternalModels(
+--- ../../part7/code/CMakeLists.txt	2026-10-01 21:21:01.994934536 +0000
++++ CMakeLists.txt	2026-10-01 23:01:57.032008443 +0000
+@@ -31,6 +31,7 @@
+ add_dependencies(MgLowerToAffine MgOpsIncGen)
+ target_link_libraries(MgLowerToAffine PUBLIC
+   MgDialect
++  MLIRControlFlowDialect
+   MLIRIR
+   MLIRPass
+   MLIRTransforms
+@@ -45,6 +46,7 @@
+ add_dependencies(MgBufferizableOpInterfaceImpl MgOpsIncGen)
+ target_link_libraries(MgBufferizableOpInterfaceImpl PUBLIC
+   MgDialect
++  MLIRControlFlowDialect
+   MLIRIR
+   MLIRBufferizationDialect
+   MLIRAffineDialect
+@@ -57,6 +59,7 @@
+ add_executable(mg-opt tools/mg-opt.cpp)
+ target_link_libraries(mg-opt PRIVATE
+   MgDialect
++  MLIRControlFlowDialect
+   MgLowerToAffine
+   MgBufferizableOpInterfaceImpl
+   MLIRIR

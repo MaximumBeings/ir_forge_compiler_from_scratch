@@ -90,7 +90,7 @@ That is the correct transpose of the logical matrix. Path A cannot be given this
 
 ## What is still not safe
 
-**Runtime shape mismatch is silent memory corruption.** The verifier can only compare shapes it knows at compile time. Called through the dynamic function with `a` as 2x3 and `b` as 1x2 (a buffer holding two doubles), the add runs to completion and returns garbage:
+**Runtime shape mismatch is silent memory corruption.** *(Update, added after Chapter 14: closed for `mg.add`. The dynamic add now aborts on a runtime mismatch instead of reading out of bounds; see Chapter 14. The description below is the state when this chapter was written.)* The verifier can only compare shapes it knows at compile time. Called through the dynamic function with `a` as 2x3 and `b` as 1x2 (a buffer holding two doubles), the add runs to completion and returns garbage:
 
 ```text
 result 2x3: 11 22 4 5 7 9

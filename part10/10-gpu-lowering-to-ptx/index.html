@@ -1179,6 +1179,95 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 7 -- Case Studies
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 7 -- Case Studies
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part12/12-reading-the-production-pipelines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    12. Reading MLIR's Own Production Pipelines: What This Book's Compiler Is Missing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1576,7 +1665,7 @@
 <p>The <code>index-bitwidth=32</code> column came from a second real run (<code>add_gpu.mlir</code> through <code>canonicalize</code>, then <code>convert-gpu-to-nvvm{index-bitwidth=32}</code>); it is also in <code>pipeline.sh</code>. What the table honestly shows:</p>
 <ul>
 <li><strong>The memory traffic is identical.</strong> Both artifacts do exactly two 8-byte global loads, one <code>add</code> and one 8-byte global store. The mathematical work Mountain Goat's <code>mg.add</code> expresses survived the whole pipeline intact.</li>
-<li><strong>The gap is the calling convention and index width, not the arithmetic.</strong> MLIR's kernel takes 23 parameters against CUDA's 3 because Chapter 1's memref-descriptor ABI carries sizes, strides and offsets the CUDA kernel simply hard-codes (<code>row * 2 + col</code>). Narrowing the index to 32 bits closes most of the instruction-count gap (25 to 22 against CUDA's 19) but does nothing about the parameter count: that is a property of the <code>memref</code> type, not a pass option this chapter found to turn off.</li>
+<li><strong>The gap is the calling convention and index width, not the arithmetic.</strong> MLIR's kernel takes 23 parameters against CUDA's 3 because Chapter 1's memref-descriptor ABI carries sizes, strides and offsets the CUDA kernel simply hard-codes (<code>row * 2 + col</code>). Narrowing the index to 32 bits closes most of the instruction-count gap (25 to 22 against CUDA's 19) but does nothing about the parameter count: that is a property of the <code>memref</code> type, not a pass option this chapter found to turn off. <em>(Correction, added after Chapter 12: this was wrong. <code>--gpu-lower-to-nvvm-pipeline</code> has a <code>kernel-bare-ptr-calling-convention</code> option that cuts the kernel to 5 parameters when all shapes are static; see Chapter 12.)</em></li>
 <li><strong>What this comparison cannot tell you:</strong> which kernel is faster. Neither was run, and a 4-element add is dominated by launch overhead anyway. Instruction counts are a static proxy, not a measurement.</li>
 <li><strong>The CUDA kernel is not a fair "idiomatic CUDA" sample.</strong> It was written to match the MLIR kernel's launch shape (2 blocks x 2 threads) and uses raw builtins because the CUDA headers are missing.</li>
 </ul>

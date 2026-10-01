@@ -29,9 +29,13 @@ void mgpuLaunchKernel(void *fn, intptr_t gx, intptr_t gy, intptr_t gz, intptr_t 
                       int32_t smem, void *stream, void **params, void **extra, size_t nparams) {
   (void)gy; (void)gz; (void)by; (void)bz; (void)smem; (void)stream; (void)extra;
   fprintf(stderr, "[stub] launch %s: grid=(%ld,1,1) block=(%ld,1,1) nparams=%zu\n", (const char *)fn, (long)gx, (long)bx, nparams);
-  if (nparams != 23) { fprintf(stderr, "[stub] unexpected parameter count\n"); exit(2); }
+  // Two parameter layouts, depending on the kernel calling convention the host was compiled with:
+  //   23 = memref descriptors expanded (default); 5 = bare pointers (kernel-bare-ptr-calling-convention).
+  if (nparams != 23 && nparams != 5) { fprintf(stderr, "[stub] unexpected parameter count\n"); exit(2); }
   int64_t step = *(int64_t *)params[0], lb = *(int64_t *)params[1];
-  double *a = *(double **)params[3], *b = *(double **)params[10], *c = *(double **)params[17];
+  double *a, *b, *c;
+  if (nparams == 23) { a = *(double **)params[3]; b = *(double **)params[10]; c = *(double **)params[17]; }
+  else               { a = *(double **)params[2]; b = *(double **)params[3];  c = *(double **)params[4]; }
   for (intptr_t blk = 0; blk < gx; blk++)
     for (intptr_t t = 0; t < bx; t++) {
       int64_t i = (blk * step + lb) * 2 + t;

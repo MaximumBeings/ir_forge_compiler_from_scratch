@@ -16,6 +16,8 @@
         <link rel="prev" href="../../part11/11-the-gpu-host-side/">
       
       
+        <link rel="next" href="../../part13/13-dynamic-shapes/">
+      
       
         
       
@@ -1215,6 +1217,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part13/13-dynamic-shapes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    13. Dynamic Shapes: Closing Chapter 12's Biggest Unknown
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1471,7 +1501,7 @@
 <h2 id="finding-4-what-is-missing-for-production-viability">Finding 4: what is missing for production viability<a class="headerlink" href="#finding-4-what-is-missing-for-production-viability" title="Permanent link">&para;</a></h2>
 <p>Only things established by looking:</p>
 <ul>
-<li><strong>Dynamic shapes are untested.</strong> Across every <code>.mlir</code> file in all chapters' <code>code/</code> directories, the tensor/memref types are <code>2x2xf64</code> (109 and 99 occurrences), <code>3xf64</code>, <code>2x3xf64</code>, <code>1x1xf64</code> and <code>5xi32</code>; no <code>?</code> dimension appears anywhere. Whether the <code>mg</code> dialect and its lowerings handle dynamic shapes is <strong>unknown</strong>, not "no". The bare-pointer GPU path above explicitly cannot.</li>
+<li><strong>Dynamic shapes are untested.</strong> Across every <code>.mlir</code> file in all chapters' <code>code/</code> directories, the tensor/memref types are <code>2x2xf64</code> (109 and 99 occurrences), <code>3xf64</code>, <code>2x3xf64</code>, <code>1x1xf64</code> and <code>5xi32</code>; no <code>?</code> dimension appears anywhere. Whether the <code>mg</code> dialect and its lowerings handle dynamic shapes is <strong>unknown</strong>, not "no". <em>(Update, added after Chapter 13: now known. They did not, in three ways; Chapter 13 fixed the lowerings and found and fixed two more bugs.)</em> The bare-pointer GPU path above explicitly cannot.</li>
 <li><strong>There is no test suite.</strong> The repository's tracked files outside <code>docs/</code> are <code>.gitignore</code>, <code>TABLE_OF_CONTENTS.md</code> and <code>mkdocs.yml</code>: no <code>lit</code>/<code>FileCheck</code> tests, no CI. Every claim in this book rests on a command having been run once and its output pasted. The in-tree pipelines are exercised by MLIR's own regression tests; this one by nobody but its author, which is why each chapter also records a reproduction script.</li>
 <li><strong>Four operations.</strong> <code>mg.constant</code>, <code>mg.add</code>, <code>mg.transpose</code>, <code>mg.print</code> (checked in <code>MgOps.td</code>), all on <code>f64</code>. No matmul, no control flow, no user-defined functions beyond what <code>func</code> already provides.</li>
 <li><strong>Nothing was ever executed on a GPU,</strong> as Chapters 10 and 11 state. The real pipelines' end-to-end behavior on hardware is outside what this sandbox can test.</li>
@@ -1529,6 +1559,22 @@
             </div>
           </a>
         
+        
+          
+          <a href="../../part13/13-dynamic-shapes/" class="md-footer__link md-footer__link--next" aria-label="Next: 13. Dynamic Shapes: Closing Chapter 12&#39;s Biggest Unknown">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                13. Dynamic Shapes: Closing Chapter 12's Biggest Unknown
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
         
       </nav>
     

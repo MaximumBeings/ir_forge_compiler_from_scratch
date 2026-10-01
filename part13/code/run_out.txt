@@ -1,0 +1,82 @@
+### 1. mixed ?x2 + 3x2 add now verifies:
+    %0 = mg.add %arg0, %arg1 : tensor<?x2xf64>, tensor<3x2xf64> -> tensor<?x2xf64>
+### 2. unranked tensors get an explicit diagnostic:
+../unranked.mlir:2:8: error: 'mg.transpose' op mg.transpose only supports ranked tensors
+../unranked_add.mlir:2:8: error: 'mg.add' op mg.add only supports ranked tensors
+### 3. canonicalizer: mixed types left alone, exact types still fold:
+    %0 = mg.transpose %arg0 : tensor<?x2xf64> to tensor<2x?xf64>
+    %1 = mg.transpose %0 : tensor<2x?xf64> to tensor<?x?xf64>
+    return %1 : tensor<?x?xf64>
+    return %arg0 : tensor<?x2xf64>
+### 4. static output byte-identical to Chapter 10's:
+IDENTICAL
+### 5. dynamic add to affine:
+#map = affine_map<(d0) -> (d0)>
+module {
+  func.func @add_dyn(%arg0: memref<?x?xf64>, %arg1: memref<?x?xf64>) -> memref<?x?xf64> {
+    %c0 = arith.constant 0 : index
+    %dim = memref.dim %arg0, %c0 : memref<?x?xf64>
+    %c1 = arith.constant 1 : index
+    %dim_0 = memref.dim %arg0, %c1 : memref<?x?xf64>
+    %alloc = memref.alloc(%dim, %dim_0) : memref<?x?xf64>
+    %c0_1 = arith.constant 0 : index
+    affine.for %arg2 = #map(%c0_1) to #map(%dim) {
+      affine.for %arg3 = #map(%c0_1) to #map(%dim_0) {
+        %0 = affine.load %arg0[%arg2, %arg3] : memref<?x?xf64>
+        %1 = affine.load %arg1[%arg2, %arg3] : memref<?x?xf64>
+        %2 = arith.addf %0, %1 : f64
+        affine.store %2, %alloc[%arg2, %arg3] : memref<?x?xf64>
+      }
+    }
+    return %alloc : memref<?x?xf64>
+  }
+}
+
+### 6. native run, path A (Chapter 4/5 conversion):
+add 2x3 -> 2x3:
+11 22 33 
+44 55 66 
+add 3x2 -> 3x2:
+11 22 
+33 44 
+55 66 
+add 1x6 -> 1x6:
+11 22 33 44 55 66 
+transpose 2x3 -> 3x2:
+1 4 
+2 5 
+3 6 
+transpose 1x6 -> 6x1:
+1 
+2 
+3 
+4 
+5 
+6 
+### 7. native run, path B (Chapter 6 bufferization) + column-major view:
+add 2x3 -> 2x3:
+11 22 33 
+44 55 66 
+add 3x2 -> 3x2:
+11 22 
+33 44 
+55 66 
+add 1x6 -> 1x6:
+11 22 33 44 55 66 
+transpose 2x3 -> 3x2:
+1 4 
+2 5 
+3 6 
+transpose 1x6 -> 6x1:
+1 
+2 
+3 
+4 
+5 
+6 
+transpose 2x3 column-major view -> 3x2:
+1 2 
+3 4 
+5 6 
+### 8. KNOWN GAP, runtime shape mismatch (a=2x3, b=1x2):
+result 2x3: 11 22 4 5 7 9 

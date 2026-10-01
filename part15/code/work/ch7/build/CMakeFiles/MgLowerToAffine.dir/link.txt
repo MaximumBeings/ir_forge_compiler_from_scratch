@@ -1,0 +1,2 @@
+/usr/bin/ar Dqc libMgLowerToAffine.a CMakeFiles/MgLowerToAffine.dir/lib/LowerToAffine.cpp.o
+/usr/bin/ranlib -D libMgLowerToAffine.a

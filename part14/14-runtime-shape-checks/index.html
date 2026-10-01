@@ -16,6 +16,8 @@
         <link rel="prev" href="../../part13/13-dynamic-shapes/">
       
       
+        <link rel="next" href="../../part15/15-a-real-test-suite/">
+      
       
         
       
@@ -1282,6 +1284,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part15/15-a-real-test-suite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    15. A Real Test Suite: lit, FileCheck, and Proof That the Tests Can Fail
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1482,7 +1512,7 @@
 <li><strong>Only <code>mg.add</code> is checked,</strong> the one op with two shaped operands. Allocation failure (<code>memref.alloc</code> returning null for a huge size), integer overflow in <code>rows * cols</code>, and negative sizes in a descriptor are not examined.</li>
 <li><strong>The GPU path has no check.</strong> Chapters 10 through 12's kernels were static-shape; dynamic-shape GPU lowering was never attempted, so nothing here applies there.</li>
 <li><strong>Chapter 7's loop transforms on dynamic bounds</strong> are still untested, as are any new passes' interactions with the assert (for example, whether <code>--canonicalize</code> or fusion preserves it across a transformation).</li>
-<li><strong>Still no assertion-based test suite.</strong> <code>run_tests.sh</code> now does compare two outputs automatically and prints exit codes, which is more than Chapter 13's script, but it prints results for a human to read rather than failing on a mismatch. Real <code>lit</code>/<code>FileCheck</code> tests remain an open candidate.</li>
+<li><strong>Still no assertion-based test suite.</strong> <em>(Update, added after Chapter 15: written there, with a test that mismatches only the columns, which this chapter's own scripts never exercised.)</em> <code>run_tests.sh</code> now does compare two outputs automatically and prints exit codes, which is more than Chapter 13's script, but it prints results for a human to read rather than failing on a mismatch. Real <code>lit</code>/<code>FileCheck</code> tests remain an open candidate.</li>
 </ul>
 <h2 id="reproducing-this-chapter">Reproducing this chapter<a class="headerlink" href="#reproducing-this-chapter" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nb">cd</span><span class="w"> </span>docs/part14/code
@@ -1540,6 +1570,22 @@
             </div>
           </a>
         
+        
+          
+          <a href="../../part15/15-a-real-test-suite/" class="md-footer__link md-footer__link--next" aria-label="Next: 15. A Real Test Suite: lit, FileCheck, and Proof That the Tests Can Fail">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                15. A Real Test Suite: lit, FileCheck, and Proof That the Tests Can Fail
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
         
       </nav>
     

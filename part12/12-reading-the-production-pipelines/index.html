@@ -1273,6 +1273,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part15/15-a-real-test-suite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    15. A Real Test Suite: lit, FileCheck, and Proof That the Tests Can Fail
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1530,7 +1558,7 @@
 <p>Only things established by looking:</p>
 <ul>
 <li><strong>Dynamic shapes are untested.</strong> Across every <code>.mlir</code> file in all chapters' <code>code/</code> directories, the tensor/memref types are <code>2x2xf64</code> (109 and 99 occurrences), <code>3xf64</code>, <code>2x3xf64</code>, <code>1x1xf64</code> and <code>5xi32</code>; no <code>?</code> dimension appears anywhere. Whether the <code>mg</code> dialect and its lowerings handle dynamic shapes is <strong>unknown</strong>, not "no". <em>(Update, added after Chapter 13: now known. They did not, in three ways; Chapter 13 fixed the lowerings and found and fixed two more bugs.)</em> The bare-pointer GPU path above explicitly cannot.</li>
-<li><strong>There is no test suite.</strong> The repository's tracked files outside <code>docs/</code> are <code>.gitignore</code>, <code>TABLE_OF_CONTENTS.md</code> and <code>mkdocs.yml</code>: no <code>lit</code>/<code>FileCheck</code> tests, no CI. Every claim in this book rests on a command having been run once and its output pasted. The in-tree pipelines are exercised by MLIR's own regression tests; this one by nobody but its author, which is why each chapter also records a reproduction script.</li>
+<li><strong>There is no test suite.</strong> <em>(Update, added after Chapter 15: a 22-test <code>lit</code>/<code>FileCheck</code> suite now exists for Chapters 3 through 14's compiler behavior, with no CI; see Chapter 15.)</em> The repository's tracked files outside <code>docs/</code> are <code>.gitignore</code>, <code>TABLE_OF_CONTENTS.md</code> and <code>mkdocs.yml</code>: no <code>lit</code>/<code>FileCheck</code> tests, no CI. Every claim in this book rests on a command having been run once and its output pasted. The in-tree pipelines are exercised by MLIR's own regression tests; this one by nobody but its author, which is why each chapter also records a reproduction script.</li>
 <li><strong>Four operations.</strong> <code>mg.constant</code>, <code>mg.add</code>, <code>mg.transpose</code>, <code>mg.print</code> (checked in <code>MgOps.td</code>), all on <code>f64</code>. No matmul, no control flow, no user-defined functions beyond what <code>func</code> already provides.</li>
 <li><strong>Nothing was ever executed on a GPU,</strong> as Chapters 10 and 11 state. The real pipelines' end-to-end behavior on hardware is outside what this sandbox can test.</li>
 <li><strong>Single toolchain, single machine:</strong> MLIR 18.1.3 on x86_64. Chapter 11's finding that <code>gpu.launch_func</code> is lowered at translation time describes this version; the repository is at a different state today and this chapter did not look.</li>

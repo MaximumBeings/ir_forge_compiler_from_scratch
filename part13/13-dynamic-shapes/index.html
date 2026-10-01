@@ -16,6 +16,8 @@
         <link rel="prev" href="../../part12/12-reading-the-production-pipelines/">
       
       
+        <link rel="next" href="../../part14/14-runtime-shape-checks/">
+      
       
         
       
@@ -1271,6 +1273,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part14/14-runtime-shape-checks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    14. A Runtime Shape Check: Closing Chapter 13's Memory-Safety Hole
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1501,7 +1531,7 @@
 <h3 id="static-regression">Static regression<a class="headerlink" href="#static-regression" title="Permanent link">&para;</a></h3>
 <p><code>--convert-mg-to-affine</code> on Chapter 10's static <code>add_tensors.mlir</code> is <strong>byte-identical</strong> to Chapter 10's stored <code>add_affine.mlir</code> (<code>cmp</code> reports no difference). Chapter 8's static <code>add_tensors</code> run natively through both paths, with Chapter 8's own harness, still prints <code>[[6, 8], [10, 12]]</code>. Chapter 3's canonicalize demo still folds to the same two-operation program.</p>
 <h2 id="what-is-still-not-safe">What is still not safe<a class="headerlink" href="#what-is-still-not-safe" title="Permanent link">&para;</a></h2>
-<p><strong>Runtime shape mismatch is silent memory corruption.</strong> The verifier can only compare shapes it knows at compile time. Called through the dynamic function with <code>a</code> as 2x3 and <code>b</code> as 1x2 (a buffer holding two doubles), the add runs to completion and returns garbage:</p>
+<p><strong>Runtime shape mismatch is silent memory corruption.</strong> <em>(Update, added after Chapter 14: closed for <code>mg.add</code>. The dynamic add now aborts on a runtime mismatch instead of reading out of bounds; see Chapter 14. The description below is the state when this chapter was written.)</em> The verifier can only compare shapes it knows at compile time. Called through the dynamic function with <code>a</code> as 2x3 and <code>b</code> as 1x2 (a buffer holding two doubles), the add runs to completion and returns garbage:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>result 2x3: 11 22 4 5 7 9
 </code></pre></div>
 <p>The loop bounds come from <code>a</code>; the loads from <code>b</code> run off the end of its two-element buffer and read whatever sits beyond it. There is no runtime check. That <code>11 22</code> is right (the first two elements exist in both) and <code>4 5 7 9</code> is not meaningful, and <strong>the values after the first two are not guaranteed to be reproducible</strong>: they are whatever happened to be in memory (they came out identical across the two runs made for this chapter, which proves nothing about other builds or machines). This is an out-of-bounds read, so it is undefined behavior, and a different run or build could crash instead. Closing it means emitting a runtime comparison of the operands' <code>memref.dim</code>s and aborting on mismatch (e.g. a <code>cf.assert</code>); this chapter did not do that, because it also needs to confirm the <code>cf</code> lowering is present in the five-pass pipeline, and that is a separate piece of verified work. Mountain Goat is <strong>not memory safe</strong> for dynamic shapes until then.</p>
@@ -1568,6 +1598,22 @@
             </div>
           </a>
         
+        
+          
+          <a href="../../part14/14-runtime-shape-checks/" class="md-footer__link md-footer__link--next" aria-label="Next: 14. A Runtime Shape Check: Closing Chapter 13&#39;s Memory-Safety Hole">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                14. A Runtime Shape Check: Closing Chapter 13's Memory-Safety Hole
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
         
       </nav>
     

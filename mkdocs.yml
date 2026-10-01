@@ -1,4 +1,4 @@
-site_name: IR Forge -- An MLIR/LLVM Compiler From Scratch -- Under Development
+site_name: IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
 site_description: A Toy Language Compiled Through a Real MLIR Dialect, Down to Real Native Machine Code
 site_author: Oluwaseyi Awoga
 copyright: Copyright &copy; 2026 Oluwaseyi Awoga
@@ -8,14 +8,14 @@ theme:
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: teal
+      primary: red
       accent: deep orange
       toggle:
         icon: material/weather-night
         name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: teal
+      primary: red
       accent: deep orange
       toggle:
         icon: material/weather-sunny

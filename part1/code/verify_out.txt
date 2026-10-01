@@ -1,0 +1,15 @@
+module {
+  func.func @sum_array(%arg0: memref<5xi32>) -> i32 {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %c5 = arith.constant 5 : index
+    %c0_i32 = arith.constant 0 : i32
+    %0 = scf.for %arg1 = %c0 to %c5 step %c1 iter_args(%arg2 = %c0_i32) -> (i32) {
+      %1 = memref.load %arg0[%arg1] : memref<5xi32>
+      %2 = arith.addi %arg2, %1 : i32
+      scf.yield %2 : i32
+    }
+    return %0 : i32
+  }
+}
+

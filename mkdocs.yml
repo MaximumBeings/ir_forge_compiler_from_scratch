@@ -67,6 +67,8 @@ nav:
       - "2. A Minimal Dialect From Scratch: Mountain Goat's Own mg Dialect": part2/02-a-minimal-dialect-from-scratch.md
   - "Part 2 -- The Pass Infrastructure":
       - "3. The Real Pass Infrastructure: Canonicalizing Mountain Goat": part3/03-the-pass-infrastructure.md
+  - "Part 3 -- Progressive Lowering":
+      - "4. Progressive Lowering: Mountain Goat to affine, Two Real Ways": part4/04-progressive-lowering-to-affine.md
 
 extra:
   social: []

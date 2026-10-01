@@ -70,6 +70,8 @@ nav:
   - "Part 3 -- Progressive Lowering":
       - "4. Progressive Lowering: Mountain Goat to affine, Two Real Ways": part4/04-progressive-lowering-to-affine.md
       - "5. Finishing Progressive Lowering: affine to scf to llvm": part5/05-affine-to-scf-to-llvm.md
+  - "Part 4 -- Optimization Across Levels":
+      - "6. Real Bufferization: Closing Chapter 4's Own Honest Gap": part6/06-real-bufferization.md
 
 extra:
   social: []

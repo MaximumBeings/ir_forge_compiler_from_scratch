@@ -1,0 +1,10 @@
+NOTE: this script deliberately breaks gd.mg. 'caught' lines are EXPECTED: they show the test can detect the mistake.
+baseline (nothing broken): test passes (expected)
+update adds the gradient instead of subtracting it: caught
+gradient has the wrong sign (y - x p): caught
+the transpose is missing from the gradient: caught
+the learning rate is ignored: caught
+the gradient is twice too large (converges to the same answer): caught
+the loss forgets to square the residuals: caught
+the loss sums the wrong way (row_sum): caught
+restored: gd.mg is back to its original

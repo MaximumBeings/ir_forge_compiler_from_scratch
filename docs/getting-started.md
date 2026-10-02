@@ -51,6 +51,7 @@ Each chapter's page starts with a "Compile and run" box (Chapters 1 to 9, 20 and
 | 22 and the [language tour](tour/language-tour.md) | `part22/code/build.sh` | adds relu, reductions and broadcasting |
 | 23 | `part22/code/build.sh` | Chapter 23 changes only the driver (`mgc -O`, `--passes`) |
 | 24 | `part24/code/build.sh` | adds the `ikj` matmul loop order; the newest `mg-opt` runs everything |
+| 26 | `part24/code/build.sh` | the trainer in `part26/code/cpp/` uses the newest compiler (`cpp/run.sh`) |
 | 25 | `./ci.sh` at the repository root | builds the newest compiler, runs all 102 tests and the docs build; also what the CI workflow runs |
 | the test suite (`part15/code/run_lit.sh`) | any build; it picks the newest that exists | the newest build runs every test |
 

@@ -1,0 +1,136 @@
+################ mgc run 01_layer_norm.mg
+  | # Layer normalisation shifts each ROW (one token's features) to mean 0 and scales it to variance 1, then applies a per-feature scale g and shift b.
+  | # Here g is all ones and b all zeros, so what is left is pure normalisation. The first row is 1 2 3 4: mean 2.5, variance 1.25, standard deviation 1.118.
+  | def layer_norm(x: tensor[4x4], g: tensor[1x4], b: tensor[1x4]) = (x - row_mean(x)) / sqrt(row_mean((x - row_mean(x)) * (x - row_mean(x))) + 0.00001) * g + b
+  | let x = [[1, 2, 3, 4], [10, 10, 10, 10], [-1, 0, 1, 0], [0, 0, 0, 8]]
+  | print layer_norm(x, [[1, 1, 1, 1]], [[0, 0, 0, 0]])
+  | # The same rows with a scale of 2 and a shift of 5: every normalised number is doubled, then 5 is added.
+  | print layer_norm(x, [[2, 2, 2, 2]], [[5, 5, 5, 5]])
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [4, 4] strides = [4, 1] data = 
+[[-1.34164,   -0.447212,   0.447212,   1.34164], 
+ [0,   0,   0,   0], 
+ [-1.4142,   0,   1.4142,   0], 
+ [-0.57735,   -0.57735,   -0.57735,   1.73205]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [4, 4] strides = [4, 1] data = 
+[[2.31673,   4.10558,   5.89442,   7.68327], 
+ [5,   5,   5,   5], 
+ [2.1716,   5,   7.8284,   5], 
+ [3.8453,   3.8453,   3.8453,   8.4641]]
+  ----- exit status 0
+
+################ mgc run 02_feed_forward.mg
+  | # The feed-forward network: expand to 8 features, keep only the positive ones (relu), contract back to 4.
+  | # With w1 = [I | -I] (an identity next to a negated identity) and w2 = [I ; -I] the hidden layer holds relu(x) next to relu(-x), and the output
+  | # is relu(x) - relu(-x), which is x itself: two relus can build a straight line. The numbers below confirm it.
+  | def ffn(x: tensor[4x4], w1: tensor[4x8], b1: tensor[1x8], w2: tensor[8x4], b2: tensor[1x4]) = relu(x @ w1 + b1) @ w2 + b2
+  | let x = [[1, -2, 0, 3], [-1, 1, -1, 1], [0, 0, 0, 0], [5, -5, 2, -2]]
+  | let w1 = [[1, 0, 0, 0, -1, 0, 0, 0], [0, 1, 0, 0, 0, -1, 0, 0], [0, 0, 1, 0, 0, 0, -1, 0], [0, 0, 0, 1, 0, 0, 0, -1]]
+  | let w2 = [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1], [-1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, -1]]
+  | let zero8 = [[0, 0, 0, 0, 0, 0, 0, 0]]
+  | let zero4 = [[0, 0, 0, 0]]
+  | print ffn(x, w1, zero8, w2, zero4)
+  | # A bias moves the hidden features before the relu: a bias of -1 on the first four hides every value below 1.
+  | print ffn(x, w1, [[-1, -1, -1, -1, 0, 0, 0, 0]], w2, zero4)
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [4, 4] strides = [4, 1] data = 
+[[1,   -2,   0,   3], 
+ [-1,   1,   -1,   1], 
+ [0,   0,   0,   0], 
+ [5,   -5,   2,   -2]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [4, 4] strides = [4, 1] data = 
+[[0,   -2,   0,   2], 
+ [-1,   0,   -1,   0], 
+ [0,   0,   0,   0], 
+ [4,   -5,   1,   -2]]
+  ----- exit status 0
+
+################ mgc run 03_tiny_transformer.mg
+  | (72 lines: the definitions are transformer.mg.defs, followed by seeded weights, the token ids and the calls; see the file)
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [4, 4] strides = [4, 1] data = 
+[[0.9,   0.34,   0.4,   0.45], 
+ [0.3915,   0.2803,   0.98,   1.07], 
+ [0.9393,   -1.0661,   -0.36,   1.0698], 
+ [0.1311,   -1.74,   -0.8,   0.7796]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [4, 4] strides = [4, 1] data = 
+[[0.353842,   0.387514,   -0.308814,   -0.435457], 
+ [-0.813699,   1.01803,   0.635739,   1.14997], 
+ [0.471843,   -0.567222,   -0.106943,   0.520354], 
+ [-0.0559538,   -1.0415,   -0.555807,   0.426276]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [4, 4] strides = [4, 1] data = 
+[[0.649067,   1.91099,   -1.84495,   -0.288202], 
+ [0.632168,   2.18516,   -0.796985,   1.26018], 
+ [0.419502,   -0.792007,   0.0416733,   1.19927], 
+ [0.0978141,   -0.951834,   -0.094805,   1.86646]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [4, 5] strides = [5, 1] data = 
+[[0.296546,   0.108577,   0.108446,   0.250679,   0.235753], 
+ [0.221851,   0.126921,   0.0812285,   0.211973,   0.358027], 
+ [0.146912,   0.185544,   0.263232,   0.12015,   0.284162], 
+ [0.12842,   0.201212,   0.198259,   0.116907,   0.355202]]
+  ----- exit status 0
+
+################ mgc run 04_last_token_changed.mg
+  | (72 lines: the definitions are transformer.mg.defs, followed by seeded weights, the token ids and the calls; see the file)
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [4, 4] strides = [4, 1] data = 
+[[0.9,   0.34,   0.4,   0.45], 
+ [0.3915,   0.2803,   0.98,   1.07], 
+ [0.9393,   -1.0661,   -0.36,   1.0698], 
+ [0.6711,   -0.7,   0.56,   1.5596]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [4, 4] strides = [4, 1] data = 
+[[0.353842,   0.387514,   -0.308814,   -0.435457], 
+ [-0.813699,   1.01803,   0.635739,   1.14997], 
+ [0.471843,   -0.567222,   -0.106943,   0.520354], 
+ [0.569287,   0.423964,   0.997841,   1.45058]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [4, 4] strides = [4, 1] data = 
+[[0.649067,   1.91099,   -1.84495,   -0.288202], 
+ [0.632168,   2.18516,   -0.796985,   1.26018], 
+ [0.419502,   -0.792007,   0.0416733,   1.19927], 
+ [0.952626,   0.65142,   0.765684,   3.64543]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [4, 5] strides = [5, 1] data = 
+[[0.296546,   0.108577,   0.108446,   0.250679,   0.235753], 
+ [0.221851,   0.126921,   0.0812285,   0.211973,   0.358027], 
+ [0.146912,   0.185544,   0.263232,   0.12015,   0.284162], 
+ [0.119444,   0.193318,   0.137116,   0.117316,   0.432807]]
+  ----- exit status 0
+
+################ mgc run errors/e1_wrong_number_of_tokens.mg
+  | # The model was written for 4 tokens. Three tokens do not fit the 4x4 parameter of layer_norm, and the compiler says so.
+  | def layer_norm(x: tensor[4x4], g: tensor[1x4], b: tensor[1x4]) = (x - row_mean(x)) / sqrt(row_mean((x - row_mean(x)) * (x - row_mean(x))) + 0.00001) * g + b
+  | print layer_norm([[1, 2, 3, 4], [4, 3, 2, 1], [0, 1, 0, 1]], [[1, 1, 1, 1]], [[0, 0, 0, 0]])
+  ----- output
+errors/e1_wrong_number_of_tokens.mg:3: error: argument shape 3x4 does not fit parameter 4x4
+  ----- exit status 1
+
+################ mgc run errors/e2_missing_argument.mg
+  | # attention_sublayer takes twelve arguments. Eleven is an arity error, reported before any code exists.
+  | def softmax(s: tensor[4x4]) = exp(s - row_max(s)) / row_sum(exp(s - row_max(s)))
+  | def layer_norm(x: tensor[4x4], g: tensor[1x4], b: tensor[1x4]) = (x - row_mean(x)) / sqrt(row_mean((x - row_mean(x)) * (x - row_mean(x))) + 0.00001) * g + b
+  | def head(x: tensor[4x4], wq: tensor[4x2], wk: tensor[4x2], wv: tensor[4x2], mask: tensor[4x4]) = softmax((x @ wq) @ transpose(x @ wk) * 0.7071067811865476 + mask) @ (x @ wv)
+  | def attention(x: tensor[4x4], mask: tensor[4x4], wq1: tensor[4x2], wk1: tensor[4x2], wv1: tensor[4x2], wo1: tensor[2x4], wq2: tensor[4x2], wk2: tensor[4x2], wv2: tensor[4x2], wo2: tensor[2x4]) = head(x, wq1, wk1, wv1, mask) @ 
+  | def attention_sublayer(x: tensor[4x4], mask: tensor[4x4], g: tensor[1x4], bt: tensor[1x4], wq1: tensor[4x2], wk1: tensor[4x2], wv1: tensor[4x2], wo1: tensor[2x4], wq2: tensor[4x2], wk2: tensor[4x2], wv2: tensor[4x2], wo2: tens
+  | let m = [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
+  | let h = [[1, 0], [0, 1], [1, 1], [0, 0]]
+  | let g = [[1, 1, 1, 1]]
+  | print attention_sublayer(m, m, g, g, h, h, h, [[1, 0, 0, 0], [0, 1, 0, 0]], h, h, h)
+  ----- output
+errors/e2_missing_argument.mg:10: error: attention_sublayer takes 12 arguments, got 11
+  ----- exit status 1
+
+################ mgc run errors/e3_sqrt_of_a_scalar.mg
+  | # sqrt is applied to a matrix. A bare number in the source is a compile-time scalar.
+  | print sqrt(16)
+  ----- output
+errors/e3_sqrt_of_a_scalar.mg:2: error: sqrt needs a matrix, not a scalar
+  ----- exit status 1
+
+################ mgc run errors/e4_residual_shapes_differ.mg
+  | # A residual connection adds the sublayer's output to its input, so their shapes must be equal. A 4x2 head output cannot be added to a 4x4 input.
+  | let x = [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
+  | let head_output = [[1, 0], [0, 1], [1, 1], [0, 0]]
+  | print x + head_output
+  ----- output
+errors/e4_residual_shapes_differ.mg:4: error: cannot add shapes 4x4 and 4x2: dimensions 4 and 2 differ and neither is 1
+  ----- exit status 1
+

@@ -1,0 +1,14 @@
+NOTE: this script deliberately breaks the compiler code. 'caught' lines are EXPECTED: they show the tests can detect the mistake.
+baseline (nothing broken): tests pass (expected)
+
+== Part 1: the front end and the driver
+sqrt is compiled as relu by the front end: caught by transformer30/ir.mlir transformer30/examples.mlir transformer30/against-reference.mlir 
+
+== Part 2: the dialect verifier and the lowering (a full rebuild per mutation)
+sqrt computes the identity (copies its input): caught by transformer30/examples.mlir transformer30/against-reference.mlir 
+sqrt computes exp instead: caught by transformer30/examples.mlir transformer30/against-reference.mlir 
+sqrt computes the square instead: caught by transformer30/examples.mlir transformer30/against-reference.mlir 
+mg.sqrt's verifier accepts anything: caught by transformer30/verifiers.mlir 
+a sum starts from 1 instead of 0 (every row_sum and row_mean is off by one): caught by transformer30/examples.mlir transformer30/against-reference.mlir 
+
+restored: mgfront.py and mgc are back to their originals

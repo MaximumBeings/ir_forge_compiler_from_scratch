@@ -1,0 +1,22 @@
+# A small transformer, written in Mountain Goat. Shapes are fixed: 4 tokens, model width 4, 2 attention heads of width 2, feed-forward width 8, vocabulary 5.
+# (Every def is one line, because a def is one line; the long ones are long.)
+
+# softmax of each row, stabilised by subtracting the row maximum (Chapter 29), for the 4x4 attention scores and for the 4x5 vocabulary scores
+def softmax(s: tensor[4x4]) = exp(s - row_max(s)) / row_sum(exp(s - row_max(s)))
+def softmax_vocab(s: tensor[4x5]) = exp(s - row_max(s)) / row_sum(exp(s - row_max(s)))
+
+# layer normalisation: each token (row) is shifted to mean 0 and scaled to variance 1, then rescaled by g and shifted by b (1 x 4, one per feature)
+def layer_norm(x: tensor[4x4], g: tensor[1x4], b: tensor[1x4]) = (x - row_mean(x)) / sqrt(row_mean((x - row_mean(x)) * (x - row_mean(x))) + 0.00001) * g + b
+
+# one attention head: queries, keys and values are projections of x; the mask (0 or -1e9) is added to the scores before the softmax (Chapter 29)
+def head(x: tensor[4x4], wq: tensor[4x2], wk: tensor[4x2], wv: tensor[4x2], mask: tensor[4x4]) = softmax((x @ wq) @ transpose(x @ wk) * 0.7071067811865476 + mask) @ (x @ wv)
+
+# two heads. Concatenating the heads and multiplying by one output matrix equals adding each head times its own half of that matrix (wo1 is the top half, wo2 the bottom)
+def attention(x: tensor[4x4], mask: tensor[4x4], wq1: tensor[4x2], wk1: tensor[4x2], wv1: tensor[4x2], wo1: tensor[2x4], wq2: tensor[4x2], wk2: tensor[4x2], wv2: tensor[4x2], wo2: tensor[2x4]) = head(x, wq1, wk1, wv1, mask) @ wo1 + head(x, wq2, wk2, wv2, mask) @ wo2
+
+# the position-wise feed-forward network: expand to 8 features, relu, contract back to 4
+def ffn(x: tensor[4x4], w1: tensor[4x8], b1: tensor[1x8], w2: tensor[8x4], b2: tensor[1x4]) = relu(x @ w1 + b1) @ w2 + b2
+
+# the two sublayers of a block, each with a residual connection and a layer norm applied BEFORE the sublayer ("pre-norm")
+def attention_sublayer(x: tensor[4x4], mask: tensor[4x4], g: tensor[1x4], bt: tensor[1x4], wq1: tensor[4x2], wk1: tensor[4x2], wv1: tensor[4x2], wo1: tensor[2x4], wq2: tensor[4x2], wk2: tensor[4x2], wv2: tensor[4x2], wo2: tensor[2x4]) = x + attention(layer_norm(x, g, bt), mask, wq1, wk1, wv1, wo1, wq2, wk2, wv2, wo2)
+def ffn_sublayer(x: tensor[4x4], g: tensor[1x4], bt: tensor[1x4], w1: tensor[4x8], b1: tensor[1x8], w2: tensor[8x4], b2: tensor[1x4]) = x + ffn(layer_norm(x, g, bt), w1, b1, w2, b2)

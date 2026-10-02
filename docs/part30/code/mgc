@@ -1,0 +1,53 @@
+#!/bin/sh
+# mgc: the Mountain Goat compiler driver. Every stage is a real tool; nothing is hidden.
+#   mgc run   prog.mg            compile to a native executable and run it
+#   mgc build prog.mg [-o exe]   compile to a native executable
+#   mgc lib   prog.mg [-o dir]   compile the 'def's to prog.o plus a C++ header prog.h (no main), for linking into your own program
+#   mgc mlir  prog.mg            print the mg-dialect MLIR the front end produces
+#   mgc ptx   prog.mg            compile to PTX (no launch: this machine has no GPU) and print the PTX
+# Options (Chapter 23): -O0|-O1|-O2|-O3        optimization level for the final clang step (default -O0, as in every earlier chapter)
+#   --passes "--affine-loop-tile=tile-size=32"  extra mg-opt passes run on the affine IR, before lowering (quote as one argument)
+#   --matmul-order ikj|ijk                      (Chapter 24) the loop order mg.matmul is lowered to (default ijk)
+# Env: MG_OPT (default Chapter 30 build), MGC_KEEP=dir (keep every intermediate file there), MGC_CFLAGS (extra flags for clang, e.g. -march=native),
+#      MGC_CLANG (the clang to call; tests set it to `echo` to see exactly which flags mgc passes).
+set -e
+HERE=$(cd "$(dirname "$0")" && pwd)
+MG_OPT=${MG_OPT:-$HERE/../../part30/code/build/mg-opt}
+LIBDIR=${MLIR_LIBDIR:-/usr/lib/llvm-18/lib}
+usage() { echo "usage: mgc run|build|lib|mlir|ptx prog.mg [-o exe] [-O0..-O3] [--passes \"...\"] [--matmul-order ikj|ijk]" >&2; exit 2; }
+[ $# -ge 2 ] || usage
+cmd=$1; src=$2; shift 2; out=; OPT=; PASSES=; CONVOPT=
+while [ $# -gt 0 ]; do case $1 in -o) out=$2; shift 2;; -O0|-O1|-O2|-O3) OPT=$1; shift;; --passes) PASSES=$2; shift 2;; --matmul-order) CONVOPT="=matmul-order=$2"; shift 2;; *) usage;; esac; done
+[ -f "$src" ] || { echo "mgc: no such file: $src" >&2; exit 2; }
+W=${MGC_KEEP:-$(mktemp -d)}; mkdir -p "$W"
+base=$(basename "$src" .mg)
+LIBFLAG=; [ "$cmd" = lib ] && LIBFLAG=--lib
+python3 "$HERE/mgfront.py" $LIBFLAG "$src" > "$W/$base.mlir"          # 1. surface syntax -> mg dialect (exit 1 + message on a syntax/shape error)
+[ "$cmd" = mlir ] && { cat "$W/$base.mlir"; exit 0; }
+[ -x "$MG_OPT" ] || { echo "mgc: no mg-opt at $MG_OPT (run part30/code/build.sh)" >&2; exit 2; }
+case $cmd in
+  build|run|lib)
+    LOWER='--lower-affine --convert-scf-to-cf --mg-lower-assert-to-stderr --convert-math-to-llvm --convert-arith-to-llvm --finalize-memref-to-llvm --convert-func-to-llvm --reconcile-unrealized-casts'
+    $MG_OPT "$W/$base.mlir" --convert-mg-to-affine$CONVOPT $PASSES -o "$W/$base.affine.mlir"   # 2. mg -> affine/memref/arith (+ runtime shape checks)
+    $MG_OPT "$W/$base.affine.mlir" $LOWER -o "$W/$base.llvm.mlir"               # 3. -> LLVM dialect, assertions -> write(2,..)+abort
+    mlir-translate-18 --mlir-to-llvmir "$W/$base.llvm.mlir" -o "$W/$base.ll"    # 4. -> LLVM IR
+    if [ "$cmd" = lib ]; then   # object + header; the object is linked by the caller
+      dir=${out:-$W}; mkdir -p "$dir"
+      ${MGC_CLANG:-clang-18} $OPT $MGC_CFLAGS -c "$W/$base.ll" -o "$dir/$base.o" 2>/dev/null
+      python3 "$HERE/mgfront.py" --header "$src" > "$dir/$base.h"
+      echo "wrote $dir/$base.o and $dir/$base.h"; exit 0
+    fi
+    exe=${out:-$W/$base.exe}
+    ${MGC_CLANG:-clang-18} $OPT $MGC_CFLAGS "$W/$base.ll" -o "$exe" -L"$LIBDIR" -lmlir_runner_utils -lm -Wl,-rpath,"$LIBDIR" 2>/dev/null   # 5. -> native executable
+    if [ "$cmd" = run ]; then exec "$exe"; fi   # (Chapter 23: this used to be `[ ... ] && exec`, which made `mgc build` exit with status 1 on success)
+    ;;
+  ptx)
+    $MG_OPT "$W/$base.mlir" --convert-mg-to-affine -o "$W/$base.affine.mlir"
+    mlir-opt-18 "$W/$base.affine.mlir" \
+      --pass-pipeline='builtin.module(func.func(affine-parallelize,lower-affine,gpu-map-parallel-loops,convert-parallel-loops-to-gpu),gpu-kernel-outlining)' -o "$W/$base.gpu.mlir"
+    mlir-opt-18 "$W/$base.gpu.mlir" \
+      --pass-pipeline='builtin.module(lower-affine,nvvm-attach-target{chip=sm_70 features=+ptx60},gpu.module(convert-scf-to-cf,convert-gpu-to-nvvm{index-bitwidth=64},reconcile-unrealized-casts),gpu-module-to-binary{format=isa})' -o "$W/$base.bin.mlir"
+    python3 "$HERE/decode_ptx.py" "$W/$base.bin.mlir"
+    ;;
+  *) usage;;
+esac

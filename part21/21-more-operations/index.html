@@ -16,6 +16,8 @@
         <link rel="prev" href="../../part20/20-the-mountain-goat-demo/">
       
       
+        <link rel="next" href="../../part22/22-broadcasting-reductions-and-relu/">
+      
       
         
       
@@ -1748,6 +1750,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part22/22-broadcasting-reductions-and-relu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    22. Broadcasting, Reductions and relu: Enough Operations for a Neural-Network Layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -3699,7 +3729,7 @@
 <h2 id="limits-and-what-is-not-established">Limits and what is not established<a class="headerlink" href="#limits-and-what-is-not-established" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Rank 2, <code>f64</code> only.</strong> No other ranks, no other element types, no integer arithmetic.</li>
-<li><strong>No broadcasting.</strong> <code>a + b</code> needs equal shapes (or <code>?</code> resolved at run time). You cannot add a row vector to every row of a matrix.</li>
+<li><strong>No broadcasting</strong> (added for static shapes in <a href="../../part22/22-broadcasting-reductions-and-relu/">Chapter 22</a>). In this chapter <code>a + b</code> needs equal shapes (or <code>?</code> resolved at run time).</li>
 <li><strong>No compile-time folding</strong> for the new operations (only <code>mg.add</code> has a folder). <code>1 + 1</code>-style scalar arithmetic is folded by the front end, but <code>mg.sub</code> of two constant matrices is computed at run time.</li>
 <li><strong><code>mg.scalar</code> uses a string attribute</strong> for its operation name; an enum would be stricter.</li>
 <li><strong>Matrix product is the textbook triple loop.</strong> No tiling, no blocking, no vectorization, no library call. <strong>No performance claim is made at all</strong>, and nothing here measures speed.</li>
@@ -3851,6 +3881,22 @@
             </div>
           </a>
         
+        
+          
+          <a href="../../part22/22-broadcasting-reductions-and-relu/" class="md-footer__link md-footer__link--next" aria-label="Next: 22. Broadcasting, Reductions and relu: Enough Operations for a Neural-Network Layer">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                22. Broadcasting, Reductions and relu: Enough Operations for a Neural-Network Layer
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
         
       </nav>
     

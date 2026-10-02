@@ -1,10 +1,10 @@
 // The language tour's examples compile, run and print what the page says they print.
-// RUN: %mgc21 run %tour/01_first_program.mg | %FileCheck %s --check-prefix=T1
-// RUN: %mgc21 run %tour/02_literals.mg | %FileCheck %s --check-prefix=T2
-// RUN: %mgc21 run %tour/03_let_and_shadowing.mg | %FileCheck %s --check-prefix=T3
-// RUN: %mgc21 run %tour/04_functions.mg | %FileCheck %s --check-prefix=T4
-// RUN: %mgc21 run %tour/05_dynamic_types.mg | %FileCheck %s --check-prefix=T5
-// RUN: %mgc21 run %tour/06_operators.mg | %FileCheck %s --check-prefix=T6
+// RUN: %mgc22 run %tour/01_first_program.mg | %FileCheck %s --check-prefix=T1
+// RUN: %mgc22 run %tour/02_literals.mg | %FileCheck %s --check-prefix=T2
+// RUN: %mgc22 run %tour/03_let_and_shadowing.mg | %FileCheck %s --check-prefix=T3
+// RUN: %mgc22 run %tour/04_functions.mg | %FileCheck %s --check-prefix=T4
+// RUN: %mgc22 run %tour/05_dynamic_types.mg | %FileCheck %s --check-prefix=T5
+// RUN: %mgc22 run %tour/06_operators.mg | %FileCheck %s --check-prefix=T6
 // T1: sizes = [2, 3]
 // T1: 1, 2, 3],
 // T1-NEXT: 4, 5, 6]]

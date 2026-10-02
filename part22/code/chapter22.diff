@@ -1,0 +1,283 @@
+--- ../../part21/code/MgOps.td	2026-10-02 03:06:25.081013492 +0000
++++ MgOps.td	2026-10-02 11:17:33.276282865 +0000
+@@ -82,6 +82,34 @@
+   let hasVerifier = 1;
+ }
+ 
++def ReluOp : Mg_Op<"relu", [Pure]> {
++  let summary = "elementwise max(x, 0), the rectified linear unit";
++  let arguments = (ins F64Tensor:$input);
++  let results = (outs F64Tensor:$result);
++  let assemblyFormat = "$input attr-dict `:` type($input) `->` type($result)";
++  let hasVerifier = 1;
++}
++
++def ReduceOp : Mg_Op<"reduce", [Pure]> {
++  let summary = "reduce a matrix along one axis with sum or max";
++  let description = [{
++    `axis = 1` combines the elements of each row, giving an M x 1 result; `axis = 0` combines the
++    elements of each column, giving a 1 x N result. `kind` is "sum" or "max".
++  }];
++  let arguments = (ins F64Tensor:$input, I64Attr:$axis, StrAttr:$kind);
++  let results = (outs F64Tensor:$result);
++  let assemblyFormat = "$input attr-dict `:` type($input) `->` type($result)";
++  let hasVerifier = 1;
++}
++
++def BroadcastOp : Mg_Op<"broadcast", [Pure]> {
++  let summary = "repeat a matrix along every dimension of size 1 to fill a larger static shape";
++  let arguments = (ins F64Tensor:$input);
++  let results = (outs F64Tensor:$result);
++  let assemblyFormat = "$input attr-dict `:` type($input) `->` type($result)";
++  let hasVerifier = 1;
++}
++
+ def NegOp : Mg_Op<"neg", [Pure]> {
+   let summary = "elementwise negation";
+   let arguments = (ins F64Tensor:$input);
+--- ../../part21/code/MgDialect.cpp	2026-10-02 03:06:25.081495534 +0000
++++ MgDialect.cpp	2026-10-02 11:17:33.276538753 +0000
+@@ -107,6 +107,37 @@
+ }
+ mlir::LogicalResult NegOp::verify() { return verifyElementwise(*this, {getInput().getType(), getResult().getType()}, "mg.neg"); }
+ 
++mlir::LogicalResult ReluOp::verify() { return verifyElementwise(*this, {getInput().getType(), getResult().getType()}, "mg.relu"); }
++
++mlir::LogicalResult ReduceOp::verify() {
++  auto in = llvm::dyn_cast<mlir::RankedTensorType>(getInput().getType());
++  auto out = llvm::dyn_cast<mlir::RankedTensorType>(getResult().getType());
++  if (!in || !out || in.getRank() != 2 || out.getRank() != 2)
++    return emitOpError("mg.reduce only supports rank-2 ranked tensors");
++  if (getAxis() != 0 && getAxis() != 1)
++    return emitOpError("mg.reduce: axis must be 0 or 1, got ") << getAxis();
++  llvm::StringRef k = getKind();
++  if (k != "sum" && k != "max")
++    return emitOpError("mg.reduce: kind must be sum or max, got '") << k << "'";
++  int64_t kept = 1 - getAxis();   // the dimension that survives
++  if (!mg::dyn::compatibleDim(out.getDimSize(kept), in.getDimSize(kept)) || out.getDimSize(getAxis()) != 1)
++    return emitOpError("mg.reduce: reducing axis ") << getAxis() << " of " << in << " must give a result with that axis of size 1, got " << out;
++  return mlir::success();
++}
++
++mlir::LogicalResult BroadcastOp::verify() {
++  auto in = llvm::dyn_cast<mlir::RankedTensorType>(getInput().getType());
++  auto out = llvm::dyn_cast<mlir::RankedTensorType>(getResult().getType());
++  if (!in || !out || in.getRank() != 2 || out.getRank() != 2)
++    return emitOpError("mg.broadcast only supports rank-2 ranked tensors");
++  if (!in.hasStaticShape() || !out.hasStaticShape())
++    return emitOpError("mg.broadcast needs static shapes (dynamic broadcasting is not supported)");
++  for (int d = 0; d < 2; ++d)
++    if (in.getDimSize(d) != out.getDimSize(d) && in.getDimSize(d) != 1)
++      return emitOpError("mg.broadcast: dimension ") << d << " of " << in << " can only grow from size 1, not to " << out;
++  return mlir::success();
++}
++
+ mlir::LogicalResult MatmulOp::verify() {
+   auto l = llvm::dyn_cast<mlir::RankedTensorType>(getLhs().getType());
+   auto r = llvm::dyn_cast<mlir::RankedTensorType>(getRhs().getType());
+--- ../../part21/code/LowerToAffine.cpp	2026-10-02 03:12:27.030941608 +0000
++++ LowerToAffine.cpp	2026-10-02 11:17:33.277001200 +0000
+@@ -1,3 +1,4 @@
++#include <limits>
+ #include "mg/MgDialect.h"
+ #include "mg/MgOps.h"
+ #include "mg/DynamicShapes.h"
+@@ -170,6 +171,91 @@
+   }
+ };
+ 
++/// Chapter 22: relu is a one-input elementwise op, like neg.
++struct ReluOpLowering : public OpConversionPattern<mg::ReluOp> {
++  using OpConversionPattern::OpConversionPattern;
++  LogicalResult matchAndRewrite(mg::ReluOp op, OpAdaptor adaptor,
++                                ConversionPatternRewriter &rewriter) const override {
++    auto loc = op.getLoc();
++    auto tensorType = llvm::cast<RankedTensorType>(op.getResult().getType());
++    auto memrefType = convertTensorToMemref(tensorType);
++    Value in = adaptor.getInput();
++    llvm::SmallVector<Value, 2> extents;
++    for (int64_t d = 0; d < 2; ++d)
++      extents.push_back(tensorType.isDynamicDim(d) ? mg::dyn::extentOf(rewriter, loc, in, d) : Value());
++    auto alloc = mg::dyn::allocFor(rewriter, loc, memrefType, extents);
++    Value zero = rewriter.create<arith::ConstantOp>(loc, rewriter.getF64FloatAttr(0.0));
++    mg::dyn::nest2D(rewriter, loc, tensorType, extents, [&](OpBuilder &b, Location l, ValueRange ivs) {
++      Value x = b.create<affine::AffineLoadOp>(l, in, ivs);
++      b.create<affine::AffineStoreOp>(l, b.create<arith::MaximumFOp>(l, x, zero), alloc, ivs);
++    });
++    rewriter.replaceOp(op, alloc.getResult());
++    return success();
++  }
++};
++
++/// mg.reduce: initialise the result (0 for sum, -infinity for max), then one nest over the INPUT that
++/// folds each element into result[i, 0] (axis 1) or result[0, j] (axis 0).
++struct ReduceOpLowering : public OpConversionPattern<mg::ReduceOp> {
++  using OpConversionPattern::OpConversionPattern;
++  LogicalResult matchAndRewrite(mg::ReduceOp op, OpAdaptor adaptor,
++                                ConversionPatternRewriter &rewriter) const override {
++    auto loc = op.getLoc();
++    auto inType = llvm::cast<RankedTensorType>(op.getInput().getType());
++    auto outType = llvm::cast<RankedTensorType>(op.getResult().getType());
++    auto memrefType = convertTensorToMemref(outType);
++    Value in = adaptor.getInput();
++    int64_t axis = op.getAxis();
++    bool isMax = op.getKind() == "max";
++    llvm::SmallVector<Value, 2> outExtents;
++    for (int64_t d = 0; d < 2; ++d)
++      outExtents.push_back(outType.isDynamicDim(d) ? mg::dyn::extentOf(rewriter, loc, in, d) : Value());
++    auto alloc = mg::dyn::allocFor(rewriter, loc, memrefType, outExtents);
++    double initVal = isMax ? -std::numeric_limits<double>::infinity() : 0.0;
++    Value init = rewriter.create<arith::ConstantOp>(loc, rewriter.getF64FloatAttr(initVal));
++    mg::dyn::nest2D(rewriter, loc, outType, outExtents, [&](OpBuilder &b, Location l, ValueRange ivs) {
++      b.create<affine::AffineStoreOp>(l, init, alloc, ivs);
++    });
++    llvm::SmallVector<Value, 2> inExtents;
++    for (int64_t d = 0; d < 2; ++d)
++      inExtents.push_back(inType.isDynamicDim(d) ? mg::dyn::extentOf(rewriter, loc, in, d) : Value());
++    mg::dyn::nest2D(rewriter, loc, inType, inExtents, [&](OpBuilder &b, Location l, ValueRange ivs) {
++      Value zeroIdx = b.create<arith::ConstantIndexOp>(l, 0);
++      Value i = ivs[0], j = ivs[1];
++      llvm::SmallVector<Value, 2> dst = axis == 1 ? llvm::SmallVector<Value, 2>{i, zeroIdx} : llvm::SmallVector<Value, 2>{zeroIdx, j};
++      Value acc = b.create<affine::AffineLoadOp>(l, alloc, dst);
++      Value x = b.create<affine::AffineLoadOp>(l, in, ivs);
++      Value r = isMax ? Value(b.create<arith::MaximumFOp>(l, acc, x)) : Value(b.create<arith::AddFOp>(l, acc, x));
++      b.create<affine::AffineStoreOp>(l, r, alloc, dst);
++    });
++    rewriter.replaceOp(op, alloc.getResult());
++    return success();
++  }
++};
++
++/// mg.broadcast (static shapes only): result[i, j] = input[i or 0, j or 0], using 0 for each size-1 input dimension.
++struct BroadcastOpLowering : public OpConversionPattern<mg::BroadcastOp> {
++  using OpConversionPattern::OpConversionPattern;
++  LogicalResult matchAndRewrite(mg::BroadcastOp op, OpAdaptor adaptor,
++                                ConversionPatternRewriter &rewriter) const override {
++    auto loc = op.getLoc();
++    auto inType = llvm::cast<RankedTensorType>(op.getInput().getType());
++    auto outType = llvm::cast<RankedTensorType>(op.getResult().getType());
++    auto memrefType = convertTensorToMemref(outType);
++    Value in = adaptor.getInput();
++    auto alloc = rewriter.create<memref::AllocOp>(loc, memrefType);
++    mg::dyn::nest2D(rewriter, loc, outType, {Value(), Value()}, [&](OpBuilder &b, Location l, ValueRange ivs) {
++      Value zeroIdx = b.create<arith::ConstantIndexOp>(l, 0);
++      Value i = inType.getDimSize(0) == 1 ? zeroIdx : ivs[0];
++      Value j = inType.getDimSize(1) == 1 ? zeroIdx : ivs[1];
++      Value x = b.create<affine::AffineLoadOp>(l, in, ValueRange{i, j});
++      b.create<affine::AffineStoreOp>(l, x, alloc, ivs);
++    });
++    rewriter.replaceOp(op, alloc.getResult());
++    return success();
++  }
++};
++
+ struct NegOpLowering : public OpConversionPattern<mg::NegOp> {
+   using OpConversionPattern::OpConversionPattern;
+   LogicalResult matchAndRewrite(mg::NegOp op, OpAdaptor adaptor,
+@@ -400,7 +486,8 @@
+                  ElementwiseBinaryLowering<mg::SubOp, arith::SubFOp>,
+                  ElementwiseBinaryLowering<mg::MulOp, arith::MulFOp>,
+                  ElementwiseBinaryLowering<mg::DivOp, arith::DivFOp>,
+-                 ScalarOpLowering, NegOpLowering, MatmulOpLowering>(typeConverter, &getContext());
++                 ScalarOpLowering, NegOpLowering, MatmulOpLowering,
++                 ReluOpLowering, ReduceOpLowering, BroadcastOpLowering>(typeConverter, &getContext());
+     populateFunctionOpInterfaceTypeConversionPattern<func::FuncOp>(patterns,
+                                                                    typeConverter);
+     populateCallOpTypeConversionPattern(patterns, typeConverter);
+--- ../../part21/code/mgfront.py	2026-10-02 03:17:06.351799178 +0000
++++ mgfront.py	2026-10-02 11:22:48.028568462 +0000
+@@ -1,6 +1,8 @@
+ #!/usr/bin/env python3
+ """mgfront: the Mountain Goat surface-syntax front end. Reads .mg source, writes MLIR (mg dialect) to stdout.
+ 
++Built-in functions (Chapter 22): relu(m); row_sum, row_max, row_mean (one value per row, an Mx1 result) and col_sum, col_max, col_mean
++(one value per column, 1xN). Elementwise operators broadcast a static dimension of size 1 (e.g. a 2x3 plus a 1x3).
+ Operators (Chapter 21): + - * / are elementwise on matrices ('*' is the Hadamard product) and also combine a matrix
+ with a scalar; '@' is the matrix product; unary '-' negates. Scalars are numbers known at compile time.
+ Grammar (one statement per line, '#' starts a comment):
+@@ -103,12 +105,27 @@
+             r = self.fn.tmp()
+             self.fn.emit(f'{r} = mg.scalar {m} {{op = "{self.OPNAME[op]}", value = {mlir_float(str(c))} : f64, reversed = {"true" if rev else "false"}}} : {fmt(shp)} -> {fmt(shp)}')
+             return r, shp
+-        for a, b in zip(s, s2):
+-            if a is not None and b is not None and a != b:
+-                raise MgError(self.line, f"cannot {self.VERB[op]} shapes {'x'.join(map(str,s))} and {'x'.join(map(str,s2))}")
++        v, s, w, s2 = self.broadcast_pair(op, v, s, w, s2)
+         shape = tuple(a if a is not None else b for a, b in zip(s, s2)); r = self.fn.tmp()
+         self.fn.emit(f"{r} = mg.{self.OPNAME[op]} {v}, {w} : {fmt(s)}, {fmt(s2)} -> {fmt(shape)}")
+         return r, shape
++    def broadcast_pair(self, op, v, s, w, s2):
++        """Make two shapes agree for an elementwise operator. A static dimension of size 1 grows to match the other
++        operand's (explicit mg.broadcast); equal sizes and '?' are left alone; anything else is an error."""
++        target = []
++        for a, b in zip(s, s2):
++            if a is None or b is None or a == b: target.append(b if a is None else a)
++            elif a == 1: target.append(b)
++            elif b == 1: target.append(a)
++            else: raise MgError(self.line, f"cannot {self.VERB[op]} shapes {'x'.join('?' if d is None else str(d) for d in s)} and {'x'.join('?' if d is None else str(d) for d in s2)}: "
++                                           f"dimensions {a} and {b} differ and neither is 1")
++        target = tuple(target)
++        return (*self.grow(v, s, target), *self.grow(w, s2, target))
++    def grow(self, v, s, target):
++        if s == target or all(a is None or a == t for a, t in zip(s, target)): return v, s
++        if None in s or None in target: raise MgError(self.line, "broadcasting needs static shapes; this operand has a '?' dimension")
++        r = self.fn.tmp(); self.fn.emit(f"{r} = mg.broadcast {v} : {fmt(s)} -> {fmt(target)}")
++        return r, target
+     def term(self):
+         k, v = self.peek()
+         if k is None: raise MgError(self.line, "expected an expression, found the end of the line")
+@@ -123,11 +140,30 @@
+                 shape = (s[1], s[0]); r = self.fn.tmp()
+                 self.fn.emit(f"{r} = mg.transpose {x} : {fmt(s)} to {fmt(shape)}")
+                 return r, shape
++            if v in self.BUILTINS and self.peek()[1] == "(":
++                return self.builtin(v)
+             if self.peek()[1] == "(":
+                 return self.call(v)
+             if v not in self.fn.env: raise MgError(self.line, f"unknown name {v!r}")
+             return self.fn.env[v]
+         raise MgError(self.line, f"unexpected {v!r}")
++    BUILTINS = {"relu", "row_sum", "col_sum", "row_max", "col_max", "row_mean", "col_mean"}
++    def builtin(self, name):
++        self.take("("); v, s = self.expr(); self.take(")")
++        if v is None: raise MgError(self.line, f"{name} needs a matrix, not a scalar")
++        if name == "relu":
++            r = self.fn.tmp(); self.fn.emit(f"{r} = mg.relu {v} : {fmt(s)} -> {fmt(s)}"); return r, s
++        axis = 1 if name.startswith("row_") else 0              # row_*: one value per row (axis 1); col_*: one per column (axis 0)
++        kind = "sum" if name.endswith("sum") else "max" if name.endswith("max") else "mean"
++        shape = (s[0], 1) if axis == 1 else (1, s[1])
++        r = self.fn.tmp()
++        self.fn.emit(f'{r} = mg.reduce {v} {{axis = {axis} : i64, kind = "{"sum" if kind == "mean" else kind}"}} : {fmt(s)} -> {fmt(shape)}')
++        if kind == "mean":                                       # mean = sum / count; the count must be known now
++            if s[axis] is None: raise MgError(self.line, f"{name} needs a static size along the averaged axis, not '?'")
++            q = self.fn.tmp()
++            self.fn.emit(f'{q} = mg.scalar {r} {{op = "div", value = {mlir_float(str(s[axis]))} : f64, reversed = false}} : {fmt(shape)} -> {fmt(shape)}')
++            r = q
++        return r, shape
+     def call(self, name):
+         if name not in self.fn.em.funcs: raise MgError(self.line, f"unknown function {name!r}")
+         params, result = self.fn.em.funcs[name]
+--- ../../part21/code/mgc	2026-10-02 03:17:06.353500579 +0000
++++ mgc	2026-10-02 11:22:48.030686829 +0000
+@@ -5,10 +5,10 @@
+ #   mgc lib   prog.mg [-o dir]   compile the 'def's to prog.o plus a C++ header prog.h (no main), for linking into your own program
+ #   mgc mlir  prog.mg            print the mg-dialect MLIR the front end produces
+ #   mgc ptx   prog.mg            compile to PTX (no launch: this machine has no GPU) and print the PTX
+-# Env: MG_OPT (default Chapter 21 build), MGC_KEEP=dir (keep every intermediate file there).
++# Env: MG_OPT (default Chapter 22 build), MGC_KEEP=dir (keep every intermediate file there).
+ set -e
+ HERE=$(cd "$(dirname "$0")" && pwd)
+-MG_OPT=${MG_OPT:-$HERE/../../part21/code/build/mg-opt}
++MG_OPT=${MG_OPT:-$HERE/../../part22/code/build/mg-opt}
+ LIBDIR=${MLIR_LIBDIR:-/usr/lib/llvm-18/lib}
+ usage() { echo "usage: mgc run|build|lib|mlir|ptx prog.mg [-o exe]" >&2; exit 2; }
+ [ $# -ge 2 ] || usage
+@@ -20,7 +20,7 @@
+ LIBFLAG=; [ "$cmd" = lib ] && LIBFLAG=--lib
+ python3 "$HERE/mgfront.py" $LIBFLAG "$src" > "$W/$base.mlir"          # 1. surface syntax -> mg dialect (exit 1 + message on a syntax/shape error)
+ [ "$cmd" = mlir ] && { cat "$W/$base.mlir"; exit 0; }
+-[ -x "$MG_OPT" ] || { echo "mgc: no mg-opt at $MG_OPT (run part21/code/build.sh)" >&2; exit 2; }
++[ -x "$MG_OPT" ] || { echo "mgc: no mg-opt at $MG_OPT (run part22/code/build.sh)" >&2; exit 2; }
+ case $cmd in
+   build|run|lib)
+     LOWER='--lower-affine --convert-scf-to-cf --mg-lower-assert-to-stderr --convert-arith-to-llvm --finalize-memref-to-llvm --convert-func-to-llvm --reconcile-unrealized-casts'

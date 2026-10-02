@@ -1,0 +1,4 @@
+tt.mlir:4:3: error: type of return operand 0 ('tensor<?x2xf64>') doesn't match function result type ('tensor<?x?xf64>') in function @tt
+  func.return %1 : tensor<?x?xf64>
+  ^
+tt.mlir:4:3: note: see current operation: "func.return"(%arg0) : (tensor<?x2xf64>) -> ()

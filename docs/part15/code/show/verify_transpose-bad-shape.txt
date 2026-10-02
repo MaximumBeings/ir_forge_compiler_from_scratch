@@ -1,0 +1,4 @@
+verifier/transpose-bad-shape.mlir:4:8: error: 'mg.transpose' op mg.transpose result shape must be the input shape reversed
+  %0 = mg.transpose %a : tensor<2x3xf64> to tensor<2x3xf64>
+       ^
+verifier/transpose-bad-shape.mlir:4:8: note: see current operation: %0 = "mg.transpose"(%arg0) : (tensor<2x3xf64>) -> tensor<2x3xf64>

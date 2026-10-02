@@ -1,0 +1,3 @@
+mg.add: operand shapes differ at runtime in dimension 0
+Aborted
+exit status: 134

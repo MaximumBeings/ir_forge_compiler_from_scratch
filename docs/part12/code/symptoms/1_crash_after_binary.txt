@@ -1,0 +1,4 @@
+Stack dump:
+0.	Program arguments: mlir-opt-18 symptoms/async.mlir "--pass-pipeline=builtin.module(lower-affine,nvvm-attach-
+ #0 0x00007fd60f7a63bf llvm::sys::PrintStackTrace(llvm::raw_ostream&, int) (/usr/lib/llvm-18/bin/../lib/libLLVM.so.18.1+0xda63bf)
+ #4 0x000055fed77ded5b mlir::gpu::GPUModuleOp::getTargetsAttr() (/usr/lib/llvm-18/bin/mlir-opt+0x14a0d5b)

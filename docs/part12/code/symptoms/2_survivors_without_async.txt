@@ -1,0 +1,9 @@
+%memref = gpu.alloc  () : memref<2x2xf64>
+%memref_0 = gpu.alloc  () : memref<2x2xf64>
+%memref_1 = gpu.alloc  () : memref<2x2xf64>
+gpu.memcpy  %memref, %8 : memref<2x2xf64>, memref<2x2xf64>
+gpu.memcpy  %memref_0, %17 : memref<2x2xf64>, memref<2x2xf64>
+gpu.memcpy  %62, %memref_1 : memref<2x2xf64>, memref<2x2xf64>
+gpu.dealloc  %memref : memref<2x2xf64>
+gpu.dealloc  %memref_0 : memref<2x2xf64>
+gpu.dealloc  %memref_1 : memref<2x2xf64>

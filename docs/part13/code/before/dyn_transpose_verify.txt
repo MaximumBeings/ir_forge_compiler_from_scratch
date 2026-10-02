@@ -1,0 +1,7 @@
+module {
+  func.func @t_dyn(%arg0: tensor<?x?xf64>) -> tensor<?x?xf64> {
+    %0 = mg.transpose %arg0 : tensor<?x?xf64> to tensor<?x?xf64>
+    return %0 : tensor<?x?xf64>
+  }
+}
+

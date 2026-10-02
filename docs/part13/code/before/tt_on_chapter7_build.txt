@@ -1,0 +1,4 @@
+tt.mlir:3:8: error: 'mg.transpose' op mg.transpose result shape must be the input shape reversed
+  %1 = mg.transpose %0 : tensor<2x?xf64> to tensor<?x?xf64>
+       ^
+tt.mlir:3:8: note: see current operation: %1 = "mg.transpose"(%0) : (tensor<2x?xf64>) -> tensor<?x?xf64>

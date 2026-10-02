@@ -4,6 +4,15 @@
 
 **What you need to know first:** Chapter 1's own real "unpacked memref descriptor" calling convention, and Chapter 4's own `ConvertMgToAffinePass`. This chapter's own new ground: what that same real convention looks like for a *returned* memref, rather than only a memref argument.
 
+!!! tip "Compile and run"
+    ```sh
+    cd docs/part7/code && ./build.sh      # once: Chapter 7's mg-opt
+    cd ../../part8/code
+    ./run.sh          # lower, translate, compile, link, run, and check what the executable links against
+    ```
+    Needs Chapter 7's `mg-opt`, `clang-18`, `mlir-translate-18`. Every listing and output on this page comes from these commands (and the chapter's own embedded files).
+
+
 ## The real question this chapter answers
 
 Every real execution of a Mountain Goat program so far -- Chapters 5, 6, and 7 -- ran through `mlir-cpu-runner-18`, a genuine JIT: it compiles and runs LLVM-dialect IR in-process, through MLIR's own `ExecutionEngine`, but it never produces an independent binary. Chapter 1's own original real executable (`sum_demo`) needed no JIT, no MLIR runtime, nothing beyond `libc` -- a real, ordinary ELF binary, compiled once, runnable anywhere the same architecture is found. This chapter answers directly: does that same real technique work unmodified on a real Mountain Goat program, and what does the real calling convention look like when a function *returns* a tensor rather than only consuming one?

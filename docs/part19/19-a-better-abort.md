@@ -4,6 +4,10 @@
 
 **What you need to know first:** Chapter 14's runtime check (`cf.assert`, abort on shape mismatch) and the stdout-buffering problem it found. New ground: file descriptors, the `write` system call, and writing an MLIR rewrite pattern that splits blocks.
 
+!!! tip "Compile and run"
+    Every command, listing and output on this page is reproduced by the commands in [Reproducing this chapter](#reproducing-this-chapter) at the bottom of the page, which also lists what must be built first. The chain of builds is in [Getting Started](../getting-started.md#which-build-does-each-chapter-need).
+
+
 ## Primer: why a message can vanish
 
 A running Unix program has three standard **file descriptors**: 0 (input), 1 (standard output, "stdout") and 2 (standard error, "stderr"). A program that prints with C's `puts` writes to the stdio library's *buffered* stdout stream: the text is held in memory and only sent to descriptor 1 when the buffer fills, is flushed, or the program exits normally. When stdout is a terminal the library flushes at each newline, so you see the text immediately. When stdout is a **pipe or a file** it flushes only when the buffer fills or at exit.

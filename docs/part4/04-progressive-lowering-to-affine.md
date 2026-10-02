@@ -4,6 +4,15 @@
 
 **What you need to know first:** Chapters 2 and 3's own `mg` dialect and its real canonicalization patterns. This chapter's own new vocabulary -- dialect conversion's real `ConversionTarget`/`TypeConverter`/`ConversionPattern`, and real bufferization -- was introduced only conceptually in Chapter 3; it is used for real, for the first time, here.
 
+!!! tip "Compile and run"
+    ```sh
+    cd docs/part4/code
+    ./build.sh        # -> ./build/mg-opt (with --convert-mg-to-affine)
+    ./run.sh          # lowering to affine/memref, and the failed one-shot-bufferize attempt
+    ```
+    Same prerequisites as Chapter 2. `run.sh` includes the attempt this chapter shows **failing**; that failure is the expected result. Every listing and output on this page comes from these commands (and the chapter's own embedded files).
+
+
 ## The real question this chapter answers
 
 Every Mountain Goat example so far has stayed inside one dialect, `mg` itself, operating on `tensor` types -- MLIR's own value-semantic array type, where an "add" produces a brand-new logical value, not a write into existing memory. MLIR's own real `affine` dialect, the real target Part 3 of this book commits to, works the other way: `affine.for`, `affine.load`, `affine.store` all operate on `memref` -- MLIR's own buffer-semantic type, an actual region of memory a real loop actually reads from and writes into. A `tensor<2x2xf64>` and a `memref<2x2xf64>` describe the same real shape and element type, but they are not interchangeable: nothing in `affine.load`'s own real definition accepts a `tensor` operand. This chapter answers, concretely, how Mountain Goat's own operations actually cross that gap -- not as a diagram, but as real, compiling, running C++.

@@ -4,6 +4,15 @@
 
 **What you need to know first:** Chapter 4's own hand-written `affine.for` lowering for `mg.add`/`mg.transpose`; Chapter 3's own canonicalization/CSE passes, run again here for a genuinely new reason.
 
+!!! tip "Compile and run"
+    ```sh
+    cd docs/part7/code
+    ./build.sh        # -> ./build/mg-opt (registers the affine passes)
+    ./run.sh          # fusion, tiling, unrolling, and the full pipeline run
+    ```
+    Same prerequisites as Chapter 5. Every listing and output on this page comes from these commands (and the chapter's own embedded files).
+
+
 ## The real question this chapter answers
 
 Chapter 1 quoted MLIR's own rationale directly: structured, affine-level loops "subsume all traditional loop transformations... such as loop tiling, interchange, permutation... fusion, and distribution," naming the exact real capability this book has not yet exercised. Mountain Goat's own `compute` function -- `mg.add` immediately feeding `mg.transpose` -- is a genuine, real producer/consumer pair once lowered: the add's own loop nest writes a buffer the transpose's own loop nest immediately reads back, element by element. This chapter answers, concretely: what do MLIR's own real, built-in affine transform passes actually do to that real pair of loop nests, run one after another, with every real before/after state captured directly?

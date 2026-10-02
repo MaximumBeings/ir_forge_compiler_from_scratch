@@ -1,0 +1,6 @@
+PASS: IR Forge / Mountain Goat :: lowering/bufferize-dynamic-add.mlir (75 of 75)
+
+Testing Time: 2.21s
+
+Total Discovered Tests: 75
+  Passed: 75 (100.00%)

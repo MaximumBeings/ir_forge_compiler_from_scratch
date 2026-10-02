@@ -4,6 +4,10 @@
 
 **What you need to know first:** Chapter 10's kernel (`gpu.module @add_tensors_kernel`, 2 blocks x 2 threads, 23 parameters) and Chapter 8's harness (the same `Memref2D` struct-return convention). New ground: the async form of `gpu` ops, and where in the pipeline `gpu.launch_func` actually becomes runtime calls.
 
+!!! tip "Compile and run"
+    Every command, listing and output on this page is reproduced by the commands in [Reproducing this chapter](#reproducing-this-chapter) at the bottom of the page, which also lists what must be built first. The chain of builds is in [Getting Started](../getting-started.md#which-build-does-each-chapter-need).
+
+
 ## Primer: what the host does around a kernel
 
 A GPU has its own memory. A kernel can only read and write memory on the device, so a host program that wants to use one must, in order:

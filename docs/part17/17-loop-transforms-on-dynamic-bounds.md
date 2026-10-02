@@ -4,6 +4,10 @@
 
 **What you need to know first:** Chapter 7's transforms on static loops, Chapter 13's dynamic lowering (`memref.dim`, operand-bound loops) and Chapter 14's runtime shape check. New ground: how a loop transform copes with a trip count it cannot know.
 
+!!! tip "Compile and run"
+    Every command, listing and output on this page is reproduced by the commands in [Reproducing this chapter](#reproducing-this-chapter) at the bottom of the page, which also lists what must be built first. The chain of builds is in [Getting Started](../getting-started.md#which-build-does-each-chapter-need).
+
+
 ## Background: why a dynamic bound makes loop transforms harder
 
 Chapter 7 transformed loops like `affine.for %i = 0 to 2`: the compiler knew the loop ran exactly twice. With dynamic shapes the bound is a value read at runtime: `affine.for %i = 0 to %dim`. Each transform leans on knowing the trip count in a different way, so each reacts differently:

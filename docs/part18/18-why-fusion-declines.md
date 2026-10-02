@@ -4,6 +4,10 @@
 
 **What you need to know first:** Chapter 17's results, in particular the fusion rows. New ground: how a loop-fusion pass decides whether to fuse (a cost model), and reading MLIR's affine transform source.
 
+!!! tip "Compile and run"
+    Every command, listing and output on this page is reproduced by the commands in [Reproducing this chapter](#reproducing-this-chapter) at the bottom of the page, which also lists what must be built first. The chain of builds is in [Getting Started](../getting-started.md#which-build-does-each-chapter-need).
+
+
 ## Background: what a fusion pass decides
 
 Two adjacent loop nests, where the first writes a buffer and the second reads it, can often be merged into one nest, so each element is consumed right after it is produced and the intermediate buffer can shrink. Chapter 7 showed this on static loops: an add nest and a transpose nest became one nest and a 4x6 buffer became a single scalar slot. But fusion is not always a win (it can duplicate work), so the pass does not fuse blindly. It runs a **profitability analysis**: a cost model that counts operation instances (roughly, ops in the body times trip counts) for the nests before and after fusion and compares them. A cost model made of products of trip counts needs the trip counts as *numbers*. That is the thread this chapter pulls.

@@ -4,6 +4,15 @@
 
 **What you need to know first:** Chapter 2's own dialect (`mg.constant`, `mg.add`, `mg.transpose`, `mg.print`) and how `hasVerifier`/ODS traits work. This chapter's own new vocabulary -- `fold()`, `RewritePattern`, `PatternRewriter`, the canonicalizer pass -- is introduced here, grounded in real, run code.
 
+!!! tip "Compile and run"
+    ```sh
+    cd docs/part3/code
+    ./build.sh        # -> ./build/mg-opt (with the verifier, folder and canonicalizer)
+    ./run.sh          # the mismatch rejection and the canonicalization demo
+    ```
+    Same prerequisites as Chapter 2. Every listing and output on this page comes from these commands (and the chapter's own embedded files).
+
+
 ## The real question this chapter answers
 
 Chapter 2 built a dialect that can be *checked* -- `mlir-tblgen-18`-generated verifiers reject malformed IR. This chapter answers a different real question: how does MLIR actually *rewrite* IR into a better, equivalent form? Two genuinely different real mechanisms exist for this in MLIR, and conflating them is a real, common confusion this chapter resolves directly: a **folder** (`fold()`) collapses an operation into a plain value or attribute when its operands are already known constants, cheaply, without needing a full pattern-match infrastructure; a **`RewritePattern`** matches a more general shape in the IR -- not just "are my operands constant" -- and replaces it with something else entirely. This chapter builds one real example of each, directly in Mountain Goat's own dialect, and runs both through the real, built-in `--canonicalize` pass.

@@ -4,6 +4,14 @@
 
 **What you need to know first:** Chapter 1's own "unpacked memref descriptor" convention and Chapter 8's own struct-return convention for `_mlir_ciface_` wrappers. This chapter's own new ground: `mlir::ExecutionEngine`'s own real, separate packed-argument calling convention, genuinely different from both.
 
+!!! tip "Compile and run"
+    ```sh
+    cd docs/part9/code
+    ./run.sh          # cmake-build run_engine, then JIT-run add_tensors_llvm.mlir
+    ```
+    Needs `cmake`, `make`, `llvm-18-dev`, `libmlir-18-dev`. The program loads MLIR text produced in Chapter 8. Every listing and output on this page comes from these commands (and the chapter's own embedded files).
+
+
 ## The real question this chapter answers
 
 `mlir-cpu-runner-18` and Chapter 8's own standalone executable are both real, but neither one is C++ code calling into a JIT-compiled Mountain Goat function *from inside the same process*, the way a real embedding application -- a database engine JIT-compiling a query plan, a numerical library JIT-compiling a kernel -- would actually use MLIR. This chapter answers directly: what does that real, embedded use look like in actual C++, using `mlir::ExecutionEngine` itself rather than a pre-built tool?

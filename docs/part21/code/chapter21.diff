@@ -1,0 +1,499 @@
+--- ../../part3/code/MgOps.td	2026-10-01 21:21:01.991785523 +0000
++++ MgOps.td	2026-10-02 03:06:25.081013492 +0000
+@@ -45,6 +45,59 @@
+   let hasFolder = 1;
+ }
+ 
++def SubOp : Mg_Op<"sub", [Pure]> {
++  let summary = "elementwise subtract of two compatible-shaped tensors (lhs - rhs)";
++  let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
++  let results = (outs F64Tensor:$result);
++  let assemblyFormat = "$lhs `,` $rhs attr-dict `:` type($lhs) `,` type($rhs) `->` type($result)";
++  let hasVerifier = 1;
++}
++
++def MulOp : Mg_Op<"mul", [Pure]> {
++  let summary = "elementwise (Hadamard) product of two compatible-shaped tensors";
++  let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
++  let results = (outs F64Tensor:$result);
++  let assemblyFormat = "$lhs `,` $rhs attr-dict `:` type($lhs) `,` type($rhs) `->` type($result)";
++  let hasVerifier = 1;
++}
++
++def DivOp : Mg_Op<"div", [Pure]> {
++  let summary = "elementwise division of two compatible-shaped tensors (lhs / rhs, IEEE: x/0 is inf or nan)";
++  let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
++  let results = (outs F64Tensor:$result);
++  let assemblyFormat = "$lhs `,` $rhs attr-dict `:` type($lhs) `,` type($rhs) `->` type($result)";
++  let hasVerifier = 1;
++}
++
++def ScalarOp : Mg_Op<"scalar", [Pure]> {
++  let summary = "combine every element with one scalar constant";
++  let description = [{
++    `op` is one of "add", "sub", "mul", "div". With `reversed = false` each element becomes
++    `x OP value`; with `reversed = true` it becomes `value OP x` (so `10 - x` and `1 / x` exist).
++    Works for any shape, including dynamic ones, because no second tensor is involved.
++  }];
++  let arguments = (ins F64Tensor:$input, StrAttr:$op, F64Attr:$value, BoolAttr:$reversed);
++  let results = (outs F64Tensor:$result);
++  let assemblyFormat = "$input attr-dict `:` type($input) `->` type($result)";
++  let hasVerifier = 1;
++}
++
++def NegOp : Mg_Op<"neg", [Pure]> {
++  let summary = "elementwise negation";
++  let arguments = (ins F64Tensor:$input);
++  let results = (outs F64Tensor:$result);
++  let assemblyFormat = "$input attr-dict `:` type($input) `->` type($result)";
++  let hasVerifier = 1;
++}
++
++def MatmulOp : Mg_Op<"matmul", [Pure]> {
++  let summary = "matrix product: (m x k) times (k x n) gives (m x n)";
++  let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
++  let results = (outs F64Tensor:$result);
++  let assemblyFormat = "$lhs `,` $rhs attr-dict `:` type($lhs) `,` type($rhs) `->` type($result)";
++  let hasVerifier = 1;
++}
++
+ def TransposeOp : Mg_Op<"transpose", [Pure]> {
+   let summary = "transpose of a 2-D tensor";
+   let arguments = (ins F64Tensor:$input);
+--- ../../part13/code/MgDialect.cpp	2026-10-01 22:53:13.160361103 +0000
++++ MgDialect.cpp	2026-10-02 03:06:25.081495534 +0000
+@@ -75,6 +75,52 @@
+   return mlir::success();
+ }
+ 
++namespace {
++/// Shared by mg.add-style ops: same rank, every dimension compatible (equal, or `?` on either side).
++mlir::LogicalResult verifyElementwise(mlir::Operation *op, llvm::ArrayRef<mlir::Type> types, llvm::StringRef name) {
++  llvm::SmallVector<mlir::RankedTensorType, 3> t;
++  for (mlir::Type ty : types) {
++    auto r = llvm::dyn_cast<mlir::RankedTensorType>(ty);
++    if (!r) return op->emitOpError(name + " only supports ranked tensors");
++    t.push_back(r);
++  }
++  for (auto x : t)
++    if (x.getRank() != t[0].getRank())
++      return op->emitOpError(name + " operands and result must have the same rank");
++  for (int64_t d = 0; d < t[0].getRank(); ++d)
++    for (auto x : t)
++      for (auto y : t)
++        if (!mg::dyn::compatibleDim(x.getDimSize(d), y.getDimSize(d)))
++          return op->emitOpError(name + " operands must have compatible shapes, got ") << x << " and " << y;
++  return mlir::success();
++}
++} // namespace
++
++mlir::LogicalResult SubOp::verify() { return verifyElementwise(*this, {getLhs().getType(), getRhs().getType(), getResult().getType()}, "mg.sub"); }
++mlir::LogicalResult MulOp::verify() { return verifyElementwise(*this, {getLhs().getType(), getRhs().getType(), getResult().getType()}, "mg.mul"); }
++mlir::LogicalResult DivOp::verify() { return verifyElementwise(*this, {getLhs().getType(), getRhs().getType(), getResult().getType()}, "mg.div"); }
++mlir::LogicalResult ScalarOp::verify() {
++  llvm::StringRef k = getOp();
++  if (k != "add" && k != "sub" && k != "mul" && k != "div")
++    return emitOpError("mg.scalar: op must be one of add, sub, mul, div, got '") << k << "'";
++  return verifyElementwise(*this, {getInput().getType(), getResult().getType()}, "mg.scalar");
++}
++mlir::LogicalResult NegOp::verify() { return verifyElementwise(*this, {getInput().getType(), getResult().getType()}, "mg.neg"); }
++
++mlir::LogicalResult MatmulOp::verify() {
++  auto l = llvm::dyn_cast<mlir::RankedTensorType>(getLhs().getType());
++  auto r = llvm::dyn_cast<mlir::RankedTensorType>(getRhs().getType());
++  auto o = llvm::dyn_cast<mlir::RankedTensorType>(getResult().getType());
++  if (!l || !r || !o) return emitOpError("mg.matmul only supports ranked tensors");
++  if (l.getRank() != 2 || r.getRank() != 2 || o.getRank() != 2)
++    return emitOpError("mg.matmul only supports rank-2 tensors");
++  if (!mg::dyn::compatibleDim(l.getDimSize(1), r.getDimSize(0)))
++    return emitOpError("mg.matmul inner dimensions differ: ") << l << " times " << r;
++  if (!mg::dyn::compatibleDim(o.getDimSize(0), l.getDimSize(0)) || !mg::dyn::compatibleDim(o.getDimSize(1), r.getDimSize(1)))
++    return emitOpError("mg.matmul result shape must be (rows of lhs) x (columns of rhs), got ") << o;
++  return mlir::success();
++}
++
+ mlir::OpFoldResult AddOp::fold(FoldAdaptor adaptor) {
+   auto lhsAttr = llvm::dyn_cast_if_present<mlir::DenseElementsAttr>(adaptor.getLhs());
+   auto rhsAttr = llvm::dyn_cast_if_present<mlir::DenseElementsAttr>(adaptor.getRhs());
+--- ../../part20/code/LowerToAffine.cpp	2026-10-02 02:52:35.252838267 +0000
++++ LowerToAffine.cpp	2026-10-02 03:12:27.030941608 +0000
+@@ -110,6 +110,139 @@
+   }
+ };
+ 
++/// Chapter 21: sub, mul and div share add's whole lowering; only the arithmetic op differs.
++template <typename MgOp, typename ArithOp>
++struct ElementwiseBinaryLowering : public OpConversionPattern<MgOp> {
++  using OpConversionPattern<MgOp>::OpConversionPattern;
++  using OpAdaptor = typename OpConversionPattern<MgOp>::OpAdaptor;
++
++  LogicalResult matchAndRewrite(MgOp op, OpAdaptor adaptor,
++                                ConversionPatternRewriter &rewriter) const override {
++    auto loc = op.getLoc();
++    auto tensorType = llvm::cast<RankedTensorType>(op.getResult().getType());
++    auto memrefType = convertTensorToMemref(tensorType);
++    Value lhs = adaptor.getLhs(), rhs = adaptor.getRhs();
++    mg::dyn::assertSameShape(rewriter, loc, lhs, rhs,
++                             llvm::cast<RankedTensorType>(op.getLhs().getType()),
++                             llvm::cast<RankedTensorType>(op.getRhs().getType()),
++                             op.getOperationName());
++    llvm::SmallVector<Value, 2> extents;
++    for (int64_t d = 0; d < 2; ++d)
++      extents.push_back(tensorType.isDynamicDim(d) ? mg::dyn::extentOf(rewriter, loc, lhs, d) : Value());
++    auto alloc = mg::dyn::allocFor(rewriter, loc, memrefType, extents);
++    mg::dyn::nest2D(rewriter, loc, tensorType, extents,
++                    [&](OpBuilder &b, Location l, ValueRange ivs) {
++                      Value x = b.create<affine::AffineLoadOp>(l, lhs, ivs);
++                      Value y = b.create<affine::AffineLoadOp>(l, rhs, ivs);
++                      b.create<affine::AffineStoreOp>(l, b.create<ArithOp>(l, x, y), alloc, ivs);
++                    });
++    rewriter.replaceOp(op, alloc.getResult());
++    return success();
++  }
++};
++
++struct ScalarOpLowering : public OpConversionPattern<mg::ScalarOp> {
++  using OpConversionPattern::OpConversionPattern;
++  LogicalResult matchAndRewrite(mg::ScalarOp op, OpAdaptor adaptor,
++                                ConversionPatternRewriter &rewriter) const override {
++    auto loc = op.getLoc();
++    auto tensorType = llvm::cast<RankedTensorType>(op.getResult().getType());
++    auto memrefType = convertTensorToMemref(tensorType);
++    Value in = adaptor.getInput();
++    llvm::SmallVector<Value, 2> extents;
++    for (int64_t d = 0; d < 2; ++d)
++      extents.push_back(tensorType.isDynamicDim(d) ? mg::dyn::extentOf(rewriter, loc, in, d) : Value());
++    auto alloc = mg::dyn::allocFor(rewriter, loc, memrefType, extents);
++    Value c = rewriter.create<arith::ConstantOp>(loc, rewriter.getF64FloatAttr(op.getValue().convertToDouble()));
++    llvm::StringRef kind = op.getOp();
++    bool rev = op.getReversed();
++    mg::dyn::nest2D(rewriter, loc, tensorType, extents, [&](OpBuilder &b, Location l, ValueRange ivs) {
++      Value x = b.create<affine::AffineLoadOp>(l, in, ivs);
++      Value lhs = rev ? c : x, rhs = rev ? x : c, r;
++      if (kind == "add") r = b.create<arith::AddFOp>(l, lhs, rhs);
++      else if (kind == "sub") r = b.create<arith::SubFOp>(l, lhs, rhs);
++      else if (kind == "mul") r = b.create<arith::MulFOp>(l, lhs, rhs);
++      else r = b.create<arith::DivFOp>(l, lhs, rhs);
++      b.create<affine::AffineStoreOp>(l, r, alloc, ivs);
++    });
++    rewriter.replaceOp(op, alloc.getResult());
++    return success();
++  }
++};
++
++struct NegOpLowering : public OpConversionPattern<mg::NegOp> {
++  using OpConversionPattern::OpConversionPattern;
++  LogicalResult matchAndRewrite(mg::NegOp op, OpAdaptor adaptor,
++                                ConversionPatternRewriter &rewriter) const override {
++    auto loc = op.getLoc();
++    auto tensorType = llvm::cast<RankedTensorType>(op.getResult().getType());
++    auto memrefType = convertTensorToMemref(tensorType);
++    Value in = adaptor.getInput();
++    llvm::SmallVector<Value, 2> extents;
++    for (int64_t d = 0; d < 2; ++d)
++      extents.push_back(tensorType.isDynamicDim(d) ? mg::dyn::extentOf(rewriter, loc, in, d) : Value());
++    auto alloc = mg::dyn::allocFor(rewriter, loc, memrefType, extents);
++    mg::dyn::nest2D(rewriter, loc, tensorType, extents,
++                    [&](OpBuilder &b, Location l, ValueRange ivs) {
++                      Value x = b.create<affine::AffineLoadOp>(l, in, ivs);
++                      b.create<affine::AffineStoreOp>(l, b.create<arith::NegFOp>(l, x), alloc, ivs);
++                    });
++    rewriter.replaceOp(op, alloc.getResult());
++    return success();
++  }
++};
++
++/// mg.matmul: result[i,j] = sum over k of lhs[i,k] * rhs[k,j]. A zero-fill nest, then a 3-deep
++/// accumulate nest. For `?` dimensions the inner extents must agree at run time: one cf.assert.
++struct MatmulOpLowering : public OpConversionPattern<mg::MatmulOp> {
++  using OpConversionPattern::OpConversionPattern;
++  LogicalResult matchAndRewrite(mg::MatmulOp op, OpAdaptor adaptor,
++                                ConversionPatternRewriter &rewriter) const override {
++    auto loc = op.getLoc();
++    auto outType = llvm::cast<RankedTensorType>(op.getResult().getType());
++    auto lt = llvm::cast<RankedTensorType>(op.getLhs().getType());
++    auto rt = llvm::cast<RankedTensorType>(op.getRhs().getType());
++    auto memrefType = convertTensorToMemref(outType);
++    Value lhs = adaptor.getLhs(), rhs = adaptor.getRhs();
++
++    if (lt.isDynamicDim(1) || rt.isDynamicDim(0)) {
++      Value l = mg::dyn::extentOf(rewriter, loc, lhs, 1), r = mg::dyn::extentOf(rewriter, loc, rhs, 0);
++      Value eq = rewriter.create<arith::CmpIOp>(loc, arith::CmpIPredicate::eq, l, r);
++      rewriter.create<cf::AssertOp>(loc, eq, rewriter.getStringAttr("mg.matmul: inner dimensions differ at runtime"));
++    }
++    // m = rows of lhs, n = columns of rhs, k = columns of lhs.
++    llvm::SmallVector<Value, 2> extents = {outType.isDynamicDim(0) ? mg::dyn::extentOf(rewriter, loc, lhs, 0) : Value(),
++                                           outType.isDynamicDim(1) ? mg::dyn::extentOf(rewriter, loc, rhs, 1) : Value()};
++    auto alloc = mg::dyn::allocFor(rewriter, loc, memrefType, extents);
++    Value zero = rewriter.create<arith::ConstantOp>(loc, rewriter.getF64FloatAttr(0.0));
++    mg::dyn::nest2D(rewriter, loc, outType, extents, [&](OpBuilder &b, Location l, ValueRange ivs) {
++      b.create<affine::AffineStoreOp>(l, zero, alloc, ivs);
++    });
++
++    auto bound = [&](int64_t staticSize, Value lhsOrRhs, int64_t dim, Value known) -> Value {
++      if (!ShapedType::isDynamic(staticSize))
++        return rewriter.create<arith::ConstantIndexOp>(loc, staticSize);
++      return known ? known : mg::dyn::extentOf(rewriter, loc, lhsOrRhs, dim);
++    };
++    Value m = bound(outType.getDimSize(0), lhs, 0, Value());
++    Value n = bound(outType.getDimSize(1), rhs, 1, Value());
++    int64_t kStatic = !lt.isDynamicDim(1) ? lt.getDimSize(1) : rt.getDimSize(0);
++    Value k = bound(kStatic, lhs, 1, Value());
++    Value c0 = rewriter.create<arith::ConstantIndexOp>(loc, 0);
++    affine::buildAffineLoopNest(rewriter, loc, ValueRange{c0, c0, c0}, ValueRange{m, n, k}, {1, 1, 1},
++        [&](OpBuilder &b, Location l, ValueRange ivs) {
++          Value i = ivs[0], j = ivs[1], kk = ivs[2];
++          Value acc = b.create<affine::AffineLoadOp>(l, alloc, ValueRange{i, j});
++          Value x = b.create<affine::AffineLoadOp>(l, lhs, ValueRange{i, kk});
++          Value y = b.create<affine::AffineLoadOp>(l, rhs, ValueRange{kk, j});
++          Value prod = b.create<arith::MulFOp>(l, x, y);
++          b.create<affine::AffineStoreOp>(l, b.create<arith::AddFOp>(l, acc, prod), alloc, ValueRange{i, j});
++        });
++    rewriter.replaceOp(op, alloc.getResult());
++    return success();
++  }
++};
++
+ /// mg.transpose lowers to a real `affine.for` loop nest over the *output*
+ /// shape, loading `input[j, i]` and storing to `result[i, j]` -- the
+ /// transpose is the real index swap between load and store, nothing more.
+@@ -263,7 +396,11 @@
+ 
+     RewritePatternSet patterns(&getContext());
+     patterns.add<ConstantOpLowering, AddOpLowering, TransposeOpLowering,
+-                PrintOpLowering, TensorCastLowering>(typeConverter, &getContext());
++                PrintOpLowering, TensorCastLowering,
++                 ElementwiseBinaryLowering<mg::SubOp, arith::SubFOp>,
++                 ElementwiseBinaryLowering<mg::MulOp, arith::MulFOp>,
++                 ElementwiseBinaryLowering<mg::DivOp, arith::DivFOp>,
++                 ScalarOpLowering, NegOpLowering, MatmulOpLowering>(typeConverter, &getContext());
+     populateFunctionOpInterfaceTypeConversionPattern<func::FuncOp>(patterns,
+                                                                    typeConverter);
+     populateCallOpTypeConversionPattern(patterns, typeConverter);
+--- ../../part20/code/mgfront.py	2026-10-02 02:58:36.640920215 +0000
++++ mgfront.py	2026-10-02 03:15:00.006673338 +0000
+@@ -1,13 +1,16 @@
+ #!/usr/bin/env python3
+ """mgfront: the Mountain Goat surface-syntax front end. Reads .mg source, writes MLIR (mg dialect) to stdout.
+ 
++Operators (Chapter 21): + - * / are elementwise on matrices ('*' is the Hadamard product) and also combine a matrix
++with a scalar; '@' is the matrix product; unary '-' negates. Scalars are numbers known at compile time.
+ Grammar (one statement per line, '#' starts a comment):
+   program := (def | stmt)*
+   def     := 'def' NAME '(' [NAME ':' type (',' NAME ':' type)*] ')' '=' expr      -- a function of tensors
+   stmt    := 'let' NAME '=' expr | 'print' expr
+   type    := 'tensor' '[' dim 'x' dim ']'      dim := INT | '?'
+-  expr    := term ('+' term)*
+-  term    := NAME | matrix | 'transpose' '(' expr ')' | NAME '(' expr (',' expr)* ')' | '(' expr ')'
++  expr    := product (('+'|'-') product)*
++  product := unary (('*'|'/'|'@') unary)*     unary := '-' unary | term
++  term    := NAME | NUMBER | matrix | 'transpose' '(' expr ')' | NAME '(' expr (',' expr)* ')' | '(' expr ')'
+   matrix  := '[' row (',' row)* ']'   row := '[' NUM (',' NUM)* ']'
+ Every value is a rank-2 f64 tensor. A dimension is an int or None (dynamic, written '?').
+ """
+@@ -16,7 +19,7 @@
+ class MgError(Exception):
+     def __init__(self, line, msg): self.line, self.msg = line, msg
+ 
+-TOKEN = re.compile(r"\s*(?:(?P<num>-?\d+\.?\d*(?:[eE][-+]?\d+)?)|(?P<id>[A-Za-z_]\w*)|(?P<sym>[()\[\],+=:?]))")
++TOKEN = re.compile(r"\s*(?:(?P<num>\d+\.?\d*(?:[eE][-+]?\d+)?)|(?P<id>[A-Za-z_]\w*)|(?P<sym>[()\[\],+\-*/@=:?]))")
+ 
+ def tokenize(text, line):
+     toks, pos = [], 0
+@@ -30,6 +33,13 @@
+         toks.append((kind, m.group(kind)))
+     return toks
+ 
++def mlir_float(text):
++    """MLIR's float literals need a decimal point before any exponent: '3e2' is rejected, '3.0e2' is accepted."""
++    t = repr(float(text))                      # '300.0', '0.25', '1e+16', '1.5e-07'
++    if "e" in t and "." not in t:
++        mantissa, exp = t.split("e"); t = mantissa + ".0e" + exp
++    return t
++
+ def fmt(shape):  # (2,None) -> 'tensor<2x?xf64>'
+     return "tensor<" + "x".join("?" if d is None else str(d) for d in shape) + "xf64>"
+ 
+@@ -56,23 +66,56 @@
+         if want is not None and v != want:
+             raise MgError(self.line, f"expected {want!r} but found {v!r}")
+         self.i += 1; return k, v
+-    def expr(self):
+-        v, s = self.term()
+-        while self.peek()[1] == "+":
+-            self.take("+"); w, s2 = self.term()
+-            for a, b in zip(s, s2):
+-                if a is not None and b is not None and a != b:
+-                    raise MgError(self.line, f"cannot add shapes {'x'.join(map(str,s))} and {'x'.join(map(str,s2))}")
+-            shape = tuple(a if a is not None else b for a, b in zip(s, s2))
++    # A value is (ssa_name, shape) for a matrix, or (None, float) for a compile-time scalar.
++    OPNAME = {"+": "add", "-": "sub", "*": "mul", "/": "div"}
++    VERB = {"+": "add", "-": "subtract", "*": "multiply", "/": "divide", "@": "multiply (matmul)"}
++    def expr(self):                       # additive level: + and -
++        x = self.product()
++        while self.peek()[1] in ("+", "-"):
++            op = self.take()[1]; y = self.product(); x = self.binary(op, x, y)
++        return x
++    def product(self):                    # multiplicative level: * (elementwise), / (elementwise), @ (matmul)
++        x = self.unary()
++        while self.peek()[1] in ("*", "/", "@"):
++            op = self.take()[1]; y = self.unary(); x = self.binary(op, x, y)
++        return x
++    def unary(self):
++        if self.peek()[1] == "-":
++            self.take("-"); v, s = self.unary()
++            if v is None: return None, -s
++            r = self.fn.tmp(); self.fn.emit(f"{r} = mg.neg {v} : {fmt(s)} -> {fmt(s)}"); return r, s
++        return self.term()
++    def binary(self, op, x, y):
++        (v, s), (w, s2) = x, y
++        if op == "@":
++            if v is None or w is None: raise MgError(self.line, "'@' (matrix product) needs two matrices, not a scalar")
++            if s[1] is not None and s2[0] is not None and s[1] != s2[0]:
++                raise MgError(self.line, f"cannot multiply (matmul) shapes {s[0]}x{s[1]} and {s2[0]}x{s2[1]}: inner dimensions differ")
++            shape = (s[0], s2[1]); r = self.fn.tmp()
++            self.fn.emit(f"{r} = mg.matmul {v}, {w} : {fmt(s)}, {fmt(s2)} -> {fmt(shape)}")
++            return r, shape
++        if v is None and w is None:       # scalar op scalar: folded here
++            if op == "/" and s2 == 0: raise MgError(self.line, "division of a scalar by zero")
++            return None, {"+": s + s2, "-": s - s2, "*": s * s2, "/": (s / s2 if op == "/" else 0)}[op]
++        if v is None or w is None:        # matrix with a scalar: mg.scalar, reversed when the scalar is on the left
++            rev = v is None
++            m, shp, c = (w, s2, s) if rev else (v, s, s2)
+             r = self.fn.tmp()
+-            self.fn.emit(f"{r} = mg.add {v}, {w} : {fmt(s)}, {fmt(s2)} -> {fmt(shape)}")
+-            v, s = r, shape
+-        return v, s
++            self.fn.emit(f'{r} = mg.scalar {m} {{op = "{self.OPNAME[op]}", value = {mlir_float(str(c))} : f64, reversed = {"true" if rev else "false"}}} : {fmt(shp)} -> {fmt(shp)}')
++            return r, shp
++        for a, b in zip(s, s2):
++            if a is not None and b is not None and a != b:
++                raise MgError(self.line, f"cannot {self.VERB[op]} shapes {'x'.join(map(str,s))} and {'x'.join(map(str,s2))}")
++        shape = tuple(a if a is not None else b for a, b in zip(s, s2)); r = self.fn.tmp()
++        self.fn.emit(f"{r} = mg.{self.OPNAME[op]} {v}, {w} : {fmt(s)}, {fmt(s2)} -> {fmt(shape)}")
++        return r, shape
+     def term(self):
+         k, v = self.peek()
++        if k is None: raise MgError(self.line, "expected an expression, found the end of the line")
+         if v == "(":
+             self.take("("); r = self.expr(); self.take(")"); return r
+         if v == "[": return self.matrix()
++        if k == "num": self.take(); return None, float(v)
+         if k == "id":
+             self.take()
+             if v == "transpose":
+@@ -95,6 +138,7 @@
+             raise MgError(self.line, f"{name} takes {len(params)} arguments, got {len(args)}")
+         vals = []
+         for (v, s), p in zip(args, params):
++            if v is None: raise MgError(self.line, f"{name}: a scalar cannot be passed where a matrix is expected")
+             for a, b in zip(s, p):
+                 if b is not None and a != b:
+                     raise MgError(self.line, f"argument shape {'x'.join('?' if d is None else str(d) for d in s)} does not fit parameter {'x'.join('?' if d is None else str(d) for d in p)}")
+@@ -105,12 +149,16 @@
+         sig = ", ".join(fmt(p) for p in params)
+         self.fn.emit(f"{r} = func.call @{name}({', '.join(vals)}) : ({sig}) -> {fmt(result)}")
+         return r, result
++    def entry(self):
++        neg = self.peek()[1] == "-"
++        if neg: self.take("-")
++        return ("-" if neg else "") + self.take()[1]
+     def matrix(self):
+         rows = []
+         self.take("[")
+         while True:
+-            self.take("["); row = [self.take()[1]]
+-            while self.peek()[1] == ",": self.take(","); row.append(self.take()[1])
++            self.take("["); row = [self.entry()]
++            while self.peek()[1] == ",": self.take(","); row.append(self.entry())
+             self.take("]"); rows.append(row)
+             if self.peek()[1] == ",": self.take(","); continue
+             break
+@@ -118,7 +166,7 @@
+         if len({len(r) for r in rows}) != 1: raise MgError(self.line, "matrix rows have different lengths")
+         def f(x):
+             if not re.fullmatch(r"-?\d+\.?\d*(?:[eE][-+]?\d+)?", x): raise MgError(self.line, f"{x!r} is not a number")
+-            return x if ("." in x or "e" in x.lower()) else x + ".0"
++            return mlir_float(x)
+         body = "[" + ", ".join("[" + ", ".join(f(x) for x in r) + "]" for r in rows) + "]"
+         shape = (len(rows), len(rows[0])); r = self.fn.tmp()
+         self.fn.emit(f"{r} = mg.constant dense<{body}> : {fmt(shape)}")
+@@ -131,8 +179,8 @@
+     for i in range(2):
+         v = p.take()[1]
+         if v == "?": dims.append(None)
+-        elif v.isdigit(): dims.append(int(v))
+-        else: raise MgError(p.line, f"bad dimension {v!r}")
++        elif v.isdigit() and int(v) > 0: dims.append(int(v))
++        else: raise MgError(p.line, f"bad dimension {v!r}: use a positive integer or '?'")
+         if i == 0 and p.take()[1] != "x": raise MgError(p.line, "expected 'x' between dimensions")
+     p.take("]"); return tuple(dims)
+ 
+@@ -156,6 +204,7 @@
+             p.take(")"); p.take("=")
+             for i, (n, shp) in enumerate(zip(names, params)): fn.env[n] = (f"%{n}", shp)
+             v, s = p.expr()
++            if v is None: raise MgError(ln, f"def {name}: a function must return a matrix, not a scalar")
+             if p.i != len(toks): raise MgError(ln, f"unexpected {p.peek()[1]!r}")
+             em.funcs[name] = (params, s)
+             em.defs.append((name, names, params, s))
+@@ -166,7 +215,9 @@
+         if kw == "let":
+             n = p.take()[1]; p.take("="); v, s = p.expr(); main.env[n] = (v, s)
+         elif kw == "print":
+-            v, s = p.expr(); main.emit(f"mg.print {v} : {fmt(s)}")
++            v, s = p.expr()
++            if v is None: raise MgError(ln, "print needs a matrix; a scalar has no shape to print")
++            main.emit(f"mg.print {v} : {fmt(s)}")
+         else:
+             raise MgError(ln, f"a statement must start with 'let', 'print' or 'def', not {kw!r}")
+         if p.i != len(toks): raise MgError(ln, f"unexpected {p.peek()[1]!r}")
+--- ../../part20/code/mgc	2026-10-02 02:58:36.642607976 +0000
++++ mgc	2026-10-02 03:11:46.808300801 +0000
+@@ -5,10 +5,10 @@
+ #   mgc lib   prog.mg [-o dir]   compile the 'def's to prog.o plus a C++ header prog.h (no main), for linking into your own program
+ #   mgc mlir  prog.mg            print the mg-dialect MLIR the front end produces
+ #   mgc ptx   prog.mg            compile to PTX (no launch: this machine has no GPU) and print the PTX
+-# Env: MG_OPT (default Chapter 20 build), MGC_KEEP=dir (keep every intermediate file there).
++# Env: MG_OPT (default Chapter 21 build), MGC_KEEP=dir (keep every intermediate file there).
+ set -e
+ HERE=$(cd "$(dirname "$0")" && pwd)
+-MG_OPT=${MG_OPT:-$HERE/../../part20/code/build/mg-opt}
++MG_OPT=${MG_OPT:-$HERE/../../part21/code/build/mg-opt}
+ LIBDIR=${MLIR_LIBDIR:-/usr/lib/llvm-18/lib}
+ usage() { echo "usage: mgc run|build|lib|mlir|ptx prog.mg [-o exe]" >&2; exit 2; }
+ [ $# -ge 2 ] || usage
+@@ -20,7 +20,7 @@
+ LIBFLAG=; [ "$cmd" = lib ] && LIBFLAG=--lib
+ python3 "$HERE/mgfront.py" $LIBFLAG "$src" > "$W/$base.mlir"          # 1. surface syntax -> mg dialect (exit 1 + message on a syntax/shape error)
+ [ "$cmd" = mlir ] && { cat "$W/$base.mlir"; exit 0; }
+-[ -x "$MG_OPT" ] || { echo "mgc: no mg-opt at $MG_OPT (run part20/code/build.sh)" >&2; exit 2; }
++[ -x "$MG_OPT" ] || { echo "mgc: no mg-opt at $MG_OPT (run part21/code/build.sh)" >&2; exit 2; }
+ case $cmd in
+   build|run|lib)
+     LOWER='--lower-affine --convert-scf-to-cf --mg-lower-assert-to-stderr --convert-arith-to-llvm --finalize-memref-to-llvm --convert-func-to-llvm --reconcile-unrealized-casts'
+@@ -42,8 +42,8 @@
+     mlir-opt-18 "$W/$base.affine.mlir" \
+       --pass-pipeline='builtin.module(func.func(affine-parallelize,lower-affine,gpu-map-parallel-loops,convert-parallel-loops-to-gpu),gpu-kernel-outlining)' -o "$W/$base.gpu.mlir"
+     mlir-opt-18 "$W/$base.gpu.mlir" \
+-      --pass-pipeline='builtin.module(lower-affine,nvvm-attach-target{chip=sm_70 features=+ptx60},gpu.module(convert-gpu-to-nvvm{index-bitwidth=64},reconcile-unrealized-casts),gpu-module-to-binary{format=isa})' -o "$W/$base.bin.mlir"
+-    python3 "$HERE/../../part10/code/decode_ptx.py" "$W/$base.bin.mlir"
++      --pass-pipeline='builtin.module(lower-affine,nvvm-attach-target{chip=sm_70 features=+ptx60},gpu.module(convert-scf-to-cf,convert-gpu-to-nvvm{index-bitwidth=64},reconcile-unrealized-casts),gpu-module-to-binary{format=isa})' -o "$W/$base.bin.mlir"
++    python3 "$HERE/decode_ptx.py" "$W/$base.bin.mlir"
+     ;;
+   *) usage;;
+ esac
+--- ../../part10/code/decode_ptx.py	2026-10-01 21:25:13.721605362 +0000
++++ decode_ptx.py	2026-10-02 03:09:33.392749115 +0000
+@@ -1,7 +1,8 @@
+ # --gpu-module-to-binary stores the PTX as a hex-escaped string attribute (\0A for newline).
++# Chapter 21: a program with several loop nests has several gpu.modules; this prints EVERY kernel's PTX (the Chapter 10 version stopped at the first).
+ # This pulls it back out as plain PTX text: python3 decode_ptx.py add_bin.mlir > out.ptx
+ import re, sys
+ s = open(sys.argv[1]).read()
+-m = re.search(r'assembly\s*=\s*"((?:[^"\\]|\\.)*)"', s)
+-t = re.sub(r'\\([0-9A-Fa-f]{2})', lambda x: chr(int(x.group(1), 16)), m.group(1))
+-sys.stdout.write(t.replace('\x00', ''))
++for m in re.finditer(r'assembly\s*=\s*"((?:[^"\\]|\\.)*)"', s):
++    t = re.sub(r'\\([0-9A-Fa-f]{2})', lambda x: chr(int(x.group(1), 16)), m.group(1))
++    sys.stdout.write(t.replace('\x00', ''))

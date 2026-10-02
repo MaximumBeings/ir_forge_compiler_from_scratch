@@ -4,6 +4,10 @@
 
 **What you need to know first:** Chapter 4's `--convert-mg-to-affine` output, Chapter 7's `affine` loop passes, and Chapter 5's memref-descriptor calling convention (each `memref` argument becomes several scalar parameters). New ground here: the `gpu` dialect's host/device split (`gpu.module`, `gpu.launch_func`) and PTX as an assembly language. A short primer on both comes first.
 
+!!! tip "Compile and run"
+    Every command, listing and output on this page is reproduced by the commands in [Reproducing this chapter](#reproducing-this-chapter) at the bottom of the page, which also lists what must be built first. The chain of builds is in [Getting Started](../getting-started.md#which-build-does-each-chapter-need).
+
+
 ## Primer 1: how a GPU runs a function
 
 A CPU function runs once per call. A **GPU kernel** is launched once but executes on *many threads at the same time*, and every thread runs the same code. Threads are organized in two levels:

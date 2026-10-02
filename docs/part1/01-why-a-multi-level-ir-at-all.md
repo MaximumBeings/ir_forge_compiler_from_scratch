@@ -4,6 +4,14 @@
 
 **What you need to know first:** nothing beyond Getting Started's own stated prerequisites -- what an intermediate representation, a basic block, and SSA form are. Every MLIR-specific idea this chapter uses is introduced here, for the first time, grounded in a real example rather than a diagram.
 
+!!! tip "Compile and run"
+    ```sh
+    cd docs/part1/code
+    ./run.sh          # parse + verify, lower, translate, compile, link, run  (intermediates in ./work/)
+    ```
+    No build step: this chapter needs only `clang-18`, `mlir-opt-18` and `mlir-translate-18`. Every listing and output on this page comes from these commands (and the chapter's own embedded files).
+
+
 ## The real question this chapter answers
 
 A compiler has to go from "a program a human wrote" to "machine code a CPU executes." LLVM already has a single, well-designed intermediate representation (LLVM IR) that does exactly that translation for a huge range of real source languages -- Clang lowers C/C++ straight to it, Rust lowers straight to it, dozens of other real frontends do the same. So why would MLIR -- a *second*, different IR, sitting *above* LLVM IR -- ever be worth building at all? This chapter answers that question the same way every chapter in this book answers a real question: not with a diagram, but by building one small real program two different ways and watching, in real, captured tool output, exactly what is lost when the second way skips the first.

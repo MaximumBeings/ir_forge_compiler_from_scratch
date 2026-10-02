@@ -4,6 +4,19 @@
 
 **What you need to know first:** nothing new beyond the earlier chapters' vocabulary: tensors and `mg.add`/`mg.transpose` (Chapters 1 to 5), dynamic shapes and the runtime check (Chapters 13 and 14), the stderr abort (Chapter 19) and the GPU recipe (Chapters 10 and 11). Each section says which chapter it is using.
 
+!!! tip "Compile and run"
+    ```sh
+    cd docs/part20/code
+    ./build.sh                      # builds ./build/mg-opt (Chapter 20's)
+    ./mgc run examples/03_dynamic.mg    # compile one example to native code and run it
+    ./mgc ptx examples/05_gpu.mg        # compile one example to PTX (not run: no GPU here)
+    ./demo.sh > demo_out.txt            # all ten examples; the output on this page is this file
+    cpp/run.sh                          # build and run the C++ program
+    cd ../part15/code && ./run_lit.sh   # the test suite
+    ```
+    Every listing and output on this page comes from these commands.
+
+
 ## Primer: what "a compiler driver" is
 
 Compilers are rarely one program. `gcc hello.c` looks like one command, but it runs a preprocessor, a compiler proper, an assembler and a linker, passing files between them. The command you type is the **driver**: it knows the stages, their order and their flags, so you do not have to.
@@ -13,6 +26,8 @@ Mountain Goat has had all its stages since Chapter 8, but you had to run them by
 A **surface syntax** (or **concrete syntax**) is the text a programmer writes. A **front end** reads it, checks it, and produces the compiler's internal form, here MLIR in the `mg` dialect. This chapter builds both missing pieces: a front end for a small language, and the driver that connects it to every stage the book already built.
 
 ## The language
+
+A short, example-driven introduction to the syntax, declarations and types is on its own page: [The Mountain Goat Language: A Short Tour](../tour/language-tour.md). This section is the formal summary.
 
 One statement per line. `#` starts a comment. Every value is a two-dimensional matrix of 64-bit floats, which is exactly what the `mg` dialect can represent.
 
@@ -265,9 +280,36 @@ cd ../part15/code && ./run_lit.sh   # 60 tests
 ## Self-check questions
 
 1. What is the difference between a front end and a driver? Which parts of this chapter are each?
+
+    ??? note "Answer"
+        A **front end** reads the source text, checks it, and produces the compiler's internal form: here `mgfront.py`, which parses `.mg` text and writes `mg`-dialect MLIR. A **driver** runs the stages in order and connects them: here `mgc`, which calls the front end, then `mg-opt`, `mlir-translate` and `clang`. The front end knows the *language*; the driver knows the *pipeline*.
+
 2. Why does the front end accept `add([[1,2,3],[4,5,6]], [[1,2],[3,4],[5,6]])` when `add` is declared `tensor[?x?]`, and what stops it at run time?
+
+    ??? note "Answer"
+        The front end can only compare dimensions it knows. Both parameters are `tensor[?x?]`, so it accepts any arguments that fit `?x?`; the sizes 2x3 and 3x2 are not compared against each other. At run time the lowering of `mg.add` compares the actual extents with `cf.assert`, and Chapter 19's pass makes that assert write its message to stderr and abort.
+
 3. Why did the first GPU example produce no kernel, and what changed to fix it?
+
+    ??? note "Answer"
+        With `let` constants as inputs, `mg.add` of two `mg.constant` operands was folded by the compiler into a single precomputed constant, so the program became stores of the final numbers: no loop, hence no loop to turn into a kernel. The fix was to make the inputs function parameters, whose values the compiler cannot know, so the addition survives as a loop.
+
 4. Why can the C++ wrapper throw an exception for `rot` but not for a failed dynamic check in `add`?
+
+    ??? note "Answer"
+        The `rot` parameter has a static shape (2x3), which the generated C++ code can compare against the matrix's `rows` and `cols` before calling anything, so it throws `std::invalid_argument`. A failed dynamic check happens *inside* the compiled code, which has no way to throw a C++ exception: it writes its message and calls `abort()`, which ends the process.
+
 5. What does `tensor.cast` from `tensor<2x3xf64>` to `tensor<?x?xf64>` change, and what would a cast in the other direction need that this one does not?
+
+    ??? note "Answer"
+        It changes only the static type: the data is the same, the compiler just stops promising the sizes. Static to dynamic is always safe. The reverse direction (`?x?` to `2x3`) would claim sizes the compiler cannot know, so a correct lowering would need a run-time check that the actual sizes are 2 and 3.
+
 6. Which of the five breakages in `prove_tests_can_fail_out.txt` is caught by the `cpp-interop` test, and why?
+
+    ??? note "Answer"
+        The `cpp-interop` test is caught by 'driver forgets Chapter 19's stderr pass': that test checks the abort message on stderr for the C++ program's mismatch run, and without the pass the message goes to stdout (and is lost when stdout is not a terminal).
+
 7. Why is the CUDA host program not in this chapter, and what exactly would it need that this environment lacks?
+
+    ??? note "Answer"
+        There is no GPU and no CUDA driver in this environment, and no `cuda.h` to compile against. Such a program would load the PTX with `cuModuleLoadData` and launch with `cuLaunchKernel`, passing the 23 kernel parameters in Chapter 10's order; none of that can be built or run here, and the book does not print code it never executed.

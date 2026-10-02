@@ -4,6 +4,15 @@
 
 **What you need to know first:** Chapter 4's own `ConvertMgToAffinePass` and Chapter 1's own five-pass `scf`-to-`llvm` pipeline. This chapter's own new ground: MLIR's real, built-in `--lower-affine` pass, and MLIR's own pre-existing runtime support library.
 
+!!! tip "Compile and run"
+    ```sh
+    cd docs/part5/code
+    ./build.sh        # -> ./build/mg-opt
+    ./run.sh          # lower to LLVM dialect, then run with mlir-cpu-runner-18
+    ```
+    Also needs `mlir-cpu-runner-18` and `libmlir_runner_utils.so` / `libmlir_c_runner_utils.so` (installed with the MLIR packages). Every listing and output on this page comes from these commands (and the chapter's own embedded files).
+
+
 ## The real question this chapter answers
 
 Chapter 4 deliberately stopped at `affine`/`memref`/`arith` -- genuinely lower-level than `mg`, but still well above real LLVM IR. Chapter 1 already proved, on a hand-written `scf.for` example, that `scf` lowers to `llvm` in five real passes. The real question this chapter answers: does that same real pipeline work unmodified on IR this book's own tooling produced, rather than hand-written -- and what is the one remaining real gap (`affine` itself, which Chapter 1 never had to cross) that sits between them?

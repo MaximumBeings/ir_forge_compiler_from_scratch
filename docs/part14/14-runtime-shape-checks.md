@@ -4,6 +4,10 @@
 
 **What you need to know first:** Chapter 13's dynamic-shape lowering (`memref.dim`, dynamic `memref.alloc`) and its recorded "known gap". New ground: `cf.assert` and `arith.cmpi`.
 
+!!! tip "Compile and run"
+    Every command, listing and output on this page is reproduced by the commands in [Reproducing this chapter](#reproducing-this-chapter) at the bottom of the page, which also lists what must be built first. The chain of builds is in [Getting Started](../getting-started.md#which-build-does-each-chapter-need).
+
+
 ## The problem, restated with the real evidence
 
 Chapter 13 ended with a call that should never have run to completion. `a` is a 2x3 matrix; `b` is declared 1x2 and its buffer holds only two doubles. The harness:

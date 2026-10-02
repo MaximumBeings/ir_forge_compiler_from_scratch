@@ -4,6 +4,15 @@
 
 **What you need to know first:** Chapter 4's own `ConvertMgToAffinePass` and its real negative result against `--one-shot-bufferize`; Chapter 3's own constant-folding discussion; Chapter 5's own `printMemrefF64` mechanism, reused directly in this chapter rather than reinvented.
 
+!!! tip "Compile and run"
+    ```sh
+    cd docs/part6/code
+    ./build.sh        # -> ./build/mg-opt (with the bufferization models)
+    ./run.sh          # one-shot-bufferize on the examples, then lower and run
+    ```
+    Same prerequisites as Chapter 5. Every listing and output on this page comes from these commands (and the chapter's own embedded files).
+
+
 ## The real question this chapter answers
 
 Chapter 4 cited MLIR's own real documentation stating plainly what `BufferizableOpInterface` requires (`bufferizesToMemoryRead`, `bufferizesToMemoryWrite`, at minimum) and predicted, without yet testing it, that implementing the real interface would be *more* work than the hand-written `ConvertMgToAffinePass` -- because One-Shot Bufferize's own whole-function analysis asks each op to correctly answer questions about aliasing and in-place reuse that a simple, always-allocate-fresh pass never has to consider. This chapter tests that prediction directly: implement the real interface for all four `mg` operations, and find out, by actually running it, whether `--one-shot-bufferize` now succeeds -- and what, concretely, the extra work turned out to be.

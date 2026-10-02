@@ -4,6 +4,10 @@
 
 **What you need to know first:** Chapters 3 through 14's behavior. The suite tests what those chapters built; it adds no compiler features.
 
+!!! tip "Compile and run"
+    Every command, listing and output on this page is reproduced by the commands in [Reproducing this chapter](#reproducing-this-chapter) at the bottom of the page, which also lists what must be built first. The chain of builds is in [Getting Started](../getting-started.md#which-build-does-each-chapter-need).
+
+
 ## Why a test suite, and why this kind
 
 Chapters 3 through 14 each ended with a pasted output, produced by a command run once. That proves the command worked *then*. It does not stop the next change from quietly breaking it, and two of the chapters already contain bugs found only later (Chapter 13 fixed a canonicalizer that produced invalid IR; Chapter 14 closed an out-of-bounds read). A test suite turns each pasted output into a check that runs again and **fails loudly** when the behavior changes.

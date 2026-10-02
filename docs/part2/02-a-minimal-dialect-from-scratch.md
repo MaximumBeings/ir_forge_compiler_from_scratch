@@ -4,6 +4,15 @@
 
 **What you need to know first:** Chapter 1's own vocabulary (dialects, operations, `mlir-opt-18`'s role as parser/verifier/pass-driver) and enough C++ to read a class definition. TableGen itself -- the declarative language the `.td` files in this chapter are written in -- is explained here, for the first time, from its own real official documentation.
 
+!!! tip "Compile and run"
+    ```sh
+    cd docs/part2/code
+    ./build.sh        # TableGen + C++ build of the mg dialect and mg-opt  -> ./build/mg-opt
+    ./run.sh          # parse and verify the example programs
+    ```
+    Needs `cmake`, `make`, `llvm-18-dev`, `libmlir-18-dev`, `mlir-18-tools`. Every listing and output on this page comes from these commands (and the chapter's own embedded files).
+
+
 ## The real question this chapter answers
 
 Chapter 1 used only dialects MLIR already ships with (`func`, `arith`, `scf`, `memref`, `llvm`). Those are real and useful, but Mountain Goat is not one of MLIR's built-in languages -- it is this book's own toy language, and it needs its own real vocabulary: a way to write "add these two tensors," "transpose this one," that is specific to Mountain Goat rather than borrowed wholesale from a dialect meant for something else. The real question this chapter answers: how does a real MLIR dialect actually get defined, in genuine, compilable code, rather than invented ad hoc as bare strings the parser happens to accept?

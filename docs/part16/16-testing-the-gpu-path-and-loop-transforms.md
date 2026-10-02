@@ -4,6 +4,10 @@
 
 **What you need to know first:** Chapter 15's suite and its `lit`/`FileCheck` basics (this chapter re-explains only the directives it uses); Chapter 7's tiling and unrolling; Chapters 10 through 12's GPU recipe.
 
+!!! tip "Compile and run"
+    Every command, listing and output on this page is reproduced by the commands in [Reproducing this chapter](#reproducing-this-chapter) at the bottom of the page, which also lists what must be built first. The chain of builds is in [Getting Started](../getting-started.md#which-build-does-each-chapter-need).
+
+
 ## Where the suite stands
 
 Chapter 15 left 22 tests and a list of what was not covered. This chapter adds 12, for 34:

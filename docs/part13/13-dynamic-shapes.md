@@ -4,6 +4,10 @@
 
 **What you need to know first:** Chapter 3's verifiers and canonicalizer, Chapter 4/5's hand-written `--convert-mg-to-affine`, Chapter 6's bufferization models, and Chapter 8's calling convention. New ground: `?` dimensions, `memref.dim`, and dynamic `memref.alloc`.
 
+!!! tip "Compile and run"
+    Every command, listing and output on this page is reproduced by the commands in [Reproducing this chapter](#reproducing-this-chapter) at the bottom of the page, which also lists what must be built first. The chain of builds is in [Getting Started](../getting-started.md#which-build-does-each-chapter-need).
+
+
 ## Background: static and dynamic shapes
 
 Every example in Chapters 1 through 12 uses shapes written into the program: `tensor<2x2xf64>` means exactly four doubles, and the compiler knows that while it compiles. A **dynamic** extent is written `?`: `tensor<?x?xf64>` is a rank-2 tensor whose two sizes are only known when the program runs, so one compiled function can serve a 2x3 input and a 1x6 input. Three consequences drive everything in this chapter:

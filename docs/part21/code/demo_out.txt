@@ -1,0 +1,273 @@
+################ ./mgc run examples/01_subtract.mg
+  | # Elementwise subtraction. Order matters: a - b is not b - a.
+  | let a = [[10, 20, 30], [40, 50, 60]]
+  | let b = [[1, 2, 3], [4, 5, 6]]
+  | print a - b
+  | print b - a
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 3] strides = [3, 1] data = 
+[[9,   18,   27], 
+ [36,   45,   54]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 3] strides = [3, 1] data = 
+[[-9,   -18,   -27], 
+ [-36,   -45,   -54]]
+  ----- exit status 0
+
+################ ./mgc run examples/02_hadamard.mg
+  | # '*' is the Hadamard (elementwise) product: each element times the matching element.
+  | # It is NOT the matrix product; that is '@' (example 4).
+  | let a = [[1, 2, 3], [4, 5, 6]]
+  | let b = [[2, 2, 2], [3, 3, 3]]
+  | print a * b
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 3] strides = [3, 1] data = 
+[[2,   4,   6], 
+ [12,   15,   18]]
+  ----- exit status 0
+
+################ ./mgc run examples/03_divide.mg
+  | # Elementwise division, and IEEE behaviour: x/0 is inf, 0/0 is nan (no error, no abort).
+  | let a = [[10, 20], [0, -5]]
+  | let b = [[4, 8], [0, 0]]
+  | print a / b
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[2.5,   2.5], 
+ [-nan,   -inf]]
+  ----- exit status 0
+
+################ ./mgc run examples/04_matmul.mg
+  | # Matrix product: (2x3) @ (3x2) gives (2x2). Entry (i,j) = sum over k of a[i,k] * b[k,j].
+  | let a = [[1, 2, 3], [4, 5, 6]]
+  | let b = [[7, 8], [9, 10], [11, 12]]
+  | print a @ b
+  | print b @ a
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[58,   64], 
+ [139,   154]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [3, 3] strides = [3, 1] data = 
+[[39,   54,   69], 
+ [49,   68,   87], 
+ [59,   82,   105]]
+  ----- exit status 0
+
+################ ./mgc run examples/05_scalar_ops.mg
+  | # Scalars combine with every element. The scalar can be on either side, which matters for - and /.
+  | let a = [[1, 2], [4, 8]]
+  | print a + 10
+  | print a - 1
+  | print 10 - a
+  | print a * 0.5
+  | print 16 / a
+  | print a / 4
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[11,   12], 
+ [14,   18]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[0,   1], 
+ [3,   7]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[9,   8], 
+ [6,   2]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[0.5,   1], 
+ [2,   4]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[16,   8], 
+ [4,   2]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[0.25,   0.5], 
+ [1,   2]]
+  ----- exit status 0
+
+################ ./mgc run examples/06_precedence.mg
+  | # Precedence: unary minus binds tightest, then * / @ (left to right), then + -.
+  | let a = [[1, 2], [3, 4]]
+  | let b = [[1, 0], [0, 1]]
+  | print a + a * a
+  | print (a + a) * a
+  | print a - b @ a
+  | print -a + 10
+  | let k = 2 + 3 * 4
+  | print a * k
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[2,   6], 
+ [12,   20]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[2,   8], 
+ [18,   32]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[0,   0], 
+ [0,   0]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[9,   8], 
+ [7,   6]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[14,   28], 
+ [42,   56]]
+  ----- exit status 0
+
+################ ./mgc run examples/07_linear_layer.mg
+  | # A tiny "linear layer": y = x @ w + bias, with x 2x3 (two samples), w 3x2, bias 2x2.
+  | def layer(x: tensor[2x3], w: tensor[3x2], bias: tensor[2x2]) = x @ w + bias
+  | print layer([[1, 2, 3], [4, 5, 6]], [[1, 0], [0, 1], [1, 1]], [[0.5, 0.5], [0.5, 0.5]])
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[4.5,   5.5], 
+ [10.5,   11.5]]
+  ----- exit status 0
+
+################ ./mgc run examples/08_gram.mg
+  | # a @ transpose(a) is always square and symmetric (a "Gram matrix"): entry (i,j) = row i . row j.
+  | let a = [[1, 2, 3], [4, 5, 6]]
+  | print a @ transpose(a)
+  | print transpose(a) @ a
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[14,   32], 
+ [32,   77]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [3, 3] strides = [3, 1] data = 
+[[17,   22,   27], 
+ [22,   29,   36], 
+ [27,   36,   45]]
+  ----- exit status 0
+
+################ ./mgc run examples/09_identity.mg
+  | # Identities you can check by eye: a @ I = a, a - a = 0, a / a = 1 (where a is not 0), -(-a) = a.
+  | let a = [[3, 1], [4, 1]]
+  | let i = [[1, 0], [0, 1]]
+  | print a @ i
+  | print a - a
+  | print a / a
+  | print -(-a)
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[3,   1], 
+ [4,   1]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[0,   0], 
+ [0,   0]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[1,   1], 
+ [1,   1]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[3,   1], 
+ [4,   1]]
+  ----- exit status 0
+
+################ ./mgc run examples/10_dynamic_matmul.mg
+  | # One compiled matmul for any compatible sizes. The inner dimensions are checked at run time.
+  | def mm(a: tensor[?x?], b: tensor[?x?]) = a @ b
+  | print mm([[1, 2, 3], [4, 5, 6]], [[1], [1], [1]])
+  | print mm([[1, 2]], [[3, 4], [5, 6]])
+  | print mm([[2]], [[21]])
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 1] strides = [1, 1] data = 
+[[6], 
+ [15]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 2] strides = [2, 1] data = 
+[[13,   16]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[42]]
+  ----- exit status 0
+
+################ ./mgc run examples/11_dynamic_scalar.mg
+  | # Scalar operations need no run-time shape check (there is no second matrix), so they work on any shape.
+  | def affine(a: tensor[?x?]) = a * 2 + 1
+  | print affine([[1, 2, 3]])
+  | print affine([[1], [2]])
+  | print affine([[0, 0], [0, 0], [0, 0]])
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 3] strides = [3, 1] data = 
+[[3,   5,   7]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 1] strides = [1, 1] data = 
+[[3], 
+ [5]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [3, 2] strides = [2, 1] data = 
+[[1,   1], 
+ [1,   1], 
+ [1,   1]]
+  ----- exit status 0
+
+################ ./mgc run examples/12_matmul_mismatch.mg
+  | # Inner dimensions 3 and 2 do not agree. The front end cannot see this (both are ?), so the program
+  | # compiles and the run-time check aborts with a message on stderr.
+  | def mm(a: tensor[?x?], b: tensor[?x?]) = a @ b
+  | print mm([[1, 2, 3], [4, 5, 6]], [[1, 2], [3, 4]])
+  ----- output
+mg.matmul: inner dimensions differ at runtime
+Aborted
+  ----- exit status 134
+
+################ ./mgc ptx examples/13_gpu_matmul.mg
+  | # The GPU path for matmul (compile-only). Use:  mgc ptx 13_gpu_matmul.mg
+  | def mm(a: tensor[4x4], b: tensor[4x4]) = a @ b
+  ----- the PTX instructions that do the arithmetic, and the kernel entry points
+.visible .entry mm_kernel(
+st.global.f64 	[%rd11], %fd1;
+.visible .entry mm_kernel(
+ld.global.f64 	%fd1, [%rd15];
+ld.global.f64 	%fd2, [%rd17];
+ld.global.f64 	%fd3, [%rd16];
+mul.rn.f64 	%fd4, %fd2, %fd3;
+add.rn.f64 	%fd5, %fd1, %fd4;
+st.global.f64 	[%rd15], %fd5;
+ld.global.f64 	%fd6, [%rd17+8];
+ld.global.f64 	%fd7, [%rd16+32];
+mul.rn.f64 	%fd8, %fd6, %fd7;
+add.rn.f64 	%fd9, %fd5, %fd8;
+st.global.f64 	[%rd15], %fd9;
+ld.global.f64 	%fd10, [%rd17+16];
+ld.global.f64 	%fd11, [%rd16+64];
+mul.rn.f64 	%fd12, %fd10, %fd11;
+add.rn.f64 	%fd13, %fd9, %fd12;
+st.global.f64 	[%rd15], %fd13;
+ld.global.f64 	%fd14, [%rd17+24];
+ld.global.f64 	%fd15, [%rd16+96];
+mul.rn.f64 	%fd16, %fd14, %fd15;
+add.rn.f64 	%fd17, %fd13, %fd16;
+st.global.f64 	[%rd15], %fd17;
+
+################ ./mgc ptx examples/14_gpu_ops.mg
+  | # The GPU path for the elementwise and scalar ops (compile-only). Use:  mgc ptx 14_gpu_ops.mg
+  | def f(a: tensor[2x2], b: tensor[2x2]) = (a - b) * a / 2 + 1
+  ----- the PTX instructions that do the arithmetic, and the kernel entry points
+.visible .entry f_kernel(
+ld.global.f64 	%fd1, [%rd16];
+ld.global.f64 	%fd2, [%rd17];
+sub.rn.f64 	%fd3, %fd1, %fd2;
+st.global.f64 	[%rd18], %fd3;
+.visible .entry f_kernel(
+ld.global.f64 	%fd1, [%rd16];
+ld.global.f64 	%fd2, [%rd17];
+mul.rn.f64 	%fd3, %fd1, %fd2;
+st.global.f64 	[%rd18], %fd3;
+.visible .entry f_kernel(
+ld.global.f64 	%fd2, [%rd14];
+div.rn.f64 	%fd3, %fd2, %fd1;
+st.global.f64 	[%rd15], %fd3;
+.visible .entry f_kernel(
+ld.global.f64 	%fd2, [%rd14];
+add.rn.f64 	%fd3, %fd2, %fd1;
+st.global.f64 	[%rd15], %fd3;
+
+################ ./mgc run examples/errors/bad_matmul.mg
+  | # Rejected by the front end: (2x3) @ (2x3) has inner dimensions 3 and 2.
+  | let a = [[1, 2, 3], [4, 5, 6]]
+  | print a @ a
+  ----- output
+errors/bad_matmul.mg:3: error: cannot multiply (matmul) shapes 2x3 and 2x3: inner dimensions differ
+  ----- exit status 1
+
+################ ./mgc run examples/errors/bad_scalar.mg
+  | # Rejected by the front end: a scalar has no shape, so it cannot be matrix-multiplied.
+  | let a = [[1, 2], [3, 4]]
+  | let k = 3
+  | print a @ k
+  ----- output
+errors/bad_scalar.mg:4: error: '@' (matrix product) needs two matrices, not a scalar
+  ----- exit status 1
+

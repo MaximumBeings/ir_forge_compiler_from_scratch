@@ -34,6 +34,24 @@ Every chapter states which of the above applies to its own code, so nothing is l
 - Compiling real LLVM IR to a real native object/executable: `clang-18 -c file.ll -o file.o`, then linked with any C harness the chapter needs
 - Every chapter shows its own exact real invocation, including every flag, inline where the code it applies to is introduced
 
+## Which build does each chapter need?
+
+Each chapter's page starts with a "Compile and run" box (Chapters 1 to 9, 20 and 21) or points to its "Reproducing this chapter" section at the bottom (Chapters 10 to 19). The compiler tool, `mg-opt`, is rebuilt by each chapter that changes it, with a `build.sh` that assembles that chapter's source files (plus the earlier chapters' files it still uses) and builds into `./build/mg-opt`. Build the one you need; you do not need all of them.
+
+| Chapters | Build before running | Notes |
+|---|---|---|
+| 1 | nothing | only `clang-18`, `mlir-opt-18`, `mlir-translate-18` |
+| 2 to 7 | that chapter's own `part N/code/build.sh` | each is a self-contained build of the compiler as it was then |
+| 8 | `part7/code/build.sh` | uses Chapter 7's `mg-opt` |
+| 9 | nothing (the chapter's `run.sh` builds its own program) | needs `cmake` and the LLVM/MLIR development packages |
+| 10, 11, 12 | a recent `mg-opt`, e.g. `part21/code/build.sh` | GPU chapters; compile-only, no GPU needed |
+| 13 to 19 | the chapter's own `build.sh` (13, 14, 19), or `part14/code/build.sh` for 15 to 18 | the test-suite chapters can also use a newer build |
+| 20 | `part20/code/build.sh` | adds the front end and the `mgc` driver |
+| 21 and the [language tour](tour/language-tour.md) | `part21/code/build.sh` | adds the operations; the newest build runs everything |
+| the test suite (`part15/code/run_lit.sh`) | any build; it picks the newest that exists | 78 tests with the Chapter 21 build |
+
+Every build needs `cmake`, `make`, `llvm-18-dev`, `libmlir-18-dev` and `mlir-18-tools` (see above), and takes a few minutes the first time. Every `run.sh` and `demo.sh` writes its intermediate files under `./work/` or `./show/`, which are git-ignored.
+
 ## Prerequisites
 
 This book assumes working knowledge of C (functions, pointers, `struct`s) and enough general compiler vocabulary to know what an intermediate representation, a basic block, and static single assignment (SSA) form are -- no prior MLIR or LLVM experience is assumed, and every dialect, operation, and pass this book uses is explained the first time it appears, cited to its own real, official source.

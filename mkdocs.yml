@@ -60,9 +60,15 @@ plugins:
 extra_css:
   - stylesheets/extra.css
 
+exclude_docs: |
+  **/build/
+  **/tree/
+  **/work/
+
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
+  - "The Mountain Goat Language: A Short Tour": tour/language-tour.md
   - "Part 0 -- Why a Multi-Level IR at All":
       - "1. Why a Multi-Level IR at All": part1/01-why-a-multi-level-ir-at-all.md
   - "Part 1 -- A Minimal Dialect From Scratch":
@@ -91,6 +97,7 @@ nav:
       - "18. Why Fusion Declines: Reading the Pass, and a Second Bug Found Along the Way": part18/18-why-fusion-declines.md
       - "19. A Better Abort: Reporting Assertion Failures on stderr": part19/19-a-better-abort.md
       - "20. The Mountain Goat Demo: A Surface Syntax, a Driver, and C++ Calling Compiled Code": part20/20-the-mountain-goat-demo.md
+      - "21. More Operations: Subtract, Hadamard, Divide, Matrix Product, and Scalars": part21/21-more-operations.md
 
 extra:
   social: []

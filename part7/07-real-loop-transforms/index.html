@@ -897,6 +897,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#the-complete-source-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The complete source files
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-later-chapters-changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What later chapters changed
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#chapter-summary" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1473,6 +1495,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#the-complete-source-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The complete source files
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-later-chapters-changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What later chapters changed
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#chapter-summary" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1665,6 +1709,139 @@
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a> [8,   12]]
 </code></pre></div></p>
 <p><code>transpose(add([[1, 2], [3, 4]], [[5, 6], [7, 8]])) = transpose([[6, 8], [10, 12]]) = [[6, 10], [8, 12]]</code> -- genuinely the correct, real answer, computed by a program whose own loop structure has been fused, tiled, fully unrolled, and re-canonicalized, through MLIR's own real, built-in passes, three real transforms deep, end to end.</p>
+<h2 id="the-complete-source-files">The complete source files<a class="headerlink" href="#the-complete-source-files" title="Permanent link">&para;</a></h2>
+<p>The excerpts above show the parts under discussion. These files appear in <code>code/</code> and are not shown elsewhere on this page; each is embedded exactly as it exists in the repository, collapsed so the narrative stays readable.</p>
+<details class="note">
+<summary><code>CMakeLists.txt</code></summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="nb">cmake_minimum_required</span><span class="p">(</span><span class="s">VERSION</span><span class="w"> </span><span class="s">3.20</span><span class="p">)</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="nb">project</span><span class="p">(</span><span class="s">mg_dialect</span><span class="p">)</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="nb">find_package</span><span class="p">(</span><span class="s">MLIR</span><span class="w"> </span><span class="s">REQUIRED</span><span class="w"> </span><span class="s">CONFIG</span><span class="p">)</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="nb">list</span><span class="p">(</span><span class="s">APPEND</span><span class="w"> </span><span class="s">CMAKE_MODULE_PATH</span><span class="w"> </span><span class="s2">&quot;${MLIR_CMAKE_DIR}&quot;</span><span class="p">)</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="nb">list</span><span class="p">(</span><span class="s">APPEND</span><span class="w"> </span><span class="s">CMAKE_MODULE_PATH</span><span class="w"> </span><span class="s2">&quot;${LLVM_CMAKE_DIR}&quot;</span><span class="p">)</span>
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="nb">include</span><span class="p">(</span><span class="s">TableGen</span><span class="p">)</span>
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="nb">include</span><span class="p">(</span><span class="s">AddLLVM</span><span class="p">)</span>
+<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="nb">include</span><span class="p">(</span><span class="s">AddMLIR</span><span class="p">)</span>
+<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="nb">include</span><span class="p">(</span><span class="s">HandleLLVMOptions</span><span class="p">)</span>
+<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a>
+<a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a><span class="nb">include_directories</span><span class="p">(</span><span class="o">${</span><span class="nv">LLVM_INCLUDE_DIRS</span><span class="o">}</span><span class="p">)</span>
+<a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a><span class="nb">include_directories</span><span class="p">(</span><span class="o">${</span><span class="nv">MLIR_INCLUDE_DIRS</span><span class="o">}</span><span class="p">)</span>
+<a id="__codelineno-14-15" name="__codelineno-14-15" href="#__codelineno-14-15"></a><span class="nb">include_directories</span><span class="p">(</span><span class="o">${</span><span class="nv">CMAKE_CURRENT_SOURCE_DIR</span><span class="o">}</span><span class="s">/include</span><span class="p">)</span>
+<a id="__codelineno-14-16" name="__codelineno-14-16" href="#__codelineno-14-16"></a><span class="nb">include_directories</span><span class="p">(</span><span class="o">${</span><span class="nv">CMAKE_CURRENT_BINARY_DIR</span><span class="o">}</span><span class="s">/include</span><span class="p">)</span>
+<a id="__codelineno-14-17" name="__codelineno-14-17" href="#__codelineno-14-17"></a><span class="nb">add_definitions</span><span class="p">(</span><span class="o">${</span><span class="nv">LLVM_DEFINITIONS</span><span class="o">}</span><span class="p">)</span>
+<a id="__codelineno-14-18" name="__codelineno-14-18" href="#__codelineno-14-18"></a>
+<a id="__codelineno-14-19" name="__codelineno-14-19" href="#__codelineno-14-19"></a><span class="nb">set</span><span class="p">(</span><span class="s">LLVM_TARGET_DEFINITIONS</span><span class="w"> </span><span class="s">include/mg/MgOps.td</span><span class="p">)</span>
+<a id="__codelineno-14-20" name="__codelineno-14-20" href="#__codelineno-14-20"></a><span class="nb">mlir_tablegen</span><span class="p">(</span><span class="s">include/mg/MgOps.h.inc</span><span class="w"> </span><span class="s">-gen-op-decls</span><span class="p">)</span>
+<a id="__codelineno-14-21" name="__codelineno-14-21" href="#__codelineno-14-21"></a><span class="nb">mlir_tablegen</span><span class="p">(</span><span class="s">include/mg/MgOps.cpp.inc</span><span class="w"> </span><span class="s">-gen-op-defs</span><span class="p">)</span>
+<a id="__codelineno-14-22" name="__codelineno-14-22" href="#__codelineno-14-22"></a><span class="nb">mlir_tablegen</span><span class="p">(</span><span class="s">include/mg/MgOpsDialect.h.inc</span><span class="w"> </span><span class="s">-gen-dialect-decls</span><span class="p">)</span>
+<a id="__codelineno-14-23" name="__codelineno-14-23" href="#__codelineno-14-23"></a><span class="nb">mlir_tablegen</span><span class="p">(</span><span class="s">include/mg/MgOpsDialect.cpp.inc</span><span class="w"> </span><span class="s">-gen-dialect-defs</span><span class="p">)</span>
+<a id="__codelineno-14-24" name="__codelineno-14-24" href="#__codelineno-14-24"></a><span class="nb">add_public_tablegen_target</span><span class="p">(</span><span class="s">MgOpsIncGen</span><span class="p">)</span>
+<a id="__codelineno-14-25" name="__codelineno-14-25" href="#__codelineno-14-25"></a>
+<a id="__codelineno-14-26" name="__codelineno-14-26" href="#__codelineno-14-26"></a><span class="nb">add_library</span><span class="p">(</span><span class="s">MgDialect</span><span class="w"> </span><span class="s">lib/MgDialect.cpp</span><span class="p">)</span>
+<a id="__codelineno-14-27" name="__codelineno-14-27" href="#__codelineno-14-27"></a><span class="nb">add_dependencies</span><span class="p">(</span><span class="s">MgDialect</span><span class="w"> </span><span class="s">MgOpsIncGen</span><span class="p">)</span>
+<a id="__codelineno-14-28" name="__codelineno-14-28" href="#__codelineno-14-28"></a><span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">MgDialect</span><span class="w"> </span><span class="s">PUBLIC</span><span class="w"> </span><span class="s">MLIRIR</span><span class="w"> </span><span class="s">MLIRFuncDialect</span><span class="p">)</span>
+<a id="__codelineno-14-29" name="__codelineno-14-29" href="#__codelineno-14-29"></a>
+<a id="__codelineno-14-30" name="__codelineno-14-30" href="#__codelineno-14-30"></a><span class="nb">add_library</span><span class="p">(</span><span class="s">MgLowerToAffine</span><span class="w"> </span><span class="s">lib/LowerToAffine.cpp</span><span class="p">)</span>
+<a id="__codelineno-14-31" name="__codelineno-14-31" href="#__codelineno-14-31"></a><span class="nb">add_dependencies</span><span class="p">(</span><span class="s">MgLowerToAffine</span><span class="w"> </span><span class="s">MgOpsIncGen</span><span class="p">)</span>
+<a id="__codelineno-14-32" name="__codelineno-14-32" href="#__codelineno-14-32"></a><span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">MgLowerToAffine</span><span class="w"> </span><span class="s">PUBLIC</span>
+<a id="__codelineno-14-33" name="__codelineno-14-33" href="#__codelineno-14-33"></a><span class="w">  </span><span class="s">MgDialect</span>
+<a id="__codelineno-14-34" name="__codelineno-14-34" href="#__codelineno-14-34"></a><span class="w">  </span><span class="s">MLIRIR</span>
+<a id="__codelineno-14-35" name="__codelineno-14-35" href="#__codelineno-14-35"></a><span class="w">  </span><span class="s">MLIRPass</span>
+<a id="__codelineno-14-36" name="__codelineno-14-36" href="#__codelineno-14-36"></a><span class="w">  </span><span class="s">MLIRTransforms</span>
+<a id="__codelineno-14-37" name="__codelineno-14-37" href="#__codelineno-14-37"></a><span class="w">  </span><span class="s">MLIRAffineDialect</span>
+<a id="__codelineno-14-38" name="__codelineno-14-38" href="#__codelineno-14-38"></a><span class="w">  </span><span class="s">MLIRMemRefDialect</span>
+<a id="__codelineno-14-39" name="__codelineno-14-39" href="#__codelineno-14-39"></a><span class="w">  </span><span class="s">MLIRArithDialect</span>
+<a id="__codelineno-14-40" name="__codelineno-14-40" href="#__codelineno-14-40"></a><span class="w">  </span><span class="s">MLIRFuncDialect</span>
+<a id="__codelineno-14-41" name="__codelineno-14-41" href="#__codelineno-14-41"></a><span class="w">  </span><span class="s">MLIRFuncTransforms</span>
+<a id="__codelineno-14-42" name="__codelineno-14-42" href="#__codelineno-14-42"></a><span class="p">)</span>
+<a id="__codelineno-14-43" name="__codelineno-14-43" href="#__codelineno-14-43"></a>
+<a id="__codelineno-14-44" name="__codelineno-14-44" href="#__codelineno-14-44"></a><span class="nb">add_library</span><span class="p">(</span><span class="s">MgBufferizableOpInterfaceImpl</span><span class="w"> </span><span class="s">lib/MgBufferizableOpInterfaceImpl.cpp</span><span class="p">)</span>
+<a id="__codelineno-14-45" name="__codelineno-14-45" href="#__codelineno-14-45"></a><span class="nb">add_dependencies</span><span class="p">(</span><span class="s">MgBufferizableOpInterfaceImpl</span><span class="w"> </span><span class="s">MgOpsIncGen</span><span class="p">)</span>
+<a id="__codelineno-14-46" name="__codelineno-14-46" href="#__codelineno-14-46"></a><span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">MgBufferizableOpInterfaceImpl</span><span class="w"> </span><span class="s">PUBLIC</span>
+<a id="__codelineno-14-47" name="__codelineno-14-47" href="#__codelineno-14-47"></a><span class="w">  </span><span class="s">MgDialect</span>
+<a id="__codelineno-14-48" name="__codelineno-14-48" href="#__codelineno-14-48"></a><span class="w">  </span><span class="s">MLIRIR</span>
+<a id="__codelineno-14-49" name="__codelineno-14-49" href="#__codelineno-14-49"></a><span class="w">  </span><span class="s">MLIRBufferizationDialect</span>
+<a id="__codelineno-14-50" name="__codelineno-14-50" href="#__codelineno-14-50"></a><span class="w">  </span><span class="s">MLIRAffineDialect</span>
+<a id="__codelineno-14-51" name="__codelineno-14-51" href="#__codelineno-14-51"></a><span class="w">  </span><span class="s">MLIRMemRefDialect</span>
+<a id="__codelineno-14-52" name="__codelineno-14-52" href="#__codelineno-14-52"></a><span class="w">  </span><span class="s">MLIRArithDialect</span>
+<a id="__codelineno-14-53" name="__codelineno-14-53" href="#__codelineno-14-53"></a><span class="p">)</span>
+<a id="__codelineno-14-54" name="__codelineno-14-54" href="#__codelineno-14-54"></a>
+<a id="__codelineno-14-55" name="__codelineno-14-55" href="#__codelineno-14-55"></a><span class="nb">get_property</span><span class="p">(</span><span class="s">MG_CONVERSION_LIBS</span><span class="w"> </span><span class="s">GLOBAL</span><span class="w"> </span><span class="s">PROPERTY</span><span class="w"> </span><span class="s">MLIR_CONVERSION_LIBS</span><span class="p">)</span>
+<a id="__codelineno-14-56" name="__codelineno-14-56" href="#__codelineno-14-56"></a>
+<a id="__codelineno-14-57" name="__codelineno-14-57" href="#__codelineno-14-57"></a><span class="nb">add_executable</span><span class="p">(</span><span class="s">mg-opt</span><span class="w"> </span><span class="s">tools/mg-opt.cpp</span><span class="p">)</span>
+<a id="__codelineno-14-58" name="__codelineno-14-58" href="#__codelineno-14-58"></a><span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">mg-opt</span><span class="w"> </span><span class="s">PRIVATE</span>
+<a id="__codelineno-14-59" name="__codelineno-14-59" href="#__codelineno-14-59"></a><span class="w">  </span><span class="s">MgDialect</span>
+<a id="__codelineno-14-60" name="__codelineno-14-60" href="#__codelineno-14-60"></a><span class="w">  </span><span class="s">MgLowerToAffine</span>
+<a id="__codelineno-14-61" name="__codelineno-14-61" href="#__codelineno-14-61"></a><span class="w">  </span><span class="s">MgBufferizableOpInterfaceImpl</span>
+<a id="__codelineno-14-62" name="__codelineno-14-62" href="#__codelineno-14-62"></a><span class="w">  </span><span class="s">MLIRIR</span>
+<a id="__codelineno-14-63" name="__codelineno-14-63" href="#__codelineno-14-63"></a><span class="w">  </span><span class="s">MLIRFuncDialect</span>
+<a id="__codelineno-14-64" name="__codelineno-14-64" href="#__codelineno-14-64"></a><span class="w">  </span><span class="s">MLIROptLib</span>
+<a id="__codelineno-14-65" name="__codelineno-14-65" href="#__codelineno-14-65"></a><span class="w">  </span><span class="s">MLIRParser</span>
+<a id="__codelineno-14-66" name="__codelineno-14-66" href="#__codelineno-14-66"></a><span class="w">  </span><span class="s">MLIRSupport</span>
+<a id="__codelineno-14-67" name="__codelineno-14-67" href="#__codelineno-14-67"></a><span class="w">  </span><span class="s">MLIRTransforms</span>
+<a id="__codelineno-14-68" name="__codelineno-14-68" href="#__codelineno-14-68"></a><span class="w">  </span><span class="s">MLIRAffineDialect</span>
+<a id="__codelineno-14-69" name="__codelineno-14-69" href="#__codelineno-14-69"></a><span class="w">  </span><span class="s">MLIRMemRefDialect</span>
+<a id="__codelineno-14-70" name="__codelineno-14-70" href="#__codelineno-14-70"></a><span class="w">  </span><span class="s">MLIRArithDialect</span>
+<a id="__codelineno-14-71" name="__codelineno-14-71" href="#__codelineno-14-71"></a><span class="w">  </span><span class="s">MLIRLLVMDialect</span>
+<a id="__codelineno-14-72" name="__codelineno-14-72" href="#__codelineno-14-72"></a><span class="w">  </span><span class="s">MLIRBufferizationDialect</span>
+<a id="__codelineno-14-73" name="__codelineno-14-73" href="#__codelineno-14-73"></a><span class="w">  </span><span class="s">MLIRBufferizationTransforms</span>
+<a id="__codelineno-14-74" name="__codelineno-14-74" href="#__codelineno-14-74"></a><span class="w">  </span><span class="s">MLIRAffineTransforms</span>
+<a id="__codelineno-14-75" name="__codelineno-14-75" href="#__codelineno-14-75"></a><span class="w">  </span><span class="s">MLIRAffineUtils</span>
+<a id="__codelineno-14-76" name="__codelineno-14-76" href="#__codelineno-14-76"></a><span class="w">  </span><span class="s">MLIRAffineAnalysis</span>
+<a id="__codelineno-14-77" name="__codelineno-14-77" href="#__codelineno-14-77"></a><span class="w">  </span><span class="o">${</span><span class="nv">MG_CONVERSION_LIBS</span><span class="o">}</span>
+<a id="__codelineno-14-78" name="__codelineno-14-78" href="#__codelineno-14-78"></a><span class="p">)</span>
+</code></pre></div>
+</details>
+<details class="note">
+<summary><code>mg-opt.cpp</code></summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mg/MgDialect.h&quot;</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Conversion/Passes.h&quot;</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/Affine/IR/AffineOps.h&quot;</span>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/Affine/Passes.h&quot;</span>
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/Arith/IR/Arith.h&quot;</span>
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/Bufferization/IR/Bufferization.h&quot;</span>
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/Bufferization/Transforms/FuncBufferizableOpInterfaceImpl.h&quot;</span>
+<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/Bufferization/Transforms/Passes.h&quot;</span>
+<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/Func/IR/FuncOps.h&quot;</span>
+<a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/LLVMIR/LLVMDialect.h&quot;</span>
+<a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/MemRef/IR/MemRef.h&quot;</span>
+<a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/IR/DialectRegistry.h&quot;</span>
+<a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/InitAllDialects.h&quot;</span>
+<a id="__codelineno-15-15" name="__codelineno-15-15" href="#__codelineno-15-15"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Tools/mlir-opt/MlirOptMain.h&quot;</span>
+<a id="__codelineno-15-16" name="__codelineno-15-16" href="#__codelineno-15-16"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Transforms/Passes.h&quot;</span>
+<a id="__codelineno-15-17" name="__codelineno-15-17" href="#__codelineno-15-17"></a>
+<a id="__codelineno-15-18" name="__codelineno-15-18" href="#__codelineno-15-18"></a><span class="k">namespace</span><span class="w"> </span><span class="nn">mg</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-15-19" name="__codelineno-15-19" href="#__codelineno-15-19"></a><span class="kt">void</span><span class="w"> </span><span class="nf">registerConvertMgToAffinePass</span><span class="p">();</span>
+<a id="__codelineno-15-20" name="__codelineno-15-20" href="#__codelineno-15-20"></a><span class="kt">void</span><span class="w"> </span><span class="nf">registerBufferizableOpInterfaceExternalModels</span><span class="p">(</span><span class="n">mlir</span><span class="o">::</span><span class="n">DialectRegistry</span><span class="w"> </span><span class="o">&amp;</span><span class="n">registry</span><span class="p">);</span>
+<a id="__codelineno-15-21" name="__codelineno-15-21" href="#__codelineno-15-21"></a><span class="p">}</span>
+<a id="__codelineno-15-22" name="__codelineno-15-22" href="#__codelineno-15-22"></a>
+<a id="__codelineno-15-23" name="__codelineno-15-23" href="#__codelineno-15-23"></a><span class="kt">int</span><span class="w"> </span><span class="n">main</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">**</span><span class="n">argv</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-15-24" name="__codelineno-15-24" href="#__codelineno-15-24"></a><span class="w">  </span><span class="n">mlir</span><span class="o">::</span><span class="n">registerCanonicalizerPass</span><span class="p">();</span>
+<a id="__codelineno-15-25" name="__codelineno-15-25" href="#__codelineno-15-25"></a><span class="w">  </span><span class="n">mlir</span><span class="o">::</span><span class="n">registerCSEPass</span><span class="p">();</span>
+<a id="__codelineno-15-26" name="__codelineno-15-26" href="#__codelineno-15-26"></a><span class="w">  </span><span class="n">mlir</span><span class="o">::</span><span class="n">registerReconcileUnrealizedCastsPass</span><span class="p">();</span>
+<a id="__codelineno-15-27" name="__codelineno-15-27" href="#__codelineno-15-27"></a><span class="w">  </span><span class="n">mg</span><span class="o">::</span><span class="n">registerConvertMgToAffinePass</span><span class="p">();</span>
+<a id="__codelineno-15-28" name="__codelineno-15-28" href="#__codelineno-15-28"></a><span class="w">  </span><span class="n">mlir</span><span class="o">::</span><span class="n">bufferization</span><span class="o">::</span><span class="n">registerBufferizationPasses</span><span class="p">();</span>
+<a id="__codelineno-15-29" name="__codelineno-15-29" href="#__codelineno-15-29"></a><span class="w">  </span><span class="n">mlir</span><span class="o">::</span><span class="n">registerConversionPasses</span><span class="p">();</span>
+<a id="__codelineno-15-30" name="__codelineno-15-30" href="#__codelineno-15-30"></a><span class="w">  </span><span class="n">mlir</span><span class="o">::</span><span class="n">affine</span><span class="o">::</span><span class="n">registerAffinePasses</span><span class="p">();</span>
+<a id="__codelineno-15-31" name="__codelineno-15-31" href="#__codelineno-15-31"></a>
+<a id="__codelineno-15-32" name="__codelineno-15-32" href="#__codelineno-15-32"></a><span class="w">  </span><span class="n">mlir</span><span class="o">::</span><span class="n">DialectRegistry</span><span class="w"> </span><span class="n">registry</span><span class="p">;</span>
+<a id="__codelineno-15-33" name="__codelineno-15-33" href="#__codelineno-15-33"></a><span class="w">  </span><span class="n">registry</span><span class="p">.</span><span class="n">insert</span><span class="o">&lt;</span><span class="n">mlir</span><span class="o">::</span><span class="n">func</span><span class="o">::</span><span class="n">FuncDialect</span><span class="p">,</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">affine</span><span class="o">::</span><span class="n">AffineDialect</span><span class="p">,</span>
+<a id="__codelineno-15-34" name="__codelineno-15-34" href="#__codelineno-15-34"></a><span class="w">                  </span><span class="n">mlir</span><span class="o">::</span><span class="n">memref</span><span class="o">::</span><span class="n">MemRefDialect</span><span class="p">,</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">arith</span><span class="o">::</span><span class="n">ArithDialect</span><span class="p">,</span>
+<a id="__codelineno-15-35" name="__codelineno-15-35" href="#__codelineno-15-35"></a><span class="w">                  </span><span class="n">mlir</span><span class="o">::</span><span class="n">bufferization</span><span class="o">::</span><span class="n">BufferizationDialect</span><span class="p">,</span>
+<a id="__codelineno-15-36" name="__codelineno-15-36" href="#__codelineno-15-36"></a><span class="w">                  </span><span class="n">mlir</span><span class="o">::</span><span class="n">LLVM</span><span class="o">::</span><span class="n">LLVMDialect</span><span class="o">&gt;</span><span class="p">();</span>
+<a id="__codelineno-15-37" name="__codelineno-15-37" href="#__codelineno-15-37"></a><span class="w">  </span><span class="n">registry</span><span class="p">.</span><span class="n">insert</span><span class="o">&lt;</span><span class="n">mg</span><span class="o">::</span><span class="n">MgDialect</span><span class="o">&gt;</span><span class="p">();</span>
+<a id="__codelineno-15-38" name="__codelineno-15-38" href="#__codelineno-15-38"></a><span class="w">  </span><span class="n">mg</span><span class="o">::</span><span class="n">registerBufferizableOpInterfaceExternalModels</span><span class="p">(</span><span class="n">registry</span><span class="p">);</span>
+<a id="__codelineno-15-39" name="__codelineno-15-39" href="#__codelineno-15-39"></a><span class="w">  </span><span class="n">mlir</span><span class="o">::</span><span class="n">bufferization</span><span class="o">::</span><span class="n">func_ext</span><span class="o">::</span><span class="n">registerBufferizableOpInterfaceExternalModels</span><span class="p">(</span>
+<a id="__codelineno-15-40" name="__codelineno-15-40" href="#__codelineno-15-40"></a><span class="w">      </span><span class="n">registry</span><span class="p">);</span>
+<a id="__codelineno-15-41" name="__codelineno-15-41" href="#__codelineno-15-41"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">asMainReturnCode</span><span class="p">(</span>
+<a id="__codelineno-15-42" name="__codelineno-15-42" href="#__codelineno-15-42"></a><span class="w">      </span><span class="n">mlir</span><span class="o">::</span><span class="n">MlirOptMain</span><span class="p">(</span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="n">argv</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Mountain Goat (mg) dialect driver</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">registry</span><span class="p">));</span>
+<a id="__codelineno-15-43" name="__codelineno-15-43" href="#__codelineno-15-43"></a><span class="p">}</span>
+</code></pre></div>
+</details>
+<h2 id="what-later-chapters-changed">What later chapters changed<a class="headerlink" href="#what-later-chapters-changed" title="Permanent link">&para;</a></h2>
+<p>Chapter 15 added a test for <code>--affine-loop-fusion</code>, and Chapter 16 added tests for tiling and full unrolling, so this chapter's three transforms are now covered by the <code>lit</code>/<code>FileCheck</code> suite. These transforms have still <strong>not</strong> been run on dynamic loop bounds (Chapter 13 leaves that open), and full unrolling in particular cannot work without a constant trip count.</p>
 <h2 id="chapter-summary">Chapter summary<a class="headerlink" href="#chapter-summary" title="Permanent link">&para;</a></h2>
 <p>This chapter ran all three real transforms Chapter 1's own citation named back in Part 0: <code>--affine-loop-fusion</code> genuinely merged Mountain Goat's own add-then-transpose loop nests into one, shrinking an intermediate buffer in the process and reordering iteration to match a real access-pattern permutation; <code>--affine-loop-tile</code> genuinely restructured the fused loop into real tile/point loop pairs, honestly using an illustrative tile size since this book's own worked example is too small to show a genuine locality benefit; <code>--affine-loop-unroll</code>, run twice (its own real, documented default scope being innermost loops only), genuinely replaced the entire loop nest with real straight-line code. Re-running <code>--canonicalize</code> -- the exact same pass already used in Chapters 3 and 4 -- genuinely cleaned up the real index arithmetic unrolling introduced, concretely demonstrating this book's own TOC-promised point: canonicalization is real, general-purpose cleanup invited back after any transform, at any level, not a one-time early pass. The full real sequence, continued through Chapter 5's own unmodified <code>affine</code>-to-<code>llvm</code> pipeline and genuinely JIT-run, produced the correct real answer.</p>
 <p>Deliberately out of scope, stated explicitly: this chapter's own tile size (<code>1</code>) is illustrative, chosen to make the transform's own structure visible on a small example, not tuned for any real performance benefit -- a genuinely larger Mountain Goat tensor, with a tile size chosen for a real cache size, is left for a reader to try, not demonstrated here. No new real <code>mg</code>-specific code was written in this chapter at all -- every real transform used is MLIR's own generic, dialect-agnostic infrastructure, applying unchanged to IR this book's own tooling produced.</p>

@@ -674,6 +674,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#the-complete-source-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The complete source files
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-later-chapters-changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What later chapters changed
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#chapter-summary" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1495,6 +1517,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#the-complete-source-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The complete source files
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-later-chapters-changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What later chapters changed
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#chapter-summary" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1728,6 +1772,311 @@
 <p>"This document describes a framework in MLIR in which to perform operation conversions between, and within dialects. This framework allows for transforming illegal operations to those supported by a provided conversion target, via a set of pattern-based operation rewriting patterns." (<code>mlir/docs/DialectConversion.md</code>)</p>
 </blockquote>
 <p>A real <code>ConversionTarget</code> (which operations/dialects are "legal" to remain), a real <code>TypeConverter</code> (how do types in the source dialect map to types in the destination dialect), and real <code>ConversionPattern</code>s (an extended <code>RewritePattern</code>, aware of operands that may themselves already be mid-conversion) are the three real pieces that framework needs -- genuinely more machinery than this chapter's own two same-dialect rewrites required, and deliberately left for Part 3, where Mountain Goat's own <code>mg</code> operations are actually lowered to MLIR's real <code>affine</code> dialect for the first time.</p>
+<h2 id="the-complete-source-files">The complete source files<a class="headerlink" href="#the-complete-source-files" title="Permanent link">&para;</a></h2>
+<p>The excerpts above show the parts under discussion. These files appear in <code>code/</code> and are not shown elsewhere on this page; each is embedded exactly as it exists in the repository, collapsed so the narrative stays readable.</p>
+<details class="note">
+<summary><code>CMakeLists.txt</code></summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="nb">cmake_minimum_required</span><span class="p">(</span><span class="s">VERSION</span><span class="w"> </span><span class="s">3.20</span><span class="p">)</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="nb">project</span><span class="p">(</span><span class="s">mg_dialect</span><span class="p">)</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="nb">find_package</span><span class="p">(</span><span class="s">MLIR</span><span class="w"> </span><span class="s">REQUIRED</span><span class="w"> </span><span class="s">CONFIG</span><span class="p">)</span>
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="nb">list</span><span class="p">(</span><span class="s">APPEND</span><span class="w"> </span><span class="s">CMAKE_MODULE_PATH</span><span class="w"> </span><span class="s2">&quot;${MLIR_CMAKE_DIR}&quot;</span><span class="p">)</span>
+<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="nb">list</span><span class="p">(</span><span class="s">APPEND</span><span class="w"> </span><span class="s">CMAKE_MODULE_PATH</span><span class="w"> </span><span class="s2">&quot;${LLVM_CMAKE_DIR}&quot;</span><span class="p">)</span>
+<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span class="nb">include</span><span class="p">(</span><span class="s">TableGen</span><span class="p">)</span>
+<a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a><span class="nb">include</span><span class="p">(</span><span class="s">AddLLVM</span><span class="p">)</span>
+<a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a><span class="nb">include</span><span class="p">(</span><span class="s">AddMLIR</span><span class="p">)</span>
+<a id="__codelineno-20-11" name="__codelineno-20-11" href="#__codelineno-20-11"></a><span class="nb">include</span><span class="p">(</span><span class="s">HandleLLVMOptions</span><span class="p">)</span>
+<a id="__codelineno-20-12" name="__codelineno-20-12" href="#__codelineno-20-12"></a>
+<a id="__codelineno-20-13" name="__codelineno-20-13" href="#__codelineno-20-13"></a><span class="nb">include_directories</span><span class="p">(</span><span class="o">${</span><span class="nv">LLVM_INCLUDE_DIRS</span><span class="o">}</span><span class="p">)</span>
+<a id="__codelineno-20-14" name="__codelineno-20-14" href="#__codelineno-20-14"></a><span class="nb">include_directories</span><span class="p">(</span><span class="o">${</span><span class="nv">MLIR_INCLUDE_DIRS</span><span class="o">}</span><span class="p">)</span>
+<a id="__codelineno-20-15" name="__codelineno-20-15" href="#__codelineno-20-15"></a><span class="nb">include_directories</span><span class="p">(</span><span class="o">${</span><span class="nv">CMAKE_CURRENT_SOURCE_DIR</span><span class="o">}</span><span class="s">/include</span><span class="p">)</span>
+<a id="__codelineno-20-16" name="__codelineno-20-16" href="#__codelineno-20-16"></a><span class="nb">include_directories</span><span class="p">(</span><span class="o">${</span><span class="nv">CMAKE_CURRENT_BINARY_DIR</span><span class="o">}</span><span class="s">/include</span><span class="p">)</span>
+<a id="__codelineno-20-17" name="__codelineno-20-17" href="#__codelineno-20-17"></a><span class="nb">add_definitions</span><span class="p">(</span><span class="o">${</span><span class="nv">LLVM_DEFINITIONS</span><span class="o">}</span><span class="p">)</span>
+<a id="__codelineno-20-18" name="__codelineno-20-18" href="#__codelineno-20-18"></a>
+<a id="__codelineno-20-19" name="__codelineno-20-19" href="#__codelineno-20-19"></a><span class="nb">set</span><span class="p">(</span><span class="s">LLVM_TARGET_DEFINITIONS</span><span class="w"> </span><span class="s">include/mg/MgOps.td</span><span class="p">)</span>
+<a id="__codelineno-20-20" name="__codelineno-20-20" href="#__codelineno-20-20"></a><span class="nb">mlir_tablegen</span><span class="p">(</span><span class="s">include/mg/MgOps.h.inc</span><span class="w"> </span><span class="s">-gen-op-decls</span><span class="p">)</span>
+<a id="__codelineno-20-21" name="__codelineno-20-21" href="#__codelineno-20-21"></a><span class="nb">mlir_tablegen</span><span class="p">(</span><span class="s">include/mg/MgOps.cpp.inc</span><span class="w"> </span><span class="s">-gen-op-defs</span><span class="p">)</span>
+<a id="__codelineno-20-22" name="__codelineno-20-22" href="#__codelineno-20-22"></a><span class="nb">mlir_tablegen</span><span class="p">(</span><span class="s">include/mg/MgOpsDialect.h.inc</span><span class="w"> </span><span class="s">-gen-dialect-decls</span><span class="p">)</span>
+<a id="__codelineno-20-23" name="__codelineno-20-23" href="#__codelineno-20-23"></a><span class="nb">mlir_tablegen</span><span class="p">(</span><span class="s">include/mg/MgOpsDialect.cpp.inc</span><span class="w"> </span><span class="s">-gen-dialect-defs</span><span class="p">)</span>
+<a id="__codelineno-20-24" name="__codelineno-20-24" href="#__codelineno-20-24"></a><span class="nb">add_public_tablegen_target</span><span class="p">(</span><span class="s">MgOpsIncGen</span><span class="p">)</span>
+<a id="__codelineno-20-25" name="__codelineno-20-25" href="#__codelineno-20-25"></a>
+<a id="__codelineno-20-26" name="__codelineno-20-26" href="#__codelineno-20-26"></a><span class="nb">add_library</span><span class="p">(</span><span class="s">MgDialect</span><span class="w"> </span><span class="s">lib/MgDialect.cpp</span><span class="p">)</span>
+<a id="__codelineno-20-27" name="__codelineno-20-27" href="#__codelineno-20-27"></a><span class="nb">add_dependencies</span><span class="p">(</span><span class="s">MgDialect</span><span class="w"> </span><span class="s">MgOpsIncGen</span><span class="p">)</span>
+<a id="__codelineno-20-28" name="__codelineno-20-28" href="#__codelineno-20-28"></a><span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">MgDialect</span><span class="w"> </span><span class="s">PUBLIC</span><span class="w"> </span><span class="s">MLIRIR</span><span class="w"> </span><span class="s">MLIRFuncDialect</span><span class="p">)</span>
+<a id="__codelineno-20-29" name="__codelineno-20-29" href="#__codelineno-20-29"></a>
+<a id="__codelineno-20-30" name="__codelineno-20-30" href="#__codelineno-20-30"></a><span class="nb">add_executable</span><span class="p">(</span><span class="s">mg-opt</span><span class="w"> </span><span class="s">tools/mg-opt.cpp</span><span class="p">)</span>
+<a id="__codelineno-20-31" name="__codelineno-20-31" href="#__codelineno-20-31"></a><span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">mg-opt</span><span class="w"> </span><span class="s">PRIVATE</span>
+<a id="__codelineno-20-32" name="__codelineno-20-32" href="#__codelineno-20-32"></a><span class="w">  </span><span class="s">MgDialect</span>
+<a id="__codelineno-20-33" name="__codelineno-20-33" href="#__codelineno-20-33"></a><span class="w">  </span><span class="s">MLIRIR</span>
+<a id="__codelineno-20-34" name="__codelineno-20-34" href="#__codelineno-20-34"></a><span class="w">  </span><span class="s">MLIRFuncDialect</span>
+<a id="__codelineno-20-35" name="__codelineno-20-35" href="#__codelineno-20-35"></a><span class="w">  </span><span class="s">MLIROptLib</span>
+<a id="__codelineno-20-36" name="__codelineno-20-36" href="#__codelineno-20-36"></a><span class="w">  </span><span class="s">MLIRParser</span>
+<a id="__codelineno-20-37" name="__codelineno-20-37" href="#__codelineno-20-37"></a><span class="w">  </span><span class="s">MLIRSupport</span>
+<a id="__codelineno-20-38" name="__codelineno-20-38" href="#__codelineno-20-38"></a><span class="w">  </span><span class="s">MLIRTransforms</span>
+<a id="__codelineno-20-39" name="__codelineno-20-39" href="#__codelineno-20-39"></a><span class="p">)</span>
+</code></pre></div>
+</details>
+<details class="note">
+<summary><code>MgDialect.cpp</code></summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mg/MgDialect.h&quot;</span>
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mg/MgOps.h&quot;</span>
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/IR/Builders.h&quot;</span>
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/IR/Matchers.h&quot;</span>
+<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/IR/OpImplementation.h&quot;</span>
+<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/IR/PatternMatch.h&quot;</span>
+<a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a>
+<a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a><span class="k">using</span><span class="w"> </span><span class="k">namespace</span><span class="w"> </span><span class="nn">mg</span><span class="p">;</span>
+<a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a>
+<a id="__codelineno-21-11" name="__codelineno-21-11" href="#__codelineno-21-11"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mg/MgOpsDialect.cpp.inc&quot;</span>
+<a id="__codelineno-21-12" name="__codelineno-21-12" href="#__codelineno-21-12"></a>
+<a id="__codelineno-21-13" name="__codelineno-21-13" href="#__codelineno-21-13"></a><span class="kt">void</span><span class="w"> </span><span class="nf">MgDialect::initialize</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-21-14" name="__codelineno-21-14" href="#__codelineno-21-14"></a><span class="w">  </span><span class="n">addOperations</span><span class="o">&lt;</span>
+<a id="__codelineno-21-15" name="__codelineno-21-15" href="#__codelineno-21-15"></a><span class="cp">#define GET_OP_LIST</span>
+<a id="__codelineno-21-16" name="__codelineno-21-16" href="#__codelineno-21-16"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mg/MgOps.cpp.inc&quot;</span>
+<a id="__codelineno-21-17" name="__codelineno-21-17" href="#__codelineno-21-17"></a><span class="w">      </span><span class="o">&gt;</span><span class="p">();</span>
+<a id="__codelineno-21-18" name="__codelineno-21-18" href="#__codelineno-21-18"></a><span class="p">}</span>
+<a id="__codelineno-21-19" name="__codelineno-21-19" href="#__codelineno-21-19"></a>
+<a id="__codelineno-21-20" name="__codelineno-21-20" href="#__codelineno-21-20"></a><span class="n">mlir</span><span class="o">::</span><span class="n">Operation</span><span class="w"> </span><span class="o">*</span><span class="nf">MgDialect::materializeConstant</span><span class="p">(</span><span class="n">mlir</span><span class="o">::</span><span class="n">OpBuilder</span><span class="w"> </span><span class="o">&amp;</span><span class="n">builder</span><span class="p">,</span>
+<a id="__codelineno-21-21" name="__codelineno-21-21" href="#__codelineno-21-21"></a><span class="w">                                                </span><span class="n">mlir</span><span class="o">::</span><span class="n">Attribute</span><span class="w"> </span><span class="n">value</span><span class="p">,</span>
+<a id="__codelineno-21-22" name="__codelineno-21-22" href="#__codelineno-21-22"></a><span class="w">                                                </span><span class="n">mlir</span><span class="o">::</span><span class="n">Type</span><span class="w"> </span><span class="n">type</span><span class="p">,</span>
+<a id="__codelineno-21-23" name="__codelineno-21-23" href="#__codelineno-21-23"></a><span class="w">                                                </span><span class="n">mlir</span><span class="o">::</span><span class="n">Location</span><span class="w"> </span><span class="n">loc</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-21-24" name="__codelineno-21-24" href="#__codelineno-21-24"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">elements</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">llvm</span><span class="o">::</span><span class="n">dyn_cast</span><span class="o">&lt;</span><span class="n">mlir</span><span class="o">::</span><span class="n">DenseElementsAttr</span><span class="o">&gt;</span><span class="p">(</span><span class="n">value</span><span class="p">);</span>
+<a id="__codelineno-21-25" name="__codelineno-21-25" href="#__codelineno-21-25"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">elements</span><span class="p">)</span>
+<a id="__codelineno-21-26" name="__codelineno-21-26" href="#__codelineno-21-26"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="k">nullptr</span><span class="p">;</span>
+<a id="__codelineno-21-27" name="__codelineno-21-27" href="#__codelineno-21-27"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">builder</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">ConstantOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="p">,</span><span class="w"> </span><span class="n">elements</span><span class="p">);</span>
+<a id="__codelineno-21-28" name="__codelineno-21-28" href="#__codelineno-21-28"></a><span class="p">}</span>
+<a id="__codelineno-21-29" name="__codelineno-21-29" href="#__codelineno-21-29"></a>
+<a id="__codelineno-21-30" name="__codelineno-21-30" href="#__codelineno-21-30"></a><span class="cp">#define GET_OP_CLASSES</span>
+<a id="__codelineno-21-31" name="__codelineno-21-31" href="#__codelineno-21-31"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mg/MgOps.cpp.inc&quot;</span>
+<a id="__codelineno-21-32" name="__codelineno-21-32" href="#__codelineno-21-32"></a>
+<a id="__codelineno-21-33" name="__codelineno-21-33" href="#__codelineno-21-33"></a><span class="n">mlir</span><span class="o">::</span><span class="n">LogicalResult</span><span class="w"> </span><span class="nf">ConstantOp::inferReturnTypes</span><span class="p">(</span>
+<a id="__codelineno-21-34" name="__codelineno-21-34" href="#__codelineno-21-34"></a><span class="w">    </span><span class="n">mlir</span><span class="o">::</span><span class="n">MLIRContext</span><span class="w"> </span><span class="o">*</span><span class="n">context</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">optional</span><span class="o">&lt;</span><span class="n">mlir</span><span class="o">::</span><span class="n">Location</span><span class="o">&gt;</span><span class="w"> </span><span class="n">location</span><span class="p">,</span>
+<a id="__codelineno-21-35" name="__codelineno-21-35" href="#__codelineno-21-35"></a><span class="w">    </span><span class="n">mlir</span><span class="o">::</span><span class="n">ValueRange</span><span class="w"> </span><span class="n">operands</span><span class="p">,</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">DictionaryAttr</span><span class="w"> </span><span class="n">attributes</span><span class="p">,</span>
+<a id="__codelineno-21-36" name="__codelineno-21-36" href="#__codelineno-21-36"></a><span class="w">    </span><span class="n">mlir</span><span class="o">::</span><span class="n">OpaqueProperties</span><span class="w"> </span><span class="n">properties</span><span class="p">,</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">RegionRange</span><span class="w"> </span><span class="n">regions</span><span class="p">,</span>
+<a id="__codelineno-21-37" name="__codelineno-21-37" href="#__codelineno-21-37"></a><span class="w">    </span><span class="n">llvm</span><span class="o">::</span><span class="n">SmallVectorImpl</span><span class="o">&lt;</span><span class="n">mlir</span><span class="o">::</span><span class="n">Type</span><span class="o">&gt;</span><span class="w"> </span><span class="o">&amp;</span><span class="n">inferredReturnTypes</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-21-38" name="__codelineno-21-38" href="#__codelineno-21-38"></a><span class="w">  </span><span class="n">Adaptor</span><span class="w"> </span><span class="n">adaptor</span><span class="p">(</span><span class="n">operands</span><span class="p">,</span><span class="w"> </span><span class="n">attributes</span><span class="p">,</span><span class="w"> </span><span class="n">properties</span><span class="p">,</span><span class="w"> </span><span class="n">regions</span><span class="p">);</span>
+<a id="__codelineno-21-39" name="__codelineno-21-39" href="#__codelineno-21-39"></a><span class="w">  </span><span class="n">inferredReturnTypes</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">adaptor</span><span class="p">.</span><span class="n">getValue</span><span class="p">().</span><span class="n">getType</span><span class="p">());</span>
+<a id="__codelineno-21-40" name="__codelineno-21-40" href="#__codelineno-21-40"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">success</span><span class="p">();</span>
+<a id="__codelineno-21-41" name="__codelineno-21-41" href="#__codelineno-21-41"></a><span class="p">}</span>
+<a id="__codelineno-21-42" name="__codelineno-21-42" href="#__codelineno-21-42"></a>
+<a id="__codelineno-21-43" name="__codelineno-21-43" href="#__codelineno-21-43"></a><span class="n">mlir</span><span class="o">::</span><span class="n">OpFoldResult</span><span class="w"> </span><span class="nf">ConstantOp::fold</span><span class="p">(</span><span class="n">FoldAdaptor</span><span class="w"> </span><span class="n">adaptor</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">getValueAttr</span><span class="p">();</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-21-44" name="__codelineno-21-44" href="#__codelineno-21-44"></a>
+<a id="__codelineno-21-45" name="__codelineno-21-45" href="#__codelineno-21-45"></a><span class="n">mlir</span><span class="o">::</span><span class="n">LogicalResult</span><span class="w"> </span><span class="nf">TransposeOp::verify</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-21-46" name="__codelineno-21-46" href="#__codelineno-21-46"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">inputType</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">llvm</span><span class="o">::</span><span class="n">cast</span><span class="o">&lt;</span><span class="n">mlir</span><span class="o">::</span><span class="n">RankedTensorType</span><span class="o">&gt;</span><span class="p">(</span><span class="n">getInput</span><span class="p">().</span><span class="n">getType</span><span class="p">());</span>
+<a id="__codelineno-21-47" name="__codelineno-21-47" href="#__codelineno-21-47"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">resultType</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">llvm</span><span class="o">::</span><span class="n">cast</span><span class="o">&lt;</span><span class="n">mlir</span><span class="o">::</span><span class="n">RankedTensorType</span><span class="o">&gt;</span><span class="p">(</span><span class="n">getResult</span><span class="p">().</span><span class="n">getType</span><span class="p">());</span>
+<a id="__codelineno-21-48" name="__codelineno-21-48" href="#__codelineno-21-48"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">inputType</span><span class="p">.</span><span class="n">getRank</span><span class="p">()</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">resultType</span><span class="p">.</span><span class="n">getRank</span><span class="p">()</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span>
+<a id="__codelineno-21-49" name="__codelineno-21-49" href="#__codelineno-21-49"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">emitOpError</span><span class="p">(</span><span class="s">&quot;mg.transpose only supports rank-2 tensors&quot;</span><span class="p">);</span>
+<a id="__codelineno-21-50" name="__codelineno-21-50" href="#__codelineno-21-50"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">inShape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">inputType</span><span class="p">.</span><span class="n">getShape</span><span class="p">();</span>
+<a id="__codelineno-21-51" name="__codelineno-21-51" href="#__codelineno-21-51"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">outShape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">resultType</span><span class="p">.</span><span class="n">getShape</span><span class="p">();</span>
+<a id="__codelineno-21-52" name="__codelineno-21-52" href="#__codelineno-21-52"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">inShape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">outShape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">inShape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">outShape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<a id="__codelineno-21-53" name="__codelineno-21-53" href="#__codelineno-21-53"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">emitOpError</span><span class="p">(</span><span class="s">&quot;mg.transpose result shape must be the input shape reversed&quot;</span><span class="p">);</span>
+<a id="__codelineno-21-54" name="__codelineno-21-54" href="#__codelineno-21-54"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">success</span><span class="p">();</span>
+<a id="__codelineno-21-55" name="__codelineno-21-55" href="#__codelineno-21-55"></a><span class="p">}</span>
+<a id="__codelineno-21-56" name="__codelineno-21-56" href="#__codelineno-21-56"></a>
+<a id="__codelineno-21-57" name="__codelineno-21-57" href="#__codelineno-21-57"></a><span class="n">mlir</span><span class="o">::</span><span class="n">LogicalResult</span><span class="w"> </span><span class="nf">AddOp::verify</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-21-58" name="__codelineno-21-58" href="#__codelineno-21-58"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">lhsType</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">llvm</span><span class="o">::</span><span class="n">cast</span><span class="o">&lt;</span><span class="n">mlir</span><span class="o">::</span><span class="n">RankedTensorType</span><span class="o">&gt;</span><span class="p">(</span><span class="n">getLhs</span><span class="p">().</span><span class="n">getType</span><span class="p">());</span>
+<a id="__codelineno-21-59" name="__codelineno-21-59" href="#__codelineno-21-59"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">rhsType</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">llvm</span><span class="o">::</span><span class="n">cast</span><span class="o">&lt;</span><span class="n">mlir</span><span class="o">::</span><span class="n">RankedTensorType</span><span class="o">&gt;</span><span class="p">(</span><span class="n">getRhs</span><span class="p">().</span><span class="n">getType</span><span class="p">());</span>
+<a id="__codelineno-21-60" name="__codelineno-21-60" href="#__codelineno-21-60"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">lhsType</span><span class="p">.</span><span class="n">getShape</span><span class="p">()</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">rhsType</span><span class="p">.</span><span class="n">getShape</span><span class="p">())</span>
+<a id="__codelineno-21-61" name="__codelineno-21-61" href="#__codelineno-21-61"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">emitOpError</span><span class="p">(</span><span class="s">&quot;mg.add operands must have the same shape, got &quot;</span><span class="p">)</span>
+<a id="__codelineno-21-62" name="__codelineno-21-62" href="#__codelineno-21-62"></a><span class="w">           </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">lhsType</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; and &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">rhsType</span><span class="p">;</span>
+<a id="__codelineno-21-63" name="__codelineno-21-63" href="#__codelineno-21-63"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">success</span><span class="p">();</span>
+<a id="__codelineno-21-64" name="__codelineno-21-64" href="#__codelineno-21-64"></a><span class="p">}</span>
+<a id="__codelineno-21-65" name="__codelineno-21-65" href="#__codelineno-21-65"></a>
+<a id="__codelineno-21-66" name="__codelineno-21-66" href="#__codelineno-21-66"></a><span class="n">mlir</span><span class="o">::</span><span class="n">OpFoldResult</span><span class="w"> </span><span class="nf">AddOp::fold</span><span class="p">(</span><span class="n">FoldAdaptor</span><span class="w"> </span><span class="n">adaptor</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-21-67" name="__codelineno-21-67" href="#__codelineno-21-67"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">lhsAttr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">llvm</span><span class="o">::</span><span class="n">dyn_cast_if_present</span><span class="o">&lt;</span><span class="n">mlir</span><span class="o">::</span><span class="n">DenseElementsAttr</span><span class="o">&gt;</span><span class="p">(</span><span class="n">adaptor</span><span class="p">.</span><span class="n">getLhs</span><span class="p">());</span>
+<a id="__codelineno-21-68" name="__codelineno-21-68" href="#__codelineno-21-68"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">rhsAttr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">llvm</span><span class="o">::</span><span class="n">dyn_cast_if_present</span><span class="o">&lt;</span><span class="n">mlir</span><span class="o">::</span><span class="n">DenseElementsAttr</span><span class="o">&gt;</span><span class="p">(</span><span class="n">adaptor</span><span class="p">.</span><span class="n">getRhs</span><span class="p">());</span>
+<a id="__codelineno-21-69" name="__codelineno-21-69" href="#__codelineno-21-69"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">lhsAttr</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">!</span><span class="n">rhsAttr</span><span class="p">)</span>
+<a id="__codelineno-21-70" name="__codelineno-21-70" href="#__codelineno-21-70"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="k">nullptr</span><span class="p">;</span>
+<a id="__codelineno-21-71" name="__codelineno-21-71" href="#__codelineno-21-71"></a>
+<a id="__codelineno-21-72" name="__codelineno-21-72" href="#__codelineno-21-72"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">lhsValues</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lhsAttr</span><span class="p">.</span><span class="n">getValues</span><span class="o">&lt;</span><span class="n">llvm</span><span class="o">::</span><span class="n">APFloat</span><span class="o">&gt;</span><span class="p">();</span>
+<a id="__codelineno-21-73" name="__codelineno-21-73" href="#__codelineno-21-73"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">rhsValues</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rhsAttr</span><span class="p">.</span><span class="n">getValues</span><span class="o">&lt;</span><span class="n">llvm</span><span class="o">::</span><span class="n">APFloat</span><span class="o">&gt;</span><span class="p">();</span>
+<a id="__codelineno-21-74" name="__codelineno-21-74" href="#__codelineno-21-74"></a><span class="w">  </span><span class="n">llvm</span><span class="o">::</span><span class="n">SmallVector</span><span class="o">&lt;</span><span class="n">llvm</span><span class="o">::</span><span class="n">APFloat</span><span class="o">&gt;</span><span class="w"> </span><span class="n">summed</span><span class="p">;</span>
+<a id="__codelineno-21-75" name="__codelineno-21-75" href="#__codelineno-21-75"></a><span class="w">  </span><span class="n">summed</span><span class="p">.</span><span class="n">reserve</span><span class="p">(</span><span class="n">lhsAttr</span><span class="p">.</span><span class="n">getNumElements</span><span class="p">());</span>
+<a id="__codelineno-21-76" name="__codelineno-21-76" href="#__codelineno-21-76"></a><span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="p">[</span><span class="n">l</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="p">]</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">llvm</span><span class="o">::</span><span class="n">zip</span><span class="p">(</span><span class="n">lhsValues</span><span class="p">,</span><span class="w"> </span><span class="n">rhsValues</span><span class="p">))</span>
+<a id="__codelineno-21-77" name="__codelineno-21-77" href="#__codelineno-21-77"></a><span class="w">    </span><span class="n">summed</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">l</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">r</span><span class="p">);</span>
+<a id="__codelineno-21-78" name="__codelineno-21-78" href="#__codelineno-21-78"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">DenseElementsAttr</span><span class="o">::</span><span class="n">get</span><span class="p">(</span><span class="n">lhsAttr</span><span class="p">.</span><span class="n">getType</span><span class="p">(),</span><span class="w"> </span><span class="n">summed</span><span class="p">);</span>
+<a id="__codelineno-21-79" name="__codelineno-21-79" href="#__codelineno-21-79"></a><span class="p">}</span>
+<a id="__codelineno-21-80" name="__codelineno-21-80" href="#__codelineno-21-80"></a>
+<a id="__codelineno-21-81" name="__codelineno-21-81" href="#__codelineno-21-81"></a><span class="k">namespace</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-21-82" name="__codelineno-21-82" href="#__codelineno-21-82"></a><span class="c1">/// Real pattern-rewrite canonicalization: mg.transpose(mg.transpose(%x))</span>
+<a id="__codelineno-21-83" name="__codelineno-21-83" href="#__codelineno-21-83"></a><span class="c1">/// folds straight to %x, since transposing a 2-D tensor twice is the</span>
+<a id="__codelineno-21-84" name="__codelineno-21-84" href="#__codelineno-21-84"></a><span class="c1">/// identity. Modeled on the same real idea MLIR&#39;s own official Toy</span>
+<a id="__codelineno-21-85" name="__codelineno-21-85" href="#__codelineno-21-85"></a><span class="c1">/// tutorial uses for its own transpose-of-transpose rewrite, written here</span>
+<a id="__codelineno-21-86" name="__codelineno-21-86" href="#__codelineno-21-86"></a><span class="c1">/// fresh rather than copied from it.</span>
+<a id="__codelineno-21-87" name="__codelineno-21-87" href="#__codelineno-21-87"></a><span class="k">struct</span><span class="w"> </span><span class="nc">SimplifyRedundantTranspose</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">OpRewritePattern</span><span class="o">&lt;</span><span class="n">TransposeOp</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-21-88" name="__codelineno-21-88" href="#__codelineno-21-88"></a><span class="w">  </span><span class="k">using</span><span class="w"> </span><span class="n">OpRewritePattern</span><span class="o">&lt;</span><span class="n">TransposeOp</span><span class="o">&gt;::</span><span class="n">OpRewritePattern</span><span class="p">;</span>
+<a id="__codelineno-21-89" name="__codelineno-21-89" href="#__codelineno-21-89"></a>
+<a id="__codelineno-21-90" name="__codelineno-21-90" href="#__codelineno-21-90"></a><span class="w">  </span><span class="n">mlir</span><span class="o">::</span><span class="n">LogicalResult</span>
+<a id="__codelineno-21-91" name="__codelineno-21-91" href="#__codelineno-21-91"></a><span class="w">  </span><span class="nf">matchAndRewrite</span><span class="p">(</span><span class="n">TransposeOp</span><span class="w"> </span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">PatternRewriter</span><span class="w"> </span><span class="o">&amp;</span><span class="n">rewriter</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-21-92" name="__codelineno-21-92" href="#__codelineno-21-92"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">innerTranspose</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">op</span><span class="p">.</span><span class="n">getInput</span><span class="p">().</span><span class="n">getDefiningOp</span><span class="o">&lt;</span><span class="n">TransposeOp</span><span class="o">&gt;</span><span class="p">();</span>
+<a id="__codelineno-21-93" name="__codelineno-21-93" href="#__codelineno-21-93"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">innerTranspose</span><span class="p">)</span>
+<a id="__codelineno-21-94" name="__codelineno-21-94" href="#__codelineno-21-94"></a><span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">failure</span><span class="p">();</span>
+<a id="__codelineno-21-95" name="__codelineno-21-95" href="#__codelineno-21-95"></a><span class="w">    </span><span class="n">rewriter</span><span class="p">.</span><span class="n">replaceOp</span><span class="p">(</span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">innerTranspose</span><span class="p">.</span><span class="n">getInput</span><span class="p">());</span>
+<a id="__codelineno-21-96" name="__codelineno-21-96" href="#__codelineno-21-96"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">success</span><span class="p">();</span>
+<a id="__codelineno-21-97" name="__codelineno-21-97" href="#__codelineno-21-97"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-21-98" name="__codelineno-21-98" href="#__codelineno-21-98"></a><span class="p">};</span>
+<a id="__codelineno-21-99" name="__codelineno-21-99" href="#__codelineno-21-99"></a><span class="p">}</span><span class="w"> </span><span class="c1">// namespace</span>
+<a id="__codelineno-21-100" name="__codelineno-21-100" href="#__codelineno-21-100"></a>
+<a id="__codelineno-21-101" name="__codelineno-21-101" href="#__codelineno-21-101"></a><span class="kt">void</span><span class="w"> </span><span class="n">TransposeOp</span><span class="o">::</span><span class="n">getCanonicalizationPatterns</span><span class="p">(</span><span class="n">mlir</span><span class="o">::</span><span class="n">RewritePatternSet</span><span class="w"> </span><span class="o">&amp;</span><span class="n">results</span><span class="p">,</span>
+<a id="__codelineno-21-102" name="__codelineno-21-102" href="#__codelineno-21-102"></a><span class="w">                                              </span><span class="n">mlir</span><span class="o">::</span><span class="n">MLIRContext</span><span class="w"> </span><span class="o">*</span><span class="n">context</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-21-103" name="__codelineno-21-103" href="#__codelineno-21-103"></a><span class="w">  </span><span class="n">results</span><span class="p">.</span><span class="n">add</span><span class="o">&lt;</span><span class="n">SimplifyRedundantTranspose</span><span class="o">&gt;</span><span class="p">(</span><span class="n">context</span><span class="p">);</span>
+<a id="__codelineno-21-104" name="__codelineno-21-104" href="#__codelineno-21-104"></a><span class="p">}</span>
+</code></pre></div>
+</details>
+<details class="note">
+<summary><code>MgDialect.h</code></summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="cp">#ifndef MG_MGDIALECT_H</span>
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="cp">#define MG_MGDIALECT_H</span>
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/IR/Dialect.h&quot;</span>
+<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a>
+<a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mg/MgOpsDialect.h.inc&quot;</span>
+<a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a>
+<a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a><span class="cp">#endif </span><span class="c1">// MG_MGDIALECT_H</span>
+</code></pre></div>
+</details>
+<details class="note">
+<summary><code>MgDialect.td</code></summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>#ifndef MG_DIALECT_TD
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>#define MG_DIALECT_TD
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>
+<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a>include &quot;mlir/IR/OpBase.td&quot;
+<a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a>
+<a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a>def Mg_Dialect : Dialect {
+<a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a>  let name = &quot;mg&quot;;
+<a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a>  let summary = &quot;Mountain Goat: a minimal tensor/array-expression dialect&quot;;
+<a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a>  let description = [{
+<a id="__codelineno-23-10" name="__codelineno-23-10" href="#__codelineno-23-10"></a>    The Mountain Goat (`mg`) dialect represents the small subset of the
+<a id="__codelineno-23-11" name="__codelineno-23-11" href="#__codelineno-23-11"></a>    Mountain Goat toy language that is specific to it: dense tensor
+<a id="__codelineno-23-12" name="__codelineno-23-12" href="#__codelineno-23-12"></a>    constants, elementwise addition, and 2-D transpose. Function
+<a id="__codelineno-23-13" name="__codelineno-23-13" href="#__codelineno-23-13"></a>    definitions and calls are deliberately represented with the real
+<a id="__codelineno-23-14" name="__codelineno-23-14" href="#__codelineno-23-14"></a>    builtin `func` dialect instead of a reinvented `mg.func` -- Mountain
+<a id="__codelineno-23-15" name="__codelineno-23-15" href="#__codelineno-23-15"></a>    Goat&#39;s own dialect stays minimal, covering only what `func` does not
+<a id="__codelineno-23-16" name="__codelineno-23-16" href="#__codelineno-23-16"></a>    already cover.
+<a id="__codelineno-23-17" name="__codelineno-23-17" href="#__codelineno-23-17"></a>  }];
+<a id="__codelineno-23-18" name="__codelineno-23-18" href="#__codelineno-23-18"></a>  let cppNamespace = &quot;::mg&quot;;
+<a id="__codelineno-23-19" name="__codelineno-23-19" href="#__codelineno-23-19"></a>  let hasConstantMaterializer = 1;
+<a id="__codelineno-23-20" name="__codelineno-23-20" href="#__codelineno-23-20"></a>}
+<a id="__codelineno-23-21" name="__codelineno-23-21" href="#__codelineno-23-21"></a>
+<a id="__codelineno-23-22" name="__codelineno-23-22" href="#__codelineno-23-22"></a>class Mg_Op&lt;string mnemonic, list&lt;Trait&gt; traits = []&gt; :
+<a id="__codelineno-23-23" name="__codelineno-23-23" href="#__codelineno-23-23"></a>    Op&lt;Mg_Dialect, mnemonic, traits&gt;;
+<a id="__codelineno-23-24" name="__codelineno-23-24" href="#__codelineno-23-24"></a>
+<a id="__codelineno-23-25" name="__codelineno-23-25" href="#__codelineno-23-25"></a>#endif // MG_DIALECT_TD
+</code></pre></div>
+</details>
+<details class="note">
+<summary><code>MgOps.h</code></summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="cp">#ifndef MG_MGOPS_H</span>
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="cp">#define MG_MGOPS_H</span>
+<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>
+<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Bytecode/BytecodeOpInterface.h&quot;</span>
+<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/IR/BuiltinTypes.h&quot;</span>
+<a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/IR/Dialect.h&quot;</span>
+<a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/IR/OpDefinition.h&quot;</span>
+<a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Interfaces/InferTypeOpInterface.h&quot;</span>
+<a id="__codelineno-24-9" name="__codelineno-24-9" href="#__codelineno-24-9"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Interfaces/SideEffectInterfaces.h&quot;</span>
+<a id="__codelineno-24-10" name="__codelineno-24-10" href="#__codelineno-24-10"></a>
+<a id="__codelineno-24-11" name="__codelineno-24-11" href="#__codelineno-24-11"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mg/MgDialect.h&quot;</span>
+<a id="__codelineno-24-12" name="__codelineno-24-12" href="#__codelineno-24-12"></a>
+<a id="__codelineno-24-13" name="__codelineno-24-13" href="#__codelineno-24-13"></a><span class="cp">#define GET_OP_CLASSES</span>
+<a id="__codelineno-24-14" name="__codelineno-24-14" href="#__codelineno-24-14"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mg/MgOps.h.inc&quot;</span>
+<a id="__codelineno-24-15" name="__codelineno-24-15" href="#__codelineno-24-15"></a>
+<a id="__codelineno-24-16" name="__codelineno-24-16" href="#__codelineno-24-16"></a><span class="cp">#endif </span><span class="c1">// MG_MGOPS_H</span>
+</code></pre></div>
+</details>
+<details class="note">
+<summary><code>MgOps.td</code></summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>#ifndef MG_OPS_TD
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>#define MG_OPS_TD
+<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>
+<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>include &quot;mg/MgDialect.td&quot;
+<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>include &quot;mlir/Interfaces/SideEffectInterfaces.td&quot;
+<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a>include &quot;mlir/Interfaces/InferTypeOpInterface.td&quot;
+<a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a>include &quot;mlir/IR/BuiltinAttributeInterfaces.td&quot;
+<a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a>
+<a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a>def ConstantOp : Mg_Op&lt;&quot;constant&quot;,
+<a id="__codelineno-25-10" name="__codelineno-25-10" href="#__codelineno-25-10"></a>    [Pure, ConstantLike, DeclareOpInterfaceMethods&lt;InferTypeOpInterface&gt;]&gt; {
+<a id="__codelineno-25-11" name="__codelineno-25-11" href="#__codelineno-25-11"></a>  let summary = &quot;dense tensor constant, Mountain Goat&#39;s own array literal&quot;;
+<a id="__codelineno-25-12" name="__codelineno-25-12" href="#__codelineno-25-12"></a>  let description = [{
+<a id="__codelineno-25-13" name="__codelineno-25-13" href="#__codelineno-25-13"></a>    The result type is never written out separately: it is inferred
+<a id="__codelineno-25-14" name="__codelineno-25-14" href="#__codelineno-25-14"></a>    straight from the dense attribute&#39;s own type, since a constant&#39;s shape
+<a id="__codelineno-25-15" name="__codelineno-25-15" href="#__codelineno-25-15"></a>    is already fully determined by its literal value. `dense&lt;[[1.0, 2.0],
+<a id="__codelineno-25-16" name="__codelineno-25-16" href="#__codelineno-25-16"></a>    [3.0, 4.0]]&gt; : tensor&lt;2x2xf64&gt;` carries its own type, so repeating it
+<a id="__codelineno-25-17" name="__codelineno-25-17" href="#__codelineno-25-17"></a>    after the op would just be the same fact spelled twice. The real
+<a id="__codelineno-25-18" name="__codelineno-25-18" href="#__codelineno-25-18"></a>    `ConstantLike` trait is what lets MLIR&#39;s own generic constant-folding
+<a id="__codelineno-25-19" name="__codelineno-25-19" href="#__codelineno-25-19"></a>    machinery recognize an `mg.constant` operand as a foldable attribute
+<a id="__codelineno-25-20" name="__codelineno-25-20" href="#__codelineno-25-20"></a>    in the first place, rather than an opaque SSA value -- `AddOp::fold`
+<a id="__codelineno-25-21" name="__codelineno-25-21" href="#__codelineno-25-21"></a>    below genuinely depends on it.
+<a id="__codelineno-25-22" name="__codelineno-25-22" href="#__codelineno-25-22"></a>  }];
+<a id="__codelineno-25-23" name="__codelineno-25-23" href="#__codelineno-25-23"></a>  let arguments = (ins F64ElementsAttr:$value);
+<a id="__codelineno-25-24" name="__codelineno-25-24" href="#__codelineno-25-24"></a>  let results = (outs F64Tensor:$result);
+<a id="__codelineno-25-25" name="__codelineno-25-25" href="#__codelineno-25-25"></a>  let assemblyFormat = &quot;$value attr-dict&quot;;
+<a id="__codelineno-25-26" name="__codelineno-25-26" href="#__codelineno-25-26"></a>  let hasFolder = 1;
+<a id="__codelineno-25-27" name="__codelineno-25-27" href="#__codelineno-25-27"></a>}
+<a id="__codelineno-25-28" name="__codelineno-25-28" href="#__codelineno-25-28"></a>
+<a id="__codelineno-25-29" name="__codelineno-25-29" href="#__codelineno-25-29"></a>def AddOp : Mg_Op&lt;&quot;add&quot;, [Pure]&gt; {
+<a id="__codelineno-25-30" name="__codelineno-25-30" href="#__codelineno-25-30"></a>  let summary = &quot;elementwise add of two equal-shaped tensors&quot;;
+<a id="__codelineno-25-31" name="__codelineno-25-31" href="#__codelineno-25-31"></a>  let description = [{
+<a id="__codelineno-25-32" name="__codelineno-25-32" href="#__codelineno-25-32"></a>    `hasVerifier = 1` closes a real, deliberately-left-open gap from this
+<a id="__codelineno-25-33" name="__codelineno-25-33" href="#__codelineno-25-33"></a>    dialect&#39;s first chapter: without it, ODS&#39;s own `F64Tensor` constraint
+<a id="__codelineno-25-34" name="__codelineno-25-34" href="#__codelineno-25-34"></a>    on `$lhs`/`$rhs` says nothing about the two operands&#39; shapes agreeing
+<a id="__codelineno-25-35" name="__codelineno-25-35" href="#__codelineno-25-35"></a>    with each other. `hasFolder = 1` additionally lets two real
+<a id="__codelineno-25-36" name="__codelineno-25-36" href="#__codelineno-25-36"></a>    `mg.constant` operands be folded together at compile time into one
+<a id="__codelineno-25-37" name="__codelineno-25-37" href="#__codelineno-25-37"></a>    `mg.constant`, through MLIR&#39;s own real constant-folding hook -- a
+<a id="__codelineno-25-38" name="__codelineno-25-38" href="#__codelineno-25-38"></a>    second, distinct mechanism from `TransposeOp`&#39;s own pattern-based
+<a id="__codelineno-25-39" name="__codelineno-25-39" href="#__codelineno-25-39"></a>    canonicalization below.
+<a id="__codelineno-25-40" name="__codelineno-25-40" href="#__codelineno-25-40"></a>  }];
+<a id="__codelineno-25-41" name="__codelineno-25-41" href="#__codelineno-25-41"></a>  let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
+<a id="__codelineno-25-42" name="__codelineno-25-42" href="#__codelineno-25-42"></a>  let results = (outs F64Tensor:$result);
+<a id="__codelineno-25-43" name="__codelineno-25-43" href="#__codelineno-25-43"></a>  let assemblyFormat = &quot;$lhs `,` $rhs attr-dict `:` type($lhs) `,` type($rhs) `-&gt;` type($result)&quot;;
+<a id="__codelineno-25-44" name="__codelineno-25-44" href="#__codelineno-25-44"></a>  let hasVerifier = 1;
+<a id="__codelineno-25-45" name="__codelineno-25-45" href="#__codelineno-25-45"></a>  let hasFolder = 1;
+<a id="__codelineno-25-46" name="__codelineno-25-46" href="#__codelineno-25-46"></a>}
+<a id="__codelineno-25-47" name="__codelineno-25-47" href="#__codelineno-25-47"></a>
+<a id="__codelineno-25-48" name="__codelineno-25-48" href="#__codelineno-25-48"></a>def TransposeOp : Mg_Op&lt;&quot;transpose&quot;, [Pure]&gt; {
+<a id="__codelineno-25-49" name="__codelineno-25-49" href="#__codelineno-25-49"></a>  let summary = &quot;transpose of a 2-D tensor&quot;;
+<a id="__codelineno-25-50" name="__codelineno-25-50" href="#__codelineno-25-50"></a>  let arguments = (ins F64Tensor:$input);
+<a id="__codelineno-25-51" name="__codelineno-25-51" href="#__codelineno-25-51"></a>  let results = (outs F64Tensor:$result);
+<a id="__codelineno-25-52" name="__codelineno-25-52" href="#__codelineno-25-52"></a>  let assemblyFormat = &quot;$input attr-dict `:` type($input) `to` type($result)&quot;;
+<a id="__codelineno-25-53" name="__codelineno-25-53" href="#__codelineno-25-53"></a>  let hasVerifier = 1;
+<a id="__codelineno-25-54" name="__codelineno-25-54" href="#__codelineno-25-54"></a>  let hasCanonicalizer = 1;
+<a id="__codelineno-25-55" name="__codelineno-25-55" href="#__codelineno-25-55"></a>}
+<a id="__codelineno-25-56" name="__codelineno-25-56" href="#__codelineno-25-56"></a>
+<a id="__codelineno-25-57" name="__codelineno-25-57" href="#__codelineno-25-57"></a>def PrintOp : Mg_Op&lt;&quot;print&quot;&gt; {
+<a id="__codelineno-25-58" name="__codelineno-25-58" href="#__codelineno-25-58"></a>  let summary = &quot;print a tensor at runtime&quot;;
+<a id="__codelineno-25-59" name="__codelineno-25-59" href="#__codelineno-25-59"></a>  let arguments = (ins F64Tensor:$input);
+<a id="__codelineno-25-60" name="__codelineno-25-60" href="#__codelineno-25-60"></a>  let assemblyFormat = &quot;$input attr-dict `:` type($input)&quot;;
+<a id="__codelineno-25-61" name="__codelineno-25-61" href="#__codelineno-25-61"></a>}
+<a id="__codelineno-25-62" name="__codelineno-25-62" href="#__codelineno-25-62"></a>
+<a id="__codelineno-25-63" name="__codelineno-25-63" href="#__codelineno-25-63"></a>#endif // MG_OPS_TD
+</code></pre></div>
+</details>
+<details class="note">
+<summary><code>mg-opt.cpp</code></summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mg/MgDialect.h&quot;</span>
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>
+<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/Func/IR/FuncOps.h&quot;</span>
+<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/IR/DialectRegistry.h&quot;</span>
+<a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/InitAllDialects.h&quot;</span>
+<a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Tools/mlir-opt/MlirOptMain.h&quot;</span>
+<a id="__codelineno-26-7" name="__codelineno-26-7" href="#__codelineno-26-7"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Transforms/Passes.h&quot;</span>
+<a id="__codelineno-26-8" name="__codelineno-26-8" href="#__codelineno-26-8"></a>
+<a id="__codelineno-26-9" name="__codelineno-26-9" href="#__codelineno-26-9"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">**</span><span class="n">argv</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-26-10" name="__codelineno-26-10" href="#__codelineno-26-10"></a><span class="w">  </span><span class="n">mlir</span><span class="o">::</span><span class="n">registerCanonicalizerPass</span><span class="p">();</span>
+<a id="__codelineno-26-11" name="__codelineno-26-11" href="#__codelineno-26-11"></a><span class="w">  </span><span class="n">mlir</span><span class="o">::</span><span class="n">registerCSEPass</span><span class="p">();</span>
+<a id="__codelineno-26-12" name="__codelineno-26-12" href="#__codelineno-26-12"></a>
+<a id="__codelineno-26-13" name="__codelineno-26-13" href="#__codelineno-26-13"></a><span class="w">  </span><span class="n">mlir</span><span class="o">::</span><span class="n">DialectRegistry</span><span class="w"> </span><span class="n">registry</span><span class="p">;</span>
+<a id="__codelineno-26-14" name="__codelineno-26-14" href="#__codelineno-26-14"></a><span class="w">  </span><span class="n">registry</span><span class="p">.</span><span class="n">insert</span><span class="o">&lt;</span><span class="n">mlir</span><span class="o">::</span><span class="n">func</span><span class="o">::</span><span class="n">FuncDialect</span><span class="o">&gt;</span><span class="p">();</span>
+<a id="__codelineno-26-15" name="__codelineno-26-15" href="#__codelineno-26-15"></a><span class="w">  </span><span class="n">registry</span><span class="p">.</span><span class="n">insert</span><span class="o">&lt;</span><span class="n">mg</span><span class="o">::</span><span class="n">MgDialect</span><span class="o">&gt;</span><span class="p">();</span>
+<a id="__codelineno-26-16" name="__codelineno-26-16" href="#__codelineno-26-16"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">asMainReturnCode</span><span class="p">(</span>
+<a id="__codelineno-26-17" name="__codelineno-26-17" href="#__codelineno-26-17"></a><span class="w">      </span><span class="n">mlir</span><span class="o">::</span><span class="n">MlirOptMain</span><span class="p">(</span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="n">argv</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Mountain Goat (mg) dialect driver</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">registry</span><span class="p">));</span>
+<a id="__codelineno-26-18" name="__codelineno-26-18" href="#__codelineno-26-18"></a><span class="p">}</span>
+</code></pre></div>
+</details>
+<h2 id="what-later-chapters-changed">What later chapters changed<a class="headerlink" href="#what-later-chapters-changed" title="Permanent link">&para;</a></h2>
+<p>Chapter 13 changed three things in the <code>MgDialect.cpp</code> shown here: both verifiers now accept dynamic (<code>?</code>) extents and reject unranked tensors explicitly, and <code>SimplifyRedundantTranspose</code> now fires only when its replacement has exactly the result type (without that guard it produced invalid IR on mixed dynamic types). Chapter 15 pins all of this with tests, including one that fails if the guard is removed. The version in this chapter's <code>code/</code> directory is the original.</p>
 <h2 id="chapter-summary">Chapter summary<a class="headerlink" href="#chapter-summary" title="Permanent link">&para;</a></h2>
 <p>This chapter closed a real, stated gap from Chapter 2 (<code>AddOp</code> now genuinely verifies its own operands' shapes match), then built two genuinely different real rewrite mechanisms into Mountain Goat's own dialect: a constant-folding <code>fold()</code> hook (<code>ConstantOp</code>, <code>AddOp</code>), requiring the real <code>ConstantLike</code> trait and a real <code>materializeConstant</code> hook to actually take effect -- a real, non-obvious requirement this chapter discovered by running the code, not by reading ahead -- and a general <code>RewritePattern</code> (<code>SimplifyRedundantTranspose</code>), MLIR's own heavier, more capable framework for rewrites that need to see more than one operation's own operands. Both were wired into a genuinely rebuilt <code>mg-opt</code>'s own <code>--canonicalize</code> pass (needing the real <code>MLIRTransforms</code> library, discovered the same way, via a genuine link error) and run together on one real program, collapsing it, correctly, from seven operations down to two.</p>
 <p>Deliberately out of scope, stated explicitly: no operation has been lowered to a <em>different</em> dialect yet -- both this chapter's own rewrites stay entirely inside <code>mg</code>. Real dialect conversion (<code>ConversionTarget</code>, <code>TypeConverter</code>, <code>ConversionPattern</code>) is introduced here only conceptually, cited from its own real official documentation; actually using it to lower Mountain Goat to <code>affine</code> is Part 3's own real subject.</p>

@@ -1174,6 +1174,28 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1588,6 +1610,28 @@
     <span class="md-ellipsis">
       
         What this chapter does not cite
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
       
     </span>
   </a>
@@ -2185,6 +2229,20 @@
 <p><code>pipeline.sh</code> was verified by running it in an empty directory and byte-comparing every output against the files in <code>code/</code>. It needs a built <code>mg-opt</code> plus <code>mlir-opt-18</code> and <code>clang-18</code>. Packages beyond Chapter 1's own: <code>mlir-18-tools libmlir-18-dev</code> as before, and in this chapter's sandbox <code>llvm-18-dev</code> also had to be installed (after an <code>apt-get update</code>) before CMake could find LLVM for rebuilding <code>mg-opt</code>. One real trap recorded in <code>probe.sh</code>: <code>mlir-opt-18 --show-dialects</code> keeps waiting for input after printing, so scripts must give it <code>&lt; /dev/null</code>.</p>
 <h2 id="what-this-chapter-does-not-cite">What this chapter does not cite<a class="headerlink" href="#what-this-chapter-does-not-cite" title="Permanent link">&para;</a></h2>
 <p>Chapters 1 through 9 cite the <code>llvm/llvm-project</code> repository's own <code>mlir/docs/</code> for claims about MLIR's design. This chapter does not: every statement above about what a pass does is taken from running it and reading its output (and <code>mlir-opt-18 --help</code> descriptions), not from the project's documentation, which was not read for this chapter. Treat the explanations of <em>why</em> <code>convert-affine-for-to-gpu</code> failed, and of the ABI cost of memref descriptors, as observations from this one small example.</p>
+<h2 id="chapter-summary">Chapter summary<a class="headerlink" href="#chapter-summary" title="Permanent link">&para;</a></h2>
+<p>This chapter carried a real Mountain Goat program, <code>mg.add</code>, from Chapter 4's <code>affine</code> loops down to real PTX: the loops were proven independent and mapped onto a 2-block-by-2-thread grid (<code>affine-parallelize</code>, <code>gpu-map-parallel-loops</code>, <code>convert-parallel-loops-to-gpu</code>, <code>gpu-kernel-outlining</code>), the kernel module was lowered to the <code>nvvm</code> dialect (<code>nvvm-attach-target</code>, <code>convert-gpu-to-nvvm</code>), and LLVM's NVPTX backend produced PTX (<code>gpu-module-to-binary{format=isa}</code>). An equivalent CUDA-style kernel was compiled with <code>clang-18</code> and compared: identical memory traffic (two global loads, one add, one store), but 23 kernel parameters against 3, because each <code>memref</code> crosses the call boundary as a seven-scalar descriptor. A first attempt with <code>--convert-affine-for-to-gpu</code> failed and is recorded.</p>
+<p>Deliberately out of scope, stated explicitly: nothing was assembled or launched (no GPU, driver or <code>ptxas</code> exists in this sandbox), so the chapter makes no claim that the PTX computes the right answer on hardware, and the host side (device allocation, copies, the launch call) is left for Chapter 11. One claim in this chapter, that the 23-parameter count cannot be changed by a pass option, was wrong and is corrected in Chapter 12.</p>
+<h2 id="self-check-questions">Self-check questions<a class="headerlink" href="#self-check-questions" title="Permanent link">&para;</a></h2>
+<p><strong>1. The MLIR kernel declares 23 parameters and the CUDA kernel 3, yet both do the same two loads, one add and one store. Where do the 20 extra parameters come from?</strong></p>
+<p>Worked answer: a <code>memref&lt;2x2xf64&gt;</code> does not cross a call boundary as a pointer. By Chapter 1's descriptor rule it becomes seven scalars: an allocated pointer, an aligned pointer, an offset, two sizes and two strides. The kernel takes three memrefs, so 3 x 7 = 21, plus two <code>index</code> arguments (the loop's step and lower bound), for 23. The CUDA kernel takes three raw pointers and writes the loop bounds and row stride into its source (<code>row * 2 + col</code>), so it has nothing else to pass.</p>
+<p><strong>2. Of the 23 declared parameters, the PTX body loads only five. Which five, and why those?</strong></p>
+<p>Worked answer: <code>param_0</code> and <code>param_1</code> (the loop step and lower bound, used in <code>block * step + lb</code>), and <code>param_3</code>, <code>param_10</code>, <code>param_17</code>, the <em>aligned pointer</em> slot, the second field, of each of the three descriptor groups (fields 2 to 8, 9 to 15 and 16 to 22 after the two index arguments). Sizes, strides and offsets are never read, because the shape is static and baked into the index arithmetic (<code>shl 1</code> for the row stride, <code>shl 3</code> for eight bytes per element). The backend deleted every unused read without being asked.</p>
+<p><strong>3. <code>--convert-affine-for-to-gpu</code> failed twice. How did the two failures differ, and what did the working route do differently?</strong></p>
+<p>Worked answer: the first failure was a scheduling error: the pass operates on a <code>func.func</code>, not on a <code>builtin.module</code>, so it must be nested in the pass pipeline. Nested, it produced <code>affine.load</code> operations indexed by GPU block and thread ids, which are not valid affine dimensions or symbols, so the result failed verification. The working route went through parallelism instead: <code>affine-parallelize</code> proved the loops independent, <code>lower-affine</code> turned them into <code>scf.parallel</code>, and the GPU mapping passes built the launch, with the kernel body using plain <code>memref.load</code>/<code>memref.store</code>. The chapter did not establish <em>why</em> the first route fails beyond that observation, and says so.</p>
+<p><strong>4. Why does this chapter have no equivalent of the <code>[[6, 8], [10, 12]]</code> check that Chapters 5 through 9 ended with, and why is that its most important caveat?</strong></p>
+<p>Worked answer: that check ran a program and compared its output with the independently known answer. Here nothing could be run: there is no GPU, no CUDA driver and no <code>ptxas</code>. The chapter therefore establishes only that real MLIR and real LLVM accept every stage and emit the PTX shown, which is a statement about the compiler, not about the kernel's correctness. Reading the PTX, the load, add and store look right, but reading is not executing, and the book's own discipline is that a plausible-looking result is not evidence.</p>
+<p><strong>5. Switching <code>index-bitwidth</code> from 64 to 32 changed the instruction count from 25 to 22. What changed in the PTX, and what did not?</strong></p>
+<p>Worked answer: the index arithmetic became 32-bit (<code>mad.lo.s32</code>, <code>shl.b32</code>, <code>add.s32</code> in place of <code>mul.lo.s64</code>, <code>add.s64</code>, <code>shl.b64</code>), and the two index parameters are now declared <code>.u32</code>. What did not change is the parameter count (still 23, because that comes from the memref descriptor ABI, not from the index width) and the memory traffic (still two loads and one store). Chapter 12 later showed that a different option, <code>kernel-bare-ptr-calling-convention</code>, is what changes the count.</p>
 
 
 

@@ -1420,6 +1420,28 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1678,6 +1700,28 @@
     <span class="md-ellipsis">
       
         Reproducing this chapter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
       
     </span>
   </a>
@@ -2641,6 +2685,20 @@
 <a id="__codelineno-55-7" name="__codelineno-55-7" href="#__codelineno-55-7"></a>./mutation.sh<span class="w">                          </span><span class="c1"># the three source mutations</span>
 </code></pre></div>
 <p>Every test, script and output shown above is embedded from the repository when the site is built, so this page cannot drift from the code it describes (a missing file fails the build). As in Chapters 10 through 14, no documentation was consulted for any claim here; the <code>not --crash</code> behavior, the <code>lit</code> version mismatch and every result above come from running the commands.</p>
+<h2 id="chapter-summary">Chapter summary<a class="headerlink" href="#chapter-summary" title="Permanent link">&para;</a></h2>
+<p>This chapter replaced "run once and paste the output" with an assertion-based suite of 22 <code>lit</code>/<code>FileCheck</code> tests across the verifier, the canonicalizer, both lowering paths, loop fusion and native execution, every one printed on the page beside the real output it matches. A first-run failure (<code>lit</code>'s built-in <code>not</code> rejecting <code>--crash</code>) was fixed by routing <code>not</code> through LLVM's own <code>not-18</code>. Because a suite that has only passed has not been shown to test anything, the same tests were run against older builds (13 failures on Chapter 7's, 6 on Chapter 13's, each a feature that build lacks) and against three deliberate source bugs, each caught by the tests aimed at it. The mutation check exposed a real gap in the suite as first written, a check covering only dimension 0, closed by a column-only mismatch test.</p>
+<p>Deliberately out of scope, stated explicitly: no CI runs the suite on a push, Chapters 1, 2, 9 and the GPU chapters had no tests at the end of this chapter (Chapter 16 covers the GPU path and two more loop transforms), <code>lit</code> came from PyPI at a different version from the toolchain, and diagnostics are pinned verbatim, which makes some tests brittle.</p>
+<h2 id="self-check-questions">Self-check questions<a class="headerlink" href="#self-check-questions" title="Permanent link">&para;</a></h2>
+<p><strong>1. What does <code>CHECK-NOT</code> assert, and which tests lean on it to show that the dynamic-shape work costs static programs nothing?</strong></p>
+<p>Worked answer: <code>CHECK-NOT: text</code> requires that <code>text</code> does not appear between the surrounding matches. The static lowering tests (<code>static-add-affine</code> and <code>bufferize-static-add</code>) use <code>CHECK-NOT: cf.assert</code> and <code>CHECK-NOT: memref.dim</code> after the loop checks, so if the dynamic machinery leaked into a static program the test would fail.</p>
+<p><strong>2. Why is the <code>mg-opt</code> under test chosen by an environment variable rather than hard-coded in <code>lit.cfg.py</code>?</strong></p>
+<p>Worked answer: so the identical suite can be pointed at other builds. That is how the chapter shows the tests can fail: <code>older_builds.sh</code> runs the unchanged tests with <code>MG_OPT</code> set to Chapter 7's and Chapter 13's builds, and <code>mutation.sh</code> sets it to builds with deliberate bugs. A suite tied to one binary could only ever report on that binary.</p>
+<p><strong>3. The two <code>not --crash</code> tests failed on the first run, while the verifier tests written with plain <code>not</code> passed. Why was that not good enough, and what was the fix?</strong></p>
+<p>Worked answer: <code>lit</code>'s builtin <code>not</code> did not support <code>--crash</code> ("<code>not</code>: command not found" for that form), so those tests could not run. The plain-<code>not</code> tests passing was not reassuring either, because at that point a passing <code>not</code> test could not be told apart from a broken one. The fix was to define <code>%not</code> as LLVM's <code>not-18</code>, which supports <code>--crash</code>, and use it everywhere; the older-build runs then showed the verifier tests really do fail when the behavior is absent.</p>
+<p><strong>4. What did mutating the code to check only dimension 0 reveal about the suite as first written?</strong></p>
+<p>Worked answer: with 21 tests, that mutation was caught only by tests of the IR's structure (the lowering tests expecting an assert for dimension 1). No native test mismatched the columns while the rows agreed, because the only mismatch case differs in rows first, so a runtime bug in dimension 1 could have passed every executable test. The 22nd test, <code>mismatch-columns-aborts</code> (2x3 plus 2x2), was added and the mutation re-run: it now fails there too.</p>
+<p><strong>5. Why is pinning an exact diagnostic message a double-edged choice? Give the example from this chapter.</strong></p>
+<p>Worked answer: it makes the test strict about wording, so it also fails when only the text changes. On Chapter 7's build, <code>verifier/add-static-mismatch</code> fails not because the program is accepted but because the message then read "operands must have the same shape" and Chapter 13 changed it to "operands must have compatible shapes". The test was kept pinned deliberately, on the view that a changed message should make a human look, but it is a brittleness a reader should know about.</p>
 
 
 

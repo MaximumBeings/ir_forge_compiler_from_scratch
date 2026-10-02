@@ -463,6 +463,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#the-complete-source-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The complete source files
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-later-chapters-changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What later chapters changed
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#chapter-summary" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1429,6 +1451,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#the-complete-source-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The complete source files
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-later-chapters-changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What later chapters changed
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#chapter-summary" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1637,6 +1681,106 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>sum_array({1,2,3,4,5}) = 15
 </code></pre></div></p>
 <p><code>1 + 2 + 3 + 4 + 5 = 15</code> -- the real, correct answer, produced by a real binary that started life as a structured <code>scf.for</code> loop, was genuinely unpacked and lowered by real MLIR passes, translated to real LLVM IR, and compiled by the real LLVM backend. Every stage of that real pipeline is now proven, not asserted: this chapter's own next parts (Part 1 onward) can build a real, custom dialect on top of this exact same real lowering-and-execution discipline with confidence that the discipline itself genuinely works.</p>
+<h2 id="the-complete-source-files">The complete source files<a class="headerlink" href="#the-complete-source-files" title="Permanent link">&para;</a></h2>
+<p>The excerpts above show the parts under discussion. These files appear in <code>code/</code> and are not shown elsewhere on this page; each is embedded exactly as it exists in the repository, collapsed so the narrative stays readable.</p>
+<details class="note">
+<summary><code>compile_warn.txt</code></summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>warning: overriding the module target triple with x86_64-pc-linux-gnu [-Woverride-module]
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>1 warning generated.
+</code></pre></div>
+</details>
+<details class="note">
+<summary><code>lower_out.txt</code></summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>module {
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>  llvm.func @sum_array(%arg0: !llvm.ptr, %arg1: !llvm.ptr, %arg2: i64, %arg3: i64, %arg4: i64) -&gt; i32 {
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>    %0 = llvm.mlir.undef : !llvm.struct&lt;(ptr, ptr, i64, array&lt;1 x i64&gt;, array&lt;1 x i64&gt;)&gt;
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>    %1 = llvm.insertvalue %arg0, %0[0] : !llvm.struct&lt;(ptr, ptr, i64, array&lt;1 x i64&gt;, array&lt;1 x i64&gt;)&gt; 
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>    %2 = llvm.insertvalue %arg1, %1[1] : !llvm.struct&lt;(ptr, ptr, i64, array&lt;1 x i64&gt;, array&lt;1 x i64&gt;)&gt; 
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>    %3 = llvm.insertvalue %arg2, %2[2] : !llvm.struct&lt;(ptr, ptr, i64, array&lt;1 x i64&gt;, array&lt;1 x i64&gt;)&gt; 
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>    %4 = llvm.insertvalue %arg3, %3[3, 0] : !llvm.struct&lt;(ptr, ptr, i64, array&lt;1 x i64&gt;, array&lt;1 x i64&gt;)&gt; 
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>    %5 = llvm.insertvalue %arg4, %4[4, 0] : !llvm.struct&lt;(ptr, ptr, i64, array&lt;1 x i64&gt;, array&lt;1 x i64&gt;)&gt; 
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>    %6 = llvm.mlir.constant(0 : index) : i64
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>    %7 = llvm.mlir.constant(1 : index) : i64
+<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a>    %8 = llvm.mlir.constant(5 : index) : i64
+<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a>    %9 = llvm.mlir.constant(0 : i32) : i32
+<a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a>    llvm.br ^bb1(%6, %9 : i64, i32)
+<a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a>  ^bb1(%10: i64, %11: i32):  // 2 preds: ^bb0, ^bb2
+<a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a>    %12 = llvm.icmp &quot;slt&quot; %10, %8 : i64
+<a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a>    llvm.cond_br %12, ^bb2, ^bb3
+<a id="__codelineno-12-17" name="__codelineno-12-17" href="#__codelineno-12-17"></a>  ^bb2:  // pred: ^bb1
+<a id="__codelineno-12-18" name="__codelineno-12-18" href="#__codelineno-12-18"></a>    %13 = llvm.extractvalue %5[1] : !llvm.struct&lt;(ptr, ptr, i64, array&lt;1 x i64&gt;, array&lt;1 x i64&gt;)&gt; 
+<a id="__codelineno-12-19" name="__codelineno-12-19" href="#__codelineno-12-19"></a>    %14 = llvm.getelementptr %13[%10] : (!llvm.ptr, i64) -&gt; !llvm.ptr, i32
+<a id="__codelineno-12-20" name="__codelineno-12-20" href="#__codelineno-12-20"></a>    %15 = llvm.load %14 : !llvm.ptr -&gt; i32
+<a id="__codelineno-12-21" name="__codelineno-12-21" href="#__codelineno-12-21"></a>    %16 = llvm.add %11, %15  : i32
+<a id="__codelineno-12-22" name="__codelineno-12-22" href="#__codelineno-12-22"></a>    %17 = llvm.add %10, %7  : i64
+<a id="__codelineno-12-23" name="__codelineno-12-23" href="#__codelineno-12-23"></a>    llvm.br ^bb1(%17, %16 : i64, i32)
+<a id="__codelineno-12-24" name="__codelineno-12-24" href="#__codelineno-12-24"></a>  ^bb3:  // pred: ^bb1
+<a id="__codelineno-12-25" name="__codelineno-12-25" href="#__codelineno-12-25"></a>    llvm.return %11 : i32
+<a id="__codelineno-12-26" name="__codelineno-12-26" href="#__codelineno-12-26"></a>  }
+<a id="__codelineno-12-27" name="__codelineno-12-27" href="#__codelineno-12-27"></a>}
+</code></pre></div>
+</details>
+<details class="note">
+<summary><code>run_out.txt</code></summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>sum_array({1,2,3,4,5}) = 15
+</code></pre></div>
+</details>
+<details class="note">
+<summary><code>translate_out.txt</code></summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>; ModuleID = &#39;LLVMDialectModule&#39;
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>source_filename = &quot;LLVMDialectModule&quot;
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>define i32 @sum_array(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4) {
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>  %6 = insertvalue { ptr, ptr, i64, [1 x i64], [1 x i64] } undef, ptr %0, 0
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>  %7 = insertvalue { ptr, ptr, i64, [1 x i64], [1 x i64] } %6, ptr %1, 1
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>  %8 = insertvalue { ptr, ptr, i64, [1 x i64], [1 x i64] } %7, i64 %2, 2
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a>  %9 = insertvalue { ptr, ptr, i64, [1 x i64], [1 x i64] } %8, i64 %3, 3, 0
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a>  %10 = insertvalue { ptr, ptr, i64, [1 x i64], [1 x i64] } %9, i64 %4, 4, 0
+<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a>  br label %11
+<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a>
+<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a>11:                                               ; preds = %15, %5
+<a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a>  %12 = phi i64 [ %20, %15 ], [ 0, %5 ]
+<a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a>  %13 = phi i32 [ %19, %15 ], [ 0, %5 ]
+<a id="__codelineno-14-15" name="__codelineno-14-15" href="#__codelineno-14-15"></a>  %14 = icmp slt i64 %12, 5
+<a id="__codelineno-14-16" name="__codelineno-14-16" href="#__codelineno-14-16"></a>  br i1 %14, label %15, label %21
+<a id="__codelineno-14-17" name="__codelineno-14-17" href="#__codelineno-14-17"></a>
+<a id="__codelineno-14-18" name="__codelineno-14-18" href="#__codelineno-14-18"></a>15:                                               ; preds = %11
+<a id="__codelineno-14-19" name="__codelineno-14-19" href="#__codelineno-14-19"></a>  %16 = extractvalue { ptr, ptr, i64, [1 x i64], [1 x i64] } %10, 1
+<a id="__codelineno-14-20" name="__codelineno-14-20" href="#__codelineno-14-20"></a>  %17 = getelementptr i32, ptr %16, i64 %12
+<a id="__codelineno-14-21" name="__codelineno-14-21" href="#__codelineno-14-21"></a>  %18 = load i32, ptr %17, align 4
+<a id="__codelineno-14-22" name="__codelineno-14-22" href="#__codelineno-14-22"></a>  %19 = add i32 %13, %18
+<a id="__codelineno-14-23" name="__codelineno-14-23" href="#__codelineno-14-23"></a>  %20 = add i64 %12, 1
+<a id="__codelineno-14-24" name="__codelineno-14-24" href="#__codelineno-14-24"></a>  br label %11
+<a id="__codelineno-14-25" name="__codelineno-14-25" href="#__codelineno-14-25"></a>
+<a id="__codelineno-14-26" name="__codelineno-14-26" href="#__codelineno-14-26"></a>21:                                               ; preds = %11
+<a id="__codelineno-14-27" name="__codelineno-14-27" href="#__codelineno-14-27"></a>  ret i32 %13
+<a id="__codelineno-14-28" name="__codelineno-14-28" href="#__codelineno-14-28"></a>}
+<a id="__codelineno-14-29" name="__codelineno-14-29" href="#__codelineno-14-29"></a>
+<a id="__codelineno-14-30" name="__codelineno-14-30" href="#__codelineno-14-30"></a>!llvm.module.flags = !{!0}
+<a id="__codelineno-14-31" name="__codelineno-14-31" href="#__codelineno-14-31"></a>
+<a id="__codelineno-14-32" name="__codelineno-14-32" href="#__codelineno-14-32"></a>!0 = !{i32 2, !&quot;Debug Info Version&quot;, i32 3}
+</code></pre></div>
+</details>
+<details class="note">
+<summary><code>verify_out.txt</code></summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>module {
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>  func.func @sum_array(%arg0: memref&lt;5xi32&gt;) -&gt; i32 {
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>    %c0 = arith.constant 0 : index
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>    %c1 = arith.constant 1 : index
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>    %c5 = arith.constant 5 : index
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>    %c0_i32 = arith.constant 0 : i32
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a>    %0 = scf.for %arg1 = %c0 to %c5 step %c1 iter_args(%arg2 = %c0_i32) -&gt; (i32) {
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a>      %1 = memref.load %arg0[%arg1] : memref&lt;5xi32&gt;
+<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a>      %2 = arith.addi %arg2, %1 : i32
+<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a>      scf.yield %2 : i32
+<a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a>    }
+<a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a>    return %0 : i32
+<a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a>  }
+<a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a>}
+</code></pre></div>
+</details>
+<h2 id="what-later-chapters-changed">What later chapters changed<a class="headerlink" href="#what-later-chapters-changed" title="Permanent link">&para;</a></h2>
+<p>No later chapter changed this chapter's code. The <code>lit</code>/<code>FileCheck</code> suite built in Chapters 15 and 16 does not cover it: the <code>scf.for</code> demonstration here is untested beyond the single recorded run shown above.</p>
 <h2 id="chapter-summary">Chapter summary<a class="headerlink" href="#chapter-summary" title="Permanent link">&para;</a></h2>
 <p>This chapter answered "why a second IR above LLVM IR" concretely rather than abstractly: a real, structured <code>scf.for</code> loop was parsed and verified by <code>mlir-opt-18</code>, genuinely lowered through four real MLIR passes to MLIR's own <code>llvm</code> dialect, where its own loop structure visibly disappeared into three bare basic blocks joined by branches -- exactly the real transformation MLIR's own official rationale names as the reason loop-level transformations (fusion, tiling, interchange) belong at a <em>structured</em> level, before that information is lost. The same IR was then translated to real LLVM IR, compiled, and run, producing the correct real answer and confirming the whole real pipeline -- parse, lower, translate, compile, execute -- genuinely works end to end on this book's own confirmed toolchain.</p>
 <p>Deliberately out of scope, stated explicitly: this chapter uses only MLIR's own pre-existing, built-in dialects (<code>func</code>, <code>arith</code>, <code>scf</code>, <code>memref</code>, <code>llvm</code>) -- no custom dialect has been defined yet; that is Part 1's own real subject. No <code>affine</code> dialect transformation (tiling, fusion) has actually been performed yet either -- this chapter only demonstrates <em>why</em> one would want to, by showing what is lost once the opportunity to do so has passed.</p>

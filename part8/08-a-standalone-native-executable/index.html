@@ -975,6 +975,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#what-later-chapters-changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What later chapters changed
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#chapter-summary" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1451,6 +1462,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#what-later-chapters-changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What later chapters changed
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#chapter-summary" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1610,6 +1632,8 @@
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>/lib64/ld-linux-x86-64.so.2 (0x00007f158f53d000)
 </code></pre></div></p>
 <p>Genuinely, only <code>libc</code> -- no <code>libMLIR*.so</code>, no <code>libmlir_runner_utils.so</code>, nothing from MLIR's own runtime at all. This is the real, concrete difference this chapter set out to demonstrate: Chapters 5 through 7's own <code>mlir-cpu-runner-18</code> runs require the real MLIR toolchain to be present on whatever machine runs them; <code>add_tensors_demo</code> does not -- it could be copied to any other real x86_64 Linux machine, with no MLIR installed whatsoever, and would run identically.</p>
+<h2 id="what-later-chapters-changed">What later chapters changed<a class="headerlink" href="#what-later-chapters-changed" title="Permanent link">&para;</a></h2>
+<p>Chapter 8's <code>harness.c</code> is linked unmodified by Chapters 11 and 12 (against a CPU stub runtime), and a byte-identical copy (<code>static_harness.c</code>) is used by the Chapter 15 test <code>execution/static-add-runs</code>, which rebuilds and reruns this chapter's static <code>add_tensors</code> on both lowering paths. Nothing in this chapter's own code has changed.</p>
 <h2 id="chapter-summary">Chapter summary<a class="headerlink" href="#chapter-summary" title="Permanent link">&para;</a></h2>
 <p>This chapter generalized Chapter 1's own exact real technique -- <code>mlir-translate-18</code> to real LLVM IR, <code>clang-18</code> compiling it, linked against a real hand-written C harness -- to a genuine Mountain Goat program for the first time, closing an open item this book has carried since Chapter 4. The one real, new fact this chapter needed, not present in Chapter 1's own original example: a <em>returned</em> memref packs its own five real descriptor fields into a single LLVM struct, returned by value, rather than unpacking into separate scalar arguments the way a memref <em>parameter</em> does -- met on the C side with a matching <code>struct</code>, not five more parameters. The resulting binary was confirmed, directly via <code>ldd</code>, to depend on nothing but <code>libc</code> -- a genuinely standalone artifact, distinct in kind from every prior chapter's own JIT-based execution.</p>
 <p>Deliberately out of scope, stated explicitly: this chapter's own harness reads the result with hand-written C, specific to this one function's own known shape (<code>2x2</code>, <code>f64</code>) -- a general-purpose C library for reading arbitrary real memref descriptors is not built here. MLIR's own real C++ <code>ExecutionEngine</code> API -- a third, genuinely different real execution mechanism from both <code>mlir-cpu-runner-18</code> and this chapter's own ahead-of-time compilation -- has not been used yet.</p>

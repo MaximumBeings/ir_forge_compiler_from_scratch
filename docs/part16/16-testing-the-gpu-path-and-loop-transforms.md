@@ -319,7 +319,7 @@ The **same tests fail** as in Chapter 15 (13 on Chapter 7's build, 6 on Chapter 
 - **`cuda-comparison` needs `clang-18`'s CUDA frontend.** It ran here without the CUDA SDK, using raw NVVM builtins, as in Chapter 10.
 - **No CI.** The suite still runs only when someone runs it.
 - **Chapters 1, 2 and 9 remain untested:** the original `scf.for` demonstration, the dialect's own build, and the `ExecutionEngine` host program.
-- **Dynamic-bound loop transforms** (Chapter 7 on `?` extents) are unexamined; the new loop tests use the static fused example.
+- **Dynamic-bound loop transforms** (Chapter 7 on `?` extents) are unexamined; the new loop tests use the static fused example. *(Update, added after Chapter 17: now examined and tested there, taking the suite to 42 tests.)*
 
 ## Reproducing this chapter
 

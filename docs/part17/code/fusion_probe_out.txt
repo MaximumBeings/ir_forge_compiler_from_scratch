@@ -1,0 +1,6 @@
+chain          affine.for before fusion: 4   after: 4
+addadd         affine.for before fusion: 4   after: 4
+static_chain   affine.for before fusion: 4   after: 2
+
+partial static shape: ?x2 chain, loops before / after full unroll / after fusion
+chain2         before: 4   after unroll-full: 3   after fusion: 4

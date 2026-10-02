@@ -219,7 +219,7 @@ The excerpts above show the parts under discussion. These files appear in `code/
 
 ## What later chapters changed
 
-Chapter 15 added a test for `--affine-loop-fusion`, and Chapter 16 added tests for tiling and full unrolling, so this chapter's three transforms are now covered by the `lit`/`FileCheck` suite. These transforms have still **not** been run on dynamic loop bounds (Chapter 13 leaves that open), and full unrolling in particular cannot work without a constant trip count.
+Chapter 15 added a test for `--affine-loop-fusion`, and Chapter 16 added tests for tiling and full unrolling, so this chapter's three transforms are now covered by the `lit`/`FileCheck` suite. These transforms were first run on dynamic loop bounds in Chapter 17: tiling and partial unrolling stayed correct on eleven runtime shapes, full unrolling needs a constant trip count (and silently does nothing without one), and fusion declined on dynamic bounds for a reason that chapter narrowed but did not establish.
 
 ## Chapter summary
 

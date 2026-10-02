@@ -147,7 +147,7 @@ In every abort case the harness never reached its `printf` of the result: the ch
 - **Abort is the only response.** There is no error return or recoverable failure; a library embedding this compiled code gets a process death.
 - **Only `mg.add` is checked,** the one op with two shaped operands. Allocation failure (`memref.alloc` returning null for a huge size), integer overflow in `rows * cols`, and negative sizes in a descriptor are not examined.
 - **The GPU path has no check.** Chapters 10 through 12's kernels were static-shape; dynamic-shape GPU lowering was never attempted, so nothing here applies there.
-- **Chapter 7's loop transforms on dynamic bounds** are still untested, as are any new passes' interactions with the assert (for example, whether `--canonicalize` or fusion preserves it across a transformation).
+- **Chapter 7's loop transforms on dynamic bounds** are still untested *(Update, added after Chapter 17: tested there, and the assert survived tiling and unrolling on that program)*, as are any new passes' interactions with the assert (for example, whether `--canonicalize` or fusion preserves it across a transformation).
 - **This chapter's own scripts still print results for a human to read.** *(Update, added after Chapter 15: the assertion-based suite now exists, and includes a test that mismatches only the columns, which this chapter's own scripts never exercised.)*
 
 ## Reproducing this chapter

@@ -1,0 +1,12 @@
+MUTATION 1: tile size 4 -> 2 in the structure test's recipe
+   FAIL: dynamic-loops/tiling-structure.mlir
+MUTATION 2: unroll factor 2 -> 4 in the epilogue test's recipe
+   FAIL: dynamic-loops/unroll-epilogue.mlir
+MUTATION 3: fusion-declines run on the STATIC chain (fusion fires)
+   FAIL: dynamic-loops/fusion-declines.mlir
+MUTATION 4: self-checking harness computes a-b instead of a+b
+   FAIL: dynamic-loops/tiling-runs.mlir
+MUTATION 5: partial-static unroll test fed the fully dynamic chain
+   FAIL: dynamic-loops/unroll-full-needs-constant-trip-count.mlir
+MUTATION 6: mismatch harness made to MATCH (no abort expected)
+   FAIL: dynamic-loops/runtime-check-survives-transforms.mlir

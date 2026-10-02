@@ -1,0 +1,17 @@
+variant          (loops = affine.for in the transformed IR; baseline has 4)
+baseline         loops=4   shapes: ALL SHAPES PASS   mismatch: aborts (exit 134)
+fusion           loops=4   shapes: ALL SHAPES PASS   mismatch: aborts (exit 134)
+tile2            loops=8   shapes: ALL SHAPES PASS   mismatch: aborts (exit 134)
+tile4            loops=8   shapes: ALL SHAPES PASS   mismatch: aborts (exit 134)
+tile16           loops=8   shapes: ALL SHAPES PASS   mismatch: aborts (exit 134)
+unroll_full      loops=4   shapes: ALL SHAPES PASS   mismatch: aborts (exit 134)
+unroll2          loops=6   shapes: ALL SHAPES PASS   mismatch: aborts (exit 134)
+unroll4          loops=6   shapes: ALL SHAPES PASS   mismatch: aborts (exit 134)
+tile4_unroll2    loops=8   shapes: ALL SHAPES PASS   mismatch: aborts (exit 134)
+
+NEGATIVE CONTROL: baseline with every arith.addf rewritten to arith.subf. The harness must FAIL.
+     mismatch at a[0][0]: want 2 got 0
+   FAIL   1x1  -> result 1x1
+     mismatch at a[0][0]: want 2 got 0
+   FAIL   1x6  -> result 6x1
+   SOME SHAPES FAIL

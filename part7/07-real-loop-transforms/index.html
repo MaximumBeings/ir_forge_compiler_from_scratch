@@ -1384,6 +1384,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part17/17-loop-transforms-on-dynamic-bounds/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    17. Loop Transforms on Dynamic Bounds
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1841,7 +1869,7 @@
 </code></pre></div>
 </details>
 <h2 id="what-later-chapters-changed">What later chapters changed<a class="headerlink" href="#what-later-chapters-changed" title="Permanent link">&para;</a></h2>
-<p>Chapter 15 added a test for <code>--affine-loop-fusion</code>, and Chapter 16 added tests for tiling and full unrolling, so this chapter's three transforms are now covered by the <code>lit</code>/<code>FileCheck</code> suite. These transforms have still <strong>not</strong> been run on dynamic loop bounds (Chapter 13 leaves that open), and full unrolling in particular cannot work without a constant trip count.</p>
+<p>Chapter 15 added a test for <code>--affine-loop-fusion</code>, and Chapter 16 added tests for tiling and full unrolling, so this chapter's three transforms are now covered by the <code>lit</code>/<code>FileCheck</code> suite. These transforms were first run on dynamic loop bounds in Chapter 17: tiling and partial unrolling stayed correct on eleven runtime shapes, full unrolling needs a constant trip count (and silently does nothing without one), and fusion declined on dynamic bounds for a reason that chapter narrowed but did not establish.</p>
 <h2 id="chapter-summary">Chapter summary<a class="headerlink" href="#chapter-summary" title="Permanent link">&para;</a></h2>
 <p>This chapter ran all three real transforms Chapter 1's own citation named back in Part 0: <code>--affine-loop-fusion</code> genuinely merged Mountain Goat's own add-then-transpose loop nests into one, shrinking an intermediate buffer in the process and reordering iteration to match a real access-pattern permutation; <code>--affine-loop-tile</code> genuinely restructured the fused loop into real tile/point loop pairs, honestly using an illustrative tile size since this book's own worked example is too small to show a genuine locality benefit; <code>--affine-loop-unroll</code>, run twice (its own real, documented default scope being innermost loops only), genuinely replaced the entire loop nest with real straight-line code. Re-running <code>--canonicalize</code> -- the exact same pass already used in Chapters 3 and 4 -- genuinely cleaned up the real index arithmetic unrolling introduced, concretely demonstrating this book's own TOC-promised point: canonicalization is real, general-purpose cleanup invited back after any transform, at any level, not a one-time early pass. The full real sequence, continued through Chapter 5's own unmodified <code>affine</code>-to-<code>llvm</code> pipeline and genuinely JIT-run, produced the correct real answer.</p>
 <p>Deliberately out of scope, stated explicitly: this chapter's own tile size (<code>1</code>) is illustrative, chosen to make the transform's own structure visible on a small example, not tuned for any real performance benefit -- a genuinely larger Mountain Goat tensor, with a tile size chosen for a real cache size, is left for a reader to try, not demonstrated here. No new real <code>mg</code>-specific code was written in this chapter at all -- every real transform used is MLIR's own generic, dialect-agnostic infrastructure, applying unchanged to IR this book's own tooling produced.</p>

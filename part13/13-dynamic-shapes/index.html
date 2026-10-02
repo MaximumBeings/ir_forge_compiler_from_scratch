@@ -1446,6 +1446,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part17/17-loop-transforms-on-dynamic-bounds/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    17. Loop Transforms on Dynamic Bounds
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2379,7 +2407,7 @@
 <ul>
 <li><strong>Only rank 2.</strong> The verifiers and loops are hard-wired to two dimensions; a rank-3 tensor is rejected by the verifier, which is correct but means dynamic <em>rank</em> is out of scope.</li>
 <li><strong><code>mg.constant</code> stays static.</strong> A literal's shape is always known, so this is by design, not a gap.</li>
-<li><strong>Chapter 7's loop transforms and Chapters 10 through 12's GPU path were not re-run on dynamic shapes.</strong> Fusion, tiling and unrolling with a <code>?</code> bound are untested; full unrolling in particular cannot work without a constant trip count. The GPU path's <code>bare-ptr</code> option requires static shapes (Chapter 12), so dynamic-shape GPU lowering was not attempted.</li>
+<li><strong>Chapter 7's loop transforms and Chapters 10 through 12's GPU path were not re-run on dynamic shapes.</strong> <em>(Update, added after Chapter 17: the loop transforms now have been; see Chapter 17. The GPU path has not.)</em> Fusion, tiling and unrolling with a <code>?</code> bound are untested; full unrolling in particular cannot work without a constant trip count. The GPU path's <code>bare-ptr</code> option requires static shapes (Chapter 12), so dynamic-shape GPU lowering was not attempted.</li>
 <li><strong>No automated tests.</strong> <em>(Update, added after Chapter 15: now a <code>lit</code>/<code>FileCheck</code> suite; see Chapter 15.)</em> <code>code/run_tests.sh</code> is a script that prints results for a human to read, not an assertion-based suite.</li>
 </ul>
 <h2 id="reproducing-this-chapter">Reproducing this chapter<a class="headerlink" href="#reproducing-this-chapter" title="Permanent link">&para;</a></h2>

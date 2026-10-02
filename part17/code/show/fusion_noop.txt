@@ -1,0 +1,1 @@
+fusion on the dynamic chain left the IR byte-identical

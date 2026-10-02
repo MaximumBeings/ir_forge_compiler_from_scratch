@@ -1435,6 +1435,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part17/17-loop-transforms-on-dynamic-bounds/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    17. Loop Transforms on Dynamic Bounds
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2171,7 +2199,7 @@
 <li><strong>Abort is the only response.</strong> There is no error return or recoverable failure; a library embedding this compiled code gets a process death.</li>
 <li><strong>Only <code>mg.add</code> is checked,</strong> the one op with two shaped operands. Allocation failure (<code>memref.alloc</code> returning null for a huge size), integer overflow in <code>rows * cols</code>, and negative sizes in a descriptor are not examined.</li>
 <li><strong>The GPU path has no check.</strong> Chapters 10 through 12's kernels were static-shape; dynamic-shape GPU lowering was never attempted, so nothing here applies there.</li>
-<li><strong>Chapter 7's loop transforms on dynamic bounds</strong> are still untested, as are any new passes' interactions with the assert (for example, whether <code>--canonicalize</code> or fusion preserves it across a transformation).</li>
+<li><strong>Chapter 7's loop transforms on dynamic bounds</strong> are still untested <em>(Update, added after Chapter 17: tested there, and the assert survived tiling and unrolling on that program)</em>, as are any new passes' interactions with the assert (for example, whether <code>--canonicalize</code> or fusion preserves it across a transformation).</li>
 <li><strong>This chapter's own scripts still print results for a human to read.</strong> <em>(Update, added after Chapter 15: the assertion-based suite now exists, and includes a test that mismatches only the columns, which this chapter's own scripts never exercised.)</em></li>
 </ul>
 <h2 id="reproducing-this-chapter">Reproducing this chapter<a class="headerlink" href="#reproducing-this-chapter" title="Permanent link">&para;</a></h2>

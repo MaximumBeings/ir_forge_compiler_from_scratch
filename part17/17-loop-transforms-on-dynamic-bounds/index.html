@@ -1,0 +1,2338 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A Toy Language Compiled Through a Real MLIR Dialect, Down to Real Native Machine Code">
+      
+      
+        <meta name="author" content="Oluwaseyi Awoga">
+      
+      
+      
+        <link rel="prev" href="../../part16/16-testing-the-gpu-path-and-loop-transforms/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>17. Loop Transforms on Dynamic Bounds - IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#17-loop-transforms-on-dynamic-bounds" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-header__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              17. Loop Transforms on Dynamic Bounds
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-nav__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part1/01-why-a-multi-level-ir-at-all/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1. Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part2/02-a-minimal-dialect-from-scratch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2. A Minimal Dialect From Scratch: Mountain Goat's Own mg Dialect
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part3/03-the-pass-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3. The Real Pass Infrastructure: Canonicalizing Mountain Goat
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 3 -- Progressive Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 3 -- Progressive Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part4/04-progressive-lowering-to-affine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4. Progressive Lowering: Mountain Goat to affine, Two Real Ways
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part5/05-affine-to-scf-to-llvm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5. Finishing Progressive Lowering: affine to scf to llvm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 4 -- Optimization Across Levels
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 4 -- Optimization Across Levels
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/06-real-bufferization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6. Real Bufferization: Closing Chapter 4's Own Honest Gap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part7/07-real-loop-transforms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    7. Real Loop Transforms: Fusion, Tiling, and Unrolling at the affine Level
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 5 -- Code Generation via LLVM
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 5 -- Code Generation via LLVM
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part8/08-a-standalone-native-executable/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    8. A Standalone Native Executable: Mountain Goat Without MLIR At Runtime
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part9/09-the-execution-engine-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    9. MLIR's Own Real C++ ExecutionEngine API, Called In-Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 6 -- GPU Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 6 -- GPU Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part10/10-gpu-lowering-to-ptx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10. GPU Lowering: Mountain Goat to the gpu Dialect, NVVM, and Real PTX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part11/11-the-gpu-host-side/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    11. The GPU Host Side: Device Memory, Real Runtime Calls, and a Stub Device
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 7 -- Case Studies
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 7 -- Case Studies
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part12/12-reading-the-production-pipelines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    12. Reading MLIR's Own Production Pipelines: What This Book's Compiler Is Missing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part13/13-dynamic-shapes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    13. Dynamic Shapes: Closing Chapter 12's Biggest Unknown
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part14/14-runtime-shape-checks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    14. A Runtime Shape Check: Closing Chapter 13's Memory-Safety Hole
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part15/15-a-real-test-suite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    15. A Real Test Suite: lit, FileCheck, and Proof That the Tests Can Fail
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part16/16-testing-the-gpu-path-and-loop-transforms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    16. Testing the GPU Path and the Loop Transforms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    17. Loop Transforms on Dynamic Bounds
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    17. Loop Transforms on Dynamic Bounds
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#background-why-a-dynamic-bound-makes-loop-transforms-harder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background: why a dynamic bound makes loop transforms harder
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-test-program" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The test program
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-correctness-is-checked" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How correctness is checked
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Results
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tiling-how-the-remainder-is-handled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tiling: how the remainder is handled
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#partial-unrolling-the-main-loop-and-the-epilogue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Partial unrolling: the main loop and the epilogue
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-a-transform-quietly-does-nothing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where a transform quietly does nothing
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Where a transform quietly does nothing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#full-unrolling-needs-a-constant-trip-count" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Full unrolling needs a constant trip count
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fusion-declines-on-dynamic-bounds-and-why-that-was-narrowed-down-but-not-explained" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fusion declines on dynamic bounds, and why that was narrowed down but not explained
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-runtime-check-survives-the-transforms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The runtime check survives the transforms
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-tests-and-whether-they-can-fail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The tests, and whether they can fail
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-this-does-and-does-not-establish" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What this does and does not establish
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducing-this-chapter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducing this chapter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#background-why-a-dynamic-bound-makes-loop-transforms-harder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background: why a dynamic bound makes loop transforms harder
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-test-program" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The test program
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-correctness-is-checked" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How correctness is checked
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Results
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tiling-how-the-remainder-is-handled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tiling: how the remainder is handled
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#partial-unrolling-the-main-loop-and-the-epilogue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Partial unrolling: the main loop and the epilogue
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-a-transform-quietly-does-nothing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where a transform quietly does nothing
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Where a transform quietly does nothing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#full-unrolling-needs-a-constant-trip-count" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Full unrolling needs a constant trip count
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fusion-declines-on-dynamic-bounds-and-why-that-was-narrowed-down-but-not-explained" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fusion declines on dynamic bounds, and why that was narrowed down but not explained
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-runtime-check-survives-the-transforms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The runtime check survives the transforms
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-tests-and-whether-they-can-fail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The tests, and whether they can fail
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-this-does-and-does-not-establish" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What this does and does not establish
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducing-this-chapter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducing this chapter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="17-loop-transforms-on-dynamic-bounds">17. Loop Transforms on Dynamic Bounds<a class="headerlink" href="#17-loop-transforms-on-dynamic-bounds" title="Permanent link">&para;</a></h1>
+<p><strong>What you will understand:</strong> whether Chapter 7's three loop transforms (fusion, tiling, unrolling) still work, and still give correct answers, when the loop bounds are not known until runtime. Chapter 13 made Mountain Goat handle dynamic shapes and listed this as untested; Chapter 16 listed it again among what the suite did not cover. The chapter runs nine transform variants on a dynamic program across eleven runtime shapes, checks every result against an independent computation, finds what each transform actually does to the IR, and explains the two places where a transform quietly does nothing. Every test, script, harness and IR listing is embedded from the repository.</p>
+<p><strong>What you need to know first:</strong> Chapter 7's transforms on static loops, Chapter 13's dynamic lowering (<code>memref.dim</code>, operand-bound loops) and Chapter 14's runtime shape check. New ground: how a loop transform copes with a trip count it cannot know.</p>
+<h2 id="background-why-a-dynamic-bound-makes-loop-transforms-harder">Background: why a dynamic bound makes loop transforms harder<a class="headerlink" href="#background-why-a-dynamic-bound-makes-loop-transforms-harder" title="Permanent link">&para;</a></h2>
+<p>Chapter 7 transformed loops like <code>affine.for %i = 0 to 2</code>: the compiler knew the loop ran exactly twice. With dynamic shapes the bound is a value read at runtime: <code>affine.for %i = 0 to %dim</code>. Each transform leans on knowing the trip count in a different way, so each reacts differently:</p>
+<table>
+<thead>
+<tr>
+<th>Transform</th>
+<th>What it needs</th>
+<th>What can go wrong with an unknown trip count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Tiling</strong> (split a loop into tile loops and point loops)</td>
+<td>nothing about the count, but the last tile may be partial</td>
+<td>the point loop must stop at the end of the data, not at the end of the tile, or it reads and writes out of bounds</td>
+</tr>
+<tr>
+<td><strong>Partial unrolling</strong> (repeat the body <em>k</em> times per iteration)</td>
+<td>nothing about the count, but it may not be a multiple of <em>k</em></td>
+<td>the leftover iterations must still run, in an <em>epilogue</em> loop, or the tail of the array is skipped</td>
+</tr>
+<tr>
+<td><strong>Full unrolling</strong> (replace the loop with straight-line copies)</td>
+<td>a <strong>constant</strong> trip count: you cannot emit "n copies" when n is unknown</td>
+<td>it cannot apply at all</td>
+</tr>
+<tr>
+<td><strong>Fusion</strong> (merge two adjacent loop nests into one)</td>
+<td>proof that the two nests cover the same iteration space and that merging preserves every data dependence</td>
+<td>with symbolic bounds that proof may be impossible, and a cautious pass declines</td>
+</tr>
+</tbody>
+</table>
+<p>The first two are about <strong>correctness at the boundary</strong>: the answer must be right for sizes that do <em>not</em> divide the tile or unroll factor. The last two are about the transform <strong>declining</strong>, which is safe but means no optimization. Both kinds of behavior are measured below.</p>
+<h2 id="the-test-program">The test program<a class="headerlink" href="#the-test-program" title="Permanent link">&para;</a></h2>
+<p>An add followed by a transpose, with every dimension dynamic. It is the dynamic version of the Chapter 7 chain, and it produces two loop nests with an intermediate buffer between them:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>func.func @chain(%a: tensor&lt;?x?xf64&gt;, %b: tensor&lt;?x?xf64&gt;) -&gt; tensor&lt;?x?xf64&gt; {
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  %s = mg.add %a, %b : tensor&lt;?x?xf64&gt;, tensor&lt;?x?xf64&gt; -&gt; tensor&lt;?x?xf64&gt;
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  %t = mg.transpose %s : tensor&lt;?x?xf64&gt; to tensor&lt;?x?xf64&gt;
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>  func.return %t : tensor&lt;?x?xf64&gt;
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>}
+</code></pre></div>
+<p>After <code>--convert-mg-to-affine</code> it becomes this, the <strong>baseline</strong> all transforms start from (<code>show/chain_affine.mlir</code>, 45 lines: Chapter 14's two runtime checks, a dynamically sized allocation, then the add nest, then the transpose nest):</p>
+<details class="note">
+<summary>Full baseline <code>chain_affine.mlir</code></summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>#map = affine_map&lt;(d0) -&gt; (d0)&gt;
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>module {
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  func.func @chain(%arg0: memref&lt;?x?xf64&gt;, %arg1: memref&lt;?x?xf64&gt;) -&gt; memref&lt;?x?xf64&gt; {
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    %c0 = arith.constant 0 : index
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    %dim = memref.dim %arg0, %c0 : memref&lt;?x?xf64&gt;
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    %c0_0 = arith.constant 0 : index
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    %dim_1 = memref.dim %arg1, %c0_0 : memref&lt;?x?xf64&gt;
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    %0 = arith.cmpi eq, %dim, %dim_1 : index
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    cf.assert %0, &quot;mg.add: operand shapes differ at runtime in dimension 0&quot;
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    %c1 = arith.constant 1 : index
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    %dim_2 = memref.dim %arg0, %c1 : memref&lt;?x?xf64&gt;
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    %c1_3 = arith.constant 1 : index
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    %dim_4 = memref.dim %arg1, %c1_3 : memref&lt;?x?xf64&gt;
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>    %1 = arith.cmpi eq, %dim_2, %dim_4 : index
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>    cf.assert %1, &quot;mg.add: operand shapes differ at runtime in dimension 1&quot;
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>    %c0_5 = arith.constant 0 : index
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>    %dim_6 = memref.dim %arg0, %c0_5 : memref&lt;?x?xf64&gt;
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>    %c1_7 = arith.constant 1 : index
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>    %dim_8 = memref.dim %arg0, %c1_7 : memref&lt;?x?xf64&gt;
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>    %alloc = memref.alloc(%dim_6, %dim_8) : memref&lt;?x?xf64&gt;
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>    %c0_9 = arith.constant 0 : index
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>    affine.for %arg2 = #map(%c0_9) to #map(%dim_6) {
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>      affine.for %arg3 = #map(%c0_9) to #map(%dim_8) {
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>        %2 = affine.load %arg0[%arg2, %arg3] : memref&lt;?x?xf64&gt;
+<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>        %3 = affine.load %arg1[%arg2, %arg3] : memref&lt;?x?xf64&gt;
+<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a>        %4 = arith.addf %2, %3 : f64
+<a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a>        affine.store %4, %alloc[%arg2, %arg3] : memref&lt;?x?xf64&gt;
+<a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a>      }
+<a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a>    }
+<a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a>    %c1_10 = arith.constant 1 : index
+<a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a>    %dim_11 = memref.dim %alloc, %c1_10 : memref&lt;?x?xf64&gt;
+<a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a>    %c0_12 = arith.constant 0 : index
+<a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a>    %dim_13 = memref.dim %alloc, %c0_12 : memref&lt;?x?xf64&gt;
+<a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a>    %alloc_14 = memref.alloc(%dim_11, %dim_13) : memref&lt;?x?xf64&gt;
+<a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a>    %c0_15 = arith.constant 0 : index
+<a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a>    affine.for %arg2 = #map(%c0_15) to #map(%dim_11) {
+<a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a>      affine.for %arg3 = #map(%c0_15) to #map(%dim_13) {
+<a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a>        %2 = affine.load %alloc[%arg3, %arg2] : memref&lt;?x?xf64&gt;
+<a id="__codelineno-1-39" name="__codelineno-1-39" href="#__codelineno-1-39"></a>        affine.store %2, %alloc_14[%arg2, %arg3] : memref&lt;?x?xf64&gt;
+<a id="__codelineno-1-40" name="__codelineno-1-40" href="#__codelineno-1-40"></a>      }
+<a id="__codelineno-1-41" name="__codelineno-1-41" href="#__codelineno-1-41"></a>    }
+<a id="__codelineno-1-42" name="__codelineno-1-42" href="#__codelineno-1-42"></a>    return %alloc_14 : memref&lt;?x?xf64&gt;
+<a id="__codelineno-1-43" name="__codelineno-1-43" href="#__codelineno-1-43"></a>  }
+<a id="__codelineno-1-44" name="__codelineno-1-44" href="#__codelineno-1-44"></a>}
+</code></pre></div>
+</details>
+<p>The part that matters is the two nests, each bounded by values read from the buffers' runtime sizes:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>    %alloc = memref.alloc(%dim_6, %dim_8) : memref&lt;?x?xf64&gt;
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    %c0_9 = arith.constant 0 : index
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    affine.for %arg2 = #map(%c0_9) to #map(%dim_6) {
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>      affine.for %arg3 = #map(%c0_9) to #map(%dim_8) {
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>        %2 = affine.load %arg0[%arg2, %arg3] : memref&lt;?x?xf64&gt;
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>        %3 = affine.load %arg1[%arg2, %arg3] : memref&lt;?x?xf64&gt;
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>        %4 = arith.addf %2, %3 : f64
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>        affine.store %4, %alloc[%arg2, %arg3] : memref&lt;?x?xf64&gt;
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>      }
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>    }
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>    %c1_10 = arith.constant 1 : index
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>    %dim_11 = memref.dim %alloc, %c1_10 : memref&lt;?x?xf64&gt;
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>    %c0_12 = arith.constant 0 : index
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>    %dim_13 = memref.dim %alloc, %c0_12 : memref&lt;?x?xf64&gt;
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>    %alloc_14 = memref.alloc(%dim_11, %dim_13) : memref&lt;?x?xf64&gt;
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>    %c0_15 = arith.constant 0 : index
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>    affine.for %arg2 = #map(%c0_15) to #map(%dim_11) {
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>      affine.for %arg3 = #map(%c0_15) to #map(%dim_13) {
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>        %2 = affine.load %alloc[%arg3, %arg2] : memref&lt;?x?xf64&gt;
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>        affine.store %2, %alloc_14[%arg2, %arg3] : memref&lt;?x?xf64&gt;
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>      }
+</code></pre></div>
+<h2 id="how-correctness-is-checked">How correctness is checked<a class="headerlink" href="#how-correctness-is-checked" title="Permanent link">&para;</a></h2>
+<p>A transform that keeps the program compiling proves little; the question is whether the numbers are right on awkward sizes. The harness computes <code>transpose(a + b)</code> directly in C for each shape and compares <strong>every element</strong> of the compiled function's result, exiting non-zero on any mismatch. The eleven shapes include ones chosen to break remainder handling: <code>1x1</code>, a single row, a single column, and sizes (<code>3x5</code>, <code>7x4</code>, <code>5x9</code>, <code>13x3</code>) that divide neither 2, 4 nor 16 evenly.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1">// Checks @chain(a, b) = transpose(a + b) for many runtime shapes, comparing against a straightforward C computation.</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="c1">// Prints one PASS/FAIL line per shape; exits 1 if any shape fails. Shapes include ones that do NOT divide common tile</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="c1">// sizes (1x1, 5x1, 3x5, 7x4, ...), because remainder handling is where tiling and unrolling go wrong.</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdint.h&gt;</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdio.h&gt;</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdlib.h&gt;</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">allocated</span><span class="p">;</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">aligned</span><span class="p">;</span><span class="w"> </span><span class="kt">int64_t</span><span class="w"> </span><span class="n">offset</span><span class="p">;</span><span class="w"> </span><span class="kt">int64_t</span><span class="w"> </span><span class="n">sizes</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="kt">int64_t</span><span class="w"> </span><span class="n">strides</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="n">Memref2D</span><span class="p">;</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="k">extern</span><span class="w"> </span><span class="n">Memref2D</span><span class="w"> </span><span class="nf">chain</span><span class="p">(</span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">a0</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">a1</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="w"> </span><span class="n">off0</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="w"> </span><span class="n">s0_0</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="w"> </span><span class="n">s0_1</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="w"> </span><span class="n">st0_0</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="w"> </span><span class="n">st0_1</span><span class="p">,</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">                      </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">b0</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">b1</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="w"> </span><span class="n">off1</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="w"> </span><span class="n">s1_0</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="w"> </span><span class="n">s1_1</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="w"> </span><span class="n">st1_0</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="w"> </span><span class="n">st1_1</span><span class="p">);</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">check</span><span class="p">(</span><span class="kt">int64_t</span><span class="w"> </span><span class="n">rows</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="w"> </span><span class="n">cols</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="w">  </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">malloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="kt">double</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">rows</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">cols</span><span class="p">),</span><span class="w"> </span><span class="o">*</span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">malloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="kt">double</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">rows</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">cols</span><span class="p">);</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int64_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">rows</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int64_t</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">cols</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">cols</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">j</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">10</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">cols</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">j</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">j</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">0.5</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="w">  </span><span class="n">Memref2D</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">chain</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">rows</span><span class="p">,</span><span class="w"> </span><span class="n">cols</span><span class="p">,</span><span class="w"> </span><span class="n">cols</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">rows</span><span class="p">,</span><span class="w"> </span><span class="n">cols</span><span class="p">,</span><span class="w"> </span><span class="n">cols</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">ok</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">sizes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">cols</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">sizes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">rows</span><span class="p">;</span>
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int64_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">ok</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">rows</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span>
+<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int64_t</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">cols</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="w">      </span><span class="kt">double</span><span class="w"> </span><span class="n">want</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">cols</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">j</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">cols</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">j</span><span class="p">];</span>
+<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="w">      </span><span class="kt">double</span><span class="w"> </span><span class="n">got</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">aligned</span><span class="p">[</span><span class="n">r</span><span class="p">.</span><span class="n">offset</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">strides</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">strides</span><span class="p">[</span><span class="mi">1</span><span class="p">]];</span>
+<a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a><span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">got</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">want</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;  mismatch at a[%ld][%ld]: want %g got %g</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">long</span><span class="p">)</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">long</span><span class="p">)</span><span class="n">j</span><span class="p">,</span><span class="w"> </span><span class="n">want</span><span class="p">,</span><span class="w"> </span><span class="n">got</span><span class="p">);</span><span class="w"> </span><span class="n">ok</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="k">break</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a><span class="w">  </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;%-5s %2ldx%-2ld -&gt; result %ldx%ld</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">ok</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;PASS&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;FAIL&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">long</span><span class="p">)</span><span class="n">rows</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">long</span><span class="p">)</span><span class="n">cols</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">long</span><span class="p">)</span><span class="n">r</span><span class="p">.</span><span class="n">sizes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="w"> </span><span class="p">(</span><span class="kt">long</span><span class="p">)</span><span class="n">r</span><span class="p">.</span><span class="n">sizes</span><span class="p">[</span><span class="mi">1</span><span class="p">]);</span>
+<a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a><span class="w">  </span><span class="n">free</span><span class="p">(</span><span class="n">a</span><span class="p">);</span><span class="w"> </span><span class="n">free</span><span class="p">(</span><span class="n">b</span><span class="p">);</span>
+<a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">ok</span><span class="p">;</span>
+<a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a><span class="p">}</span>
+<a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a>
+<a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a><span class="w">  </span><span class="k">static</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">int64_t</span><span class="w"> </span><span class="n">shapes</span><span class="p">[][</span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{{</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">},{</span><span class="mi">1</span><span class="p">,</span><span class="mi">6</span><span class="p">},{</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">},{</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">},{</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">},{</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">},{</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">},{</span><span class="mi">7</span><span class="p">,</span><span class="mi">4</span><span class="p">},{</span><span class="mi">5</span><span class="p">,</span><span class="mi">9</span><span class="p">},{</span><span class="mi">8</span><span class="p">,</span><span class="mi">8</span><span class="p">},{</span><span class="mi">13</span><span class="p">,</span><span class="mi">3</span><span class="p">}};</span>
+<a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a><span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">allok</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a><span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">unsigned</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="k">sizeof</span><span class="w"> </span><span class="n">shapes</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="k">sizeof</span><span class="w"> </span><span class="n">shapes</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span><span class="w"> </span><span class="n">k</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="n">allok</span><span class="w"> </span><span class="o">&amp;=</span><span class="w"> </span><span class="n">check</span><span class="p">(</span><span class="n">shapes</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span><span class="w"> </span><span class="n">shapes</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">1</span><span class="p">]);</span>
+<a id="__codelineno-3-33" name="__codelineno-3-33" href="#__codelineno-3-33"></a><span class="w">  </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;%s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">allok</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;ALL SHAPES PASS&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;SOME SHAPES FAIL&quot;</span><span class="p">);</span>
+<a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">allok</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<a id="__codelineno-3-35" name="__codelineno-3-35" href="#__codelineno-3-35"></a><span class="p">}</span>
+</code></pre></div>
+<p>A second harness calls the same function with operands whose shapes <strong>disagree</strong>; Chapter 14's runtime check must abort it before any out-of-bounds load:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1">// Calls @chain with operands whose runtime shapes DISAGREE (a is 2x3, b is 1x2 over a two-element buffer).</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="c1">// Chapter 14&#39;s runtime check must abort the program before any out-of-bounds load; reaching the printf is a failure.</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdint.h&gt;</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdio.h&gt;</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">allocated</span><span class="p">;</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">aligned</span><span class="p">;</span><span class="w"> </span><span class="kt">int64_t</span><span class="w"> </span><span class="n">offset</span><span class="p">;</span><span class="w"> </span><span class="kt">int64_t</span><span class="w"> </span><span class="n">sizes</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="kt">int64_t</span><span class="w"> </span><span class="n">strides</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="n">Memref2D</span><span class="p">;</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="k">extern</span><span class="w"> </span><span class="n">Memref2D</span><span class="w"> </span><span class="nf">chain</span><span class="p">(</span><span class="kt">double</span><span class="o">*</span><span class="p">,</span><span class="kt">double</span><span class="o">*</span><span class="p">,</span><span class="kt">int64_t</span><span class="p">,</span><span class="kt">int64_t</span><span class="p">,</span><span class="kt">int64_t</span><span class="p">,</span><span class="kt">int64_t</span><span class="p">,</span><span class="kt">int64_t</span><span class="p">,</span><span class="kt">double</span><span class="o">*</span><span class="p">,</span><span class="kt">double</span><span class="o">*</span><span class="p">,</span><span class="kt">int64_t</span><span class="p">,</span><span class="kt">int64_t</span><span class="p">,</span><span class="kt">int64_t</span><span class="p">,</span><span class="kt">int64_t</span><span class="p">,</span><span class="kt">int64_t</span><span class="p">);</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">  </span><span class="kt">double</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">},</span><span class="w"> </span><span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="mi">10</span><span class="p">,</span><span class="mi">20</span><span class="p">};</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">  </span><span class="n">Memref2D</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">chain</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">a</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">  </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;returned %ldx%ld (should be unreachable)</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">long</span><span class="p">)</span><span class="n">r</span><span class="p">.</span><span class="n">sizes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="w"> </span><span class="p">(</span><span class="kt">long</span><span class="p">)</span><span class="n">r</span><span class="p">.</span><span class="n">sizes</span><span class="p">[</span><span class="mi">1</span><span class="p">]);</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="p">}</span>
+</code></pre></div>
+<p><code>run_variants.sh</code> builds each variant to a native executable, runs both harnesses, and reports the transformed IR's loop count:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="ch">#!/bin/sh</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="c1"># Lower chain.mlir (dynamic add then transpose) to affine, apply one set of Chapter 7 passes, lower to native code, and</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="c1">#   (1) run the self-checking harness on eleven runtime shapes,</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1">#   (2) run the mismatch harness, which must ABORT (Chapter 14&#39;s runtime check must survive the transform).</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="c1"># Needs ../../part14/code/build.sh to have been run. Output: run_variants_out.txt</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="nv">HERE</span><span class="o">=</span><span class="k">$(</span><span class="nb">cd</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>dirname<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$0</span><span class="s2">&quot;</span><span class="k">)</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">pwd</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="nv">M</span><span class="o">=</span><span class="si">${</span><span class="nv">MG_OPT</span><span class="k">:-</span><span class="nv">$HERE</span><span class="p">/../../part14/code/build/mg-opt</span><span class="si">}</span><span class="p">;</span><span class="w"> </span><span class="nv">W</span><span class="o">=</span><span class="nv">$HERE</span>/work<span class="p">;</span><span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span><span class="nv">$W</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="nv">LOW</span><span class="o">=</span><span class="s1">&#39;--lower-affine --convert-scf-to-cf --convert-arith-to-llvm --finalize-memref-to-llvm --convert-func-to-llvm --reconcile-unrealized-casts&#39;</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="nv">$M</span><span class="w"> </span><span class="nv">$HERE</span>/chain.mlir<span class="w"> </span>--convert-mg-to-affine<span class="w"> </span>-o<span class="w"> </span><span class="nv">$W</span>/chain_affine.mlir<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">exit</span><span class="w"> </span><span class="m">2</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>build<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w">  </span><span class="c1"># name  (expects $W/name.affine.mlir)</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">  </span><span class="nv">$M</span><span class="w"> </span><span class="nv">$W</span>/<span class="nv">$1</span>.affine.mlir<span class="w"> </span><span class="nv">$LOW</span><span class="w"> </span>-o<span class="w"> </span><span class="nv">$W</span>/<span class="nv">$1</span>.llvm.mlir<span class="w"> </span><span class="m">2</span>&gt;<span class="nv">$W</span>/<span class="nv">$1</span>.err<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>mlir-translate-18<span class="w"> </span>--mlir-to-llvmir<span class="w"> </span><span class="nv">$W</span>/<span class="nv">$1</span>.llvm.mlir<span class="w"> </span>-o<span class="w"> </span><span class="nv">$W</span>/<span class="nv">$1</span>.ll<span class="w"> </span><span class="o">&amp;&amp;</span>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">  </span>clang-18<span class="w"> </span>-c<span class="w"> </span><span class="nv">$W</span>/<span class="nv">$1</span>.ll<span class="w"> </span>-o<span class="w"> </span><span class="nv">$W</span>/<span class="nv">$1</span>.o<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>clang-18<span class="w"> </span><span class="nv">$HERE</span>/chain_harness.c<span class="w"> </span><span class="nv">$W</span>/<span class="nv">$1</span>.o<span class="w"> </span>-o<span class="w"> </span><span class="nv">$W</span>/<span class="nv">$1</span>.exe<span class="w"> </span><span class="o">&amp;&amp;</span>
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="w">  </span>clang-18<span class="w"> </span><span class="nv">$HERE</span>/chain_mismatch_harness.c<span class="w"> </span><span class="nv">$W</span>/<span class="nv">$1</span>.o<span class="w"> </span>-o<span class="w"> </span><span class="nv">$W</span>/<span class="nv">$1</span>.mm
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="o">}</span>
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>report<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w">  </span><span class="c1"># name</span>
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a><span class="w">  </span><span class="nv">loops</span><span class="o">=</span><span class="k">$(</span>grep<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;affine.for&quot;</span><span class="w"> </span><span class="nv">$W</span>/<span class="nv">$1</span>.affine.mlir<span class="k">)</span>
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a><span class="w">  </span><span class="nv">shapes</span><span class="o">=</span><span class="k">$(</span><span class="nv">$W</span>/<span class="nv">$1</span>.exe<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s2">&quot;^(ALL|SOME)&quot;</span><span class="k">)</span>
+<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a><span class="w">  </span><span class="nv">$W</span>/<span class="nv">$1</span>.mm<span class="w"> </span>&gt;/dev/null<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="p">;</span><span class="w"> </span><span class="nv">rc</span><span class="o">=</span><span class="nv">$?</span>
+<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a><span class="w">  </span><span class="k">case</span><span class="w"> </span><span class="nv">$rc</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="m">134</span><span class="o">)</span><span class="w"> </span><span class="nv">abort</span><span class="o">=</span><span class="s2">&quot;aborts (exit 134)&quot;</span><span class="p">;;</span><span class="w"> </span><span class="m">0</span><span class="o">)</span><span class="w"> </span><span class="nv">abort</span><span class="o">=</span><span class="s2">&quot;DID NOT ABORT&quot;</span><span class="p">;;</span><span class="w"> </span>*<span class="o">)</span><span class="w"> </span><span class="nv">abort</span><span class="o">=</span><span class="s2">&quot;exit </span><span class="nv">$rc</span><span class="s2">&quot;</span><span class="p">;;</span><span class="w"> </span><span class="k">esac</span>
+<a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a><span class="w">  </span><span class="nb">printf</span><span class="w"> </span><span class="s2">&quot;%-16s loops=%-2s  shapes: %-16s  mismatch: %s\n&quot;</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$1</span><span class="s2">&quot;</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$loops</span><span class="s2">&quot;</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$shapes</span><span class="s2">&quot;</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$abort</span><span class="s2">&quot;</span>
+<a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a><span class="o">}</span>
+<a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a>run<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w">  </span><span class="c1"># name, passes...</span>
+<a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a><span class="w">  </span><span class="nv">name</span><span class="o">=</span><span class="nv">$1</span><span class="p">;</span><span class="w"> </span><span class="nb">shift</span>
+<a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a><span class="w">  </span><span class="nv">$M</span><span class="w"> </span><span class="nv">$W</span>/chain_affine.mlir<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$@</span><span class="s2">&quot;</span><span class="w"> </span>-o<span class="w"> </span><span class="nv">$W</span>/<span class="nv">$name</span>.affine.mlir<span class="w"> </span><span class="m">2</span>&gt;<span class="nv">$W</span>/<span class="nv">$name</span>.err<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$name</span><span class="s2">: transform FAILED: </span><span class="k">$(</span>head<span class="w"> </span>-c<span class="w"> </span><span class="m">200</span><span class="w"> </span><span class="nv">$W</span>/<span class="nv">$name</span>.err<span class="k">)</span><span class="s2">&quot;</span><span class="p">;</span><span class="w"> </span><span class="k">return</span><span class="p">;</span><span class="w"> </span><span class="o">}</span>
+<a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a><span class="w">  </span>build<span class="w"> </span><span class="nv">$name</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$name</span><span class="s2">: build FAILED: </span><span class="k">$(</span>head<span class="w"> </span>-c<span class="w"> </span><span class="m">300</span><span class="w"> </span><span class="nv">$W</span>/<span class="nv">$name</span>.err<span class="k">)</span><span class="s2">&quot;</span><span class="p">;</span><span class="w"> </span><span class="k">return</span><span class="p">;</span><span class="w"> </span><span class="o">}</span>
+<a id="__codelineno-5-25" name="__codelineno-5-25" href="#__codelineno-5-25"></a><span class="w">  </span>report<span class="w"> </span><span class="nv">$name</span>
+<a id="__codelineno-5-26" name="__codelineno-5-26" href="#__codelineno-5-26"></a><span class="o">}</span>
+<a id="__codelineno-5-27" name="__codelineno-5-27" href="#__codelineno-5-27"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;variant          (loops = affine.for in the transformed IR; baseline has 4)&quot;</span>
+<a id="__codelineno-5-28" name="__codelineno-5-28" href="#__codelineno-5-28"></a>run<span class="w"> </span>baseline
+<a id="__codelineno-5-29" name="__codelineno-5-29" href="#__codelineno-5-29"></a>run<span class="w"> </span>fusion<span class="w">        </span>--affine-loop-fusion
+<a id="__codelineno-5-30" name="__codelineno-5-30" href="#__codelineno-5-30"></a>run<span class="w"> </span>tile2<span class="w">         </span>--affine-loop-tile<span class="o">=</span><span class="s2">&quot;tile-size=2&quot;</span>
+<a id="__codelineno-5-31" name="__codelineno-5-31" href="#__codelineno-5-31"></a>run<span class="w"> </span>tile4<span class="w">         </span>--affine-loop-tile<span class="o">=</span><span class="s2">&quot;tile-size=4&quot;</span>
+<a id="__codelineno-5-32" name="__codelineno-5-32" href="#__codelineno-5-32"></a>run<span class="w"> </span>tile16<span class="w">        </span>--affine-loop-tile<span class="o">=</span><span class="s2">&quot;tile-size=16&quot;</span>
+<a id="__codelineno-5-33" name="__codelineno-5-33" href="#__codelineno-5-33"></a>run<span class="w"> </span>unroll_full<span class="w">   </span>--affine-loop-unroll<span class="o">=</span><span class="s2">&quot;unroll-full&quot;</span>
+<a id="__codelineno-5-34" name="__codelineno-5-34" href="#__codelineno-5-34"></a>run<span class="w"> </span>unroll2<span class="w">       </span>--affine-loop-unroll<span class="o">=</span><span class="s2">&quot;unroll-factor=2&quot;</span>
+<a id="__codelineno-5-35" name="__codelineno-5-35" href="#__codelineno-5-35"></a>run<span class="w"> </span>unroll4<span class="w">       </span>--affine-loop-unroll<span class="o">=</span><span class="s2">&quot;unroll-factor=4&quot;</span>
+<a id="__codelineno-5-36" name="__codelineno-5-36" href="#__codelineno-5-36"></a>run<span class="w"> </span>tile4_unroll2<span class="w"> </span>--affine-loop-tile<span class="o">=</span><span class="s2">&quot;tile-size=4&quot;</span><span class="w"> </span>--affine-loop-unroll<span class="o">=</span><span class="s2">&quot;unroll-factor=2&quot;</span>
+<a id="__codelineno-5-37" name="__codelineno-5-37" href="#__codelineno-5-37"></a><span class="nb">echo</span>
+<a id="__codelineno-5-38" name="__codelineno-5-38" href="#__codelineno-5-38"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;NEGATIVE CONTROL: baseline with every arith.addf rewritten to arith.subf. The harness must FAIL.&quot;</span>
+<a id="__codelineno-5-39" name="__codelineno-5-39" href="#__codelineno-5-39"></a>sed<span class="w"> </span><span class="s1">&#39;s/arith.addf/arith.subf/&#39;</span><span class="w"> </span><span class="nv">$W</span>/baseline.affine.mlir<span class="w"> </span>&gt;<span class="w"> </span><span class="nv">$W</span>/control.affine.mlir
+<a id="__codelineno-5-40" name="__codelineno-5-40" href="#__codelineno-5-40"></a>build<span class="w"> </span>control<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="nv">$W</span>/control.exe<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-4<span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span><span class="s1">&#39;s/^/   /&#39;</span><span class="p">;</span><span class="w"> </span><span class="nv">$W</span>/control.exe<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s2">&quot;^(ALL|SOME)&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span><span class="s1">&#39;s/^/   /&#39;</span><span class="p">;</span><span class="w"> </span><span class="o">}</span>
+<a id="__codelineno-5-41" name="__codelineno-5-41" href="#__codelineno-5-41"></a><span class="nb">exit</span><span class="w"> </span><span class="m">0</span>
+</code></pre></div>
+<h2 id="results">Results<a class="headerlink" href="#results" title="Permanent link">&para;</a></h2>
+<p>The complete, unedited output of that script (<code>run_variants_out.txt</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>variant          (loops = affine.for in the transformed IR; baseline has 4)
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>baseline         loops=4   shapes: ALL SHAPES PASS   mismatch: aborts (exit 134)
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>fusion           loops=4   shapes: ALL SHAPES PASS   mismatch: aborts (exit 134)
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>tile2            loops=8   shapes: ALL SHAPES PASS   mismatch: aborts (exit 134)
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>tile4            loops=8   shapes: ALL SHAPES PASS   mismatch: aborts (exit 134)
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>tile16           loops=8   shapes: ALL SHAPES PASS   mismatch: aborts (exit 134)
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>unroll_full      loops=4   shapes: ALL SHAPES PASS   mismatch: aborts (exit 134)
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>unroll2          loops=6   shapes: ALL SHAPES PASS   mismatch: aborts (exit 134)
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>unroll4          loops=6   shapes: ALL SHAPES PASS   mismatch: aborts (exit 134)
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>tile4_unroll2    loops=8   shapes: ALL SHAPES PASS   mismatch: aborts (exit 134)
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>NEGATIVE CONTROL: baseline with every arith.addf rewritten to arith.subf. The harness must FAIL.
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>     mismatch at a[0][0]: want 2 got 0
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>   FAIL   1x1  -&gt; result 1x1
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>     mismatch at a[0][0]: want 2 got 0
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>   FAIL   1x6  -&gt; result 6x1
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>   SOME SHAPES FAIL
+</code></pre></div>
+<p>Reading it:</p>
+<ul>
+<li><strong>Every variant passes every shape.</strong> Tiling at 2, 4 and 16 (16 is larger than most of the shapes, so there is a single partial tile), partial unrolling at 2 and 4, and tiling followed by unrolling all produced exactly the C answer on all eleven shapes.</li>
+<li><strong>The runtime check survives every transform.</strong> The mismatch program aborts (exit 134) in all nine variants, including after tiling plus unrolling. Chapter 14 left open whether a loop transform could reorder or drop the <code>cf.assert</code>; on this program, it did not.</li>
+<li><strong>Two variants changed nothing.</strong> <code>fusion</code> and <code>unroll_full</code> report <code>loops=4</code>, the same as the baseline. Section "Where a transform quietly does nothing" below shows that the IR is byte-identical.</li>
+<li><strong>The negative control fails as it should.</strong> With every <code>arith.addf</code> rewritten to <code>arith.subf</code>, the harness reports <code>FAIL</code> and prints the first mismatch. This matters: without it, "all shapes pass" could only mean the harness never complains. (The control is applied to the baseline IR, not to a transform, so it shows the harness can fail, not that any transform is wrong.)</li>
+</ul>
+<h2 id="tiling-how-the-remainder-is-handled">Tiling: how the remainder is handled<a class="headerlink" href="#tiling-how-the-remainder-is-handled" title="Permanent link">&para;</a></h2>
+<p>With tile size 4 the add nest becomes the following (<code>show/chain_tile4.mlir</code>; the transpose nest is transformed identically). The two maps first, then the nest:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>#map = affine_map&lt;(d0) -&gt; (d0)&gt;
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>#map1 = affine_map&lt;(d0, d1) -&gt; (d1 + 4, d0)&gt;
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>    affine.for %arg2 = #map(%c0_9) to #map(%dim_6) step 4 {
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>      affine.for %arg3 = #map(%c0_9) to #map(%dim_8) step 4 {
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>        affine.for %arg4 = #map(%arg2) to min #map1(%dim_6, %arg2) {
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>          affine.for %arg5 = #map(%arg3) to min #map1(%dim_8, %arg3) {
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>            %2 = affine.load %arg0[%arg4, %arg5] : memref&lt;?x?xf64&gt;
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>            %3 = affine.load %arg1[%arg4, %arg5] : memref&lt;?x?xf64&gt;
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>            %4 = arith.addf %2, %3 : f64
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>            affine.store %4, %alloc[%arg4, %arg5] : memref&lt;?x?xf64&gt;
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>          }
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>        }
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>      }
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>    }
+</code></pre></div>
+<p>The outer two loops are the <strong>tile loops</strong>: they step through the data four at a time (<code>step 4</code>). The inner two are the <strong>point loops</strong>, each walking the elements inside one tile. The remainder is handled by the point loops' upper bound: <code>min #map1(%dim_6, %arg2)</code> means <code>min(%arg2 + 4, %dim_6)</code>, since <code>#map1 = (d0, d1) -&gt; (d1 + 4, d0)</code> applied to <code>(%dim_6, %arg2)</code> gives <code>(%arg2 + 4, %dim_6)</code>. For all tiles but the last, the first term wins and the tile is full; for the last tile the second term wins and the loop stops at the end of the data. That <code>min</code> is what makes a 5x9 matrix, whose rows and columns are not multiples of 4, come out right.</p>
+<p>The structure test pins exactly this shape (the map, <code>step 4</code> twice per nest, and a <code>min</code> bound on both point loops, for both nests), and a separate test runs the tiled program on all eleven shapes:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>// Chapter 17: the tiled dynamic nest steps the tile loops by 4 and clips each point loop with min(...), which is how
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>// a remainder tile is handled. Two nests (add, transpose), so everything below happens twice.
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>// RUN: %mg-opt %inputs/chain.mlir --convert-mg-to-affine | %mg-opt --affine-loop-tile=&quot;tile-size=4&quot; | %FileCheck %s
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>// CHECK: #map1 = affine_map&lt;(d0, d1) -&gt; (d1 + 4, d0)&gt;
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>// CHECK-COUNT-2: affine.for %{{.*}} = #map(%{{.*}}) to #map(%{{.*}}) step 4 {
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>// CHECK: affine.for %{{.*}} = #map(%{{.*}}) to min #map1(%{{.*}}, %{{.*}}) {
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>// CHECK: affine.for %{{.*}} = #map(%{{.*}}) to min #map1(%{{.*}}, %{{.*}}) {
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>// CHECK-COUNT-2: affine.for %{{.*}} = #map(%{{.*}}) to #map(%{{.*}}) step 4 {
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>// CHECK: to min #map1
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>// Chapter 17: tiling a DYNAMIC-bound nest (tile size 4) stays correct on eleven runtime shapes, including ones that do not divide 4.
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>// RUN: %mg-opt %inputs/chain.mlir --convert-mg-to-affine -o %t.affine.mlir
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>// RUN: %mg-opt %t.affine.mlir --affine-loop-tile=&quot;tile-size=4&quot; -o %t.tiled.mlir
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>// RUN: %mg-opt %t.tiled.mlir %lower-to-llvm -o %t.llvm.mlir
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>// RUN: %mlir-translate --mlir-to-llvmir %t.llvm.mlir -o %t.ll
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>// RUN: %clang -c %t.ll -o %t.o
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>// RUN: %clang %inputs/chain_harness.c %t.o -o %t.exe
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>// RUN: %t.exe | %FileCheck %s
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>// CHECK-NOT: FAIL
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>// CHECK: ALL SHAPES PASS
+</code></pre></div>
+<h2 id="partial-unrolling-the-main-loop-and-the-epilogue">Partial unrolling: the main loop and the epilogue<a class="headerlink" href="#partial-unrolling-the-main-loop-and-the-epilogue" title="Permanent link">&para;</a></h2>
+<p>With <code>unroll-factor=2</code> the inner loop of the add nest becomes (<code>show/chain_unroll2.mlir</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>#map = affine_map&lt;(d0) -&gt; (d0)&gt;
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>#map1 = affine_map&lt;()[s0] -&gt; ((s0 floordiv 2) * 2)&gt;
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>#map2 = affine_map&lt;(d0) -&gt; (d0 + 1)&gt;
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>    %c0_9 = arith.constant 0 : index
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>    affine.for %arg2 = #map(%c0_9) to #map(%dim_6) {
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>      affine.for %arg3 = #map(%c0_9) to #map1()[%dim_8] step 2 {
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>        %2 = affine.load %arg0[%arg2, %arg3] : memref&lt;?x?xf64&gt;
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>        %3 = affine.load %arg1[%arg2, %arg3] : memref&lt;?x?xf64&gt;
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>        %4 = arith.addf %2, %3 : f64
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>        affine.store %4, %alloc[%arg2, %arg3] : memref&lt;?x?xf64&gt;
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>        %5 = affine.apply #map2(%arg3)
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>        %6 = affine.load %arg0[%arg2, %5] : memref&lt;?x?xf64&gt;
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>        %7 = affine.load %arg1[%arg2, %5] : memref&lt;?x?xf64&gt;
+<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a>        %8 = arith.addf %6, %7 : f64
+<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a>        affine.store %8, %alloc[%arg2, %5] : memref&lt;?x?xf64&gt;
+<a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a>      }
+<a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a>      affine.for %arg3 = #map1()[%dim_8] to #map(%dim_8) {
+<a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a>        %2 = affine.load %arg0[%arg2, %arg3] : memref&lt;?x?xf64&gt;
+<a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a>        %3 = affine.load %arg1[%arg2, %arg3] : memref&lt;?x?xf64&gt;
+<a id="__codelineno-12-17" name="__codelineno-12-17" href="#__codelineno-12-17"></a>        %4 = arith.addf %2, %3 : f64
+<a id="__codelineno-12-18" name="__codelineno-12-18" href="#__codelineno-12-18"></a>        affine.store %4, %alloc[%arg2, %arg3] : memref&lt;?x?xf64&gt;
+<a id="__codelineno-12-19" name="__codelineno-12-19" href="#__codelineno-12-19"></a>      }
+<a id="__codelineno-12-20" name="__codelineno-12-20" href="#__codelineno-12-20"></a>    }
+</code></pre></div>
+<p>There are two loops where there was one. The <strong>main loop</strong> runs from 0 up to <code>(n floordiv 2) * 2</code> (<code>#map1</code>, <code>n</code> rounded down to a multiple of 2) in steps of 2, and its body holds two copies of the original work (lines 26 to 29 are the iteration at <code>%arg3</code>, lines 30 to 34 the one at <code>%arg3 + 1</code>, computed by <code>affine.apply #map2</code>). The <strong>epilogue loop</strong> then runs from where the main loop stopped up to <code>n</code>, one iteration at a time. For an even <code>n</code> the epilogue runs zero times; for an odd <code>n</code> it runs once. That is the same remainder idea as tiling's <code>min</code>, expressed as a second loop instead of a clipped bound.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>// Chapter 17: unrolling by 2 splits the inner loop into a main loop that stops at (n floordiv 2) * 2 and steps by 2,
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>// plus an epilogue loop for the leftover iteration. Seen for both nests.
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>// RUN: %mg-opt %inputs/chain.mlir --convert-mg-to-affine | %mg-opt --affine-loop-unroll=&quot;unroll-factor=2&quot; | %FileCheck %s
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>// CHECK: #map1 = affine_map&lt;()[s0] -&gt; ((s0 floordiv 2) * 2)&gt;
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>// CHECK: affine.for %{{.*}} = #map(%{{.*}}) to #map1()[%{{.*}}] step 2 {
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>// CHECK: arith.addf
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>// CHECK: arith.addf
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>// CHECK: affine.for %{{.*}} = #map1()[%{{.*}}] to #map(%{{.*}}) {
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>// CHECK: affine.for %{{.*}} = #map(%{{.*}}) to #map1()[%{{.*}}] step 2 {
+<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a>// CHECK: affine.for %{{.*}} = #map1()[%{{.*}}] to #map(%{{.*}}) {
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>// Chapter 17: partial unrolling (factor 4) of a dynamic-bound nest stays correct on eleven shapes, remainders included.
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>// RUN: %mg-opt %inputs/chain.mlir --convert-mg-to-affine -o %t.affine.mlir
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>// RUN: %mg-opt %t.affine.mlir --affine-loop-unroll=&quot;unroll-factor=4&quot; -o %t.unrolled.mlir
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>// RUN: %mg-opt %t.unrolled.mlir %lower-to-llvm -o %t.llvm.mlir
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>// RUN: %mlir-translate --mlir-to-llvmir %t.llvm.mlir -o %t.ll
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>// RUN: %clang -c %t.ll -o %t.o
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>// RUN: %clang %inputs/chain_harness.c %t.o -o %t.exe
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a>// RUN: %t.exe | %FileCheck %s
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a>// CHECK-NOT: FAIL
+<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a>// CHECK: ALL SHAPES PASS
+</code></pre></div>
+<h2 id="where-a-transform-quietly-does-nothing">Where a transform quietly does nothing<a class="headerlink" href="#where-a-transform-quietly-does-nothing" title="Permanent link">&para;</a></h2>
+<h3 id="full-unrolling-needs-a-constant-trip-count">Full unrolling needs a constant trip count<a class="headerlink" href="#full-unrolling-needs-a-constant-trip-count" title="Permanent link">&para;</a></h3>
+<p>Applied to the fully dynamic chain, <code>--affine-loop-unroll="unroll-full"</code> produced no error and no change. <code>fusion_probe.sh</code> and <code>show.sh</code> record that the output is byte-identical to the input:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>unroll-full on the dynamic chain left the IR byte-identical
+</code></pre></div>
+<p>That is the expected behavior (you cannot write out "n copies" for an unknown n) but it is worth seeing because the pass reports nothing: a script that assumed full unrolling had happened would be wrong without any diagnostic. With a <strong>partially static</strong> shape the same pass <em>does</em> work on the loop whose trip count is known. For <code>tensor&lt;?x2xf64&gt;</code> the add nest's inner loop runs exactly twice:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>func.func @chain2(%a: tensor&lt;?x2xf64&gt;, %b: tensor&lt;?x2xf64&gt;) -&gt; tensor&lt;2x?xf64&gt; {
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>  %s = mg.add %a, %b : tensor&lt;?x2xf64&gt;, tensor&lt;?x2xf64&gt; -&gt; tensor&lt;?x2xf64&gt;
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>  %t = mg.transpose %s : tensor&lt;?x2xf64&gt; to tensor&lt;2x?xf64&gt;
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>  func.return %t : tensor&lt;2x?xf64&gt;
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>}
+</code></pre></div>
+<p>and full unrolling removed that loop (4 loops down to 3) and left the dynamic outer loop (<code>show/chain2_unroll_full.mlir</code>, add nest):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>    affine.for %arg2 = #map(%c0_5) to #map(%dim_4) {
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>      %1 = affine.load %arg0[%arg2, %c0] : memref&lt;?x2xf64&gt;
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>      %2 = affine.load %arg1[%arg2, %c0] : memref&lt;?x2xf64&gt;
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>      %3 = arith.addf %1, %2 : f64
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>      affine.store %3, %alloc[%arg2, %c0] : memref&lt;?x2xf64&gt;
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>      %4 = affine.apply #map1(%c0)
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>      %5 = affine.load %arg0[%arg2, %4] : memref&lt;?x2xf64&gt;
+<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>      %6 = affine.load %arg1[%arg2, %4] : memref&lt;?x2xf64&gt;
+<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>      %7 = arith.addf %5, %6 : f64
+<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>      affine.store %7, %alloc[%arg2, %4] : memref&lt;?x2xf64&gt;
+<a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a>    }
+</code></pre></div>
+<p>The two stores, <code>[%arg2, %c0]</code> and <code>[%arg2, %4]</code>, are the two unrolled iterations of the former inner loop, inside the surviving dynamic loop over rows. The transpose nest keeps its loops: its <em>outer</em> loop is the static one, and full unrolling only targets innermost loops (a Chapter 7 finding).</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>// Chapter 17: full unrolling needs a constant trip count. With fully dynamic bounds it silently does nothing (4 loops stay 4);
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>// with a ?x2 shape the add nest&#39;s inner loop (trip count 2) is unrolled away (4 -&gt; 3 loops) and the dynamic loops remain.
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>// RUN: %mg-opt %inputs/chain.mlir --convert-mg-to-affine | %mg-opt --affine-loop-unroll=&quot;unroll-full&quot; | %FileCheck %s --check-prefix=DYN
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>// RUN: %mg-opt %inputs/chain2.mlir --convert-mg-to-affine | %mg-opt --affine-loop-unroll=&quot;unroll-full&quot; | %FileCheck %s --check-prefix=PART
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>// DYN-COUNT-4: affine.for
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>// DYN-NOT: affine.for
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a>// PART-COUNT-3: affine.for
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a>// PART-NOT: affine.for
+</code></pre></div>
+<h3 id="fusion-declines-on-dynamic-bounds-and-why-that-was-narrowed-down-but-not-explained">Fusion declines on dynamic bounds, and why that was narrowed down but not explained<a class="headerlink" href="#fusion-declines-on-dynamic-bounds-and-why-that-was-narrowed-down-but-not-explained" title="Permanent link">&para;</a></h3>
+<p><code>--affine-loop-fusion</code> left the dynamic chain alone (<code>show/fusion_noop.txt</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>fusion on the dynamic chain left the IR byte-identical
+</code></pre></div>
+<p>An obvious guess is that the <em>transpose's</em> access pattern is the blocker, since Chapter 7 found that fusing add with transpose required permuting a loop. <code>fusion_probe.sh</code> tests that with three programs: the dynamic chain, a dynamic add followed by another add (no transpose, identical index patterns), and the same add-then-transpose chain with static 4x6 bounds:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="ch">#!/bin/sh</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="c1"># Why did --affine-loop-fusion do nothing on the dynamic chain? Narrowing it down with three programs. Output: fusion_probe_out.txt</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="nv">HERE</span><span class="o">=</span><span class="k">$(</span><span class="nb">cd</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>dirname<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$0</span><span class="s2">&quot;</span><span class="k">)</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">pwd</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="nv">M</span><span class="o">=</span><span class="si">${</span><span class="nv">MG_OPT</span><span class="k">:-</span><span class="nv">$HERE</span><span class="p">/../../part14/code/build/mg-opt</span><span class="si">}</span><span class="p">;</span><span class="w"> </span><span class="nv">W</span><span class="o">=</span><span class="nv">$HERE</span>/work<span class="p">;</span><span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span><span class="nv">$W</span>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>count<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w"> </span>grep<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;affine.for&quot;</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$1</span><span class="s2">&quot;</span><span class="p">;</span><span class="w"> </span><span class="o">}</span>
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="k">for</span><span class="w"> </span>p<span class="w"> </span><span class="k">in</span><span class="w"> </span>chain<span class="w"> </span>addadd<span class="w"> </span>static_chain<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="w">  </span><span class="nv">$M</span><span class="w"> </span><span class="nv">$HERE</span>/<span class="nv">$p</span>.mlir<span class="w"> </span>--convert-mg-to-affine<span class="w"> </span>-o<span class="w"> </span><span class="nv">$W</span>/<span class="nv">$p</span>.affine.mlir
+<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="w">  </span><span class="nv">$M</span><span class="w"> </span><span class="nv">$W</span>/<span class="nv">$p</span>.affine.mlir<span class="w"> </span>--affine-loop-fusion<span class="w"> </span>-o<span class="w"> </span><span class="nv">$W</span>/<span class="nv">$p</span>.fused.mlir
+<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span class="w">  </span><span class="nb">printf</span><span class="w"> </span><span class="s2">&quot;%-14s affine.for before fusion: %s   after: %s\n&quot;</span><span class="w"> </span><span class="nv">$p</span><span class="w"> </span><span class="k">$(</span>count<span class="w"> </span><span class="nv">$W</span>/<span class="nv">$p</span>.affine.mlir<span class="k">)</span><span class="w"> </span><span class="k">$(</span>count<span class="w"> </span><span class="nv">$W</span>/<span class="nv">$p</span>.fused.mlir<span class="k">)</span>
+<a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a><span class="k">done</span>
+<a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a><span class="nb">echo</span>
+<a id="__codelineno-20-11" name="__codelineno-20-11" href="#__codelineno-20-11"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;partial static shape: ?x2 chain, loops before / after full unroll / after fusion&quot;</span>
+<a id="__codelineno-20-12" name="__codelineno-20-12" href="#__codelineno-20-12"></a><span class="nv">$M</span><span class="w"> </span><span class="nv">$HERE</span>/chain2.mlir<span class="w"> </span>--convert-mg-to-affine<span class="w"> </span>-o<span class="w"> </span><span class="nv">$W</span>/chain2.affine.mlir
+<a id="__codelineno-20-13" name="__codelineno-20-13" href="#__codelineno-20-13"></a><span class="nb">printf</span><span class="w"> </span><span class="s2">&quot;chain2         before: %s   after unroll-full: %s   after fusion: %s\n&quot;</span><span class="w"> </span><span class="k">$(</span>count<span class="w"> </span><span class="nv">$W</span>/chain2.affine.mlir<span class="k">)</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-20-14" name="__codelineno-20-14" href="#__codelineno-20-14"></a><span class="w">  </span><span class="k">$(</span><span class="nv">$M</span><span class="w"> </span><span class="nv">$W</span>/chain2.affine.mlir<span class="w"> </span>--affine-loop-unroll<span class="o">=</span><span class="s2">&quot;unroll-full&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;affine.for&quot;</span><span class="k">)</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-20-15" name="__codelineno-20-15" href="#__codelineno-20-15"></a><span class="w">  </span><span class="k">$(</span><span class="nv">$M</span><span class="w"> </span><span class="nv">$W</span>/chain2.affine.mlir<span class="w"> </span>--affine-loop-fusion<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;affine.for&quot;</span><span class="k">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>chain          affine.for before fusion: 4   after: 4
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>addadd         affine.for before fusion: 4   after: 4
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>static_chain   affine.for before fusion: 4   after: 2
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>partial static shape: ?x2 chain, loops before / after full unroll / after fusion
+<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a>chain2         before: 4   after unroll-full: 3   after fusion: 4
+</code></pre></div>
+<p>The result disproves the guess. The dynamic add-then-add chain is <em>also</em> left at 4 loops, while the static add-then-transpose chain fuses from 4 loops to 2. So the transpose is not what blocks fusion; <strong>dynamic bounds are</strong>, at least in this form. The static fused result, for comparison (<code>show/static_chain_fused.mlir</code>; note the intermediate buffer shrank to a 1x1 scalar slot, as in Chapter 7):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>module {
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>  func.func @chain(%arg0: memref&lt;4x6xf64&gt;, %arg1: memref&lt;4x6xf64&gt;) -&gt; memref&lt;6x4xf64&gt; {
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>    %alloc = memref.alloc() : memref&lt;1x1xf64&gt;
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>    %alloc_0 = memref.alloc() : memref&lt;6x4xf64&gt;
+<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a>    affine.for %arg2 = 0 to 6 {
+<a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a>      affine.for %arg3 = 0 to 4 {
+<a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a>        %0 = affine.load %arg0[%arg3, %arg2] : memref&lt;4x6xf64&gt;
+<a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a>        %1 = affine.load %arg1[%arg3, %arg2] : memref&lt;4x6xf64&gt;
+<a id="__codelineno-22-9" name="__codelineno-22-9" href="#__codelineno-22-9"></a>        %2 = arith.addf %0, %1 : f64
+<a id="__codelineno-22-10" name="__codelineno-22-10" href="#__codelineno-22-10"></a>        affine.store %2, %alloc[0, 0] : memref&lt;1x1xf64&gt;
+<a id="__codelineno-22-11" name="__codelineno-22-11" href="#__codelineno-22-11"></a>        %3 = affine.load %alloc[0, 0] : memref&lt;1x1xf64&gt;
+<a id="__codelineno-22-12" name="__codelineno-22-12" href="#__codelineno-22-12"></a>        affine.store %3, %alloc_0[%arg2, %arg3] : memref&lt;6x4xf64&gt;
+<a id="__codelineno-22-13" name="__codelineno-22-13" href="#__codelineno-22-13"></a>      }
+<a id="__codelineno-22-14" name="__codelineno-22-14" href="#__codelineno-22-14"></a>    }
+<a id="__codelineno-22-15" name="__codelineno-22-15" href="#__codelineno-22-15"></a>    return %alloc_0 : memref&lt;6x4xf64&gt;
+<a id="__codelineno-22-16" name="__codelineno-22-16" href="#__codelineno-22-16"></a>  }
+<a id="__codelineno-22-17" name="__codelineno-22-17" href="#__codelineno-22-17"></a>}
+</code></pre></div>
+<p><strong>Why</strong> fusion declines was not established. Plausible explanations include that the intermediate buffer's size is dynamic, or that the dependence analysis cannot prove the two nests' symbolic iteration spaces equal; this chapter did not read the pass's source, as Chapter 12 did for other passes, and no test here distinguishes those explanations. The honest summary is a measured limitation without a verified cause.</p>
+<p>Two tests pin the pair: one asserts that fusion leaves the dynamic nests at four loops, with a header saying it is <em>designed to start failing</em> if a newer toolchain fuses them (in the same spirit as Chapter 16's crash test), and one asserts that the identical chain with static bounds does fuse, so the first test cannot pass merely because fusion is broken everywhere.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>// Chapter 17: PINS AN OBSERVED LIMITATION. --affine-loop-fusion leaves a dynamic-bound nest pair alone: 4 loops in, 4 out
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>// (the same pair with static bounds fuses 4 -&gt; 2, see loops/fusion.mlir). The cause was not established. If a newer
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>// toolchain starts fusing these, this test fails: that is the signal to revisit Chapter 17, not a regression.
+<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a>// RUN: %mg-opt %inputs/chain.mlir --convert-mg-to-affine | %mg-opt --affine-loop-fusion | %FileCheck %s
+<a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a>// CHECK-COUNT-4: affine.for
+<a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a>// CHECK-NOT: affine.for
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>// Chapter 17: the control for fusion-declines: the SAME add-then-transpose chain with static 4x6 bounds does fuse (4 -&gt; 2 loops).
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>// RUN: %mg-opt %inputs/static_chain.mlir --convert-mg-to-affine | %mg-opt --affine-loop-fusion | %FileCheck %s
+<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>// CHECK-COUNT-2: affine.for
+<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>// CHECK-NOT: affine.for
+</code></pre></div>
+<h2 id="the-runtime-check-survives-the-transforms">The runtime check survives the transforms<a class="headerlink" href="#the-runtime-check-survives-the-transforms" title="Permanent link">&para;</a></h2>
+<p>Chapter 14 closed an out-of-bounds read with a <code>cf.assert</code> emitted before the loop, and noted it was untested whether a loop transform preserves it. The test applies tiling <em>and</em> unrolling together, builds the mismatch harness, and requires the process to abort, with the explanation visible under line-buffered output:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>// Chapter 17: Chapter 14&#39;s runtime shape check must survive tiling and unrolling: a mismatched call still ABORTS.
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>// RUN: %mg-opt %inputs/chain.mlir --convert-mg-to-affine -o %t.affine.mlir
+<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>// RUN: %mg-opt %t.affine.mlir --affine-loop-tile=&quot;tile-size=4&quot; --affine-loop-unroll=&quot;unroll-factor=2&quot; -o %t.xf.mlir
+<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>// RUN: %mg-opt %t.xf.mlir %lower-to-llvm -o %t.llvm.mlir
+<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>// RUN: %mlir-translate --mlir-to-llvmir %t.llvm.mlir -o %t.ll
+<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a>// RUN: %clang -c %t.ll -o %t.o
+<a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a>// RUN: %clang %inputs/chain_mismatch_harness.c %t.o -o %t.exe
+<a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a>// RUN: %not --crash %t.exe
+<a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a>// RUN: %not --crash stdbuf -oL %t.exe 2&gt;&amp;1 | %FileCheck %s
+<a id="__codelineno-25-10" name="__codelineno-25-10" href="#__codelineno-25-10"></a>// CHECK: mg.add: operand shapes differ at runtime in dimension 0
+</code></pre></div>
+<p>This holds on this program for these transforms. It is an observation, not a proof: the assert is outside the loops, so tiling and unrolling, which rewrite loop nests, have no reason to touch it, and nothing here examines passes that could move or remove it.</p>
+<h2 id="the-tests-and-whether-they-can-fail">The tests, and whether they can fail<a class="headerlink" href="#the-tests-and-whether-they-can-fail" title="Permanent link">&para;</a></h2>
+<p>The suite grew from 34 tests (Chapter 16) to 42 with the eight above. The complete run (<code>run_out_42.txt</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>-- Testing: 42 tests, 4 workers --
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>PASS: IR Forge / Mountain Goat :: execution/static-add-runs.mlir (1 of 42)
+<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>PASS: IR Forge / Mountain Goat :: execution/dynamic-shapes-run.mlir (2 of 42)
+<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a>PASS: IR Forge / Mountain Goat :: execution/mismatch-aborts.mlir (3 of 42)
+<a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a>PASS: IR Forge / Mountain Goat :: execution/gpu-host-with-stub-runtime.mlir (4 of 42)
+<a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a>PASS: IR Forge / Mountain Goat :: execution/mixed-static-dynamic.mlir (5 of 42)
+<a id="__codelineno-26-7" name="__codelineno-26-7" href="#__codelineno-26-7"></a>PASS: IR Forge / Mountain Goat :: execution/strided-view.mlir (6 of 42)
+<a id="__codelineno-26-8" name="__codelineno-26-8" href="#__codelineno-26-8"></a>PASS: IR Forge / Mountain Goat :: gpu/ptx-default.mlir (7 of 42)
+<a id="__codelineno-26-9" name="__codelineno-26-9" href="#__codelineno-26-9"></a>PASS: IR Forge / Mountain Goat :: gpu/pass-order-crash.mlir (8 of 42)
+<a id="__codelineno-26-10" name="__codelineno-26-10" href="#__codelineno-26-10"></a>PASS: IR Forge / Mountain Goat :: gpu/ptx-index32.mlir (9 of 42)
+<a id="__codelineno-26-11" name="__codelineno-26-11" href="#__codelineno-26-11"></a>PASS: IR Forge / Mountain Goat :: execution/mismatch-columns-aborts.mlir (10 of 42)
+<a id="__codelineno-26-12" name="__codelineno-26-12" href="#__codelineno-26-12"></a>PASS: IR Forge / Mountain Goat :: gpu/host-runtime-calls.mlir (11 of 42)
+<a id="__codelineno-26-13" name="__codelineno-26-13" href="#__codelineno-26-13"></a>PASS: IR Forge / Mountain Goat :: gpu/host-runtime-calls-bare.mlir (12 of 42)
+<a id="__codelineno-26-14" name="__codelineno-26-14" href="#__codelineno-26-14"></a>PASS: IR Forge / Mountain Goat :: gpu/nvvm-lowering.mlir (13 of 42)
+<a id="__codelineno-26-15" name="__codelineno-26-15" href="#__codelineno-26-15"></a>PASS: IR Forge / Mountain Goat :: loops/tiling.mlir (14 of 42)
+<a id="__codelineno-26-16" name="__codelineno-26-16" href="#__codelineno-26-16"></a>PASS: IR Forge / Mountain Goat :: gpu/ptx-bare-pointers.mlir (15 of 42)
+<a id="__codelineno-26-17" name="__codelineno-26-17" href="#__codelineno-26-17"></a>PASS: IR Forge / Mountain Goat :: gpu/kernel-outlining.mlir (16 of 42)
+<a id="__codelineno-26-18" name="__codelineno-26-18" href="#__codelineno-26-18"></a>PASS: IR Forge / Mountain Goat :: verifier/dynamic-accepted.mlir (17 of 42)
+<a id="__codelineno-26-19" name="__codelineno-26-19" href="#__codelineno-26-19"></a>PASS: IR Forge / Mountain Goat :: gpu/cuda-comparison.mlir (18 of 42)
+<a id="__codelineno-26-20" name="__codelineno-26-20" href="#__codelineno-26-20"></a>PASS: IR Forge / Mountain Goat :: lowering/static-add-affine.mlir (19 of 42)
+<a id="__codelineno-26-21" name="__codelineno-26-21" href="#__codelineno-26-21"></a>PASS: IR Forge / Mountain Goat :: verifier/unranked-rejected.mlir (20 of 42)
+<a id="__codelineno-26-22" name="__codelineno-26-22" href="#__codelineno-26-22"></a>PASS: IR Forge / Mountain Goat :: lowering/mixed-add-one-check.mlir (21 of 42)
+<a id="__codelineno-26-23" name="__codelineno-26-23" href="#__codelineno-26-23"></a>PASS: IR Forge / Mountain Goat :: verifier/transpose-bad-shape.mlir (22 of 42)
+<a id="__codelineno-26-24" name="__codelineno-26-24" href="#__codelineno-26-24"></a>PASS: IR Forge / Mountain Goat :: lowering/dynamic-transpose-no-check.mlir (23 of 42)
+<a id="__codelineno-26-25" name="__codelineno-26-25" href="#__codelineno-26-25"></a>PASS: IR Forge / Mountain Goat :: loops/fusion.mlir (24 of 42)
+<a id="__codelineno-26-26" name="__codelineno-26-26" href="#__codelineno-26-26"></a>PASS: IR Forge / Mountain Goat :: verifier/transpose-rank3.mlir (25 of 42)
+<a id="__codelineno-26-27" name="__codelineno-26-27" href="#__codelineno-26-27"></a>PASS: IR Forge / Mountain Goat :: lowering/bufferize-static-add.mlir (26 of 42)
+<a id="__codelineno-26-28" name="__codelineno-26-28" href="#__codelineno-26-28"></a>PASS: IR Forge / Mountain Goat :: loops/unroll-full.mlir (27 of 42)
+<a id="__codelineno-26-29" name="__codelineno-26-29" href="#__codelineno-26-29"></a>PASS: IR Forge / Mountain Goat :: canonicalize/transpose-twice-dynamic-exact.mlir (28 of 42)
+<a id="__codelineno-26-30" name="__codelineno-26-30" href="#__codelineno-26-30"></a>PASS: IR Forge / Mountain Goat :: verifier/add-static-mismatch.mlir (29 of 42)
+<a id="__codelineno-26-31" name="__codelineno-26-31" href="#__codelineno-26-31"></a>PASS: IR Forge / Mountain Goat :: canonicalize/transpose-twice-dynamic-mixed.mlir (30 of 42)
+<a id="__codelineno-26-32" name="__codelineno-26-32" href="#__codelineno-26-32"></a>PASS: IR Forge / Mountain Goat :: canonicalize/transpose-twice.mlir (31 of 42)
+<a id="__codelineno-26-33" name="__codelineno-26-33" href="#__codelineno-26-33"></a>PASS: IR Forge / Mountain Goat :: lowering/bufferize-dynamic-add.mlir (32 of 42)
+<a id="__codelineno-26-34" name="__codelineno-26-34" href="#__codelineno-26-34"></a>PASS: IR Forge / Mountain Goat :: canonicalize/fold-constant-add.mlir (33 of 42)
+<a id="__codelineno-26-35" name="__codelineno-26-35" href="#__codelineno-26-35"></a>PASS: IR Forge / Mountain Goat :: lowering/dynamic-add-affine.mlir (34 of 42)
+<a id="__codelineno-26-36" name="__codelineno-26-36" href="#__codelineno-26-36"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/fusion-fires-when-static.mlir (35 of 42)
+<a id="__codelineno-26-37" name="__codelineno-26-37" href="#__codelineno-26-37"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/fusion-declines.mlir (36 of 42)
+<a id="__codelineno-26-38" name="__codelineno-26-38" href="#__codelineno-26-38"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/tiling-structure.mlir (37 of 42)
+<a id="__codelineno-26-39" name="__codelineno-26-39" href="#__codelineno-26-39"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/unroll-epilogue.mlir (38 of 42)
+<a id="__codelineno-26-40" name="__codelineno-26-40" href="#__codelineno-26-40"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/unroll-full-needs-constant-trip-count.mlir (39 of 42)
+<a id="__codelineno-26-41" name="__codelineno-26-41" href="#__codelineno-26-41"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/runtime-check-survives-transforms.mlir (40 of 42)
+<a id="__codelineno-26-42" name="__codelineno-26-42" href="#__codelineno-26-42"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/tiling-runs.mlir (41 of 42)
+<a id="__codelineno-26-43" name="__codelineno-26-43" href="#__codelineno-26-43"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/unroll-runs.mlir (42 of 42)
+<a id="__codelineno-26-44" name="__codelineno-26-44" href="#__codelineno-26-44"></a>
+<a id="__codelineno-26-45" name="__codelineno-26-45" href="#__codelineno-26-45"></a>Testing Time: 0.86s
+<a id="__codelineno-26-46" name="__codelineno-26-46" href="#__codelineno-26-46"></a>
+<a id="__codelineno-26-47" name="__codelineno-26-47" href="#__codelineno-26-47"></a>Total Discovered Tests: 42
+<a id="__codelineno-26-48" name="__codelineno-26-48" href="#__codelineno-26-48"></a>  Passed: 42 (100.00%)
+</code></pre></div>
+<p>Passing on a first run proves nothing, so <code>dynloops_mutation.sh</code> changes one thing in a copy of the suite per mutation and runs only the affected test. It carries forward the guard from Chapter 16 that rejects any mutation which changes the file's line count:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="ch">#!/bin/sh</span>
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="c1"># Chapter 17: do the dynamic-loop tests fail when the thing they pin changes? Each mutation edits ONE file in a COPY of the</span>
+<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="c1"># suite and runs only the affected test. A mutation that changes the file&#39;s line count is rejected (a substitution never should).</span>
+<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a><span class="nv">HERE</span><span class="o">=</span><span class="k">$(</span><span class="nb">cd</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>dirname<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$0</span><span class="s2">&quot;</span><span class="k">)</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">pwd</span><span class="k">)</span>
+<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">MG_OPT</span><span class="o">=</span><span class="si">${</span><span class="nv">MG_OPT</span><span class="k">:-</span><span class="nv">$HERE</span><span class="p">/../../part14/code/build/mg-opt</span><span class="si">}</span>
+<a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a><span class="nb">export</span><span class="w"> </span><span class="nv">DECODE_PTX</span><span class="o">=</span><span class="k">$(</span><span class="nb">cd</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$HERE</span><span class="s2">/../../part10/code&quot;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">pwd</span><span class="k">)</span>/decode_ptx.py
+<a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a><span class="nv">n</span><span class="o">=</span><span class="m">0</span>
+<a id="__codelineno-27-8" name="__codelineno-27-8" href="#__codelineno-27-8"></a>mut<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w">  </span><span class="c1"># description | file under test/ | sed expression | test to run</span>
+<a id="__codelineno-27-9" name="__codelineno-27-9" href="#__codelineno-27-9"></a><span class="w">  </span><span class="nv">n</span><span class="o">=</span><span class="k">$((</span><span class="nv">n</span><span class="o">+</span><span class="m">1</span><span class="k">))</span><span class="p">;</span><span class="w"> </span><span class="nv">W</span><span class="o">=</span><span class="nv">$HERE</span>/work/dm-<span class="nv">$n</span><span class="p">;</span><span class="w"> </span>rm<span class="w"> </span>-rf<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">&quot;</span><span class="p">;</span><span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">&quot;</span><span class="p">;</span><span class="w"> </span>cp<span class="w"> </span>-r<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$HERE</span><span class="s2">/test&quot;</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">/test&quot;</span>
+<a id="__codelineno-27-10" name="__codelineno-27-10" href="#__codelineno-27-10"></a><span class="w">  </span>sed<span class="w"> </span>-i<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$3</span><span class="s2">&quot;</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">/test/</span><span class="nv">$2</span><span class="s2">&quot;</span>
+<a id="__codelineno-27-11" name="__codelineno-27-11" href="#__codelineno-27-11"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span>cmp<span class="w"> </span>-s<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$HERE</span><span class="s2">/test/</span><span class="nv">$2</span><span class="s2">&quot;</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">/test/</span><span class="nv">$2</span><span class="s2">&quot;</span><span class="p">;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;MUTATION </span><span class="nv">$n</span><span class="s2"> NOT APPLIED (</span><span class="nv">$1</span><span class="s2">)&quot;</span><span class="p">;</span><span class="w"> </span><span class="k">return</span><span class="p">;</span><span class="w"> </span><span class="k">fi</span>
+<a id="__codelineno-27-12" name="__codelineno-27-12" href="#__codelineno-27-12"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>wc<span class="w"> </span>-l<span class="w"> </span>&lt;<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$HERE</span><span class="s2">/test/</span><span class="nv">$2</span><span class="s2">&quot;</span><span class="k">)</span><span class="s2">&quot;</span><span class="w"> </span>!<span class="o">=</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>wc<span class="w"> </span>-l<span class="w"> </span>&lt;<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">/test/</span><span class="nv">$2</span><span class="s2">&quot;</span><span class="k">)</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;MUTATION </span><span class="nv">$n</span><span class="s2"> MALFORMED (</span><span class="nv">$1</span><span class="s2">): line count changed&quot;</span><span class="p">;</span><span class="w"> </span><span class="k">return</span><span class="p">;</span><span class="w"> </span><span class="k">fi</span>
+<a id="__codelineno-27-13" name="__codelineno-27-13" href="#__codelineno-27-13"></a><span class="w">  </span><span class="nv">out</span><span class="o">=</span><span class="k">$(</span><span class="nv">MG_TEST_TMP</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">/out&quot;</span><span class="w"> </span>lit<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">/test/</span><span class="nv">$4</span><span class="s2">&quot;</span><span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s2">&quot;^(PASS|FAIL)&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span><span class="s1">&#39;s/IR Forge \/ Mountain Goat :: //;s/ ([0-9]* of [0-9]*)//&#39;</span><span class="k">)</span>
+<a id="__codelineno-27-14" name="__codelineno-27-14" href="#__codelineno-27-14"></a><span class="w">  </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;MUTATION </span><span class="nv">$n</span><span class="s2">: </span><span class="nv">$1</span><span class="s2">&quot;</span><span class="p">;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;   </span><span class="nv">$out</span><span class="s2">&quot;</span>
+<a id="__codelineno-27-15" name="__codelineno-27-15" href="#__codelineno-27-15"></a><span class="o">}</span>
+<a id="__codelineno-27-16" name="__codelineno-27-16" href="#__codelineno-27-16"></a>mut<span class="w"> </span><span class="s2">&quot;tile size 4 -&gt; 2 in the structure test&#39;s recipe&quot;</span><span class="w">          </span>dynamic-loops/tiling-structure.mlir<span class="w">        </span><span class="s1">&#39;/RUN:/s/tile-size=4/tile-size=2/&#39;</span><span class="w">  </span>dynamic-loops/tiling-structure.mlir
+<a id="__codelineno-27-17" name="__codelineno-27-17" href="#__codelineno-27-17"></a>mut<span class="w"> </span><span class="s2">&quot;unroll factor 2 -&gt; 4 in the epilogue test&#39;s recipe&quot;</span><span class="w">        </span>dynamic-loops/unroll-epilogue.mlir<span class="w">         </span><span class="s1">&#39;/RUN:/s/unroll-factor=2/unroll-factor=4/&#39;</span><span class="w">  </span>dynamic-loops/unroll-epilogue.mlir
+<a id="__codelineno-27-18" name="__codelineno-27-18" href="#__codelineno-27-18"></a>mut<span class="w"> </span><span class="s2">&quot;fusion-declines run on the STATIC chain (fusion fires)&quot;</span><span class="w">    </span>dynamic-loops/fusion-declines.mlir<span class="w">         </span><span class="s1">&#39;/RUN:/s#%inputs/chain.mlir#%inputs/static_chain.mlir#&#39;</span><span class="w">  </span>dynamic-loops/fusion-declines.mlir
+<a id="__codelineno-27-19" name="__codelineno-27-19" href="#__codelineno-27-19"></a>mut<span class="w"> </span><span class="s2">&quot;self-checking harness computes a-b instead of a+b&quot;</span><span class="w">         </span>Inputs/chain_harness.c<span class="w">                     </span><span class="s1">&#39;s/double want = a\[i \* cols + j\] + b\[i \* cols + j\];/double want = a[i * cols + j] - b[i * cols + j];/&#39;</span><span class="w">  </span>dynamic-loops/tiling-runs.mlir
+<a id="__codelineno-27-20" name="__codelineno-27-20" href="#__codelineno-27-20"></a>mut<span class="w"> </span><span class="s2">&quot;partial-static unroll test fed the fully dynamic chain&quot;</span><span class="w">    </span>dynamic-loops/unroll-full-needs-constant-trip-count.mlir<span class="w">  </span><span class="s1">&#39;/check-prefix=PART/s#%inputs/chain2.mlir#%inputs/chain.mlir#&#39;</span><span class="w">  </span>dynamic-loops/unroll-full-needs-constant-trip-count.mlir
+<a id="__codelineno-27-21" name="__codelineno-27-21" href="#__codelineno-27-21"></a>mut<span class="w"> </span><span class="s2">&quot;mismatch harness made to MATCH (no abort expected)&quot;</span><span class="w">        </span>Inputs/chain_mismatch_harness.c<span class="w">            </span><span class="s1">&#39;s/b\[2\] = {10,20}/b[6] = {10,20,30,40,50,60}/; s/b,b,0,1,2,2,1/b,b,0,2,3,3,1/&#39;</span><span class="w">  </span>dynamic-loops/runtime-check-survives-transforms.mlir
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>MUTATION 1: tile size 4 -&gt; 2 in the structure test&#39;s recipe
+<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a>   FAIL: dynamic-loops/tiling-structure.mlir
+<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a>MUTATION 2: unroll factor 2 -&gt; 4 in the epilogue test&#39;s recipe
+<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a>   FAIL: dynamic-loops/unroll-epilogue.mlir
+<a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a>MUTATION 3: fusion-declines run on the STATIC chain (fusion fires)
+<a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a>   FAIL: dynamic-loops/fusion-declines.mlir
+<a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a>MUTATION 4: self-checking harness computes a-b instead of a+b
+<a id="__codelineno-28-8" name="__codelineno-28-8" href="#__codelineno-28-8"></a>   FAIL: dynamic-loops/tiling-runs.mlir
+<a id="__codelineno-28-9" name="__codelineno-28-9" href="#__codelineno-28-9"></a>MUTATION 5: partial-static unroll test fed the fully dynamic chain
+<a id="__codelineno-28-10" name="__codelineno-28-10" href="#__codelineno-28-10"></a>   FAIL: dynamic-loops/unroll-full-needs-constant-trip-count.mlir
+<a id="__codelineno-28-11" name="__codelineno-28-11" href="#__codelineno-28-11"></a>MUTATION 6: mismatch harness made to MATCH (no abort expected)
+<a id="__codelineno-28-12" name="__codelineno-28-12" href="#__codelineno-28-12"></a>   FAIL: dynamic-loops/runtime-check-survives-transforms.mlir
+</code></pre></div>
+<p>All six mutations are caught: a changed tile size, a changed unroll factor, the "fusion declines" test fed the <em>static</em> chain (so fusion fires and the test fails, showing it really detects fusion firing), a harness whose expected value is wrong (so every shape fails), the partial-static unroll test fed the fully dynamic chain, and a mismatch harness changed to <em>match</em> (so nothing aborts). In the first run of this script, mutation 6 reported <code>NOT APPLIED</code>: it had been written with two <code>-e</code> expressions that the helper's single-expression interface mishandled. The script surfaced it instead of counting it as a pass; it was rewritten as one expression and rerun, and its diff is now exactly the two intended lines.</p>
+<h2 id="what-this-does-and-does-not-establish">What this does and does not establish<a class="headerlink" href="#what-this-does-and-does-not-establish" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>One program, two nests.</strong> Everything above is the add-then-transpose chain and two sibling programs. Other op sequences were not tried.</li>
+<li><strong>Eleven shapes is a sample.</strong> The shapes were chosen to include remainders, but eleven is not exhaustive, and very large sizes were not tried.</li>
+<li><strong>Correctness only, no performance.</strong> Tiling and unrolling exist to make code faster, but nothing here was timed. A transform can be correct and slower; no claim about speed is made.</li>
+<li><strong>Fusion's cause is unexplained,</strong> as stated above, and it is a limitation of this toolchain version's pass on this IR, not a statement about fusion in general.</li>
+<li><strong>Only Chapter 7's transforms.</strong> No other affine passes (interchange, vectorization, loop-invariant code motion) were examined.</li>
+<li><strong>Rank 2 only,</strong> as throughout since Chapter 13.</li>
+<li><strong>The GPU path was not run on dynamic shapes;</strong> the bare-pointer option still requires static shapes (Chapter 12).</li>
+<li><strong>No CI.</strong> The suite runs when someone runs it.</li>
+</ul>
+<h2 id="reproducing-this-chapter">Reproducing this chapter<a class="headerlink" href="#reproducing-this-chapter" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>../part14/code/build.sh<span class="w">          </span><span class="c1"># the mg-opt under test (and: pip install lit)</span>
+<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="nb">cd</span><span class="w"> </span>docs/part17/code
+<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>./run_variants.sh<span class="w">   </span>&gt;<span class="w"> </span>run_variants_out.txt<span class="w">   </span><span class="c1"># nine variants x eleven shapes, abort check, negative control</span>
+<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a>./fusion_probe.sh<span class="w">   </span>&gt;<span class="w"> </span>fusion_probe_out.txt<span class="w">   </span><span class="c1"># narrowing down why fusion declined</span>
+<a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a>./show.sh<span class="w">                                    </span><span class="c1"># the IR listings above, under show/</span>
+<a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a><span class="nb">cd</span><span class="w"> </span>../part15/code
+<a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a>./run_lit.sh<span class="w">        </span>&gt;<span class="w"> </span>run_out_42.txt<span class="w">         </span><span class="c1"># the 42-test suite</span>
+<a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a>./dynloops_mutation.sh<span class="w">                       </span><span class="c1"># the six mutations</span>
+</code></pre></div>
+<p>Every file and output above is embedded from the repository when the site is built, so this page cannot drift from the code it describes. As in Chapters 10 through 16, no documentation was consulted for any claim: each result comes from running the commands.</p>
+<h2 id="chapter-summary">Chapter summary<a class="headerlink" href="#chapter-summary" title="Permanent link">&para;</a></h2>
+<p>This chapter settled whether Chapter 7's loop transforms survive dynamic bounds. Tiling (sizes 2, 4 and 16), partial unrolling (factors 2 and 4) and tiling plus unrolling all produced exactly the right answer on eleven runtime shapes, including shapes that divide neither the tile nor the unroll factor, because tiling clips each point loop with a <code>min</code> bound and unrolling adds an epilogue loop for the leftover iterations. Chapter 14's runtime shape check survived every transform. Two transforms quietly do nothing: full unrolling needs a constant trip count (and works on a loop whose count is static, such as the 2 in <code>?x2</code>), and fusion declines on dynamic bounds even for a plain add-then-add chain, while the same static add-then-transpose chain fuses from 4 loops to 2. The cause of the fusion limitation was narrowed (it is not the transpose) but not established. Eight new <code>lit</code> tests pin all of this and six mutations were all caught.</p>
+<p>Deliberately out of scope, stated explicitly: nothing was timed, so no claim is made that any transform helps; only one program and Chapter 7's three transforms were examined; fusion's cause is unexplained; and the GPU path and rank other than 2 were not touched.</p>
+<h2 id="self-check-questions">Self-check questions<a class="headerlink" href="#self-check-questions" title="Permanent link">&para;</a></h2>
+<p><strong>1. Why must tiling clip its point loops with <code>min(arg + tile, n)</code>, and what would go wrong without the <code>min</code>?</strong></p>
+<p>Worked answer: the tile loop steps through the data in strides of the tile size, but when <code>n</code> is not a multiple of the tile size the last tile is partial. A point loop running a fixed tile-size number of iterations would walk past the end of the data in that last tile, reading and writing out of bounds. The <code>min</code> bound makes the last tile stop at <code>n</code>. The chapter's evidence is the tiled IR (<code>min #map1(%dim_6, %arg2)</code>) and the passing results on <code>5x9</code>, <code>7x4</code>, <code>13x3</code> and other shapes that are not multiples of 4.</p>
+<p><strong>2. What does the epilogue loop do after partial unrolling, and when does it run zero times?</strong></p>
+<p>Worked answer: the main loop runs up to <code>(n floordiv k) * k</code>, <code>n</code> rounded down to a multiple of the unroll factor <code>k</code>, stepping by <code>k</code> with <code>k</code> copies of the body. The epilogue loop runs the remaining <code>n mod k</code> iterations one at a time. When <code>n</code> is already a multiple of <code>k</code> the main loop covers everything and the epilogue loop's range is empty, so it runs zero times. For <code>unroll-factor=2</code> that is every even <code>n</code>.</p>
+<p><strong>3. Full unrolling produced no error and no change on the dynamic chain. Why is "no error" a trap, and how was the no-op demonstrated?</strong></p>
+<p>Worked answer: a pass that declines to apply reports nothing, so a script or reader could assume the loops were unrolled when they were not. The chapter shows the output IR is byte-identical to the input (<code>cmp</code>), and the loop count stays at 4. The reason is that full unrolling must emit a fixed number of copies of the body, which needs a constant trip count; with a bound read from <code>memref.dim</code> there is none. With <code>tensor&lt;?x2xf64&gt;</code> the inner loop's count is the constant 2, and the same pass does unroll it (4 loops down to 3).</p>
+<p><strong>4. A natural guess is that the transpose's access pattern stops <code>--affine-loop-fusion</code> on the dynamic chain. How did the chapter test that guess, and what was the answer?</strong></p>
+<p>Worked answer: it ran fusion on three programs: the dynamic add-then-transpose chain, a dynamic add-then-add chain (identical index patterns, no transpose), and the same add-then-transpose chain with static 4x6 bounds. The dynamic add-then-add chain was also left at 4 loops, while the static add-then-transpose chain fused to 2. So the transpose is not the blocker; dynamic bounds are. The chapter then stops: it did not establish <em>why</em> dynamic bounds block fusion, and says no test distinguishes the candidate explanations.</p>
+<p><strong>5. Why does <code>fusion-declines.mlir</code> come with a companion test, <code>fusion-fires-when-static.mlir</code>, and what is the first test designed to do if the toolchain changes?</strong></p>
+<p>Worked answer: the first test passes when fusion leaves the dynamic nests alone, which would also be true if fusion were simply broken everywhere. The companion shows the same chain with static bounds <em>does</em> fuse (4 loops to 2), so the first test is passing for the specific reason the chapter claims. The first test is also designed to start failing if a newer toolchain begins fusing dynamic nests: that is the signal to revisit this chapter's finding, not a regression in the book.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../../part16/16-testing-the-gpu-path-and-loop-transforms/" class="md-footer__link md-footer__link--prev" aria-label="Previous: 16. Testing the GPU Path and the Loop Transforms">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                16. Testing the GPU Path and the Loop Transforms
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 Oluwaseyi Awoga
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

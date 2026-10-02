@@ -1,0 +1,7 @@
+NOTE: this script deliberately damages example files. 'caught by' lines are EXPECTED: they show the tests can detect the damage.
+baseline (nothing damaged): all tests pass (expected)
+Chapter 1: the loop subtracts instead of adds (answer is no longer 15): caught by chapters/ch01-pipeline.mlir 
+Chapter 2: the valid program loses its transpose: caught by chapters/ch02-example-programs.mlir 
+Chapter 2: the 'bad' transpose is made valid (so it is no longer rejected): caught by chapters/ch02-example-programs.mlir 
+Chapter 9: the lowered add subtracts instead (JIT output changes): caught by chapters/ch09-execution-engine.mlir 
+restored (baseline again): all tests pass (expected)

@@ -1,0 +1,162 @@
+::group::check tools
+=== check tools
+all tools found: Ubuntu clang version 18.1.3 (1ubuntu1)
+::endgroup::
+=== check tools: PASS (0s)
+::group::check workflow file
+=== check workflow file
+CI workflow check passed: 6 steps, triggers ['pull_request', 'push', 'workflow_dispatch'], runner ubuntu-24.04
+::endgroup::
+=== check workflow file: PASS (0s)
+::group::build the compiler
+=== build the compiler
+[100%] Linking CXX executable mg-opt
+[100%] Built target mg-opt
+::endgroup::
+=== build the compiler: PASS (67s)
+::group::run the test suite
+=== run the test suite
+-- Testing: 102 tests, 4 workers --
+PASS: IR Forge / Mountain Goat :: chapters/ch09-execution-engine.mlir (1 of 102)
+PASS: IR Forge / Mountain Goat :: loop-order/results-identical.mlir (2 of 102)
+PASS: IR Forge / Mountain Goat :: broadcast/values.mlir (3 of 102)
+PASS: IR Forge / Mountain Goat :: perf/options-same-results.mlir (4 of 102)
+PASS: IR Forge / Mountain Goat :: chapters/ch01-pipeline.mlir (5 of 102)
+PASS: IR Forge / Mountain Goat :: tour/tour-examples.mlir (6 of 102)
+PASS: IR Forge / Mountain Goat :: loop-order/cpp-ikj.mlir (7 of 102)
+PASS: IR Forge / Mountain Goat :: broadcast/cpp-interop-reductions.mlir (8 of 102)
+PASS: IR Forge / Mountain Goat :: ops/values.mlir (9 of 102)
+PASS: IR Forge / Mountain Goat :: loop-order/bitwise-identical.mlir (10 of 102)
+PASS: IR Forge / Mountain Goat :: ops/elementwise-mismatch-aborts.mlir (11 of 102)
+PASS: IR Forge / Mountain Goat :: ops/cpp-interop-ops.mlir (12 of 102)
+PASS: IR Forge / Mountain Goat :: frontend/more-examples.mlir (13 of 102)
+PASS: IR Forge / Mountain Goat :: frontend/cpp-interop.mlir (14 of 102)
+PASS: IR Forge / Mountain Goat :: ops/precedence-and-identities.mlir (15 of 102)
+PASS: IR Forge / Mountain Goat :: execution/gpu-host-with-stub-runtime.mlir (16 of 102)
+PASS: IR Forge / Mountain Goat :: perf/flags-reach-clang.mlir (17 of 102)
+PASS: IR Forge / Mountain Goat :: tour/scientific-literals.mlir (18 of 102)
+PASS: IR Forge / Mountain Goat :: ops/composed-programs.mlir (19 of 102)
+PASS: IR Forge / Mountain Goat :: broadcast/networks.mlir (20 of 102)
+PASS: IR Forge / Mountain Goat :: broadcast/identities.mlir (21 of 102)
+PASS: IR Forge / Mountain Goat :: frontend/hello-and-static.mlir (22 of 102)
+PASS: IR Forge / Mountain Goat :: ops/negate-and-dynamic-divide.mlir (23 of 102)
+PASS: IR Forge / Mountain Goat :: loop-order/flag-reaches-pass.mlir (24 of 102)
+PASS: IR Forge / Mountain Goat :: frontend/runtime-mismatch-aborts.mlir (25 of 102)
+PASS: IR Forge / Mountain Goat :: assert-stderr/message-on-stderr.mlir (26 of 102)
+PASS: IR Forge / Mountain Goat :: ops/dynamic-ops.mlir (27 of 102)
+PASS: IR Forge / Mountain Goat :: broadcast/dynamic-reductions.mlir (28 of 102)
+PASS: IR Forge / Mountain Goat :: frontend/dynamic-runs.mlir (29 of 102)
+PASS: IR Forge / Mountain Goat :: perf/tiling-structure.mlir (30 of 102)
+PASS: IR Forge / Mountain Goat :: ops/ptx-new-ops.mlir (31 of 102)
+PASS: IR Forge / Mountain Goat :: execution/mismatch-columns-aborts.mlir (32 of 102)
+PASS: IR Forge / Mountain Goat :: execution/mismatch-aborts.mlir (33 of 102)
+PASS: IR Forge / Mountain Goat :: execution/dynamic-shapes-run.mlir (34 of 102)
+PASS: IR Forge / Mountain Goat :: assert-stderr/nested-assert-runs.mlir (35 of 102)
+PASS: IR Forge / Mountain Goat :: tour/tour-errors.mlir (36 of 102)
+PASS: IR Forge / Mountain Goat :: execution/static-add-runs.mlir (37 of 102)
+PASS: IR Forge / Mountain Goat :: ops/matmul-mismatch-aborts.mlir (38 of 102)
+PASS: IR Forge / Mountain Goat :: dynamic-loops/runtime-check-survives-transforms.mlir (39 of 102)
+PASS: IR Forge / Mountain Goat :: assert-stderr/valid-shapes-still-pass.mlir (40 of 102)
+PASS: IR Forge / Mountain Goat :: dynamic-loops/tiling-runs.mlir (41 of 102)
+PASS: IR Forge / Mountain Goat :: ops/division-ieee.mlir (42 of 102)
+PASS: IR Forge / Mountain Goat :: dynamic-loops/unroll-runs.mlir (43 of 102)
+PASS: IR Forge / Mountain Goat :: assert-stderr/message-bytes-exact.mlir (44 of 102)
+PASS: IR Forge / Mountain Goat :: broadcast/ptx-layer.mlir (45 of 102)
+PASS: IR Forge / Mountain Goat :: execution/strided-view.mlir (46 of 102)
+PASS: IR Forge / Mountain Goat :: frontend/ptx-from-source.mlir (47 of 102)
+PASS: IR Forge / Mountain Goat :: execution/mixed-static-dynamic.mlir (48 of 102)
+PASS: IR Forge / Mountain Goat :: dynamic-loops/fusion-after-tiling.mlir (49 of 102)
+PASS: IR Forge / Mountain Goat :: dynamic-loops/fusion-needs-constant-trip-counts.mlir (50 of 102)
+PASS: IR Forge / Mountain Goat :: chapters/ch02-example-programs.mlir (51 of 102)
+PASS: IR Forge / Mountain Goat :: gpu/pass-order-crash.mlir (52 of 102)
+PASS: IR Forge / Mountain Goat :: frontend/front-end-errors.mlir (53 of 102)
+PASS: IR Forge / Mountain Goat :: gpu/host-runtime-calls.mlir (54 of 102)
+PASS: IR Forge / Mountain Goat :: gpu/ptx-index32.mlir (55 of 102)
+PASS: IR Forge / Mountain Goat :: ops/front-end-errors.mlir (56 of 102)
+PASS: IR Forge / Mountain Goat :: dynamic-loops/unroll-full-needs-constant-trip-count.mlir (57 of 102)
+PASS: IR Forge / Mountain Goat :: gpu/ptx-default.mlir (58 of 102)
+PASS: IR Forge / Mountain Goat :: gpu/host-runtime-calls-bare.mlir (59 of 102)
+PASS: IR Forge / Mountain Goat :: assert-stderr/guard-nested-assert.mlir (60 of 102)
+PASS: IR Forge / Mountain Goat :: loop-order/structure.mlir (61 of 102)
+PASS: IR Forge / Mountain Goat :: gpu/ptx-bare-pointers.mlir (62 of 102)
+PASS: IR Forge / Mountain Goat :: broadcast/front-end-errors.mlir (63 of 102)
+PASS: IR Forge / Mountain Goat :: gpu/nvvm-lowering.mlir (64 of 102)
+PASS: IR Forge / Mountain Goat :: ops/matmul-lowering-structure.mlir (65 of 102)
+PASS: IR Forge / Mountain Goat :: assert-stderr/static-unchanged.mlir (66 of 102)
+PASS: IR Forge / Mountain Goat :: frontend/emit-mlir.mlir (67 of 102)
+PASS: IR Forge / Mountain Goat :: dynamic-loops/fusion-declines.mlir (68 of 102)
+PASS: IR Forge / Mountain Goat :: dynamic-loops/fusion-fires-when-static.mlir (69 of 102)
+PASS: IR Forge / Mountain Goat :: loops/fusion.mlir (70 of 102)
+PASS: IR Forge / Mountain Goat :: dynamic-loops/unroll-epilogue.mlir (71 of 102)
+PASS: IR Forge / Mountain Goat :: gpu/cuda-comparison.mlir (72 of 102)
+PASS: IR Forge / Mountain Goat :: verifier/unranked-rejected.mlir (73 of 102)
+PASS: IR Forge / Mountain Goat :: broadcast/roundtrip-and-lowering.mlir (74 of 102)
+PASS: IR Forge / Mountain Goat :: ops/elementwise-static-mismatch.mlir (75 of 102)
+PASS: IR Forge / Mountain Goat :: verifier/transpose-rank3.mlir (76 of 102)
+PASS: IR Forge / Mountain Goat :: lowering/bufferize-dynamic-add.mlir (77 of 102)
+PASS: IR Forge / Mountain Goat :: dynamic-loops/tiling-structure.mlir (78 of 102)
+PASS: IR Forge / Mountain Goat :: lowering/static-add-affine.mlir (79 of 102)
+PASS: IR Forge / Mountain Goat :: loop-order/bad-option.mlir (80 of 102)
+PASS: IR Forge / Mountain Goat :: loops/unroll-full.mlir (81 of 102)
+PASS: IR Forge / Mountain Goat :: assert-stderr/rewrite-structure.mlir (82 of 102)
+PASS: IR Forge / Mountain Goat :: loops/tiling.mlir (83 of 102)
+PASS: IR Forge / Mountain Goat :: lowering/mixed-add-one-check.mlir (84 of 102)
+PASS: IR Forge / Mountain Goat :: gpu/kernel-outlining.mlir (85 of 102)
+PASS: IR Forge / Mountain Goat :: verifier/transpose-bad-shape.mlir (86 of 102)
+PASS: IR Forge / Mountain Goat :: broadcast/verifier-reduce.mlir (87 of 102)
+PASS: IR Forge / Mountain Goat :: verifier/dynamic-accepted.mlir (88 of 102)
+PASS: IR Forge / Mountain Goat :: assert-stderr/run-twice-no-collision.mlir (89 of 102)
+PASS: IR Forge / Mountain Goat :: ops/scalar-bad-op.mlir (90 of 102)
+PASS: IR Forge / Mountain Goat :: ops/matmul-inner-mismatch.mlir (91 of 102)
+PASS: IR Forge / Mountain Goat :: verifier/add-static-mismatch.mlir (92 of 102)
+PASS: IR Forge / Mountain Goat :: lowering/dynamic-add-affine.mlir (93 of 102)
+PASS: IR Forge / Mountain Goat :: broadcast/verifier-broadcast.mlir (94 of 102)
+PASS: IR Forge / Mountain Goat :: canonicalize/fold-constant-add.mlir (95 of 102)
+PASS: IR Forge / Mountain Goat :: canonicalize/transpose-twice.mlir (96 of 102)
+PASS: IR Forge / Mountain Goat :: ops/matmul-bad-result-shape.mlir (97 of 102)
+PASS: IR Forge / Mountain Goat :: lowering/dynamic-transpose-no-check.mlir (98 of 102)
+PASS: IR Forge / Mountain Goat :: lowering/bufferize-static-add.mlir (99 of 102)
+PASS: IR Forge / Mountain Goat :: canonicalize/transpose-twice-dynamic-exact.mlir (100 of 102)
+PASS: IR Forge / Mountain Goat :: canonicalize/transpose-twice-dynamic-mixed.mlir (101 of 102)
+PASS: IR Forge / Mountain Goat :: ops/dynamic-accepted.mlir (102 of 102)
+
+Testing Time: 6.52s
+
+Total Discovered Tests: 102
+  Passed: 102 (100.00%)
+::endgroup::
+=== run the test suite: PASS (7s)
+::group::build the documentation
+=== build the documentation
+
+[31m │  ⚠  Warning from the Material for MkDocs team[0m
+[31m │[0m
+[31m │[0m  MkDocs 2.0, the underlying framework of Material for MkDocs,
+[31m │[0m  will introduce backward-incompatible changes, including:
+[31m │[0m
+[31m │  × [0mAll plugins will stop working – the plugin system has been removed
+[31m │  × [0mAll theme overrides will break – the theming system has been rewritten
+[31m │  × [0mNo migration path exists – existing projects cannot be upgraded
+[31m │  × [0mClosed contribution model – community members can't report bugs
+[31m │  × [0mCurrently unlicensed – unsuitable for production use
+[31m │[0m
+[31m │[0m  Our full analysis:
+[31m │[0m
+[31m │[0m  [4mhttps://squidfunk.github.io/mkdocs-material/blog/2026/02/18/mkdocs-2.0/[0m
+[0m
+INFO    -  Cleaning site directory
+INFO    -  Building documentation to directory: /home/user/ir_forge_compiler_from_scratch/site
+INFO    -  The following pages exist in the docs directory, but are not included in the "nav" configuration:
+  - part12/code/llvm-18.1.3/NOTICE.md
+  - part18/code/llvm-18.1.3/NOTICE.md
+INFO    -  Documentation built in 5.12 seconds
+::endgroup::
+=== build the documentation: PASS (5s)
+
+CI summary:
+  PASS check tools                                 0s
+  PASS check workflow file                         0s
+  PASS build the compiler                         67s
+  PASS run the test suite                          7s
+  PASS build the documentation                     5s
+CI passed.

@@ -1,0 +1,273 @@
+################ mgc run 01_ge.mg
+  | # ge(a, b) compares: 1 where a >= b and 0 where it is not, element by element, with the same broadcasting as + - * /.
+  | print ge([[1, 5, 3], [2, 2, 9]], [[2, 2, 2], [2, 2, 2]])       # which entries are at least 2?
+  | print ge([[1, 5, 3], [2, 2, 9]], [[2], [9]])                    # a 2x1 column is stretched across the columns: row 0 against 2, row 1 against 9
+  | # the one-hot row of the largest entry: compare a row with its own maximum (row_max gives a 2x1 column)
+  | let scores = [[0.2, 0.7, 0.1], [0.5, 0.1, 0.4]]
+  | print ge(scores, row_max(scores))
+  | # a tie gives several 1s: both 0.5s reach the maximum
+  | print ge([[0.5, 0.5, 0.0]], row_max([[0.5, 0.5, 0.0]]))
+  | # a comparison against a number: write the number as a 1x1 matrix
+  | print ge([[0.2, 0.7, 0.1]], [[0.5]])
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 3] strides = [3, 1] data = 
+[[0,   1,   1], 
+ [1,   1,   1]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 3] strides = [3, 1] data = 
+[[0,   1,   1], 
+ [0,   0,   1]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 3] strides = [3, 1] data = 
+[[0,   1,   0], 
+ [1,   0,   0]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 3] strides = [3, 1] data = 
+[[1,   1,   0]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 3] strides = [3, 1] data = 
+[[0,   1,   0]]
+  ----- exit status 0
+
+################ mgc run 02_train_and_validate.mg
+  | (457 lines: the definitions are generalize.mg.defs.in, followed by the data, the unrolled training steps and the prints, written by make_examples.py; see the file)
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1.60944]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1.60944]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.832556]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1.48224]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.519409]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1.94577]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.46728]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[2.23759]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.436194]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[2.66616]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.42598]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[3.0038]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.420915]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[3.34617]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.418396]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[3.69074]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.41714]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[4.03635]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [5, 5] strides = [5, 1] data = 
+[[-2.89375,   4.89056,   3.79069,   -2.89375,   -2.89375], 
+ [-2.81214,   -2.81214,   4.56525,   3.87117,   -2.81214], 
+ [6.45562,   -1.61391,   -1.61391,   -1.61391,   -1.61391], 
+ [5.8938,   -1.47345,   -1.47345,   -1.47345,   -1.47345], 
+ [0,   0,   0,   0,   0]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [4, 1] strides = [1, 1] data = 
+[[8.07078], 
+ [0.00252321], 
+ [0.288306], 
+ [7.78379]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [5, 5] strides = [5, 1] data = 
+[[0.000311968,   0.749533,   0.249532,   0.000311968,   0.000311968], 
+ [0.000416429,   0.000416429,   0.666043,   0.332708,   0.000416429], 
+ [0.99875,   0.000312539,   0.000312539,   0.000312539,   0.000312539], 
+ [0.99748,   0.000630007,   0.000630007,   0.000630007,   0.000630007], 
+ [0.2,   0.2,   0.2,   0.2,   0.2]]
+  ----- exit status 0
+
+################ mgc run 03_weight_decay.mg
+  | (457 lines: the definitions are generalize.mg.defs.in, followed by the data, the unrolled training steps and the prints, written by make_examples.py; see the file)
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1.60944]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1.60944]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.832556]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1.48224]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.933881]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1.4375]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.973275]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1.49269]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.959281]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1.47375]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.960122]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1.47495]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.960112]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1.47494]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.960112]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1.47494]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.960112]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1.47494]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [5, 5] strides = [5, 1] data = 
+[[-0.426541,   1.07857,   0.201049,   -0.426541,   -0.426541], 
+ [-0.366977,   -0.366977,   0.809691,   0.29124,   -0.366977], 
+ [1.04192,   -0.26048,   -0.26048,   -0.26048,   -0.26048], 
+ [0.641953,   -0.160488,   -0.160488,   -0.160488,   -0.160488], 
+ [0,   0,   0,   0,   0]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [4, 1] strides = [1, 1] data = 
+[[2.03837], 
+ [1.02709], 
+ [0.733227], 
+ [2.10107]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [5, 5] strides = [5, 1] data = 
+[[0.106635,   0.480357,   0.199738,   0.106635,   0.106635], 
+ [0.122326,   0.122326,   0.39677,   0.236253,   0.122326], 
+ [0.479039,   0.13024,   0.13024,   0.13024,   0.13024], 
+ [0.358047,   0.160488,   0.160488,   0.160488,   0.160488], 
+ [0.2,   0.2,   0.2,   0.2,   0.2]]
+  ----- exit status 0
+
+################ mgc run 04_too_strong.mg
+  | (457 lines: the definitions are generalize.mg.defs.in, followed by the data, the unrolled training steps and the prints, written by make_examples.py; see the file)
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1.60944]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1.60944]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.832556]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1.48224]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[2.17033]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[5.19087]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[71.781]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[36.9733]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[2403.25]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[5515.15]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[5.20111e+07]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[2.62988e+07]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1.05317e+15]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[5.32522e+14]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[4.31818e+29]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[2.18344e+29]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[7.25952e+58]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[3.6707e+58]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [5, 5] strides = [5, 1] data = 
+[[3.03504e+58,   -9.4075e+58,   3.02391e+57,   3.03504e+58,   3.03504e+58], 
+ [2.10816e+58,   2.10816e+58,   -5.85669e+58,   -4.67779e+57,   2.10816e+58], 
+ [-4.71564e+58,   1.17891e+58,   1.17891e+58,   1.17891e+58,   1.17891e+58], 
+ [-1.79219e+58,   4.48048e+57,   4.48048e+57,   4.48048e+57,   4.48048e+57], 
+ [0,   0,   0,   0,   0]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [4, 1] strides = [1, 1] data = 
+[[1.38629], 
+ [2.24024e+58], 
+ [1.24425e+59], 
+ [1.09861]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [5, 5] strides = [5, 1] data = 
+[[0.333333,   0,   0,   0.333333,   0.333333], 
+ [0.333333,   0.333333,   0,   0,   0.333333], 
+ [0,   0.25,   0.25,   0.25,   0.25], 
+ [0,   0.25,   0.25,   0.25,   0.25], 
+ [0.2,   0.2,   0.2,   0.2,   0.2]]
+  ----- exit status 0
+
+################ mgc run 05_generate.mg
+  | (457 lines: the definitions are generalize.mg.defs.in, followed by the data, the unrolled training steps and the prints, written by make_examples.py; see the file)
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [5, 5] strides = [5, 1] data = 
+[[0.106635,   0.480357,   0.199738,   0.106635,   0.106635], 
+ [0.122326,   0.122326,   0.39677,   0.236253,   0.122326], 
+ [0.479039,   0.13024,   0.13024,   0.13024,   0.13024], 
+ [0.358047,   0.160488,   0.160488,   0.160488,   0.160488], 
+ [0.2,   0.2,   0.2,   0.2,   0.2]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[2]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[2]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[2]]
+  ----- exit status 0
+
+################ mgc run 06_a_tie.mg
+  | (445 lines: the definitions are generalize.mg.defs.in, followed by the data, the unrolled training steps and the prints, written by make_examples.py; see the file)
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [5, 5] strides = [5, 1] data = 
+[[0.106635,   0.480357,   0.199738,   0.106635,   0.106635], 
+ [0.122326,   0.122326,   0.39677,   0.236253,   0.122326], 
+ [0.479039,   0.13024,   0.13024,   0.13024,   0.13024], 
+ [0.358047,   0.160488,   0.160488,   0.160488,   0.160488], 
+ [0.2,   0.2,   0.2,   0.2,   0.2]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[4]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[10]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0]]
+  ----- exit status 0
+
+################ mgc run errors/e1_ge_of_a_scalar.mg
+  | # ge compares two matrices. A bare number in the source is a compile-time scalar; write a threshold as a 1x1 matrix.
+  | print ge([[1, 2]], 1)
+  ----- output
+errors/e1_ge_of_a_scalar.mg:2: error: ge compares two matrices, not a scalar; write a scalar threshold as a 1x1 matrix such as [[0.5]]
+  ----- exit status 1
+
+################ mgc run errors/e2_ge_shapes_differ.mg
+  | # The shapes must agree or broadcast: 2x3 and 3x2 do not.
+  | print ge([[1, 2, 3], [4, 5, 6]], [[1, 2], [3, 4], [5, 6]])
+  ----- output
+errors/e2_ge_shapes_differ.mg:2: error: cannot compare shapes 2x3 and 3x2: dimensions 2 and 3 differ and neither is 1
+  ----- exit status 1
+
+################ mgc run errors/e3_held_out_pairs_to_the_training_loss.mg
+  | # The held-out data have 4 pairs and the training loss was written for 10. Passing one where the other belongs is a shape error, caught when compiling.
+  | def log_softmax10(s: tensor[10x5]) = s - row_max(s) - log(row_sum(exp(s - row_max(s))))
+  | def train_loss(w: tensor[5x5], x: tensor[10x5], y: tensor[10x5]) = col_sum(row_sum(y * log_softmax10(x @ w))) * -0.1
+  | let w = [[0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0]]
+  | let xv = [[0, 0, 1, 0, 0], [0, 0, 0, 1, 0], [1, 0, 0, 0, 0], [0, 1, 0, 0, 0]]
+  | let yv = [[0, 0, 0, 1, 0], [1, 0, 0, 0, 0], [0, 1, 0, 0, 0], [0, 0, 0, 0, 1]]
+  | print train_loss(w, xv, yv)
+  ----- output
+errors/e3_held_out_pairs_to_the_training_loss.mg:7: error: argument shape 4x5 does not fit parameter 10x5
+  ----- exit status 1
+

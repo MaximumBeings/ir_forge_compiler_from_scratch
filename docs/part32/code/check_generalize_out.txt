@@ -1,0 +1,43 @@
+-- training and held-out loss against the independent Python trainer, for each weight-decay strength
+  ok   strength 0: training and held-out loss at all 9 checkpoints equal the reference
+  ok   strength 0: final weights and probabilities equal the reference
+  ok   strength 0: held-out surprise of each pair equals the reference
+  ok   strength 0.001: training and held-out loss at all 9 checkpoints equal the reference
+  ok   strength 0.001: final weights and probabilities equal the reference
+  ok   strength 0.001: held-out surprise of each pair equals the reference
+  ok   strength 0.01: training and held-out loss at all 9 checkpoints equal the reference
+  ok   strength 0.01: final weights and probabilities equal the reference
+  ok   strength 0.01: held-out surprise of each pair equals the reference
+  ok   strength 0.1: training and held-out loss at all 9 checkpoints equal the reference
+  ok   strength 0.1: final weights and probabilities equal the reference
+  ok   strength 0.1: held-out surprise of each pair equals the reference
+-- a strength that is too large for the learning rate
+  ok   strength 0.3: the program and the reference blow up in exactly the same way (losses equal at every checkpoint)
+  ok   the loss grows without bound (7.26e+58 after 400 steps): learning rate x strength = 2.4 is above 2, so each step overshoots by a factor of 1.4
+-- overfitting without weight decay
+  ok   training loss falls at every checkpoint
+  ok   held-out loss RISES at every checkpoint from step 5 on
+  ok   and ends well above its starting value (1.6094 to 4.0363)
+-- why: the held-out pairs the training pairs never showed
+  ok   held-out pairs [(2, 3), (1, 4)] never occur in the training pairs
+  ok   their surprises [8.07, 7.78] are above 4; the others [0.0, 0.29] are below 1.5
+  ok   the unseen pairs carry more than 90% of the held-out loss
+-- weight decay
+  ok   strength 0.001: held-out loss 2.6835 is below the 4.0363 of no weight decay
+  ok   strength 0.01: held-out loss 1.8533 is below the 4.0363 of no weight decay
+  ok   strength 0.1: held-out loss 1.4749 is below the 4.0363 of no weight decay
+  ok   a stronger strength gives a higher final training loss (the price of the penalty)
+  ok   a stronger strength gives smaller weights
+  ok   the strength with the lowest held-out loss is 0.1 for both
+-- the gradient with weight decay against finite differences of the penalised objective (step 0.01)
+  ok   strength 0.01, random weights #1: gradient equals the reference and the finite-difference estimate (largest difference 3.8e-04)
+  ok   strength 0.01, random weights #2: gradient equals the reference and the finite-difference estimate (largest difference 4.2e-04)
+  ok   strength 0.1, random weights #1: gradient equals the reference and the finite-difference estimate (largest difference 4.0e-04)
+  ok   strength 0.1, random weights #2: gradient equals the reference and the finite-difference estimate (largest difference 3.9e-04)
+-- greedy generation
+  ok   starting from token 0: [0, 1, 2, 0, 1, 2, 0, 1, 2] equals the reference chain
+  ok   starting from token 1: [1, 2, 0, 1, 2, 0, 1, 2, 0] equals the reference chain
+  ok   starting from token 2: [2, 0, 1, 2, 0, 1, 2, 0, 1] equals the reference chain
+  ok   starting from token 3: [3, 0, 1, 2, 0, 1, 2, 0, 1] equals the reference chain
+  ok   starting from token 4 (its row is uniform): every token ties, the mask is all ones (x @ ids = 0+1+2+3+4 = 10), and the next step takes the largest column sum of the probabilities (token 0)
+all checks pass

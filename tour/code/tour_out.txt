@@ -1,0 +1,174 @@
+################ mgc run 01_first_program.mg
+  | # A Mountain Goat program is a list of lines. This is a comment: everything after '#' is ignored.
+  | let m = [[1, 2, 3], [4, 5, 6]]      # a 2 by 3 matrix
+  | print m                             # show it
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 3] strides = [3, 1] data = 
+[[1,   2,   3], 
+ [4,   5,   6]]
+  ----- exit status 0
+
+################ mgc run 02_literals.mg
+  | # Matrix literals: rows in brackets, numbers may be integers, decimals, negative, or scientific.
+  | let a = [[1.5, -2, 3e2]]            # one row, three columns (1x3)
+  | let b = [[1], [2], [3]]             # three rows, one column (3x1)
+  | print a
+  | print b
+  | # A bare number is a scalar. It has no shape and can only be combined with a matrix.
+  | let k = 4
+  | print a * k
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 3] strides = [3, 1] data = 
+[[1.5,   -2,   300]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [3, 1] strides = [1, 1] data = 
+[[1], 
+ [2], 
+ [3]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 3] strides = [3, 1] data = 
+[[6,   -8,   1200]]
+  ----- exit status 0
+
+################ mgc run 03_let_and_shadowing.mg
+  | # 'let' binds a name to a value. A later 'let' of the same name replaces it (the old value is untouched).
+  | let a = [[1, 2]]
+  | let a = a * 10                      # the right-hand side still sees the OLD a
+  | let a = a + 1
+  | print a
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 2] strides = [2, 1] data = 
+[[11,   21]]
+  ----- exit status 0
+
+################ mgc run 04_functions.mg
+  | # 'def' declares a function: typed parameters, one expression as the body, the result type is worked out.
+  | def scale(a: tensor[2x2]) = a * 3
+  | def shift_and_scale(a: tensor[2x2]) = scale(a + 1)    # may call functions defined ABOVE it
+  | print shift_and_scale([[1, 2], [3, 4]])
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[6,   9], 
+ [12,   15]]
+  ----- exit status 0
+
+################ mgc run 05_dynamic_types.mg
+  | # '?' in a type means "any size, known only when the program runs". One function, many shapes.
+  | def twice(a: tensor[?x?]) = a + a                      # any rows, any columns
+  | def row_sums(a: tensor[?x3]) = a @ [[1], [1], [1]]     # any rows, but exactly 3 columns
+  | print twice([[1, 2]])
+  | print twice([[1], [2], [3]])
+  | print row_sums([[1, 2, 3], [4, 5, 6]])
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 2] strides = [2, 1] data = 
+[[2,   4]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [3, 1] strides = [1, 1] data = 
+[[2], 
+ [4], 
+ [6]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 1] strides = [1, 1] data = 
+[[6], 
+ [15]]
+  ----- exit status 0
+
+################ mgc run 06_operators.mg
+  | # Every operator on two 2x2 matrices (and a scalar).
+  | let a = [[1, 2], [3, 4]]
+  | let b = [[10, 20], [30, 40]]
+  | print a + b
+  | print b - a
+  | print a * b                        # elementwise (Hadamard)
+  | print b / a
+  | print a @ b                        # matrix product
+  | print transpose(a)
+  | print -a
+  | print a * 2 + 1
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[11,   22], 
+ [33,   44]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[9,   18], 
+ [27,   36]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[10,   40], 
+ [90,   160]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[10,   10], 
+ [10,   10]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[70,   100], 
+ [150,   220]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[1,   3], 
+ [2,   4]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[-1,   -2], 
+ [-3,   -4]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[3,   5], 
+ [7,   9]]
+  ----- exit status 0
+
+################ mgc run errors/e1_bad_statement.mg
+  | # a line must start with let, print or def
+  | show [[1]]
+  ----- output
+errors/e1_bad_statement.mg:2: error: a statement must start with 'let', 'print' or 'def', not 'show'
+  ----- exit status 1
+
+################ mgc run errors/e2_unknown_name.mg
+  | let a = [[1, 2]]
+  | print b
+  ----- output
+errors/e2_unknown_name.mg:2: error: unknown name 'b'
+  ----- exit status 1
+
+################ mgc run errors/e3_shape_mismatch.mg
+  | let a = [[1, 2]]
+  | let b = [[1], [2]]
+  | print a + b
+  ----- output
+errors/e3_shape_mismatch.mg:3: error: cannot add shapes 1x2 and 2x1
+  ----- exit status 1
+
+################ mgc run errors/e4_function_order.mg
+  | # f is used before it is defined
+  | print f([[1]])
+  | def f(a: tensor[1x1]) = a
+  ----- output
+errors/e4_function_order.mg:2: error: unknown function 'f'
+  ----- exit status 1
+
+################ mgc run errors/e5_arity.mg
+  | def f(a: tensor[1x1]) = a
+  | print f([[1]], [[2]])
+  ----- output
+errors/e5_arity.mg:2: error: f takes 1 arguments, got 2
+  ----- exit status 1
+
+################ mgc run errors/e6_scalar_print.mg
+  | let k = 3
+  | print k
+  ----- output
+errors/e6_scalar_print.mg:2: error: print needs a matrix; a scalar has no shape to print
+  ----- exit status 1
+
+################ mgc run errors/e7_param_shape.mg
+  | def f(a: tensor[2x2]) = a
+  | print f([[1, 2, 3]])
+  ----- output
+errors/e7_param_shape.mg:2: error: argument shape 1x3 does not fit parameter 2x2
+  ----- exit status 1
+
+################ mgc run errors/e8_zero_dimension.mg
+  | def f(a: tensor[0x3]) = a
+  ----- output
+errors/e8_zero_dimension.mg:1: error: bad dimension '0': use a positive integer or '?'
+  ----- exit status 1
+
+################ mgc run errors/e9_let_in_def.mg
+  | def f(a: tensor[1x1]) =
+  |   let b = a
+  ----- output
+errors/e9_let_in_def.mg:1: error: expected an expression, found the end of the line
+  ----- exit status 1
+

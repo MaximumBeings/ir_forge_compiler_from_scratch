@@ -36,6 +36,16 @@ config.substitutions += [
                            "--finalize-memref-to-llvm --convert-func-to-llvm --reconcile-unrealized-casts"),
     ("%to-gpu", to_gpu),
 ]
+# The language tour (docs/tour): its examples are run in place, like the chapters' examples.
+config.substitutions += [("%tour", os.path.join(config.test_source_root, "..", "..", "..", "tour", "code"))]
+# Chapter 21: the extended driver/front end (more operations), also referenced in place.
+ch21 = os.path.join(config.test_source_root, "..", "..", "..", "part21", "code")
+config.substitutions += [
+    ("%mgc21", "env MG_OPT=" + mg_opt + " " + os.path.join(ch21, "mgc")),
+    ("%mgfront21", "python3 " + os.path.join(ch21, "mgfront.py")),
+    ("%ex21", os.path.join(ch21, "examples")),
+    ("%cpp21", os.path.join(ch21, "cpp")),
+]
 # Chapter 20: the surface-syntax driver and its examples (they live in part20/code, not copied, so tests cannot drift from the book).
 ch20 = os.path.join(config.test_source_root, "..", "..", "..", "part20", "code")
 config.substitutions += [

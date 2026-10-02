@@ -1,2 +1,0 @@
-/usr/bin/ar Dqc libMgAssertToStderr.a CMakeFiles/MgAssertToStderr.dir/lib/AssertToStderr.cpp.o
-/usr/bin/ranlib -D libMgAssertToStderr.a

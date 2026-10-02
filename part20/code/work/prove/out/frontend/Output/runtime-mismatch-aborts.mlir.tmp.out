@@ -1,4 +1,0 @@
-Unranked Memref base@ = 0x564058df2330 rank = 2 offset = 0 sizes = [3, 2] strides = [2, 1] data = 
-[[11,   12], 
- [13,   14], 
- [15,   16]]

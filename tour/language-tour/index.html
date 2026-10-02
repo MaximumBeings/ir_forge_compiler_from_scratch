@@ -1,0 +1,2234 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A Toy Language Compiled Through a Real MLIR Dialect, Down to Real Native Machine Code">
+      
+      
+        <meta name="author" content="Oluwaseyi Awoga">
+      
+      
+      
+        <link rel="prev" href="../../getting-started/">
+      
+      
+        <link rel="next" href="../../part1/01-why-a-multi-level-ir-at-all/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>The Mountain Goat Language: A Short Tour - IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#mountain-goat-a-short-tour-of-the-language" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-header__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              The Mountain Goat Language: A Short Tour
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-nav__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Mountain Goat Language: A Short Tour
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Mountain Goat Language: A Short Tour
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#compile-and-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compile and run
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-a-program-looks-like" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What a program looks like
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#values-and-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Values and types
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#literals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Literals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#declaring-names-with-let" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Declaring names with let
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#declaring-functions-with-def" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Declaring functions with def
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dynamic-dimensions-one-function-many-shapes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dynamic dimensions: one function, many shapes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#expressions-and-operators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Expressions and operators
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mistakes-the-compiler-reports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mistakes the compiler reports
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-full-grammar" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The full grammar
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-language-does-not-have" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the language does not have
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-each-construct-goes-in-the-compiler" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where each construct goes in the compiler
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quick-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick reference
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part1/01-why-a-multi-level-ir-at-all/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1. Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part2/02-a-minimal-dialect-from-scratch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2. A Minimal Dialect From Scratch: Mountain Goat's Own mg Dialect
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part3/03-the-pass-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3. The Real Pass Infrastructure: Canonicalizing Mountain Goat
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 3 -- Progressive Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 3 -- Progressive Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part4/04-progressive-lowering-to-affine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4. Progressive Lowering: Mountain Goat to affine, Two Real Ways
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part5/05-affine-to-scf-to-llvm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5. Finishing Progressive Lowering: affine to scf to llvm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 4 -- Optimization Across Levels
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 4 -- Optimization Across Levels
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/06-real-bufferization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6. Real Bufferization: Closing Chapter 4's Own Honest Gap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part7/07-real-loop-transforms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    7. Real Loop Transforms: Fusion, Tiling, and Unrolling at the affine Level
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 5 -- Code Generation via LLVM
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 5 -- Code Generation via LLVM
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part8/08-a-standalone-native-executable/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    8. A Standalone Native Executable: Mountain Goat Without MLIR At Runtime
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part9/09-the-execution-engine-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    9. MLIR's Own Real C++ ExecutionEngine API, Called In-Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 6 -- GPU Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 6 -- GPU Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part10/10-gpu-lowering-to-ptx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10. GPU Lowering: Mountain Goat to the gpu Dialect, NVVM, and Real PTX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part11/11-the-gpu-host-side/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    11. The GPU Host Side: Device Memory, Real Runtime Calls, and a Stub Device
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 7 -- Case Studies
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 7 -- Case Studies
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part12/12-reading-the-production-pipelines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    12. Reading MLIR's Own Production Pipelines: What This Book's Compiler Is Missing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part13/13-dynamic-shapes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    13. Dynamic Shapes: Closing Chapter 12's Biggest Unknown
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part14/14-runtime-shape-checks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    14. A Runtime Shape Check: Closing Chapter 13's Memory-Safety Hole
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part15/15-a-real-test-suite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    15. A Real Test Suite: lit, FileCheck, and Proof That the Tests Can Fail
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part16/16-testing-the-gpu-path-and-loop-transforms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    16. Testing the GPU Path and the Loop Transforms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part17/17-loop-transforms-on-dynamic-bounds/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    17. Loop Transforms on Dynamic Bounds
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part18/18-why-fusion-declines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    18. Why Fusion Declines: Reading the Pass, and a Second Bug Found Along the Way
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part19/19-a-better-abort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    19. A Better Abort: Reporting Assertion Failures on stderr
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part20/20-the-mountain-goat-demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    20. The Mountain Goat Demo: A Surface Syntax, a Driver, and C++ Calling Compiled Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part21/21-more-operations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    21. More Operations: Subtract, Hadamard, Divide, Matrix Product, and Scalars
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#compile-and-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compile and run
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-a-program-looks-like" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What a program looks like
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#values-and-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Values and types
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#literals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Literals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#declaring-names-with-let" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Declaring names with let
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#declaring-functions-with-def" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Declaring functions with def
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dynamic-dimensions-one-function-many-shapes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dynamic dimensions: one function, many shapes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#expressions-and-operators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Expressions and operators
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mistakes-the-compiler-reports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mistakes the compiler reports
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-full-grammar" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The full grammar
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-language-does-not-have" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the language does not have
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-each-construct-goes-in-the-compiler" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where each construct goes in the compiler
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quick-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick reference
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="mountain-goat-a-short-tour-of-the-language">Mountain Goat: A Short Tour of the Language<a class="headerlink" href="#mountain-goat-a-short-tour-of-the-language" title="Permanent link">&para;</a></h1>
+<p>This page is a short introduction to the Mountain Goat <strong>language</strong>: what a program looks like, what values and types exist, how to declare things, and what each operator does. It is the page to read first if you have not seen the language before. Chapters 20 and 21 build and extend the compiler for it; this page only describes what you can write.</p>
+<p>Everything on this page was run for real. Each example is a file in <code>docs/tour/code/</code>, and each output below is what the compiler and the program printed.</p>
+<h2 id="compile-and-run">Compile and run<a class="headerlink" href="#compile-and-run" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">cd</span><span class="w"> </span>docs/part21/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./build.sh<span class="w">      </span><span class="c1"># once: builds the compiler&#39;s mg-opt tool</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>../../tour/code
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>../../part21/code/mgc<span class="w"> </span>run<span class="w"> </span>01_first_program.mg<span class="w">    </span><span class="c1"># compile to a native executable and run it</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>../../part21/code/mgc<span class="w"> </span>mlir<span class="w"> </span>01_first_program.mg<span class="w">   </span><span class="c1"># show the MLIR the front end produces</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>../../part21/code/mgc<span class="w"> </span>ptx<span class="w">  </span>05_dynamic_types.mg<span class="w">   </span><span class="c1"># compile to GPU code (PTX); nothing is launched</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>./run_tour.sh<span class="w"> </span>&gt;<span class="w"> </span>tour_out.txt<span class="w">                      </span><span class="c1"># run every example on this page</span>
+</code></pre></div>
+<p><code>mgc run</code> needs LLVM 18's MLIR tools (<code>mlir-opt-18</code>, <code>mlir-translate-18</code>, <code>clang-18</code>) installed; see Getting Started. Chapter 20 explains each stage <code>mgc</code> runs.</p>
+<h2 id="what-a-program-looks-like">What a program looks like<a class="headerlink" href="#what-a-program-looks-like" title="Permanent link">&para;</a></h2>
+<p>A Mountain Goat program is a file ending in <code>.mg</code> with <strong>one statement per line</strong>. A <code>#</code> starts a comment that runs to the end of the line. Blank lines are ignored. There are three kinds of statement: <code>let</code>, <code>print</code> and <code>def</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>################ mgc run 01_first_program.mg
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  | # A Mountain Goat program is a list of lines. This is a comment: everything after &#39;#&#39; is ignored.
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  | let m = [[1, 2, 3], [4, 5, 6]]      # a 2 by 3 matrix
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  | print m                             # show it
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>  ----- output
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 3] strides = [3, 1] data = 
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>[[1,   2,   3], 
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a> [4,   5,   6]]
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>  ----- exit status 0
+</code></pre></div>
+<p>The first line is a comment. <code>let m = ...</code> <strong>declares</strong> a name <code>m</code> and gives it a value: a two-by-three matrix. <code>print m</code> shows it. The output is MLIR's own runtime printer, not something Mountain Goat designed: <code>sizes = [2, 3]</code> is the matrix shape, <code>strides</code> says how the data is laid out in memory, and the numbers follow.</p>
+<h2 id="values-and-types">Values and types<a class="headerlink" href="#values-and-types" title="Permanent link">&para;</a></h2>
+<p>Mountain Goat has exactly <strong>one kind of value that can be printed or passed around: a two-dimensional matrix of 64-bit floating-point numbers</strong> (<code>f64</code>, the same as C's <code>double</code>). There are no integers, strings, booleans, lists or records. Every other piece of the language exists to build, combine or name matrices.</p>
+<p>The <strong>type</strong> of a matrix is its shape. You write a type as <code>tensor[R x C]</code> where <code>R</code> is the number of rows and <code>C</code> the number of columns, with no spaces: <code>tensor[2x3]</code> is a matrix of two rows and three columns. Types appear only in one place, the parameters of a <code>def</code> (below); everywhere else the compiler works the type out for you.</p>
+<p>Each dimension is either:</p>
+<ul>
+<li><strong>a positive whole number</strong>, a <strong>static</strong> dimension known when the program is compiled: <code>tensor[2x3]</code>;</li>
+<li><strong><code>?</code></strong>, a <strong>dynamic</strong> dimension known only when the program runs: <code>tensor[?x3]</code> is "any number of rows, exactly 3 columns", and <code>tensor[?x?]</code> is "any shape at all".</li>
+</ul>
+<p>A <strong>tensor</strong> is the general word for an array of numbers with any number of dimensions; Mountain Goat only has the two-dimensional kind (a matrix), but keeps the word in the type because that is what the compiler's internal form calls it.</p>
+<p>There is one more kind of value, which cannot be printed: the <strong>scalar</strong>, a plain number with no shape, like <code>4</code> or <code>0.5</code>. A scalar exists only to combine with a matrix (<code>m * 4</code>); it is known when the program is compiled, so there is nothing to compute at run time.</p>
+<h2 id="literals">Literals<a class="headerlink" href="#literals" title="Permanent link">&para;</a></h2>
+<p>A <strong>matrix literal</strong> is rows in brackets inside an outer pair of brackets: <code>[[1, 2, 3], [4, 5, 6]]</code> is a 2x3 matrix. All rows must have the same length. Numbers may be whole (<code>2</code>), decimal (<code>1.5</code>), negative (<code>-2</code>) or scientific (<code>3e2</code>, which is 300).</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>################ mgc run 02_literals.mg
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  | # Matrix literals: rows in brackets, numbers may be integers, decimals, negative, or scientific.
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  | let a = [[1.5, -2, 3e2]]            # one row, three columns (1x3)
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>  | let b = [[1], [2], [3]]             # three rows, one column (3x1)
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>  | print a
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>  | print b
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>  | # A bare number is a scalar. It has no shape and can only be combined with a matrix.
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>  | let k = 4
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>  | print a * k
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>  ----- output
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 3] strides = [3, 1] data = 
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>[[1.5,   -2,   300]]
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [3, 1] strides = [1, 1] data = 
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>[[1], 
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a> [2], 
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a> [3]]
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 3] strides = [3, 1] data = 
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>[[6,   -8,   1200]]
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>  ----- exit status 0
+</code></pre></div>
+<p><code>a</code> is 1x3 and <code>b</code> is 3x1: the shape is simply how the literal is bracketed. <code>let k = 4</code> declares a scalar. <code>a * k</code> multiplies every element of <code>a</code> by 4, so <code>1.5, -2, 300</code> becomes <code>6, -8, 1200</code>.</p>
+<h2 id="declaring-names-with-let">Declaring names with <code>let</code><a class="headerlink" href="#declaring-names-with-let" title="Permanent link">&para;</a></h2>
+<p><code>let name = expression</code> gives a name to the value of an expression. The name can then be used in later lines. There are no variables that change: a <code>let</code> does not modify anything. A later <code>let</code> of the <strong>same name</strong> declares a new binding that replaces the old one from that point on; the right-hand side of the new <code>let</code> still sees the old value.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>################ mgc run 03_let_and_shadowing.mg
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  | # &#39;let&#39; binds a name to a value. A later &#39;let&#39; of the same name replaces it (the old value is untouched).
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  | let a = [[1, 2]]
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>  | let a = a * 10                      # the right-hand side still sees the OLD a
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>  | let a = a + 1
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>  | print a
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>  ----- output
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 2] strides = [2, 1] data = 
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>[[11,   21]]
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>  ----- exit status 0
+</code></pre></div>
+<p>Start with <code>[[1, 2]]</code>; the second line makes <code>[[10, 20]]</code> (using the first <code>a</code>); the third makes <code>[[11, 21]]</code>. The output is <code>11, 21</code>.</p>
+<p>A <code>let</code> can bind a scalar too (<code>let k = 2 + 3 * 4</code> is the scalar 14, computed by the compiler).</p>
+<h2 id="declaring-functions-with-def">Declaring functions with <code>def</code><a class="headerlink" href="#declaring-functions-with-def" title="Permanent link">&para;</a></h2>
+<p><code>def name(parameters) = expression</code> declares a function. Each parameter has a name and a type, written <code>name: tensor[RxC]</code>. The <strong>body is a single expression</strong>: there are no statements inside a function, so no <code>let</code> and no <code>print</code> in a body. The function's <strong>result type is worked out</strong> from the body; you do not write it. A function is used by calling it, <code>name(arguments)</code>, anywhere an expression can appear.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>################ mgc run 04_functions.mg
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>  | # &#39;def&#39; declares a function: typed parameters, one expression as the body, the result type is worked out.
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>  | def scale(a: tensor[2x2]) = a * 3
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>  | def shift_and_scale(a: tensor[2x2]) = scale(a + 1)    # may call functions defined ABOVE it
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>  | print shift_and_scale([[1, 2], [3, 4]])
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>  ----- output
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>[[6,   9], 
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a> [12,   15]]
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>  ----- exit status 0
+</code></pre></div>
+<p>Two rules to know. A function may only call functions <strong>defined above it</strong> (so there is no recursion and no forward reference; the error for breaking this is shown below). And the arguments of a call must fit the parameter types: a matrix of known shape fits a parameter with the same static shape, or a <code>?</code>.</p>
+<h2 id="dynamic-dimensions-one-function-many-shapes">Dynamic dimensions: one function, many shapes<a class="headerlink" href="#dynamic-dimensions-one-function-many-shapes" title="Permanent link">&para;</a></h2>
+<p>A parameter type with <code>?</code> makes the function work for many shapes. The compiler produces <strong>one</strong> compiled function, and the shapes are looked at when it runs.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>################ mgc run 05_dynamic_types.mg
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>  | # &#39;?&#39; in a type means &quot;any size, known only when the program runs&quot;. One function, many shapes.
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>  | def twice(a: tensor[?x?]) = a + a                      # any rows, any columns
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>  | def row_sums(a: tensor[?x3]) = a @ [[1], [1], [1]]     # any rows, but exactly 3 columns
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>  | print twice([[1, 2]])
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>  | print twice([[1], [2], [3]])
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>  | print row_sums([[1, 2, 3], [4, 5, 6]])
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>  ----- output
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 2] strides = [2, 1] data = 
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>[[2,   4]]
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [3, 1] strides = [1, 1] data = 
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>[[2], 
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a> [4], 
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a> [6]]
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 1] strides = [1, 1] data = 
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>[[6], 
+<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a> [15]]
+<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>  ----- exit status 0
+</code></pre></div>
+<p><code>twice</code> is called with a 1x2 matrix and then with a 3x1 matrix. <code>row_sums</code> accepts any number of rows but exactly 3 columns, and multiplies by a column of ones, so it adds up each row: <code>1+2+3 = 6</code> and <code>4+5+6 = 15</code>.</p>
+<p>When a dimension is <code>?</code>, a mismatch cannot be seen while compiling. If two <code>?</code> dimensions turn out different at run time, the program <strong>stops with an error message on standard error</strong> (Chapters 14 and 19); it does not print a wrong answer.</p>
+<h2 id="expressions-and-operators">Expressions and operators<a class="headerlink" href="#expressions-and-operators" title="Permanent link">&para;</a></h2>
+<p>An <strong>expression</strong> computes a value: a name, a literal, a function call, <code>transpose(e)</code>, a parenthesized expression, or two expressions joined by an operator.</p>
+<table>
+<thead>
+<tr>
+<th>Operator</th>
+<th>Meaning</th>
+<th>Shape rule</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>a + b</code>, <code>a - b</code></td>
+<td>elementwise add, subtract</td>
+<td>same shape (or <code>?</code> that agree at run time)</td>
+</tr>
+<tr>
+<td><code>a * b</code></td>
+<td>elementwise product (the <strong>Hadamard</strong> product)</td>
+<td>same shape</td>
+</tr>
+<tr>
+<td><code>a / b</code></td>
+<td>elementwise division</td>
+<td>same shape</td>
+</tr>
+<tr>
+<td><code>a @ b</code></td>
+<td><strong>matrix product</strong></td>
+<td><code>a</code> is m by k, <code>b</code> is k by n, result is m by n</td>
+</tr>
+<tr>
+<td><code>transpose(a)</code></td>
+<td>rows become columns</td>
+<td>m by n becomes n by m</td>
+</tr>
+<tr>
+<td><code>-a</code></td>
+<td>negate every element</td>
+<td>same shape</td>
+</tr>
+<tr>
+<td>matrix <code>op</code> scalar, scalar <code>op</code> matrix</td>
+<td>combine every element with the number (<code>+ - * /</code>)</td>
+<td>same shape as the matrix</td>
+</tr>
+</tbody>
+</table>
+<p>From tightest to loosest binding: unary <code>-</code>; then <code>*</code>, <code>/</code> and <code>@</code> (left to right); then <code>+</code> and <code>-</code> (left to right). Parentheses override. So <code>a + b * c</code> means <code>a + (b * c)</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>################ mgc run 06_operators.mg
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>  | # Every operator on two 2x2 matrices (and a scalar).
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>  | let a = [[1, 2], [3, 4]]
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>  | let b = [[10, 20], [30, 40]]
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>  | print a + b
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>  | print b - a
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>  | print a * b                        # elementwise (Hadamard)
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>  | print b / a
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>  | print a @ b                        # matrix product
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>  | print transpose(a)
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>  | print -a
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>  | print a * 2 + 1
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>  ----- output
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>[[11,   22], 
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a> [33,   44]]
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a>[[9,   18], 
+<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a> [27,   36]]
+<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a>[[10,   40], 
+<a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a> [90,   160]]
+<a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+<a id="__codelineno-6-24" name="__codelineno-6-24" href="#__codelineno-6-24"></a>[[10,   10], 
+<a id="__codelineno-6-25" name="__codelineno-6-25" href="#__codelineno-6-25"></a> [10,   10]]
+<a id="__codelineno-6-26" name="__codelineno-6-26" href="#__codelineno-6-26"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+<a id="__codelineno-6-27" name="__codelineno-6-27" href="#__codelineno-6-27"></a>[[70,   100], 
+<a id="__codelineno-6-28" name="__codelineno-6-28" href="#__codelineno-6-28"></a> [150,   220]]
+<a id="__codelineno-6-29" name="__codelineno-6-29" href="#__codelineno-6-29"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+<a id="__codelineno-6-30" name="__codelineno-6-30" href="#__codelineno-6-30"></a>[[1,   3], 
+<a id="__codelineno-6-31" name="__codelineno-6-31" href="#__codelineno-6-31"></a> [2,   4]]
+<a id="__codelineno-6-32" name="__codelineno-6-32" href="#__codelineno-6-32"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+<a id="__codelineno-6-33" name="__codelineno-6-33" href="#__codelineno-6-33"></a>[[-1,   -2], 
+<a id="__codelineno-6-34" name="__codelineno-6-34" href="#__codelineno-6-34"></a> [-3,   -4]]
+<a id="__codelineno-6-35" name="__codelineno-6-35" href="#__codelineno-6-35"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+<a id="__codelineno-6-36" name="__codelineno-6-36" href="#__codelineno-6-36"></a>[[3,   5], 
+<a id="__codelineno-6-37" name="__codelineno-6-37" href="#__codelineno-6-37"></a> [7,   9]]
+<a id="__codelineno-6-38" name="__codelineno-6-38" href="#__codelineno-6-38"></a>  ----- exit status 0
+</code></pre></div>
+<p>With <code>a = [[1, 2], [3, 4]]</code> and <code>b = [[10, 20], [30, 40]]</code> the eight outputs are, in order: <code>a + b</code>, <code>b - a</code>, <code>a * b</code> (elementwise: <code>10, 40, 90, 160</code>), <code>b / a</code>, <code>a @ b</code> (matrix product: <code>70, 100, 150, 220</code>), <code>transpose(a)</code>, <code>-a</code>, and <code>a * 2 + 1</code>. Compare the third and fifth: same inputs, different operators, different answers.</p>
+<h2 id="mistakes-the-compiler-reports">Mistakes the compiler reports<a class="headerlink" href="#mistakes-the-compiler-reports" title="Permanent link">&para;</a></h2>
+<p>The compiler checks what it can <strong>before</strong> producing any code, and reports the file and line. Each of these is one real example from <code>docs/tour/code/errors/</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>################ mgc run errors/e1_bad_statement.mg
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  | # a line must start with let, print or def
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  | show [[1]]
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>  ----- output
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>errors/e1_bad_statement.mg:2: error: a statement must start with &#39;let&#39;, &#39;print&#39; or &#39;def&#39;, not &#39;show&#39;
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>  ----- exit status 1
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>################ mgc run errors/e2_unknown_name.mg
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>  | let a = [[1, 2]]
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>  | print b
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>  ----- output
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>errors/e2_unknown_name.mg:2: error: unknown name &#39;b&#39;
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>  ----- exit status 1
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>################ mgc run errors/e3_shape_mismatch.mg
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>  | let a = [[1, 2]]
+<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>  | let b = [[1], [2]]
+<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a>  | print a + b
+<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a>  ----- output
+<a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a>errors/e3_shape_mismatch.mg:3: error: cannot add shapes 1x2 and 2x1
+<a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a>  ----- exit status 1
+<a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a>
+<a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a>################ mgc run errors/e4_function_order.mg
+<a id="__codelineno-7-24" name="__codelineno-7-24" href="#__codelineno-7-24"></a>  | # f is used before it is defined
+<a id="__codelineno-7-25" name="__codelineno-7-25" href="#__codelineno-7-25"></a>  | print f([[1]])
+<a id="__codelineno-7-26" name="__codelineno-7-26" href="#__codelineno-7-26"></a>  | def f(a: tensor[1x1]) = a
+<a id="__codelineno-7-27" name="__codelineno-7-27" href="#__codelineno-7-27"></a>  ----- output
+<a id="__codelineno-7-28" name="__codelineno-7-28" href="#__codelineno-7-28"></a>errors/e4_function_order.mg:2: error: unknown function &#39;f&#39;
+<a id="__codelineno-7-29" name="__codelineno-7-29" href="#__codelineno-7-29"></a>  ----- exit status 1
+<a id="__codelineno-7-30" name="__codelineno-7-30" href="#__codelineno-7-30"></a>
+<a id="__codelineno-7-31" name="__codelineno-7-31" href="#__codelineno-7-31"></a>################ mgc run errors/e5_arity.mg
+<a id="__codelineno-7-32" name="__codelineno-7-32" href="#__codelineno-7-32"></a>  | def f(a: tensor[1x1]) = a
+<a id="__codelineno-7-33" name="__codelineno-7-33" href="#__codelineno-7-33"></a>  | print f([[1]], [[2]])
+<a id="__codelineno-7-34" name="__codelineno-7-34" href="#__codelineno-7-34"></a>  ----- output
+<a id="__codelineno-7-35" name="__codelineno-7-35" href="#__codelineno-7-35"></a>errors/e5_arity.mg:2: error: f takes 1 arguments, got 2
+<a id="__codelineno-7-36" name="__codelineno-7-36" href="#__codelineno-7-36"></a>  ----- exit status 1
+<a id="__codelineno-7-37" name="__codelineno-7-37" href="#__codelineno-7-37"></a>
+<a id="__codelineno-7-38" name="__codelineno-7-38" href="#__codelineno-7-38"></a>################ mgc run errors/e6_scalar_print.mg
+<a id="__codelineno-7-39" name="__codelineno-7-39" href="#__codelineno-7-39"></a>  | let k = 3
+<a id="__codelineno-7-40" name="__codelineno-7-40" href="#__codelineno-7-40"></a>  | print k
+<a id="__codelineno-7-41" name="__codelineno-7-41" href="#__codelineno-7-41"></a>  ----- output
+<a id="__codelineno-7-42" name="__codelineno-7-42" href="#__codelineno-7-42"></a>errors/e6_scalar_print.mg:2: error: print needs a matrix; a scalar has no shape to print
+<a id="__codelineno-7-43" name="__codelineno-7-43" href="#__codelineno-7-43"></a>  ----- exit status 1
+<a id="__codelineno-7-44" name="__codelineno-7-44" href="#__codelineno-7-44"></a>
+<a id="__codelineno-7-45" name="__codelineno-7-45" href="#__codelineno-7-45"></a>################ mgc run errors/e7_param_shape.mg
+<a id="__codelineno-7-46" name="__codelineno-7-46" href="#__codelineno-7-46"></a>  | def f(a: tensor[2x2]) = a
+<a id="__codelineno-7-47" name="__codelineno-7-47" href="#__codelineno-7-47"></a>  | print f([[1, 2, 3]])
+<a id="__codelineno-7-48" name="__codelineno-7-48" href="#__codelineno-7-48"></a>  ----- output
+<a id="__codelineno-7-49" name="__codelineno-7-49" href="#__codelineno-7-49"></a>errors/e7_param_shape.mg:2: error: argument shape 1x3 does not fit parameter 2x2
+<a id="__codelineno-7-50" name="__codelineno-7-50" href="#__codelineno-7-50"></a>  ----- exit status 1
+<a id="__codelineno-7-51" name="__codelineno-7-51" href="#__codelineno-7-51"></a>
+<a id="__codelineno-7-52" name="__codelineno-7-52" href="#__codelineno-7-52"></a>################ mgc run errors/e8_zero_dimension.mg
+<a id="__codelineno-7-53" name="__codelineno-7-53" href="#__codelineno-7-53"></a>  | def f(a: tensor[0x3]) = a
+<a id="__codelineno-7-54" name="__codelineno-7-54" href="#__codelineno-7-54"></a>  ----- output
+<a id="__codelineno-7-55" name="__codelineno-7-55" href="#__codelineno-7-55"></a>errors/e8_zero_dimension.mg:1: error: bad dimension &#39;0&#39;: use a positive integer or &#39;?&#39;
+<a id="__codelineno-7-56" name="__codelineno-7-56" href="#__codelineno-7-56"></a>  ----- exit status 1
+<a id="__codelineno-7-57" name="__codelineno-7-57" href="#__codelineno-7-57"></a>
+<a id="__codelineno-7-58" name="__codelineno-7-58" href="#__codelineno-7-58"></a>################ mgc run errors/e9_let_in_def.mg
+<a id="__codelineno-7-59" name="__codelineno-7-59" href="#__codelineno-7-59"></a>  | def f(a: tensor[1x1]) =
+<a id="__codelineno-7-60" name="__codelineno-7-60" href="#__codelineno-7-60"></a>  |   let b = a
+<a id="__codelineno-7-61" name="__codelineno-7-61" href="#__codelineno-7-61"></a>  ----- output
+<a id="__codelineno-7-62" name="__codelineno-7-62" href="#__codelineno-7-62"></a>errors/e9_let_in_def.mg:1: error: expected an expression, found the end of the line
+<a id="__codelineno-7-63" name="__codelineno-7-63" href="#__codelineno-7-63"></a>  ----- exit status 1
+</code></pre></div>
+<p>In order: a line that starts with something other than <code>let</code>, <code>print</code> or <code>def</code>; a name that was never declared; adding a 1x2 to a 2x1; calling a function before it is defined; giving a function the wrong number of arguments; trying to print a scalar; passing a matrix whose shape does not fit the parameter; a zero-size dimension; and a <code>def</code> with no expression after the <code>=</code>. Every one of these exits with status 1 and produces no program.</p>
+<p>What the compiler <strong>cannot</strong> check is a mismatch between two <code>?</code> dimensions, since the sizes do not exist until the program runs. That check happens at run time (Chapter 14); see Chapter 20's example 4 and Chapter 21's example 12.</p>
+<h2 id="the-full-grammar">The full grammar<a class="headerlink" href="#the-full-grammar" title="Permanent link">&para;</a></h2>
+<p>The language's complete grammar is in the header comment of the front end's source, shown here exactly as in <code>mgfront.py</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>&quot;&quot;&quot;mgfront: the Mountain Goat surface-syntax front end. Reads .mg source, writes MLIR (mg dialect) to stdout.
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>Operators (Chapter 21): + - * / are elementwise on matrices (&#39;*&#39; is the Hadamard product) and also combine a matrix
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>with a scalar; &#39;@&#39; is the matrix product; unary &#39;-&#39; negates. Scalars are numbers known at compile time.
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>Grammar (one statement per line, &#39;#&#39; starts a comment):
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>  program := (def | stmt)*
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>  def     := &#39;def&#39; NAME &#39;(&#39; [NAME &#39;:&#39; type (&#39;,&#39; NAME &#39;:&#39; type)*] &#39;)&#39; &#39;=&#39; expr      -- a function of tensors
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>  stmt    := &#39;let&#39; NAME &#39;=&#39; expr | &#39;print&#39; expr
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>  type    := &#39;tensor&#39; &#39;[&#39; dim &#39;x&#39; dim &#39;]&#39;      dim := INT | &#39;?&#39;
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>  expr    := product ((&#39;+&#39;|&#39;-&#39;) product)*
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>  product := unary ((&#39;*&#39;|&#39;/&#39;|&#39;@&#39;) unary)*     unary := &#39;-&#39; unary | term
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>  term    := NAME | NUMBER | matrix | &#39;transpose&#39; &#39;(&#39; expr &#39;)&#39; | NAME &#39;(&#39; expr (&#39;,&#39; expr)* &#39;)&#39; | &#39;(&#39; expr &#39;)&#39;
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>  matrix  := &#39;[&#39; row (&#39;,&#39; row)* &#39;]&#39;   row := &#39;[&#39; NUM (&#39;,&#39; NUM)* &#39;]&#39;
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>Every value is a rank-2 f64 tensor. A dimension is an int or None (dynamic, written &#39;?&#39;).
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>&quot;&quot;&quot;
+</code></pre></div>
+<p>(<code>INT</code>, <code>NUM</code> and <code>NAME</code> are the usual: digits, numbers, and letters-digits-underscores starting with a letter or underscore.)</p>
+<h2 id="what-the-language-does-not-have">What the language does not have<a class="headerlink" href="#what-the-language-does-not-have" title="Permanent link">&para;</a></h2>
+<p>No integers, strings or booleans; no loops, conditionals or recursion; no indexing into a matrix or reading a single element; no matrices of other ranks (no vectors that are one-dimensional, no three-dimensional arrays); no broadcasting (you cannot add a row to every row of a matrix); no variables that change; no input from files or the keyboard; no <code>let</code> or <code>print</code> inside a function; no way to import another file. These are not oversights to apologize for: the language is the size of the compiler this book builds, and every feature has to be lowered, verified and tested.</p>
+<h2 id="where-each-construct-goes-in-the-compiler">Where each construct goes in the compiler<a class="headerlink" href="#where-each-construct-goes-in-the-compiler" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>You write</th>
+<th>The front end emits (Chapter 3, 20, 21)</th>
+<th>Lowered by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>[[1, 2], [3, 4]]</code></td>
+<td><code>mg.constant</code></td>
+<td>Chapter 4</td>
+</tr>
+<tr>
+<td><code>a + b</code>, <code>a - b</code>, <code>a * b</code>, <code>a / b</code></td>
+<td><code>mg.add</code>, <code>mg.sub</code>, <code>mg.mul</code>, <code>mg.div</code></td>
+<td>Chapters 4, 14, 21</td>
+</tr>
+<tr>
+<td><code>a @ b</code></td>
+<td><code>mg.matmul</code></td>
+<td>Chapter 21</td>
+</tr>
+<tr>
+<td><code>transpose(a)</code></td>
+<td><code>mg.transpose</code></td>
+<td>Chapter 4</td>
+</tr>
+<tr>
+<td><code>-a</code></td>
+<td><code>mg.neg</code></td>
+<td>Chapter 21</td>
+</tr>
+<tr>
+<td><code>a + 3</code>, <code>10 - a</code>, ...</td>
+<td><code>mg.scalar</code></td>
+<td>Chapter 21</td>
+</tr>
+<tr>
+<td><code>print a</code></td>
+<td><code>mg.print</code></td>
+<td>Chapter 13</td>
+</tr>
+<tr>
+<td><code>def f(...) = ...</code></td>
+<td>a <code>func.func</code></td>
+<td>Chapters 4 and 5</td>
+</tr>
+<tr>
+<td>a call <code>f(x)</code></td>
+<td><code>func.call</code>, with a <code>tensor.cast</code> if a static shape meets a <code>?</code></td>
+<td>Chapter 20</td>
+</tr>
+<tr>
+<td>a <code>?</code> dimension</td>
+<td>a <code>?</code> in the tensor type; a run-time <code>cf.assert</code></td>
+<td>Chapters 13, 14, 19</td>
+</tr>
+</tbody>
+</table>
+<h2 id="quick-reference">Quick reference<a class="headerlink" href="#quick-reference" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a># comment
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>let name = expr                       declare a matrix or scalar
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>def f(a: tensor[RxC], ...) = expr     declare a function (R, C: positive integer or ?)
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>print expr                            print a matrix
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>[[1, 2], [3, 4]]                      matrix literal      3.5  -2  1e3   scalar literal
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>+  -   elementwise            *  /   elementwise (or matrix with scalar)
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>@      matrix product         -a     negate        transpose(a)
+</code></pre></div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../../getting-started/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Getting Started">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Getting Started
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../../part1/01-why-a-multi-level-ir-at-all/" class="md-footer__link md-footer__link--next" aria-label="Next: 1. Why a Multi-Level IR at All">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                1. Why a Multi-Level IR at All
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 Oluwaseyi Awoga
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

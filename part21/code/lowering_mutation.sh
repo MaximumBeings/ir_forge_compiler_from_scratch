@@ -17,3 +17,8 @@ try "scalar op ignores reversed (10 - x computed as x - 10)" 's/Value lhs = rev 
 try "matmul skips the run-time inner-dimension check" 's/if (lt.isDynamicDim(1) || rt.isDynamicDim(0)) {/if (false) {/'
 try "mg.div lowered as a multiply"                   's/ElementwiseBinaryLowering<mg::DivOp, arith::DivFOp>/ElementwiseBinaryLowering<mg::DivOp, arith::MulFOp>/'
 try "mg.neg lowered as identity (no negation)"        's/b.create<arith::NegFOp>(l, x)/x/'
+# Added after an independent review (Chapter 21's "After the review" section):
+try "elementwise operands swapped (computes rhs OP lhs)"  's/b.create<affine::AffineStoreOp>(l, b.create<ArithOp>(l, x, y), alloc, ivs);/b.create<affine::AffineStoreOp>(l, b.create<ArithOp>(l, y, x), alloc, ivs);/'
+try "elementwise drops its run-time shape check"          '/struct ElementwiseBinaryLowering/,/^};/ s/mg::dyn::assertSameShape(rewriter, loc, lhs, rhs,/if (false) mg::dyn::assertSameShape(rewriter, loc, lhs, rhs,/'
+try "matmul takes n from the wrong operand (lhs dim 1)"  's/Value n = bound(outType.getDimSize(1), rhs, 1, Value());/Value n = bound(outType.getDimSize(1), lhs, 1, Value());/'
+

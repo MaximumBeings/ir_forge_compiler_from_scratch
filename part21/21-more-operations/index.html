@@ -1692,6 +1692,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#after-an-independent-review" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        After an independent review
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#bugs-found-while-writing-the-language-tour" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2080,6 +2091,17 @@
     <span class="md-ellipsis">
       
         Tests
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#after-an-independent-review" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        After an independent review
       
     </span>
   </a>
@@ -3263,7 +3285,7 @@
 <a id="__codelineno-20-21" name="__codelineno-20-21" href="#__codelineno-20-21"></a> [4,   1]]
 <a id="__codelineno-20-22" name="__codelineno-20-22" href="#__codelineno-20-22"></a>  ----- exit status 0
 </code></pre></div>
-<p><code>a @ I = a</code>, <code>a - a = 0</code>, <code>a / a = 1</code> (wherever <code>a</code> is not zero) and <code>-(-a) = a</code>. When you add an operation to a compiler, checking such identities is a cheap, independent way to catch a lowering bug, because they hold regardless of what the numbers are.</p>
+<p><code>a @ I = a</code>, <code>a - a = 0</code>, <code>a / a = 1</code> (wherever <code>a</code> is not zero) and <code>-(-a) = a</code>. When you add an operation to a compiler, checking such identities is a cheap, independent way to catch a lowering bug, because they hold regardless of what the numbers are. They have blind spots, though: <code>-(-a) = a</code> cannot tell a real negation from one that does nothing (two no-ops also give back <code>a</code>), so negation gets its own direct checks (<code>16_negate.mg</code>, below).</p>
 <h3 id="10-one-compiled-matmul-many-shapes">10. One compiled matmul, many shapes<a class="headerlink" href="#10-one-compiled-matmul-many-shapes" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>################ ./mgc run examples/10_dynamic_matmul.mg
 <a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>  | # One compiled matmul for any compatible sizes. The inner dimensions are checked at run time.
@@ -3405,50 +3427,63 @@
 <a id="__codelineno-26-7" name="__codelineno-26-7" href="#__codelineno-26-7"></a>def gram(a: tensor[?x?]) = a @ transpose(a)
 </code></pre></div>
 <p>A C++ program calls them and, for <code>matmul</code>, <strong>compares the result against a plain C++ triple loop</strong> on two inputs: the 2x3 by 3x2 example, and a 7x5 by 5x9 pair of generated matrices (an independent check, since the reference is not compiled by Mountain Goat):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="c1">// A C++ program calling the Chapter 21 operations. Compare every result against plain C++ loops.</span>
-<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;cmath&gt;</span>
-<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;cstdio&gt;</span>
-<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;ops.h&quot;</span>
-<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a>
-<a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a><span class="k">static</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="nf">same</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">mg</span><span class="o">::</span><span class="n">Matrix</span><span class="w"> </span><span class="o">&amp;</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">mg</span><span class="o">::</span><span class="n">Matrix</span><span class="w"> </span><span class="o">&amp;</span><span class="n">y</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">x</span><span class="p">.</span><span class="n">rows</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">y</span><span class="p">.</span><span class="n">rows</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">x</span><span class="p">.</span><span class="n">cols</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">y</span><span class="p">.</span><span class="n">cols</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
-<a id="__codelineno-27-8" name="__codelineno-27-8" href="#__codelineno-27-8"></a><span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">x</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="n">size</span><span class="p">();</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">fabs</span><span class="p">(</span><span class="n">x</span><span class="p">.</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">y</span><span class="p">.</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">1e-12</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
-<a id="__codelineno-27-9" name="__codelineno-27-9" href="#__codelineno-27-9"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
-<a id="__codelineno-27-10" name="__codelineno-27-10" href="#__codelineno-27-10"></a><span class="p">}</span>
-<a id="__codelineno-27-11" name="__codelineno-27-11" href="#__codelineno-27-11"></a><span class="k">static</span><span class="w"> </span><span class="n">mg</span><span class="o">::</span><span class="n">Matrix</span><span class="w"> </span><span class="nf">ref_matmul</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">mg</span><span class="o">::</span><span class="n">Matrix</span><span class="w"> </span><span class="o">&amp;</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">mg</span><span class="o">::</span><span class="n">Matrix</span><span class="w"> </span><span class="o">&amp;</span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-27-12" name="__codelineno-27-12" href="#__codelineno-27-12"></a><span class="w">  </span><span class="n">mg</span><span class="o">::</span><span class="n">Matrix</span><span class="w"> </span><span class="n">c</span><span class="p">(</span><span class="n">a</span><span class="p">.</span><span class="n">rows</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">.</span><span class="n">cols</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="n">a</span><span class="p">.</span><span class="n">rows</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">b</span><span class="p">.</span><span class="n">cols</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">));</span>
-<a id="__codelineno-27-13" name="__codelineno-27-13" href="#__codelineno-27-13"></a><span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int64_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">rows</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span>
-<a id="__codelineno-27-14" name="__codelineno-27-14" href="#__codelineno-27-14"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int64_t</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">b</span><span class="p">.</span><span class="n">cols</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="o">++</span><span class="p">)</span>
-<a id="__codelineno-27-15" name="__codelineno-27-15" href="#__codelineno-27-15"></a><span class="w">      </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int64_t</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">cols</span><span class="p">;</span><span class="w"> </span><span class="n">k</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="n">c</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">j</span><span class="p">)</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">a</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">b</span><span class="p">(</span><span class="n">k</span><span class="p">,</span><span class="w"> </span><span class="n">j</span><span class="p">);</span>
-<a id="__codelineno-27-16" name="__codelineno-27-16" href="#__codelineno-27-16"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">c</span><span class="p">;</span>
-<a id="__codelineno-27-17" name="__codelineno-27-17" href="#__codelineno-27-17"></a><span class="p">}</span>
-<a id="__codelineno-27-18" name="__codelineno-27-18" href="#__codelineno-27-18"></a><span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">show</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">mg</span><span class="o">::</span><span class="n">Matrix</span><span class="w"> </span><span class="o">&amp;</span><span class="n">m</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-27-19" name="__codelineno-27-19" href="#__codelineno-27-19"></a><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;%s (%ldx%ld):</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">long</span><span class="p">)</span><span class="n">m</span><span class="p">.</span><span class="n">rows</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">long</span><span class="p">)</span><span class="n">m</span><span class="p">.</span><span class="n">cols</span><span class="p">);</span>
-<a id="__codelineno-27-20" name="__codelineno-27-20" href="#__codelineno-27-20"></a><span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int64_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">m</span><span class="p">.</span><span class="n">rows</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int64_t</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">m</span><span class="p">.</span><span class="n">cols</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">printf</span><span class="p">(</span><span class="s">&quot; %g&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">m</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">j</span><span class="p">));</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-27-21" name="__codelineno-27-21" href="#__codelineno-27-21"></a><span class="p">}</span>
-<a id="__codelineno-27-22" name="__codelineno-27-22" href="#__codelineno-27-22"></a>
-<a id="__codelineno-27-23" name="__codelineno-27-23" href="#__codelineno-27-23"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">**</span><span class="n">argv</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-27-24" name="__codelineno-27-24" href="#__codelineno-27-24"></a><span class="w">  </span><span class="n">mg</span><span class="o">::</span><span class="n">Matrix</span><span class="w"> </span><span class="n">a</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="mi">6</span><span class="p">}),</span><span class="w"> </span><span class="n">b</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="mi">7</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="mi">9</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="mi">11</span><span class="p">,</span><span class="w"> </span><span class="mi">12</span><span class="p">}),</span><span class="w"> </span><span class="n">c</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="mi">6</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">});</span>
-<a id="__codelineno-27-25" name="__codelineno-27-25" href="#__codelineno-27-25"></a><span class="w">  </span><span class="n">show</span><span class="p">(</span><span class="s">&quot;sub(a, c)&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">mg</span><span class="o">::</span><span class="n">sub</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="p">));</span>
-<a id="__codelineno-27-26" name="__codelineno-27-26" href="#__codelineno-27-26"></a><span class="w">  </span><span class="n">show</span><span class="p">(</span><span class="s">&quot;hadamard(a, c)&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">mg</span><span class="o">::</span><span class="n">hadamard</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="p">));</span>
-<a id="__codelineno-27-27" name="__codelineno-27-27" href="#__codelineno-27-27"></a><span class="w">  </span><span class="n">show</span><span class="p">(</span><span class="s">&quot;divide(a, c)&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">mg</span><span class="o">::</span><span class="n">divide</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="p">));</span>
-<a id="__codelineno-27-28" name="__codelineno-27-28" href="#__codelineno-27-28"></a><span class="w">  </span><span class="n">show</span><span class="p">(</span><span class="s">&quot;matmul(a, b)&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">mg</span><span class="o">::</span><span class="n">matmul</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">));</span>
-<a id="__codelineno-27-29" name="__codelineno-27-29" href="#__codelineno-27-29"></a><span class="w">  </span><span class="n">show</span><span class="p">(</span><span class="s">&quot;gram(a)&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">mg</span><span class="o">::</span><span class="n">gram</span><span class="p">(</span><span class="n">a</span><span class="p">));</span>
-<a id="__codelineno-27-30" name="__codelineno-27-30" href="#__codelineno-27-30"></a><span class="w">  </span><span class="n">show</span><span class="p">(</span><span class="s">&quot;affine(a)&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">mg</span><span class="o">::</span><span class="n">affine</span><span class="p">(</span><span class="n">a</span><span class="p">));</span>
-<a id="__codelineno-27-31" name="__codelineno-27-31" href="#__codelineno-27-31"></a><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;matmul matches a plain C++ triple loop: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">same</span><span class="p">(</span><span class="n">mg</span><span class="o">::</span><span class="n">matmul</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">),</span><span class="w"> </span><span class="n">ref_matmul</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">))</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;yes&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;NO&quot;</span><span class="p">);</span>
-<a id="__codelineno-27-32" name="__codelineno-27-32" href="#__codelineno-27-32"></a><span class="w">  </span><span class="c1">// A bigger one, to compare against the reference on more than a hand-sized case.</span>
-<a id="__codelineno-27-33" name="__codelineno-27-33" href="#__codelineno-27-33"></a><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="w"> </span><span class="n">pd</span><span class="p">(</span><span class="mi">35</span><span class="p">),</span><span class="w"> </span><span class="n">qd</span><span class="p">(</span><span class="mi">45</span><span class="p">);</span>
-<a id="__codelineno-27-34" name="__codelineno-27-34" href="#__codelineno-27-34"></a><span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">35</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="n">pd</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">double</span><span class="p">)((</span><span class="n">i</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">7</span><span class="p">)</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mi">11</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span>
-<a id="__codelineno-27-35" name="__codelineno-27-35" href="#__codelineno-27-35"></a><span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">45</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="n">qd</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">double</span><span class="p">)((</span><span class="n">i</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">5</span><span class="p">)</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mi">13</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">6</span><span class="p">;</span>
-<a id="__codelineno-27-36" name="__codelineno-27-36" href="#__codelineno-27-36"></a><span class="w">  </span><span class="n">mg</span><span class="o">::</span><span class="n">Matrix</span><span class="w"> </span><span class="n">p</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="n">pd</span><span class="p">),</span><span class="w"> </span><span class="n">q</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="mi">9</span><span class="p">,</span><span class="w"> </span><span class="n">qd</span><span class="p">);</span>
-<a id="__codelineno-27-37" name="__codelineno-27-37" href="#__codelineno-27-37"></a><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;7x5 @ 5x9 matches the plain loop: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">same</span><span class="p">(</span><span class="n">mg</span><span class="o">::</span><span class="n">matmul</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="n">q</span><span class="p">),</span><span class="w"> </span><span class="n">ref_matmul</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="n">q</span><span class="p">))</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;yes&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;NO&quot;</span><span class="p">);</span>
-<a id="__codelineno-27-38" name="__codelineno-27-38" href="#__codelineno-27-38"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">argc</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-27-39" name="__codelineno-27-39" href="#__codelineno-27-39"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;about to matmul 2x3 by 2x3...</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">fflush</span><span class="p">(</span><span class="n">stdout</span><span class="p">);</span>
-<a id="__codelineno-27-40" name="__codelineno-27-40" href="#__codelineno-27-40"></a><span class="w">    </span><span class="n">mg</span><span class="o">::</span><span class="n">matmul</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="p">);</span>
-<a id="__codelineno-27-41" name="__codelineno-27-41" href="#__codelineno-27-41"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;not reached</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
-<a id="__codelineno-27-42" name="__codelineno-27-42" href="#__codelineno-27-42"></a><span class="w">  </span><span class="p">}</span>
-<a id="__codelineno-27-43" name="__codelineno-27-43" href="#__codelineno-27-43"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
-<a id="__codelineno-27-44" name="__codelineno-27-44" href="#__codelineno-27-44"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="c1">// A C++ program calling the Chapter 21 operations. The elementwise results are checked by the test against exact expected</span>
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="c1">// values; matmul is also compared against a plain C++ triple loop, including after the heap has been deliberately dirtied.</span>
+<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;cmath&gt;</span>
+<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;cstdio&gt;</span>
+<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;cstdlib&gt;</span>
+<a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;ops.h&quot;</span>
+<a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a>
+<a id="__codelineno-27-8" name="__codelineno-27-8" href="#__codelineno-27-8"></a><span class="k">static</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="nf">same</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">mg</span><span class="o">::</span><span class="n">Matrix</span><span class="w"> </span><span class="o">&amp;</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">mg</span><span class="o">::</span><span class="n">Matrix</span><span class="w"> </span><span class="o">&amp;</span><span class="n">y</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-27-9" name="__codelineno-27-9" href="#__codelineno-27-9"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">x</span><span class="p">.</span><span class="n">rows</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">y</span><span class="p">.</span><span class="n">rows</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">x</span><span class="p">.</span><span class="n">cols</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">y</span><span class="p">.</span><span class="n">cols</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+<a id="__codelineno-27-10" name="__codelineno-27-10" href="#__codelineno-27-10"></a><span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">x</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="n">size</span><span class="p">();</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">fabs</span><span class="p">(</span><span class="n">x</span><span class="p">.</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">y</span><span class="p">.</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">1e-12</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+<a id="__codelineno-27-11" name="__codelineno-27-11" href="#__codelineno-27-11"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
+<a id="__codelineno-27-12" name="__codelineno-27-12" href="#__codelineno-27-12"></a><span class="p">}</span>
+<a id="__codelineno-27-13" name="__codelineno-27-13" href="#__codelineno-27-13"></a><span class="k">static</span><span class="w"> </span><span class="n">mg</span><span class="o">::</span><span class="n">Matrix</span><span class="w"> </span><span class="nf">ref_matmul</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">mg</span><span class="o">::</span><span class="n">Matrix</span><span class="w"> </span><span class="o">&amp;</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">mg</span><span class="o">::</span><span class="n">Matrix</span><span class="w"> </span><span class="o">&amp;</span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-27-14" name="__codelineno-27-14" href="#__codelineno-27-14"></a><span class="w">  </span><span class="n">mg</span><span class="o">::</span><span class="n">Matrix</span><span class="w"> </span><span class="n">c</span><span class="p">(</span><span class="n">a</span><span class="p">.</span><span class="n">rows</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">.</span><span class="n">cols</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="n">a</span><span class="p">.</span><span class="n">rows</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">b</span><span class="p">.</span><span class="n">cols</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">));</span>
+<a id="__codelineno-27-15" name="__codelineno-27-15" href="#__codelineno-27-15"></a><span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int64_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">rows</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span>
+<a id="__codelineno-27-16" name="__codelineno-27-16" href="#__codelineno-27-16"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int64_t</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">b</span><span class="p">.</span><span class="n">cols</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="o">++</span><span class="p">)</span>
+<a id="__codelineno-27-17" name="__codelineno-27-17" href="#__codelineno-27-17"></a><span class="w">      </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int64_t</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">cols</span><span class="p">;</span><span class="w"> </span><span class="n">k</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="n">c</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">j</span><span class="p">)</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">a</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">b</span><span class="p">(</span><span class="n">k</span><span class="p">,</span><span class="w"> </span><span class="n">j</span><span class="p">);</span>
+<a id="__codelineno-27-18" name="__codelineno-27-18" href="#__codelineno-27-18"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">c</span><span class="p">;</span>
+<a id="__codelineno-27-19" name="__codelineno-27-19" href="#__codelineno-27-19"></a><span class="p">}</span>
+<a id="__codelineno-27-20" name="__codelineno-27-20" href="#__codelineno-27-20"></a><span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">show</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">mg</span><span class="o">::</span><span class="n">Matrix</span><span class="w"> </span><span class="o">&amp;</span><span class="n">m</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-27-21" name="__codelineno-27-21" href="#__codelineno-27-21"></a><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;%s (%ldx%ld):</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">long</span><span class="p">)</span><span class="n">m</span><span class="p">.</span><span class="n">rows</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">long</span><span class="p">)</span><span class="n">m</span><span class="p">.</span><span class="n">cols</span><span class="p">);</span>
+<a id="__codelineno-27-22" name="__codelineno-27-22" href="#__codelineno-27-22"></a><span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int64_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">m</span><span class="p">.</span><span class="n">rows</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int64_t</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">m</span><span class="p">.</span><span class="n">cols</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">printf</span><span class="p">(</span><span class="s">&quot; %g&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">m</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">j</span><span class="p">));</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-27-23" name="__codelineno-27-23" href="#__codelineno-27-23"></a><span class="p">}</span>
+<a id="__codelineno-27-24" name="__codelineno-27-24" href="#__codelineno-27-24"></a>
+<a id="__codelineno-27-25" name="__codelineno-27-25" href="#__codelineno-27-25"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">**</span><span class="n">argv</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-27-26" name="__codelineno-27-26" href="#__codelineno-27-26"></a><span class="w">  </span><span class="n">mg</span><span class="o">::</span><span class="n">Matrix</span><span class="w"> </span><span class="n">a</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="mi">6</span><span class="p">}),</span><span class="w"> </span><span class="n">b</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="mi">7</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="mi">9</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="mi">11</span><span class="p">,</span><span class="w"> </span><span class="mi">12</span><span class="p">}),</span><span class="w"> </span><span class="n">c</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="mi">6</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">});</span>
+<a id="__codelineno-27-27" name="__codelineno-27-27" href="#__codelineno-27-27"></a><span class="w">  </span><span class="n">show</span><span class="p">(</span><span class="s">&quot;sub(a, c)&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">mg</span><span class="o">::</span><span class="n">sub</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="p">));</span>
+<a id="__codelineno-27-28" name="__codelineno-27-28" href="#__codelineno-27-28"></a><span class="w">  </span><span class="n">show</span><span class="p">(</span><span class="s">&quot;hadamard(a, c)&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">mg</span><span class="o">::</span><span class="n">hadamard</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="p">));</span>
+<a id="__codelineno-27-29" name="__codelineno-27-29" href="#__codelineno-27-29"></a><span class="w">  </span><span class="n">show</span><span class="p">(</span><span class="s">&quot;divide(a, c)&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">mg</span><span class="o">::</span><span class="n">divide</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="p">));</span>
+<a id="__codelineno-27-30" name="__codelineno-27-30" href="#__codelineno-27-30"></a><span class="w">  </span><span class="n">show</span><span class="p">(</span><span class="s">&quot;matmul(a, b)&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">mg</span><span class="o">::</span><span class="n">matmul</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">));</span>
+<a id="__codelineno-27-31" name="__codelineno-27-31" href="#__codelineno-27-31"></a><span class="w">  </span><span class="n">show</span><span class="p">(</span><span class="s">&quot;gram(a)&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">mg</span><span class="o">::</span><span class="n">gram</span><span class="p">(</span><span class="n">a</span><span class="p">));</span>
+<a id="__codelineno-27-32" name="__codelineno-27-32" href="#__codelineno-27-32"></a><span class="w">  </span><span class="n">show</span><span class="p">(</span><span class="s">&quot;affine(a)&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">mg</span><span class="o">::</span><span class="n">affine</span><span class="p">(</span><span class="n">a</span><span class="p">));</span>
+<a id="__codelineno-27-33" name="__codelineno-27-33" href="#__codelineno-27-33"></a><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;matmul matches a plain C++ triple loop: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">same</span><span class="p">(</span><span class="n">mg</span><span class="o">::</span><span class="n">matmul</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">),</span><span class="w"> </span><span class="n">ref_matmul</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">))</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;yes&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;NO&quot;</span><span class="p">);</span>
+<a id="__codelineno-27-34" name="__codelineno-27-34" href="#__codelineno-27-34"></a><span class="w">  </span><span class="c1">// Dirty the heap first: allocate a block, fill it with 1000s, free it. The compiled code never zeroes memory it did not</span>
+<a id="__codelineno-27-35" name="__codelineno-27-35" href="#__codelineno-27-35"></a><span class="w">  </span><span class="c1">// fill itself, so a matmul that forgot to zero its accumulators would add into these 1000s and print 1015, 1022 instead of</span>
+<a id="__codelineno-27-36" name="__codelineno-27-36" href="#__codelineno-27-36"></a><span class="w">  </span><span class="c1">// 15, 22. (Without this, a fresh heap is all zeros and the bug hides.)</span>
+<a id="__codelineno-27-37" name="__codelineno-27-37" href="#__codelineno-27-37"></a><span class="w">  </span><span class="p">{</span>
+<a id="__codelineno-27-38" name="__codelineno-27-38" href="#__codelineno-27-38"></a><span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">junk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="n">std</span><span class="o">::</span><span class="n">malloc</span><span class="p">(</span><span class="mi">4</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="kt">double</span><span class="p">));</span>
+<a id="__codelineno-27-39" name="__codelineno-27-39" href="#__codelineno-27-39"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">4</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="n">junk</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1000.0</span><span class="p">;</span>
+<a id="__codelineno-27-40" name="__codelineno-27-40" href="#__codelineno-27-40"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">free</span><span class="p">(</span><span class="n">junk</span><span class="p">);</span>
+<a id="__codelineno-27-41" name="__codelineno-27-41" href="#__codelineno-27-41"></a><span class="w">    </span><span class="n">mg</span><span class="o">::</span><span class="n">Matrix</span><span class="w"> </span><span class="n">sq</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">});</span>
+<a id="__codelineno-27-42" name="__codelineno-27-42" href="#__codelineno-27-42"></a><span class="w">    </span><span class="n">mg</span><span class="o">::</span><span class="n">Matrix</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mg</span><span class="o">::</span><span class="n">matmul</span><span class="p">(</span><span class="n">sq</span><span class="p">,</span><span class="w"> </span><span class="n">sq</span><span class="p">);</span>
+<a id="__codelineno-27-43" name="__codelineno-27-43" href="#__codelineno-27-43"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;dirty-heap matmul: %g %g %g %g</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">data</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">data</span><span class="p">[</span><span class="mi">3</span><span class="p">]);</span>
+<a id="__codelineno-27-44" name="__codelineno-27-44" href="#__codelineno-27-44"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-27-45" name="__codelineno-27-45" href="#__codelineno-27-45"></a><span class="w">  </span><span class="c1">// A bigger one, to compare against the reference on more than a hand-sized case.</span>
+<a id="__codelineno-27-46" name="__codelineno-27-46" href="#__codelineno-27-46"></a><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="w"> </span><span class="n">pd</span><span class="p">(</span><span class="mi">35</span><span class="p">),</span><span class="w"> </span><span class="n">qd</span><span class="p">(</span><span class="mi">45</span><span class="p">);</span>
+<a id="__codelineno-27-47" name="__codelineno-27-47" href="#__codelineno-27-47"></a><span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">35</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="n">pd</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">double</span><span class="p">)((</span><span class="n">i</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">7</span><span class="p">)</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mi">11</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span>
+<a id="__codelineno-27-48" name="__codelineno-27-48" href="#__codelineno-27-48"></a><span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">45</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="n">qd</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">double</span><span class="p">)((</span><span class="n">i</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">5</span><span class="p">)</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mi">13</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">6</span><span class="p">;</span>
+<a id="__codelineno-27-49" name="__codelineno-27-49" href="#__codelineno-27-49"></a><span class="w">  </span><span class="n">mg</span><span class="o">::</span><span class="n">Matrix</span><span class="w"> </span><span class="n">p</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="n">pd</span><span class="p">),</span><span class="w"> </span><span class="n">q</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="mi">9</span><span class="p">,</span><span class="w"> </span><span class="n">qd</span><span class="p">);</span>
+<a id="__codelineno-27-50" name="__codelineno-27-50" href="#__codelineno-27-50"></a><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;7x5 @ 5x9 matches the plain loop: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">same</span><span class="p">(</span><span class="n">mg</span><span class="o">::</span><span class="n">matmul</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="n">q</span><span class="p">),</span><span class="w"> </span><span class="n">ref_matmul</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="n">q</span><span class="p">))</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;yes&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;NO&quot;</span><span class="p">);</span>
+<a id="__codelineno-27-51" name="__codelineno-27-51" href="#__codelineno-27-51"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">argc</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-27-52" name="__codelineno-27-52" href="#__codelineno-27-52"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;about to matmul 2x3 by 2x3...</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">fflush</span><span class="p">(</span><span class="n">stdout</span><span class="p">);</span>
+<a id="__codelineno-27-53" name="__codelineno-27-53" href="#__codelineno-27-53"></a><span class="w">    </span><span class="n">mg</span><span class="o">::</span><span class="n">matmul</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="p">);</span>
+<a id="__codelineno-27-54" name="__codelineno-27-54" href="#__codelineno-27-54"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;not reached</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-27-55" name="__codelineno-27-55" href="#__codelineno-27-55"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-27-56" name="__codelineno-27-56" href="#__codelineno-27-56"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-27-57" name="__codelineno-27-57" href="#__codelineno-27-57"></a><span class="p">}</span>
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="ch">#!/bin/sh</span>
 <a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="c1"># Compile ops.mg with mgc, then build and run the C++ program against it. Output: run_out.txt</span>
@@ -3480,36 +3515,38 @@
 <a id="__codelineno-29-19" name="__codelineno-29-19" href="#__codelineno-29-19"></a> 3 5 7
 <a id="__codelineno-29-20" name="__codelineno-29-20" href="#__codelineno-29-20"></a> 9 11 13
 <a id="__codelineno-29-21" name="__codelineno-29-21" href="#__codelineno-29-21"></a>matmul matches a plain C++ triple loop: yes
-<a id="__codelineno-29-22" name="__codelineno-29-22" href="#__codelineno-29-22"></a>7x5 @ 5x9 matches the plain loop: yes
-<a id="__codelineno-29-23" name="__codelineno-29-23" href="#__codelineno-29-23"></a>--- ./app mismatch   (exit status follows)
-<a id="__codelineno-29-24" name="__codelineno-29-24" href="#__codelineno-29-24"></a>sub(a, c) (2x3):
-<a id="__codelineno-29-25" name="__codelineno-29-25" href="#__codelineno-29-25"></a> -5 -3 -1
-<a id="__codelineno-29-26" name="__codelineno-29-26" href="#__codelineno-29-26"></a> 1 3 5
-<a id="__codelineno-29-27" name="__codelineno-29-27" href="#__codelineno-29-27"></a>hadamard(a, c) (2x3):
-<a id="__codelineno-29-28" name="__codelineno-29-28" href="#__codelineno-29-28"></a> 6 10 12
-<a id="__codelineno-29-29" name="__codelineno-29-29" href="#__codelineno-29-29"></a> 12 10 6
-<a id="__codelineno-29-30" name="__codelineno-29-30" href="#__codelineno-29-30"></a>divide(a, c) (2x3):
-<a id="__codelineno-29-31" name="__codelineno-29-31" href="#__codelineno-29-31"></a> 0.166667 0.4 0.75
-<a id="__codelineno-29-32" name="__codelineno-29-32" href="#__codelineno-29-32"></a> 1.33333 2.5 6
-<a id="__codelineno-29-33" name="__codelineno-29-33" href="#__codelineno-29-33"></a>matmul(a, b) (2x2):
-<a id="__codelineno-29-34" name="__codelineno-29-34" href="#__codelineno-29-34"></a> 58 64
-<a id="__codelineno-29-35" name="__codelineno-29-35" href="#__codelineno-29-35"></a> 139 154
-<a id="__codelineno-29-36" name="__codelineno-29-36" href="#__codelineno-29-36"></a>gram(a) (2x2):
-<a id="__codelineno-29-37" name="__codelineno-29-37" href="#__codelineno-29-37"></a> 14 32
-<a id="__codelineno-29-38" name="__codelineno-29-38" href="#__codelineno-29-38"></a> 32 77
-<a id="__codelineno-29-39" name="__codelineno-29-39" href="#__codelineno-29-39"></a>affine(a) (2x3):
-<a id="__codelineno-29-40" name="__codelineno-29-40" href="#__codelineno-29-40"></a> 3 5 7
-<a id="__codelineno-29-41" name="__codelineno-29-41" href="#__codelineno-29-41"></a> 9 11 13
-<a id="__codelineno-29-42" name="__codelineno-29-42" href="#__codelineno-29-42"></a>matmul matches a plain C++ triple loop: yes
-<a id="__codelineno-29-43" name="__codelineno-29-43" href="#__codelineno-29-43"></a>7x5 @ 5x9 matches the plain loop: yes
-<a id="__codelineno-29-44" name="__codelineno-29-44" href="#__codelineno-29-44"></a>about to matmul 2x3 by 2x3...
-<a id="__codelineno-29-45" name="__codelineno-29-45" href="#__codelineno-29-45"></a>mg.matmul: inner dimensions differ at runtime
-<a id="__codelineno-29-46" name="__codelineno-29-46" href="#__codelineno-29-46"></a>Aborted
-<a id="__codelineno-29-47" name="__codelineno-29-47" href="#__codelineno-29-47"></a>exit=134
+<a id="__codelineno-29-22" name="__codelineno-29-22" href="#__codelineno-29-22"></a>dirty-heap matmul: 7 10 15 22
+<a id="__codelineno-29-23" name="__codelineno-29-23" href="#__codelineno-29-23"></a>7x5 @ 5x9 matches the plain loop: yes
+<a id="__codelineno-29-24" name="__codelineno-29-24" href="#__codelineno-29-24"></a>--- ./app mismatch   (exit status follows)
+<a id="__codelineno-29-25" name="__codelineno-29-25" href="#__codelineno-29-25"></a>sub(a, c) (2x3):
+<a id="__codelineno-29-26" name="__codelineno-29-26" href="#__codelineno-29-26"></a> -5 -3 -1
+<a id="__codelineno-29-27" name="__codelineno-29-27" href="#__codelineno-29-27"></a> 1 3 5
+<a id="__codelineno-29-28" name="__codelineno-29-28" href="#__codelineno-29-28"></a>hadamard(a, c) (2x3):
+<a id="__codelineno-29-29" name="__codelineno-29-29" href="#__codelineno-29-29"></a> 6 10 12
+<a id="__codelineno-29-30" name="__codelineno-29-30" href="#__codelineno-29-30"></a> 12 10 6
+<a id="__codelineno-29-31" name="__codelineno-29-31" href="#__codelineno-29-31"></a>divide(a, c) (2x3):
+<a id="__codelineno-29-32" name="__codelineno-29-32" href="#__codelineno-29-32"></a> 0.166667 0.4 0.75
+<a id="__codelineno-29-33" name="__codelineno-29-33" href="#__codelineno-29-33"></a> 1.33333 2.5 6
+<a id="__codelineno-29-34" name="__codelineno-29-34" href="#__codelineno-29-34"></a>matmul(a, b) (2x2):
+<a id="__codelineno-29-35" name="__codelineno-29-35" href="#__codelineno-29-35"></a> 58 64
+<a id="__codelineno-29-36" name="__codelineno-29-36" href="#__codelineno-29-36"></a> 139 154
+<a id="__codelineno-29-37" name="__codelineno-29-37" href="#__codelineno-29-37"></a>gram(a) (2x2):
+<a id="__codelineno-29-38" name="__codelineno-29-38" href="#__codelineno-29-38"></a> 14 32
+<a id="__codelineno-29-39" name="__codelineno-29-39" href="#__codelineno-29-39"></a> 32 77
+<a id="__codelineno-29-40" name="__codelineno-29-40" href="#__codelineno-29-40"></a>affine(a) (2x3):
+<a id="__codelineno-29-41" name="__codelineno-29-41" href="#__codelineno-29-41"></a> 3 5 7
+<a id="__codelineno-29-42" name="__codelineno-29-42" href="#__codelineno-29-42"></a> 9 11 13
+<a id="__codelineno-29-43" name="__codelineno-29-43" href="#__codelineno-29-43"></a>matmul matches a plain C++ triple loop: yes
+<a id="__codelineno-29-44" name="__codelineno-29-44" href="#__codelineno-29-44"></a>dirty-heap matmul: 7 10 15 22
+<a id="__codelineno-29-45" name="__codelineno-29-45" href="#__codelineno-29-45"></a>7x5 @ 5x9 matches the plain loop: yes
+<a id="__codelineno-29-46" name="__codelineno-29-46" href="#__codelineno-29-46"></a>about to matmul 2x3 by 2x3...
+<a id="__codelineno-29-47" name="__codelineno-29-47" href="#__codelineno-29-47"></a>mg.matmul: inner dimensions differ at runtime
+<a id="__codelineno-29-48" name="__codelineno-29-48" href="#__codelineno-29-48"></a>Aborted
+<a id="__codelineno-29-49" name="__codelineno-29-49" href="#__codelineno-29-49"></a>exit=134
 </code></pre></div>
 <p>Both comparisons print <code>yes</code>. The second run, <code>./app mismatch</code>, calls <code>matmul</code> on a 2x3 and a 2x3, and the compiled code aborts with its message, as in example 12.</p>
 <h2 id="tests">Tests<a class="headerlink" href="#tests" title="Permanent link">&para;</a></h2>
-<p>Fifteen new tests in <code>test/ops/</code>, and three more in <code>test/tour/</code> for the language tour (suite: 78). Like Chapter 20's, the program tests run the real example files rather than copies.</p>
+<p>Seventeen test files in <code>test/ops/</code> (fifteen written with the chapter and two added after the review below), and three more in <code>test/tour/</code> for the language tour. Like Chapter 20's, the program tests run the real example files rather than copies.</p>
 <table>
 <thead>
 <tr>
@@ -3576,7 +3613,15 @@
 </tr>
 <tr>
 <td><code>cpp-interop-ops</code></td>
-<td>the C++ program builds with <code>-Wall -Werror</code>, matches the plain C++ loops, and aborts with the message on mismatch</td>
+<td>the C++ program builds with <code>-Wall -Werror</code>; every function's result matches exact hand-computed values; <code>matmul</code> matches a plain C++ loop, including on a deliberately dirtied heap; and a mismatch aborts with the message</td>
+</tr>
+<tr>
+<td><code>elementwise-mismatch-aborts</code></td>
+<td>added after the review: <code>sub</code>, <code>mul</code> and <code>div</code> abort on a run-time shape mismatch, naming the operation, with empty stdout</td>
+</tr>
+<tr>
+<td><code>negate-and-dynamic-divide</code></td>
+<td>added after the review: <code>neg</code> on static and dynamic shapes; dynamic division with order-sensitive numbers</td>
 </tr>
 </tbody>
 </table>
@@ -3610,61 +3655,66 @@
 <a id="__codelineno-30-27" name="__codelineno-30-27" href="#__codelineno-30-27"></a>restore<span class="p">;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;### restored&quot;</span><span class="p">;</span><span class="w"> </span>run<span class="w"> </span><span class="s2">&quot;baseline again&quot;</span><span class="w"> </span><span class="nv">$HERE</span>/build/mg-opt
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>### baseline: Chapter 21 build
-<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a>  Passed  : 15 (19.23%)
+<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a>  Passed  : 17 (18.89%)
 <a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a>### Chapter 20 build (none of the new ops exist)
-<a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a>FAIL: ops/precedence-and-identities.mlir (1 of 15)
-<a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a>FAIL: ops/dynamic-ops.mlir (2 of 15)
-<a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a>FAIL: ops/values.mlir (3 of 15)
-<a id="__codelineno-31-7" name="__codelineno-31-7" href="#__codelineno-31-7"></a>FAIL: ops/cpp-interop-ops.mlir (4 of 15)
-<a id="__codelineno-31-8" name="__codelineno-31-8" href="#__codelineno-31-8"></a>FAIL: ops/matmul-mismatch-aborts.mlir (5 of 15)
-<a id="__codelineno-31-9" name="__codelineno-31-9" href="#__codelineno-31-9"></a>FAIL: ops/composed-programs.mlir (6 of 15)
-<a id="__codelineno-31-10" name="__codelineno-31-10" href="#__codelineno-31-10"></a>FAIL: ops/ptx-new-ops.mlir (7 of 15)
-<a id="__codelineno-31-11" name="__codelineno-31-11" href="#__codelineno-31-11"></a>FAIL: ops/matmul-lowering-structure.mlir (8 of 15)
-<a id="__codelineno-31-12" name="__codelineno-31-12" href="#__codelineno-31-12"></a>FAIL: ops/division-ieee.mlir (9 of 15)
-<a id="__codelineno-31-13" name="__codelineno-31-13" href="#__codelineno-31-13"></a>FAIL: ops/dynamic-accepted.mlir (10 of 15)
-<a id="__codelineno-31-14" name="__codelineno-31-14" href="#__codelineno-31-14"></a>FAIL: ops/scalar-bad-op.mlir (11 of 15)
-<a id="__codelineno-31-15" name="__codelineno-31-15" href="#__codelineno-31-15"></a>FAIL: ops/matmul-inner-mismatch.mlir (12 of 15)
-<a id="__codelineno-31-16" name="__codelineno-31-16" href="#__codelineno-31-16"></a>FAIL: ops/elementwise-static-mismatch.mlir (13 of 15)
-<a id="__codelineno-31-17" name="__codelineno-31-17" href="#__codelineno-31-17"></a>FAIL: ops/matmul-bad-result-shape.mlir (15 of 15)
-<a id="__codelineno-31-18" name="__codelineno-31-18" href="#__codelineno-31-18"></a>  Passed  :  1 (1.28%)
-<a id="__codelineno-31-19" name="__codelineno-31-19" href="#__codelineno-31-19"></a>  Failed  : 14 (17.95%)
-<a id="__codelineno-31-20" name="__codelineno-31-20" href="#__codelineno-31-20"></a>### front-end/driver mutation: &#39;-&#39; is emitted as mg.add
-<a id="__codelineno-31-21" name="__codelineno-31-21" href="#__codelineno-31-21"></a>FAIL: ops/ptx-new-ops.mlir (1 of 15)
-<a id="__codelineno-31-22" name="__codelineno-31-22" href="#__codelineno-31-22"></a>FAIL: ops/values.mlir (2 of 15)
-<a id="__codelineno-31-23" name="__codelineno-31-23" href="#__codelineno-31-23"></a>FAIL: ops/precedence-and-identities.mlir (4 of 15)
-<a id="__codelineno-31-24" name="__codelineno-31-24" href="#__codelineno-31-24"></a>  Passed  : 12 (15.38%)
-<a id="__codelineno-31-25" name="__codelineno-31-25" href="#__codelineno-31-25"></a>  Failed  :  3 (3.85%)
-<a id="__codelineno-31-26" name="__codelineno-31-26" href="#__codelineno-31-26"></a>### front-end/driver mutation: &#39;*&#39; and &#39;@&#39; swapped (Hadamard vs matmul)
-<a id="__codelineno-31-27" name="__codelineno-31-27" href="#__codelineno-31-27"></a>FAIL: ops/cpp-interop-ops.mlir (1 of 15)
-<a id="__codelineno-31-28" name="__codelineno-31-28" href="#__codelineno-31-28"></a>FAIL: ops/precedence-and-identities.mlir (2 of 15)
-<a id="__codelineno-31-29" name="__codelineno-31-29" href="#__codelineno-31-29"></a>FAIL: ops/dynamic-ops.mlir (3 of 15)
-<a id="__codelineno-31-30" name="__codelineno-31-30" href="#__codelineno-31-30"></a>FAIL: ops/composed-programs.mlir (4 of 15)
-<a id="__codelineno-31-31" name="__codelineno-31-31" href="#__codelineno-31-31"></a>FAIL: ops/matmul-mismatch-aborts.mlir (5 of 15)
-<a id="__codelineno-31-32" name="__codelineno-31-32" href="#__codelineno-31-32"></a>FAIL: ops/front-end-errors.mlir (6 of 15)
-<a id="__codelineno-31-33" name="__codelineno-31-33" href="#__codelineno-31-33"></a>FAIL: ops/ptx-new-ops.mlir (7 of 15)
-<a id="__codelineno-31-34" name="__codelineno-31-34" href="#__codelineno-31-34"></a>FAIL: ops/values.mlir (14 of 15)
-<a id="__codelineno-31-35" name="__codelineno-31-35" href="#__codelineno-31-35"></a>  Passed  :  7 (8.97%)
-<a id="__codelineno-31-36" name="__codelineno-31-36" href="#__codelineno-31-36"></a>  Failed  :  8 (10.26%)
-<a id="__codelineno-31-37" name="__codelineno-31-37" href="#__codelineno-31-37"></a>### front-end/driver mutation: scalar on the left is not marked reversed
-<a id="__codelineno-31-38" name="__codelineno-31-38" href="#__codelineno-31-38"></a>FAIL: ops/values.mlir (5 of 15)
-<a id="__codelineno-31-39" name="__codelineno-31-39" href="#__codelineno-31-39"></a>  Passed  : 14 (17.95%)
-<a id="__codelineno-31-40" name="__codelineno-31-40" href="#__codelineno-31-40"></a>  Failed  :  1 (1.28%)
-<a id="__codelineno-31-41" name="__codelineno-31-41" href="#__codelineno-31-41"></a>### front-end/driver mutation: &#39;*&#39; and &#39;+&#39; on the same precedence level
-<a id="__codelineno-31-42" name="__codelineno-31-42" href="#__codelineno-31-42"></a>FAIL: ops/precedence-and-identities.mlir (1 of 15)
-<a id="__codelineno-31-43" name="__codelineno-31-43" href="#__codelineno-31-43"></a>  Passed  : 14 (17.95%)
-<a id="__codelineno-31-44" name="__codelineno-31-44" href="#__codelineno-31-44"></a>  Failed  :  1 (1.28%)
-<a id="__codelineno-31-45" name="__codelineno-31-45" href="#__codelineno-31-45"></a>### front-end/driver mutation: matmul result shape is (m, k) instead of (m, n)
-<a id="__codelineno-31-46" name="__codelineno-31-46" href="#__codelineno-31-46"></a>FAIL: ops/composed-programs.mlir (1 of 15)
-<a id="__codelineno-31-47" name="__codelineno-31-47" href="#__codelineno-31-47"></a>FAIL: ops/values.mlir (4 of 15)
-<a id="__codelineno-31-48" name="__codelineno-31-48" href="#__codelineno-31-48"></a>  Passed  : 13 (16.67%)
-<a id="__codelineno-31-49" name="__codelineno-31-49" href="#__codelineno-31-49"></a>  Failed  :  2 (2.56%)
-<a id="__codelineno-31-50" name="__codelineno-31-50" href="#__codelineno-31-50"></a>### front-end/driver mutation: driver forgets convert-scf-to-cf for the GPU path
-<a id="__codelineno-31-51" name="__codelineno-31-51" href="#__codelineno-31-51"></a>FAIL: ops/ptx-new-ops.mlir (4 of 15)
-<a id="__codelineno-31-52" name="__codelineno-31-52" href="#__codelineno-31-52"></a>  Passed  : 14 (17.95%)
-<a id="__codelineno-31-53" name="__codelineno-31-53" href="#__codelineno-31-53"></a>  Failed  :  1 (1.28%)
-<a id="__codelineno-31-54" name="__codelineno-31-54" href="#__codelineno-31-54"></a>### restored
-<a id="__codelineno-31-55" name="__codelineno-31-55" href="#__codelineno-31-55"></a>### baseline again
-<a id="__codelineno-31-56" name="__codelineno-31-56" href="#__codelineno-31-56"></a>  Passed  : 15 (19.23%)
+<a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a>FAIL: ops/elementwise-mismatch-aborts.mlir (1 of 17)
+<a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a>FAIL: ops/cpp-interop-ops.mlir (2 of 17)
+<a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a>FAIL: ops/values.mlir (3 of 17)
+<a id="__codelineno-31-7" name="__codelineno-31-7" href="#__codelineno-31-7"></a>FAIL: ops/negate-and-dynamic-divide.mlir (4 of 17)
+<a id="__codelineno-31-8" name="__codelineno-31-8" href="#__codelineno-31-8"></a>FAIL: ops/composed-programs.mlir (5 of 17)
+<a id="__codelineno-31-9" name="__codelineno-31-9" href="#__codelineno-31-9"></a>FAIL: ops/dynamic-ops.mlir (6 of 17)
+<a id="__codelineno-31-10" name="__codelineno-31-10" href="#__codelineno-31-10"></a>FAIL: ops/ptx-new-ops.mlir (7 of 17)
+<a id="__codelineno-31-11" name="__codelineno-31-11" href="#__codelineno-31-11"></a>FAIL: ops/precedence-and-identities.mlir (8 of 17)
+<a id="__codelineno-31-12" name="__codelineno-31-12" href="#__codelineno-31-12"></a>FAIL: ops/matmul-lowering-structure.mlir (9 of 17)
+<a id="__codelineno-31-13" name="__codelineno-31-13" href="#__codelineno-31-13"></a>FAIL: ops/matmul-mismatch-aborts.mlir (10 of 17)
+<a id="__codelineno-31-14" name="__codelineno-31-14" href="#__codelineno-31-14"></a>FAIL: ops/dynamic-accepted.mlir (11 of 17)
+<a id="__codelineno-31-15" name="__codelineno-31-15" href="#__codelineno-31-15"></a>FAIL: ops/division-ieee.mlir (12 of 17)
+<a id="__codelineno-31-16" name="__codelineno-31-16" href="#__codelineno-31-16"></a>FAIL: ops/elementwise-static-mismatch.mlir (13 of 17)
+<a id="__codelineno-31-17" name="__codelineno-31-17" href="#__codelineno-31-17"></a>FAIL: ops/matmul-inner-mismatch.mlir (14 of 17)
+<a id="__codelineno-31-18" name="__codelineno-31-18" href="#__codelineno-31-18"></a>FAIL: ops/matmul-bad-result-shape.mlir (16 of 17)
+<a id="__codelineno-31-19" name="__codelineno-31-19" href="#__codelineno-31-19"></a>FAIL: ops/scalar-bad-op.mlir (17 of 17)
+<a id="__codelineno-31-20" name="__codelineno-31-20" href="#__codelineno-31-20"></a>  Passed  :  1 (1.11%)
+<a id="__codelineno-31-21" name="__codelineno-31-21" href="#__codelineno-31-21"></a>  Failed  : 16 (17.78%)
+<a id="__codelineno-31-22" name="__codelineno-31-22" href="#__codelineno-31-22"></a>### front-end/driver mutation: &#39;-&#39; is emitted as mg.add
+<a id="__codelineno-31-23" name="__codelineno-31-23" href="#__codelineno-31-23"></a>FAIL: ops/values.mlir (1 of 17)
+<a id="__codelineno-31-24" name="__codelineno-31-24" href="#__codelineno-31-24"></a>FAIL: ops/elementwise-mismatch-aborts.mlir (4 of 17)
+<a id="__codelineno-31-25" name="__codelineno-31-25" href="#__codelineno-31-25"></a>FAIL: ops/precedence-and-identities.mlir (5 of 17)
+<a id="__codelineno-31-26" name="__codelineno-31-26" href="#__codelineno-31-26"></a>FAIL: ops/cpp-interop-ops.mlir (6 of 17)
+<a id="__codelineno-31-27" name="__codelineno-31-27" href="#__codelineno-31-27"></a>FAIL: ops/ptx-new-ops.mlir (7 of 17)
+<a id="__codelineno-31-28" name="__codelineno-31-28" href="#__codelineno-31-28"></a>  Passed  : 12 (13.33%)
+<a id="__codelineno-31-29" name="__codelineno-31-29" href="#__codelineno-31-29"></a>  Failed  :  5 (5.56%)
+<a id="__codelineno-31-30" name="__codelineno-31-30" href="#__codelineno-31-30"></a>### front-end/driver mutation: &#39;*&#39; and &#39;@&#39; swapped (Hadamard vs matmul)
+<a id="__codelineno-31-31" name="__codelineno-31-31" href="#__codelineno-31-31"></a>FAIL: ops/precedence-and-identities.mlir (1 of 17)
+<a id="__codelineno-31-32" name="__codelineno-31-32" href="#__codelineno-31-32"></a>FAIL: ops/cpp-interop-ops.mlir (2 of 17)
+<a id="__codelineno-31-33" name="__codelineno-31-33" href="#__codelineno-31-33"></a>FAIL: ops/composed-programs.mlir (3 of 17)
+<a id="__codelineno-31-34" name="__codelineno-31-34" href="#__codelineno-31-34"></a>FAIL: ops/ptx-new-ops.mlir (4 of 17)
+<a id="__codelineno-31-35" name="__codelineno-31-35" href="#__codelineno-31-35"></a>FAIL: ops/dynamic-ops.mlir (5 of 17)
+<a id="__codelineno-31-36" name="__codelineno-31-36" href="#__codelineno-31-36"></a>FAIL: ops/values.mlir (6 of 17)
+<a id="__codelineno-31-37" name="__codelineno-31-37" href="#__codelineno-31-37"></a>FAIL: ops/matmul-mismatch-aborts.mlir (7 of 17)
+<a id="__codelineno-31-38" name="__codelineno-31-38" href="#__codelineno-31-38"></a>FAIL: ops/front-end-errors.mlir (8 of 17)
+<a id="__codelineno-31-39" name="__codelineno-31-39" href="#__codelineno-31-39"></a>FAIL: ops/elementwise-mismatch-aborts.mlir (17 of 17)
+<a id="__codelineno-31-40" name="__codelineno-31-40" href="#__codelineno-31-40"></a>  Passed  :  8 (8.89%)
+<a id="__codelineno-31-41" name="__codelineno-31-41" href="#__codelineno-31-41"></a>  Failed  :  9 (10.00%)
+<a id="__codelineno-31-42" name="__codelineno-31-42" href="#__codelineno-31-42"></a>### front-end/driver mutation: scalar on the left is not marked reversed
+<a id="__codelineno-31-43" name="__codelineno-31-43" href="#__codelineno-31-43"></a>FAIL: ops/values.mlir (4 of 17)
+<a id="__codelineno-31-44" name="__codelineno-31-44" href="#__codelineno-31-44"></a>  Passed  : 16 (17.78%)
+<a id="__codelineno-31-45" name="__codelineno-31-45" href="#__codelineno-31-45"></a>  Failed  :  1 (1.11%)
+<a id="__codelineno-31-46" name="__codelineno-31-46" href="#__codelineno-31-46"></a>### front-end/driver mutation: &#39;*&#39; and &#39;+&#39; on the same precedence level
+<a id="__codelineno-31-47" name="__codelineno-31-47" href="#__codelineno-31-47"></a>FAIL: ops/precedence-and-identities.mlir (6 of 17)
+<a id="__codelineno-31-48" name="__codelineno-31-48" href="#__codelineno-31-48"></a>  Passed  : 16 (17.78%)
+<a id="__codelineno-31-49" name="__codelineno-31-49" href="#__codelineno-31-49"></a>  Failed  :  1 (1.11%)
+<a id="__codelineno-31-50" name="__codelineno-31-50" href="#__codelineno-31-50"></a>### front-end/driver mutation: matmul result shape is (m, k) instead of (m, n)
+<a id="__codelineno-31-51" name="__codelineno-31-51" href="#__codelineno-31-51"></a>FAIL: ops/composed-programs.mlir (2 of 17)
+<a id="__codelineno-31-52" name="__codelineno-31-52" href="#__codelineno-31-52"></a>FAIL: ops/values.mlir (3 of 17)
+<a id="__codelineno-31-53" name="__codelineno-31-53" href="#__codelineno-31-53"></a>  Passed  : 15 (16.67%)
+<a id="__codelineno-31-54" name="__codelineno-31-54" href="#__codelineno-31-54"></a>  Failed  :  2 (2.22%)
+<a id="__codelineno-31-55" name="__codelineno-31-55" href="#__codelineno-31-55"></a>### front-end/driver mutation: driver forgets convert-scf-to-cf for the GPU path
+<a id="__codelineno-31-56" name="__codelineno-31-56" href="#__codelineno-31-56"></a>FAIL: ops/ptx-new-ops.mlir (8 of 17)
+<a id="__codelineno-31-57" name="__codelineno-31-57" href="#__codelineno-31-57"></a>  Passed  : 16 (17.78%)
+<a id="__codelineno-31-58" name="__codelineno-31-58" href="#__codelineno-31-58"></a>  Failed  :  1 (1.11%)
+<a id="__codelineno-31-59" name="__codelineno-31-59" href="#__codelineno-31-59"></a>### restored
+<a id="__codelineno-31-60" name="__codelineno-31-60" href="#__codelineno-31-60"></a>### baseline again
+<a id="__codelineno-31-61" name="__codelineno-31-61" href="#__codelineno-31-61"></a>  Passed  : 17 (18.89%)
 </code></pre></div>
 <p>Front-end bugs are cheap to inject. Bugs in the lowering need <code>mg-opt</code> rebuilt (a full rebuild each), so <code>lowering_mutation.sh</code> injects five, one at a time, into a copy of the source tree:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="ch">#!/bin/sh</span>
@@ -3686,39 +3736,270 @@
 <a id="__codelineno-32-17" name="__codelineno-32-17" href="#__codelineno-32-17"></a>try<span class="w"> </span><span class="s2">&quot;matmul skips the run-time inner-dimension check&quot;</span><span class="w"> </span><span class="s1">&#39;s/if (lt.isDynamicDim(1) || rt.isDynamicDim(0)) {/if (false) {/&#39;</span>
 <a id="__codelineno-32-18" name="__codelineno-32-18" href="#__codelineno-32-18"></a>try<span class="w"> </span><span class="s2">&quot;mg.div lowered as a multiply&quot;</span><span class="w">                   </span><span class="s1">&#39;s/ElementwiseBinaryLowering&lt;mg::DivOp, arith::DivFOp&gt;/ElementwiseBinaryLowering&lt;mg::DivOp, arith::MulFOp&gt;/&#39;</span>
 <a id="__codelineno-32-19" name="__codelineno-32-19" href="#__codelineno-32-19"></a>try<span class="w"> </span><span class="s2">&quot;mg.neg lowered as identity (no negation)&quot;</span><span class="w">        </span><span class="s1">&#39;s/b.create&lt;arith::NegFOp&gt;(l, x)/x/&#39;</span>
+<a id="__codelineno-32-20" name="__codelineno-32-20" href="#__codelineno-32-20"></a><span class="c1"># Added after an independent review (Chapter 21&#39;s &quot;After the review&quot; section):</span>
+<a id="__codelineno-32-21" name="__codelineno-32-21" href="#__codelineno-32-21"></a>try<span class="w"> </span><span class="s2">&quot;elementwise operands swapped (computes rhs OP lhs)&quot;</span><span class="w">  </span><span class="s1">&#39;s/b.create&lt;affine::AffineStoreOp&gt;(l, b.create&lt;ArithOp&gt;(l, x, y), alloc, ivs);/b.create&lt;affine::AffineStoreOp&gt;(l, b.create&lt;ArithOp&gt;(l, y, x), alloc, ivs);/&#39;</span>
+<a id="__codelineno-32-22" name="__codelineno-32-22" href="#__codelineno-32-22"></a>try<span class="w"> </span><span class="s2">&quot;elementwise drops its run-time shape check&quot;</span><span class="w">          </span><span class="s1">&#39;/struct ElementwiseBinaryLowering/,/^};/ s/mg::dyn::assertSameShape(rewriter, loc, lhs, rhs,/if (false) mg::dyn::assertSameShape(rewriter, loc, lhs, rhs,/&#39;</span>
+<a id="__codelineno-32-23" name="__codelineno-32-23" href="#__codelineno-32-23"></a>try<span class="w"> </span><span class="s2">&quot;matmul takes n from the wrong operand (lhs dim 1)&quot;</span><span class="w">  </span><span class="s1">&#39;s/Value n = bound(outType.getDimSize(1), rhs, 1, Value());/Value n = bound(outType.getDimSize(1), lhs, 1, Value());/&#39;</span>
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>### lowering mutation: matmul accumulator not zero-filled
-<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a>FAIL: ops/matmul-lowering-structure.mlir (7 of 15)
-<a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a>FAIL: ops/cpp-interop-ops.mlir (12 of 15)
-<a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a>  Passed  : 13 (17.33%)
-<a id="__codelineno-33-5" name="__codelineno-33-5" href="#__codelineno-33-5"></a>  Failed  :  2 (2.67%)
+<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a>FAIL: ops/matmul-lowering-structure.mlir (9 of 17)
+<a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a>FAIL: ops/cpp-interop-ops.mlir (11 of 17)
+<a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a>  Passed  : 15 (16.67%)
+<a id="__codelineno-33-5" name="__codelineno-33-5" href="#__codelineno-33-5"></a>  Failed  :  2 (2.22%)
 <a id="__codelineno-33-6" name="__codelineno-33-6" href="#__codelineno-33-6"></a>### lowering mutation: scalar op ignores reversed (10 - x computed as x - 10)
-<a id="__codelineno-33-7" name="__codelineno-33-7" href="#__codelineno-33-7"></a>FAIL: ops/values.mlir (15 of 15)
-<a id="__codelineno-33-8" name="__codelineno-33-8" href="#__codelineno-33-8"></a>  Passed  : 14 (18.67%)
-<a id="__codelineno-33-9" name="__codelineno-33-9" href="#__codelineno-33-9"></a>  Failed  :  1 (1.33%)
+<a id="__codelineno-33-7" name="__codelineno-33-7" href="#__codelineno-33-7"></a>FAIL: ops/values.mlir (17 of 17)
+<a id="__codelineno-33-8" name="__codelineno-33-8" href="#__codelineno-33-8"></a>  Passed  : 16 (17.78%)
+<a id="__codelineno-33-9" name="__codelineno-33-9" href="#__codelineno-33-9"></a>  Failed  :  1 (1.11%)
 <a id="__codelineno-33-10" name="__codelineno-33-10" href="#__codelineno-33-10"></a>### lowering mutation: matmul skips the run-time inner-dimension check
-<a id="__codelineno-33-11" name="__codelineno-33-11" href="#__codelineno-33-11"></a>FAIL: ops/matmul-lowering-structure.mlir (7 of 15)
-<a id="__codelineno-33-12" name="__codelineno-33-12" href="#__codelineno-33-12"></a>FAIL: ops/matmul-mismatch-aborts.mlir (10 of 15)
-<a id="__codelineno-33-13" name="__codelineno-33-13" href="#__codelineno-33-13"></a>FAIL: ops/cpp-interop-ops.mlir (12 of 15)
-<a id="__codelineno-33-14" name="__codelineno-33-14" href="#__codelineno-33-14"></a>  Passed  : 12 (16.00%)
-<a id="__codelineno-33-15" name="__codelineno-33-15" href="#__codelineno-33-15"></a>  Failed  :  3 (4.00%)
+<a id="__codelineno-33-11" name="__codelineno-33-11" href="#__codelineno-33-11"></a>FAIL: ops/matmul-lowering-structure.mlir (9 of 17)
+<a id="__codelineno-33-12" name="__codelineno-33-12" href="#__codelineno-33-12"></a>FAIL: ops/cpp-interop-ops.mlir (10 of 17)
+<a id="__codelineno-33-13" name="__codelineno-33-13" href="#__codelineno-33-13"></a>FAIL: ops/matmul-mismatch-aborts.mlir (11 of 17)
+<a id="__codelineno-33-14" name="__codelineno-33-14" href="#__codelineno-33-14"></a>  Passed  : 14 (15.56%)
+<a id="__codelineno-33-15" name="__codelineno-33-15" href="#__codelineno-33-15"></a>  Failed  :  3 (3.33%)
 <a id="__codelineno-33-16" name="__codelineno-33-16" href="#__codelineno-33-16"></a>### lowering mutation: mg.div lowered as a multiply
-<a id="__codelineno-33-17" name="__codelineno-33-17" href="#__codelineno-33-17"></a>FAIL: ops/division-ieee.mlir (2 of 15)
-<a id="__codelineno-33-18" name="__codelineno-33-18" href="#__codelineno-33-18"></a>FAIL: ops/precedence-and-identities.mlir (14 of 15)
-<a id="__codelineno-33-19" name="__codelineno-33-19" href="#__codelineno-33-19"></a>  Passed  : 13 (17.33%)
-<a id="__codelineno-33-20" name="__codelineno-33-20" href="#__codelineno-33-20"></a>  Failed  :  2 (2.67%)
-<a id="__codelineno-33-21" name="__codelineno-33-21" href="#__codelineno-33-21"></a>### lowering mutation: mg.neg lowered as identity (no negation)
-<a id="__codelineno-33-22" name="__codelineno-33-22" href="#__codelineno-33-22"></a>FAIL: ops/precedence-and-identities.mlir (11 of 15)
-<a id="__codelineno-33-23" name="__codelineno-33-23" href="#__codelineno-33-23"></a>  Passed  : 14 (18.67%)
-<a id="__codelineno-33-24" name="__codelineno-33-24" href="#__codelineno-33-24"></a>  Failed  :  1 (1.33%)
+<a id="__codelineno-33-17" name="__codelineno-33-17" href="#__codelineno-33-17"></a>FAIL: ops/division-ieee.mlir (2 of 17)
+<a id="__codelineno-33-18" name="__codelineno-33-18" href="#__codelineno-33-18"></a>FAIL: ops/cpp-interop-ops.mlir (10 of 17)
+<a id="__codelineno-33-19" name="__codelineno-33-19" href="#__codelineno-33-19"></a>FAIL: ops/negate-and-dynamic-divide.mlir (14 of 17)
+<a id="__codelineno-33-20" name="__codelineno-33-20" href="#__codelineno-33-20"></a>FAIL: ops/precedence-and-identities.mlir (16 of 17)
+<a id="__codelineno-33-21" name="__codelineno-33-21" href="#__codelineno-33-21"></a>  Passed  : 13 (14.44%)
+<a id="__codelineno-33-22" name="__codelineno-33-22" href="#__codelineno-33-22"></a>  Failed  :  4 (4.44%)
+<a id="__codelineno-33-23" name="__codelineno-33-23" href="#__codelineno-33-23"></a>### lowering mutation: mg.neg lowered as identity (no negation)
+<a id="__codelineno-33-24" name="__codelineno-33-24" href="#__codelineno-33-24"></a>FAIL: ops/negate-and-dynamic-divide.mlir (12 of 17)
+<a id="__codelineno-33-25" name="__codelineno-33-25" href="#__codelineno-33-25"></a>FAIL: ops/precedence-and-identities.mlir (15 of 17)
+<a id="__codelineno-33-26" name="__codelineno-33-26" href="#__codelineno-33-26"></a>  Passed  : 15 (16.67%)
+<a id="__codelineno-33-27" name="__codelineno-33-27" href="#__codelineno-33-27"></a>  Failed  :  2 (2.22%)
+<a id="__codelineno-33-28" name="__codelineno-33-28" href="#__codelineno-33-28"></a>### lowering mutation: elementwise operands swapped (computes rhs OP lhs)
+<a id="__codelineno-33-29" name="__codelineno-33-29" href="#__codelineno-33-29"></a>FAIL: ops/division-ieee.mlir (2 of 17)
+<a id="__codelineno-33-30" name="__codelineno-33-30" href="#__codelineno-33-30"></a>FAIL: ops/cpp-interop-ops.mlir (11 of 17)
+<a id="__codelineno-33-31" name="__codelineno-33-31" href="#__codelineno-33-31"></a>FAIL: ops/negate-and-dynamic-divide.mlir (14 of 17)
+<a id="__codelineno-33-32" name="__codelineno-33-32" href="#__codelineno-33-32"></a>FAIL: ops/values.mlir (15 of 17)
+<a id="__codelineno-33-33" name="__codelineno-33-33" href="#__codelineno-33-33"></a>  Passed  : 13 (14.44%)
+<a id="__codelineno-33-34" name="__codelineno-33-34" href="#__codelineno-33-34"></a>  Failed  :  4 (4.44%)
+<a id="__codelineno-33-35" name="__codelineno-33-35" href="#__codelineno-33-35"></a>### lowering mutation: elementwise drops its run-time shape check
+<a id="__codelineno-33-36" name="__codelineno-33-36" href="#__codelineno-33-36"></a>FAIL: ops/elementwise-mismatch-aborts.mlir (4 of 17)
+<a id="__codelineno-33-37" name="__codelineno-33-37" href="#__codelineno-33-37"></a>  Passed  : 16 (17.78%)
+<a id="__codelineno-33-38" name="__codelineno-33-38" href="#__codelineno-33-38"></a>  Failed  :  1 (1.11%)
+<a id="__codelineno-33-39" name="__codelineno-33-39" href="#__codelineno-33-39"></a>### lowering mutation: matmul takes n from the wrong operand (lhs dim 1)
+<a id="__codelineno-33-40" name="__codelineno-33-40" href="#__codelineno-33-40"></a>FAIL: ops/dynamic-ops.mlir (3 of 17)
+<a id="__codelineno-33-41" name="__codelineno-33-41" href="#__codelineno-33-41"></a>FAIL: ops/cpp-interop-ops.mlir (10 of 17)
+<a id="__codelineno-33-42" name="__codelineno-33-42" href="#__codelineno-33-42"></a>  Passed  : 15 (16.67%)
+<a id="__codelineno-33-43" name="__codelineno-33-43" href="#__codelineno-33-43"></a>  Failed  :  2 (2.22%)
 </code></pre></div>
-<p>Read the second list closely: <strong>removing the zero-fill is caught by only two of the fifteen tests</strong>, the lowering-structure test and the 7x5-by-5x9 comparison in the C++ test. None of the tests that print small results noticed, because <code>malloc</code> returned fresh, already-zero memory for a small buffer, so the accumulators happened to start at zero anyway. The bug is real and the program is wrong, but it would pass every small example by luck. This is exactly why the structure test (which looks for the zero-fill loop) and the larger independent comparison exist, and a reminder that a test which passes on a tiny input proves little about memory the program forgot to initialize.</p>
-<p>The same list shows the three other groups of tests doing their jobs. Ignoring the <code>reversed</code> flag is caught by <code>values</code>; dropping the run-time inner-dimension check is caught by three tests; compiling <code>div</code> as a multiply, and compiling <code>neg</code> as the identity, are caught by the tests that check results (<code>division-ieee</code>, <code>precedence-and-identities</code>). Notice that <code>neg</code> is caught by only one test; the <code>values</code> test does not use negation at all.</p>
+<p>Read the second list closely, and read the corrected account that follows it (an independent review found that my first explanation here was wrong): <strong>removing the zero-fill was caught by only two of the original fifteen tests</strong>, the lowering-structure test and, as it turned out, the C++ program. No <code>.mg</code> program that prints a result noticed.</p>
+<p>The same list shows the other mutations doing what they should. Ignoring the <code>reversed</code> flag is caught by <code>values</code>; dropping the run-time inner-dimension check is caught by three tests; compiling <code>div</code> as a multiply, and <code>neg</code> as the identity, were each caught by a single check, which is thinner than it looks (the review below made them direct).</p>
+<h2 id="after-an-independent-review">After an independent review<a class="headerlink" href="#after-an-independent-review" title="Permanent link">&para;</a></h2>
+<p>I asked a second model (Opus) to review these mutation results and the tests behind them, without editing anything. It found real problems, which I confirmed before acting, and which this section records. This is the kind of thing a mutation run is for, and the kind of thing I missed on my own.</p>
+<p><strong>1. My explanation of the zero-fill result was wrong.</strong> I had written that <code>malloc</code> returned "fresh, already-zero memory for a small buffer". The real reason is different and more important: <strong>the generated code never frees anything</strong> (<code>LowerToAffine.cpp</code> contains no <code>dealloc</code>), so in a program run with <code>mgc run</code> every allocation comes from heap memory nobody has used yet, which the operating system hands out zeroed, whatever its size. <strong>No program written in Mountain Goat can ever catch a missing zero-fill</strong>, because it cannot reuse freed memory. The C++ wrapper does free its results (<code>take()</code> calls <code>std::free</code>), so a C++ program <em>can</em> reuse memory, and that is why the C++ test noticed. But it noticed by accident of how the C library recycles blocks: against the broken build, the <em>second</em> 2x2 matmul in the C++ program printed <code>NO</code>, because it reused a small block freed earlier, while the large 7x5-by-5x9 comparison printed <code>yes</code>, because its block was fresh. I had credited the large comparison; it was the small one. A test that passes or fails depending on the allocator is not a test to rely on.</p>
+<p><strong>2. A deterministic test now exists.</strong> The C++ program allocates a small block, fills it with <code>1000</code>s, frees it, and <em>then</em> calls <code>matmul</code>. With the zero-fill, the result is <code>7 10 15 22</code>. Without it, the accumulators start from the leftover 1000s and the result is <code>7 10 1015 1022</code>, every time. The check is <code>dirty-heap matmul: 7 10 15 22</code> in <code>cpp-interop-ops</code>.</p>
+<p><strong>3. Results that were printed but never checked.</strong> The C++ program printed the results of <code>sub</code>, <code>hadamard</code>, <code>divide</code>, <code>gram</code> and <code>affine</code>, but the test only checked <code>matmul</code>; under the mutation that compiled <code>div</code> as a multiply, that test still passed. The test now checks every function's output against hand-computed values. (The program's own header comment said "compare every result against plain C++ loops"; only <code>matmul</code> was. The comment is corrected.)</p>
+<p><strong>4. The run-time shape check was only tested for <code>+</code>.</strong> <code>sub</code>, <code>mul</code> and <code>div</code> share a lowering template with their own copy of the check (<code>assertSameShape</code>), and nothing exercised it for them. New examples <code>15_elementwise_mismatch.mg</code>, <code>15b_mul_mismatch.mg</code> and <code>15c_div_mismatch.mg</code> abort with <code>mg.sub:</code>, <code>mg.mul:</code> and <code>mg.div: operand shapes differ at runtime in dimension 0</code>, with an empty stdout (test <code>elementwise-mismatch-aborts</code>).</p>
+<p><strong>5. <code>neg</code> and dynamic <code>div</code> now have direct tests</strong> (<code>16_negate.mg</code>, <code>17_dynamic_divide.mg</code>; test <code>negate-and-dynamic-divide</code>): negation on static and dynamic shapes with a negative input, and a dynamic division with numbers where order matters (<code>[[1, 4], [9, 3]] / [[2, 8], [3, 4]]</code> is <code>[[0.5, 0.5], [3, 0.75]]</code>). Negation had been caught by exactly one check line, and <code>-(-a)</code>, which I had cited as an identity check, cannot see a negation that does nothing.</p>
+<p><strong>6. <code>dynamic-ops</code> now checks every value</strong> it prints, including the <code>2x1</code> and <code>3x2</code> cases that previously only had their sizes checked.</p>
+<p>Three <strong>new mutations</strong> accompany these, and the script was rerun in full (eight rebuilds):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a>### lowering mutation: matmul accumulator not zero-filled
+<a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a>FAIL: ops/matmul-lowering-structure.mlir (9 of 17)
+<a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a>FAIL: ops/cpp-interop-ops.mlir (11 of 17)
+<a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a>  Passed  : 15 (16.67%)
+<a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a>  Failed  :  2 (2.22%)
+<a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a>### lowering mutation: scalar op ignores reversed (10 - x computed as x - 10)
+<a id="__codelineno-34-7" name="__codelineno-34-7" href="#__codelineno-34-7"></a>FAIL: ops/values.mlir (17 of 17)
+<a id="__codelineno-34-8" name="__codelineno-34-8" href="#__codelineno-34-8"></a>  Passed  : 16 (17.78%)
+<a id="__codelineno-34-9" name="__codelineno-34-9" href="#__codelineno-34-9"></a>  Failed  :  1 (1.11%)
+<a id="__codelineno-34-10" name="__codelineno-34-10" href="#__codelineno-34-10"></a>### lowering mutation: matmul skips the run-time inner-dimension check
+<a id="__codelineno-34-11" name="__codelineno-34-11" href="#__codelineno-34-11"></a>FAIL: ops/matmul-lowering-structure.mlir (9 of 17)
+<a id="__codelineno-34-12" name="__codelineno-34-12" href="#__codelineno-34-12"></a>FAIL: ops/cpp-interop-ops.mlir (10 of 17)
+<a id="__codelineno-34-13" name="__codelineno-34-13" href="#__codelineno-34-13"></a>FAIL: ops/matmul-mismatch-aborts.mlir (11 of 17)
+<a id="__codelineno-34-14" name="__codelineno-34-14" href="#__codelineno-34-14"></a>  Passed  : 14 (15.56%)
+<a id="__codelineno-34-15" name="__codelineno-34-15" href="#__codelineno-34-15"></a>  Failed  :  3 (3.33%)
+<a id="__codelineno-34-16" name="__codelineno-34-16" href="#__codelineno-34-16"></a>### lowering mutation: mg.div lowered as a multiply
+<a id="__codelineno-34-17" name="__codelineno-34-17" href="#__codelineno-34-17"></a>FAIL: ops/division-ieee.mlir (2 of 17)
+<a id="__codelineno-34-18" name="__codelineno-34-18" href="#__codelineno-34-18"></a>FAIL: ops/cpp-interop-ops.mlir (10 of 17)
+<a id="__codelineno-34-19" name="__codelineno-34-19" href="#__codelineno-34-19"></a>FAIL: ops/negate-and-dynamic-divide.mlir (14 of 17)
+<a id="__codelineno-34-20" name="__codelineno-34-20" href="#__codelineno-34-20"></a>FAIL: ops/precedence-and-identities.mlir (16 of 17)
+<a id="__codelineno-34-21" name="__codelineno-34-21" href="#__codelineno-34-21"></a>  Passed  : 13 (14.44%)
+<a id="__codelineno-34-22" name="__codelineno-34-22" href="#__codelineno-34-22"></a>  Failed  :  4 (4.44%)
+<a id="__codelineno-34-23" name="__codelineno-34-23" href="#__codelineno-34-23"></a>### lowering mutation: mg.neg lowered as identity (no negation)
+<a id="__codelineno-34-24" name="__codelineno-34-24" href="#__codelineno-34-24"></a>FAIL: ops/negate-and-dynamic-divide.mlir (12 of 17)
+<a id="__codelineno-34-25" name="__codelineno-34-25" href="#__codelineno-34-25"></a>FAIL: ops/precedence-and-identities.mlir (15 of 17)
+<a id="__codelineno-34-26" name="__codelineno-34-26" href="#__codelineno-34-26"></a>  Passed  : 15 (16.67%)
+<a id="__codelineno-34-27" name="__codelineno-34-27" href="#__codelineno-34-27"></a>  Failed  :  2 (2.22%)
+<a id="__codelineno-34-28" name="__codelineno-34-28" href="#__codelineno-34-28"></a>### lowering mutation: elementwise operands swapped (computes rhs OP lhs)
+<a id="__codelineno-34-29" name="__codelineno-34-29" href="#__codelineno-34-29"></a>FAIL: ops/division-ieee.mlir (2 of 17)
+<a id="__codelineno-34-30" name="__codelineno-34-30" href="#__codelineno-34-30"></a>FAIL: ops/cpp-interop-ops.mlir (11 of 17)
+<a id="__codelineno-34-31" name="__codelineno-34-31" href="#__codelineno-34-31"></a>FAIL: ops/negate-and-dynamic-divide.mlir (14 of 17)
+<a id="__codelineno-34-32" name="__codelineno-34-32" href="#__codelineno-34-32"></a>FAIL: ops/values.mlir (15 of 17)
+<a id="__codelineno-34-33" name="__codelineno-34-33" href="#__codelineno-34-33"></a>  Passed  : 13 (14.44%)
+<a id="__codelineno-34-34" name="__codelineno-34-34" href="#__codelineno-34-34"></a>  Failed  :  4 (4.44%)
+<a id="__codelineno-34-35" name="__codelineno-34-35" href="#__codelineno-34-35"></a>### lowering mutation: elementwise drops its run-time shape check
+<a id="__codelineno-34-36" name="__codelineno-34-36" href="#__codelineno-34-36"></a>FAIL: ops/elementwise-mismatch-aborts.mlir (4 of 17)
+<a id="__codelineno-34-37" name="__codelineno-34-37" href="#__codelineno-34-37"></a>  Passed  : 16 (17.78%)
+<a id="__codelineno-34-38" name="__codelineno-34-38" href="#__codelineno-34-38"></a>  Failed  :  1 (1.11%)
+<a id="__codelineno-34-39" name="__codelineno-34-39" href="#__codelineno-34-39"></a>### lowering mutation: matmul takes n from the wrong operand (lhs dim 1)
+<a id="__codelineno-34-40" name="__codelineno-34-40" href="#__codelineno-34-40"></a>FAIL: ops/dynamic-ops.mlir (3 of 17)
+<a id="__codelineno-34-41" name="__codelineno-34-41" href="#__codelineno-34-41"></a>FAIL: ops/cpp-interop-ops.mlir (10 of 17)
+<a id="__codelineno-34-42" name="__codelineno-34-42" href="#__codelineno-34-42"></a>  Passed  : 15 (16.67%)
+<a id="__codelineno-34-43" name="__codelineno-34-43" href="#__codelineno-34-43"></a>  Failed  :  2 (2.22%)
+</code></pre></div>
+<p>Before and after, for the five original mutants, counting the test files that fail out of the seventeen:</p>
+<table>
+<thead>
+<tr>
+<th>Mutation</th>
+<th>Before the review</th>
+<th>After</th>
+<th>Who catches it now</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>matmul accumulator not zero-filled</td>
+<td>2 (one by allocator luck)</td>
+<td>2</td>
+<td>structure test, and the dirty-heap check (deterministic)</td>
+</tr>
+<tr>
+<td>scalar op ignores <code>reversed</code></td>
+<td>1</td>
+<td>1</td>
+<td><code>values</code>: <code>10 - a</code> and <code>16 / a</code> have a direct, deterministic check</td>
+</tr>
+<tr>
+<td>matmul skips the run-time inner-dimension check</td>
+<td>3</td>
+<td>3</td>
+<td>structure, the abort test, the C++ abort run</td>
+</tr>
+<tr>
+<td><code>div</code> computed as a multiply</td>
+<td>2</td>
+<td>4</td>
+<td>division, identities, dynamic divide, C++ output</td>
+</tr>
+<tr>
+<td><code>neg</code> computed as the identity</td>
+<td>1</td>
+<td>2</td>
+<td>identities, and the new direct <code>neg</code> test</td>
+</tr>
+</tbody>
+</table>
+<p>The three new mutations are each caught as well: operands swapped (4 tests), the elementwise run-time shape check removed (1 test, the new <code>elementwise-mismatch-aborts</code>, which is the only thing that exercises that code), and the matmul output width read from the wrong operand (2 tests).</p>
+<p>Two honest remarks. First, "caught by only one test" is not automatically a weakness: <code>reversed</code> and the shape check are each caught by a <em>direct, deterministic</em> check of exactly that behavior, which is what you want. What was a weakness was a catch that depended on chance (the allocator) or on a test that did not look at the thing it printed. Second, the zero-fill mutant is still caught by only two checks, and one of them (the structure test) looks at the implementation, not the behavior. That is the best available: the language cannot observe the bug, so only the C++ side, which can reuse memory, can.</p>
+<p>The full suite after these additions:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a>Testing Time: 4.62s
+<a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a>
+<a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a>Total Discovered Tests: 90
+<a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a>  Passed: 90 (100.00%)
+</code></pre></div>
+<p>The new examples' real output:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a>################ ./mgc run examples/15_elementwise_mismatch.mg
+<a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a>  | # The run-time shape check is not only for &#39;+&#39;: subtract, multiply and divide each abort on a dimension mismatch,
+<a id="__codelineno-36-3" name="__codelineno-36-3" href="#__codelineno-36-3"></a>  | # naming the operation. Here 1x3 minus 2x1: the 1x3 is a ?-typed parameter, so nothing broadcasts and the check runs.
+<a id="__codelineno-36-4" name="__codelineno-36-4" href="#__codelineno-36-4"></a>  | def f(a: tensor[?x?], b: tensor[?x?]) = a - b
+<a id="__codelineno-36-5" name="__codelineno-36-5" href="#__codelineno-36-5"></a>  | print f([[1, 2, 3]], [[1], [2]])
+<a id="__codelineno-36-6" name="__codelineno-36-6" href="#__codelineno-36-6"></a>  ----- output
+<a id="__codelineno-36-7" name="__codelineno-36-7" href="#__codelineno-36-7"></a>mg.sub: operand shapes differ at runtime in dimension 0
+<a id="__codelineno-36-8" name="__codelineno-36-8" href="#__codelineno-36-8"></a>Aborted
+<a id="__codelineno-36-9" name="__codelineno-36-9" href="#__codelineno-36-9"></a>  ----- exit status 134
+<a id="__codelineno-36-10" name="__codelineno-36-10" href="#__codelineno-36-10"></a>
+<a id="__codelineno-36-11" name="__codelineno-36-11" href="#__codelineno-36-11"></a>################ ./mgc run examples/15b_mul_mismatch.mg
+<a id="__codelineno-36-12" name="__codelineno-36-12" href="#__codelineno-36-12"></a>  | def f(a: tensor[?x?], b: tensor[?x?]) = a * b
+<a id="__codelineno-36-13" name="__codelineno-36-13" href="#__codelineno-36-13"></a>  | print f([[1, 2, 3]], [[1], [2]])
+<a id="__codelineno-36-14" name="__codelineno-36-14" href="#__codelineno-36-14"></a>  ----- output
+<a id="__codelineno-36-15" name="__codelineno-36-15" href="#__codelineno-36-15"></a>mg.mul: operand shapes differ at runtime in dimension 0
+<a id="__codelineno-36-16" name="__codelineno-36-16" href="#__codelineno-36-16"></a>Aborted
+<a id="__codelineno-36-17" name="__codelineno-36-17" href="#__codelineno-36-17"></a>  ----- exit status 134
+<a id="__codelineno-36-18" name="__codelineno-36-18" href="#__codelineno-36-18"></a>
+<a id="__codelineno-36-19" name="__codelineno-36-19" href="#__codelineno-36-19"></a>################ ./mgc run examples/15c_div_mismatch.mg
+<a id="__codelineno-36-20" name="__codelineno-36-20" href="#__codelineno-36-20"></a>  | def f(a: tensor[?x?], b: tensor[?x?]) = a / b
+<a id="__codelineno-36-21" name="__codelineno-36-21" href="#__codelineno-36-21"></a>  | print f([[1, 2, 3]], [[1], [2]])
+<a id="__codelineno-36-22" name="__codelineno-36-22" href="#__codelineno-36-22"></a>  ----- output
+<a id="__codelineno-36-23" name="__codelineno-36-23" href="#__codelineno-36-23"></a>mg.div: operand shapes differ at runtime in dimension 0
+<a id="__codelineno-36-24" name="__codelineno-36-24" href="#__codelineno-36-24"></a>Aborted
+<a id="__codelineno-36-25" name="__codelineno-36-25" href="#__codelineno-36-25"></a>  ----- exit status 134
+<a id="__codelineno-36-26" name="__codelineno-36-26" href="#__codelineno-36-26"></a>
+<a id="__codelineno-36-27" name="__codelineno-36-27" href="#__codelineno-36-27"></a>################ ./mgc run examples/16_negate.mg
+<a id="__codelineno-36-28" name="__codelineno-36-28" href="#__codelineno-36-28"></a>  | # Negation, on its own: static and dynamic shapes. (-(-a) = a cannot tell a real negation from a no-op; these can.)
+<a id="__codelineno-36-29" name="__codelineno-36-29" href="#__codelineno-36-29"></a>  | def h(a: tensor[?x?]) = -a
+<a id="__codelineno-36-30" name="__codelineno-36-30" href="#__codelineno-36-30"></a>  | print h([[1, -2, 3]])
+<a id="__codelineno-36-31" name="__codelineno-36-31" href="#__codelineno-36-31"></a>  | print -[[0.5, -4]]
+<a id="__codelineno-36-32" name="__codelineno-36-32" href="#__codelineno-36-32"></a>  | print h([[7], [-8]])
+<a id="__codelineno-36-33" name="__codelineno-36-33" href="#__codelineno-36-33"></a>  ----- output
+<a id="__codelineno-36-34" name="__codelineno-36-34" href="#__codelineno-36-34"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 3] strides = [3, 1] data = 
+<a id="__codelineno-36-35" name="__codelineno-36-35" href="#__codelineno-36-35"></a>[[-1,   2,   -3]]
+<a id="__codelineno-36-36" name="__codelineno-36-36" href="#__codelineno-36-36"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 2] strides = [2, 1] data = 
+<a id="__codelineno-36-37" name="__codelineno-36-37" href="#__codelineno-36-37"></a>[[-0.5,   4]]
+<a id="__codelineno-36-38" name="__codelineno-36-38" href="#__codelineno-36-38"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 1] strides = [1, 1] data = 
+<a id="__codelineno-36-39" name="__codelineno-36-39" href="#__codelineno-36-39"></a>[[-7], 
+<a id="__codelineno-36-40" name="__codelineno-36-40" href="#__codelineno-36-40"></a> [8]]
+<a id="__codelineno-36-41" name="__codelineno-36-41" href="#__codelineno-36-41"></a>  ----- exit status 0
+<a id="__codelineno-36-42" name="__codelineno-36-42" href="#__codelineno-36-42"></a>
+<a id="__codelineno-36-43" name="__codelineno-36-43" href="#__codelineno-36-43"></a>################ ./mgc run examples/17_dynamic_divide.mg
+<a id="__codelineno-36-44" name="__codelineno-36-44" href="#__codelineno-36-44"></a>  | # Division on dynamic shapes, with numbers where the order matters (a / b is not b / a).
+<a id="__codelineno-36-45" name="__codelineno-36-45" href="#__codelineno-36-45"></a>  | def g(a: tensor[?x?], b: tensor[?x?]) = a / b
+<a id="__codelineno-36-46" name="__codelineno-36-46" href="#__codelineno-36-46"></a>  | print g([[1, 4], [9, 3]], [[2, 8], [3, 4]])
+<a id="__codelineno-36-47" name="__codelineno-36-47" href="#__codelineno-36-47"></a>  ----- output
+<a id="__codelineno-36-48" name="__codelineno-36-48" href="#__codelineno-36-48"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+<a id="__codelineno-36-49" name="__codelineno-36-49" href="#__codelineno-36-49"></a>[[0.5,   0.5], 
+<a id="__codelineno-36-50" name="__codelineno-36-50" href="#__codelineno-36-50"></a> [3,   0.75]]
+<a id="__codelineno-36-51" name="__codelineno-36-51" href="#__codelineno-36-51"></a>  ----- exit status 0
+</code></pre></div>
+<p>The C++ program's output, with the new check:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a>wrote work/cpp/ops.o and work/cpp/ops.h
+<a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a>--- ./app
+<a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a>sub(a, c) (2x3):
+<a id="__codelineno-37-4" name="__codelineno-37-4" href="#__codelineno-37-4"></a> -5 -3 -1
+<a id="__codelineno-37-5" name="__codelineno-37-5" href="#__codelineno-37-5"></a> 1 3 5
+<a id="__codelineno-37-6" name="__codelineno-37-6" href="#__codelineno-37-6"></a>hadamard(a, c) (2x3):
+<a id="__codelineno-37-7" name="__codelineno-37-7" href="#__codelineno-37-7"></a> 6 10 12
+<a id="__codelineno-37-8" name="__codelineno-37-8" href="#__codelineno-37-8"></a> 12 10 6
+<a id="__codelineno-37-9" name="__codelineno-37-9" href="#__codelineno-37-9"></a>divide(a, c) (2x3):
+<a id="__codelineno-37-10" name="__codelineno-37-10" href="#__codelineno-37-10"></a> 0.166667 0.4 0.75
+<a id="__codelineno-37-11" name="__codelineno-37-11" href="#__codelineno-37-11"></a> 1.33333 2.5 6
+<a id="__codelineno-37-12" name="__codelineno-37-12" href="#__codelineno-37-12"></a>matmul(a, b) (2x2):
+<a id="__codelineno-37-13" name="__codelineno-37-13" href="#__codelineno-37-13"></a> 58 64
+<a id="__codelineno-37-14" name="__codelineno-37-14" href="#__codelineno-37-14"></a> 139 154
+<a id="__codelineno-37-15" name="__codelineno-37-15" href="#__codelineno-37-15"></a>gram(a) (2x2):
+<a id="__codelineno-37-16" name="__codelineno-37-16" href="#__codelineno-37-16"></a> 14 32
+<a id="__codelineno-37-17" name="__codelineno-37-17" href="#__codelineno-37-17"></a> 32 77
+<a id="__codelineno-37-18" name="__codelineno-37-18" href="#__codelineno-37-18"></a>affine(a) (2x3):
+<a id="__codelineno-37-19" name="__codelineno-37-19" href="#__codelineno-37-19"></a> 3 5 7
+<a id="__codelineno-37-20" name="__codelineno-37-20" href="#__codelineno-37-20"></a> 9 11 13
+<a id="__codelineno-37-21" name="__codelineno-37-21" href="#__codelineno-37-21"></a>matmul matches a plain C++ triple loop: yes
+<a id="__codelineno-37-22" name="__codelineno-37-22" href="#__codelineno-37-22"></a>dirty-heap matmul: 7 10 15 22
+<a id="__codelineno-37-23" name="__codelineno-37-23" href="#__codelineno-37-23"></a>7x5 @ 5x9 matches the plain loop: yes
+<a id="__codelineno-37-24" name="__codelineno-37-24" href="#__codelineno-37-24"></a>--- ./app mismatch   (exit status follows)
+<a id="__codelineno-37-25" name="__codelineno-37-25" href="#__codelineno-37-25"></a>sub(a, c) (2x3):
+<a id="__codelineno-37-26" name="__codelineno-37-26" href="#__codelineno-37-26"></a> -5 -3 -1
+<a id="__codelineno-37-27" name="__codelineno-37-27" href="#__codelineno-37-27"></a> 1 3 5
+<a id="__codelineno-37-28" name="__codelineno-37-28" href="#__codelineno-37-28"></a>hadamard(a, c) (2x3):
+<a id="__codelineno-37-29" name="__codelineno-37-29" href="#__codelineno-37-29"></a> 6 10 12
+<a id="__codelineno-37-30" name="__codelineno-37-30" href="#__codelineno-37-30"></a> 12 10 6
+<a id="__codelineno-37-31" name="__codelineno-37-31" href="#__codelineno-37-31"></a>divide(a, c) (2x3):
+<a id="__codelineno-37-32" name="__codelineno-37-32" href="#__codelineno-37-32"></a> 0.166667 0.4 0.75
+<a id="__codelineno-37-33" name="__codelineno-37-33" href="#__codelineno-37-33"></a> 1.33333 2.5 6
+<a id="__codelineno-37-34" name="__codelineno-37-34" href="#__codelineno-37-34"></a>matmul(a, b) (2x2):
+<a id="__codelineno-37-35" name="__codelineno-37-35" href="#__codelineno-37-35"></a> 58 64
+<a id="__codelineno-37-36" name="__codelineno-37-36" href="#__codelineno-37-36"></a> 139 154
+<a id="__codelineno-37-37" name="__codelineno-37-37" href="#__codelineno-37-37"></a>gram(a) (2x2):
+<a id="__codelineno-37-38" name="__codelineno-37-38" href="#__codelineno-37-38"></a> 14 32
+<a id="__codelineno-37-39" name="__codelineno-37-39" href="#__codelineno-37-39"></a> 32 77
+<a id="__codelineno-37-40" name="__codelineno-37-40" href="#__codelineno-37-40"></a>affine(a) (2x3):
+<a id="__codelineno-37-41" name="__codelineno-37-41" href="#__codelineno-37-41"></a> 3 5 7
+<a id="__codelineno-37-42" name="__codelineno-37-42" href="#__codelineno-37-42"></a> 9 11 13
+<a id="__codelineno-37-43" name="__codelineno-37-43" href="#__codelineno-37-43"></a>matmul matches a plain C++ triple loop: yes
+<a id="__codelineno-37-44" name="__codelineno-37-44" href="#__codelineno-37-44"></a>dirty-heap matmul: 7 10 15 22
+<a id="__codelineno-37-45" name="__codelineno-37-45" href="#__codelineno-37-45"></a>7x5 @ 5x9 matches the plain loop: yes
+<a id="__codelineno-37-46" name="__codelineno-37-46" href="#__codelineno-37-46"></a>about to matmul 2x3 by 2x3...
+<a id="__codelineno-37-47" name="__codelineno-37-47" href="#__codelineno-37-47"></a>mg.matmul: inner dimensions differ at runtime
+<a id="__codelineno-37-48" name="__codelineno-37-48" href="#__codelineno-37-48"></a>Aborted
+<a id="__codelineno-37-49" name="__codelineno-37-49" href="#__codelineno-37-49"></a>exit=134
+</code></pre></div>
 <p>The full suite against the Chapter 21 build:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a>Testing Time: 2.60s
-<a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a>
-<a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a>Total Discovered Tests: 78
-<a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a>  Passed: 78 (100.00%)
+<div class="highlight"><pre><span></span><code><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a>Testing Time: 2.60s
+<a id="__codelineno-38-2" name="__codelineno-38-2" href="#__codelineno-38-2"></a>
+<a id="__codelineno-38-3" name="__codelineno-38-3" href="#__codelineno-38-3"></a>Total Discovered Tests: 78
+<a id="__codelineno-38-4" name="__codelineno-38-4" href="#__codelineno-38-4"></a>  Passed: 78 (100.00%)
 </code></pre></div>
 <h2 id="bugs-found-while-writing-the-language-tour">Bugs found while writing the language tour<a class="headerlink" href="#bugs-found-while-writing-the-language-tour" title="Permanent link">&para;</a></h2>
 <p>Writing the tour page (<code>docs/tour/language-tour.md</code>) with real, runnable examples found two problems in this chapter's front end, both now fixed and covered by tests:</p>
@@ -3740,11 +4021,11 @@
 <li><strong>The language itself is described in the <a href="../../tour/language-tour/">language tour</a>.</strong> This chapter only adds operations to it.</li>
 </ul>
 <h2 id="reproducing">Reproducing<a class="headerlink" href="#reproducing" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="nb">cd</span><span class="w"> </span>docs/part21/code
-<a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a>./build.sh<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./demo.sh<span class="w"> </span>&gt;<span class="w"> </span>demo_out.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./show.sh<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>cpp/run.sh
-<a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a>./prove_tests_can_fail.sh<span class="w">            </span><span class="c1"># front-end mutations (a few seconds)</span>
-<a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a>./lowering_mutation.sh<span class="w">               </span><span class="c1"># lowering mutations (a full rebuild each: roughly 10 minutes)</span>
-<a id="__codelineno-35-5" name="__codelineno-35-5" href="#__codelineno-35-5"></a><span class="nb">cd</span><span class="w"> </span>../../part15/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_lit.sh<span class="w"> </span><span class="c1"># 78 tests</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a><span class="nb">cd</span><span class="w"> </span>docs/part21/code
+<a id="__codelineno-39-2" name="__codelineno-39-2" href="#__codelineno-39-2"></a>./build.sh<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./demo.sh<span class="w"> </span>&gt;<span class="w"> </span>demo_out.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./show.sh<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>cpp/run.sh
+<a id="__codelineno-39-3" name="__codelineno-39-3" href="#__codelineno-39-3"></a>./prove_tests_can_fail.sh<span class="w">            </span><span class="c1"># front-end mutations (a few seconds)</span>
+<a id="__codelineno-39-4" name="__codelineno-39-4" href="#__codelineno-39-4"></a>./lowering_mutation.sh<span class="w">               </span><span class="c1"># lowering mutations (a full rebuild each: roughly 10 minutes)</span>
+<a id="__codelineno-39-5" name="__codelineno-39-5" href="#__codelineno-39-5"></a><span class="nb">cd</span><span class="w"> </span>../../part15/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_lit.sh<span class="w"> </span><span class="c1"># 78 tests</span>
 </code></pre></div>
 <h2 id="chapter-summary">Chapter summary<a class="headerlink" href="#chapter-summary" title="Permanent link">&para;</a></h2>
 <ul>
@@ -3755,7 +4036,7 @@
 <li>Fourteen worked examples ran for real, including a linear layer, a Gram matrix, a dynamic matmul and a run-time abort.</li>
 <li>The GPU path produced PTX for all of it, which exposed two real gaps (no <code>scf-to-cf</code> for loops inside kernels; a decoder that printed only the first kernel), both fixed.</li>
 <li>C++ calls the new operations and matches a plain C++ loop on a 7x5 by 5x9 product.</li>
-<li>Fifteen new tests (plus three for the tour, 78 total), each shown able to fail.</li>
+<li>Seventeen test files (plus three for the tour); each file was shown to fail under at least one injected bug, and an independent review then found and fixed the places where a single check was carrying too much.</li>
 </ul>
 <h2 id="self-check-questions">Self-check questions<a class="headerlink" href="#self-check-questions" title="Permanent link">&para;</a></h2>
 <p>Each answer is collapsed; try the question first.</p>
@@ -3785,7 +4066,7 @@
 <p>Why must the result of a matmul be zero-filled first?</p>
 <details class="note">
 <summary>Answer</summary>
-<p>The main loop <em>accumulates</em>: it reads the current value at <code>result[i][j]</code>, adds a product, and writes it back. <code>memref.alloc</code> gives memory with unspecified contents, so without the fill every sum would start from garbage. The lowering therefore runs a separate loop nest that stores 0.0 everywhere before the accumulate nest. One of this chapter's mutations removes exactly this step, and the tests fail.</p>
+<p>The main loop <em>accumulates</em>: it reads the current value at <code>result[i][j]</code>, adds a product, and writes it back. <code>memref.alloc</code> gives memory with unspecified contents, so without the fill every sum would start from garbage. The lowering therefore runs a separate loop nest that stores 0.0 everywhere before the accumulate nest. One of this chapter's mutations removes exactly this step. Only the lowering-structure test and one deliberately dirtied-heap test in the C++ program reliably notice (see "After an independent review" below); no program written in the language itself can, because the generated code never reuses memory.</p>
 </details>
 </li>
 <li>

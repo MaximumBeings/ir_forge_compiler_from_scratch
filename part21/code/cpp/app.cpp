@@ -1,6 +1,8 @@
-// A C++ program calling the Chapter 21 operations. Compare every result against plain C++ loops.
+// A C++ program calling the Chapter 21 operations. The elementwise results are checked by the test against exact expected
+// values; matmul is also compared against a plain C++ triple loop, including after the heap has been deliberately dirtied.
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include "ops.h"
 
 static bool same(const mg::Matrix &x, const mg::Matrix &y) {
@@ -29,6 +31,17 @@ int main(int argc, char **argv) {
   show("gram(a)", mg::gram(a));
   show("affine(a)", mg::affine(a));
   std::printf("matmul matches a plain C++ triple loop: %s\n", same(mg::matmul(a, b), ref_matmul(a, b)) ? "yes" : "NO");
+  // Dirty the heap first: allocate a block, fill it with 1000s, free it. The compiled code never zeroes memory it did not
+  // fill itself, so a matmul that forgot to zero its accumulators would add into these 1000s and print 1015, 1022 instead of
+  // 15, 22. (Without this, a fresh heap is all zeros and the bug hides.)
+  {
+    double *junk = (double *)std::malloc(4 * sizeof(double));
+    for (int i = 0; i < 4; i++) junk[i] = 1000.0;
+    std::free(junk);
+    mg::Matrix sq(2, 2, {1, 2, 3, 4});
+    mg::Matrix r = mg::matmul(sq, sq);
+    std::printf("dirty-heap matmul: %g %g %g %g\n", r.data[0], r.data[1], r.data[2], r.data[3]);
+  }
   // A bigger one, to compare against the reference on more than a hand-sized case.
   std::vector<double> pd(35), qd(45);
   for (size_t i = 0; i < 35; i++) pd[i] = (double)((i * 7) % 11) - 5;

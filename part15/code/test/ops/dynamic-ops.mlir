@@ -11,5 +11,9 @@
 // DS: sizes = [1, 3]
 // DS: 3, 5, 7]]
 // DS: sizes = [2, 1]
+// DS: 3],
+// DS-NEXT: 5]]
 // DS: sizes = [3, 2]
 // DS: 1, 1],
+// DS-NEXT: 1, 1],
+// DS-NEXT: 1, 1]]

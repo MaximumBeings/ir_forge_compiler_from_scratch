@@ -275,7 +275,7 @@ cd ../part15/code && ./run_lit.sh   # 60 tests
 - Ten example programs ran for real: static, dynamic, mismatched, composed, and one compiled to PTX.
 - `mgc lib` generates a C++ header, so ordinary C++ code calls compiled Mountain Goat functions; static shape errors throw, dynamic ones abort with a message on stderr.
 - The CUDA story ends at PTX: real, inspected, and not launched.
-- Eight new tests (60 total), each shown able to fail.
+- Eight new tests (60 total). Each test file was shown to fail under at least one injected bug; that is a weaker claim than "each test is strong", and Chapter 21's review section shows what the difference looks like.
 
 ## Self-check questions
 

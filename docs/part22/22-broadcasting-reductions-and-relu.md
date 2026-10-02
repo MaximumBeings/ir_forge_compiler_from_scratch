@@ -278,7 +278,7 @@ Ten new test files in `test/broadcast/` (the suite now has 88 tests). As in earl
 --8<-- "docs/part22/code/prove_tests_can_fail_out.txt"
 ```
 
-**Two runs found holes in the tests.** The first time the front-end mutations ran, the mutation "a size-1 left operand is not broadcast" made **no test fail** (`Passed: 10`, no failures): every example put the small operand on the right (`a + bias`), so the left-hand branch of the front end's broadcast rule was never exercised. Example 11 and a new check in `values` were added, the mutation was rerun, and it is now caught. A test suite is evidence only for what it exercises; a mutation is the way to find what it does not.
+**Two runs found holes in the tests.** The first time the front-end mutations ran, the mutation "a size-1 left operand is not broadcast" made **no test fail** (`Passed: 10`, no failures): every example put the small operand on the right (`a + bias`), so the left-hand branch of the front end's broadcast rule was never exercised. The left-broadcast example (`12_broadcast_left.mg`, section 11 below) and a new check in `values` were added, the mutation was rerun, and it is now caught. A test suite is evidence only for what it exercises; a mutation is the way to find what it does not.
 
 Lowering bugs need `mg-opt` rebuilt, so `lowering_mutation.sh` injects each into a copy of the source tree:
 
@@ -290,7 +290,7 @@ Lowering bugs need `mg-opt` rebuilt, so `lowering_mutation.sh` injects each into
 --8<-- "docs/part22/code/lowering_mutation_out.txt"
 ```
 
-**The second hole.** The first lowering mutation, "max reduction starts at 0 instead of -infinity", was run before example 12 existed. It was caught by only **two** of the ten test files (the lowering-structure test, which looks for the `-infinity` constant, and the C++ comparison, whose generated data happens to include a column of all-negative numbers). Every hand-sized example passed, because none had a column whose maximum is negative. The first run's result:
+**The second hole.** The first lowering mutation, "max reduction starts at 0 instead of -infinity", was run before the negative-max example (`13_negative_max.mg`, section 12 below) existed. It was caught by only **two** of the ten test files (the lowering-structure test, which looks for the `-infinity` constant, and the C++ comparison, whose generated data happens to include a column of all-negative numbers). Every hand-sized example passed, because none had a column whose maximum is negative. The first run's result:
 
 ```text
 ### lowering mutation: max reduction starts at 0 instead of -infinity
@@ -300,7 +300,7 @@ FAIL: broadcast/cpp-interop-reductions.mlir (9 of 10)
   Failed  :  2 (2.27%)
 ```
 
-Example 12 and a check in `values` were added, and the whole mutation run was repeated; the listing above is the repeat, in which that mutation now also fails `values`.
+The negative-max example and a check in `values` were added, and the whole mutation run was repeated; the listing above is the repeat, in which that mutation now also fails `values`.
 
 **The third: a mutation that changes nothing you can see.** "Reduce over axis 1 writes into the wrong cell" stores each row's running total at `result[0, i]` instead of `result[i, 0]`. It passed **every** test, and no test of the numbers could ever catch it. The reason is that the result of a row reduction is M by 1, and in row-major memory the element at `[0, i]` has the same address as `[i, 0]` (the offset is `row * 1 + column`, and one of the two indices is 0). The program writes outside the declared shape (in the abstract language that is out of bounds) but into exactly the memory that the correct version would have used, so the outputs are identical. A bug whose effect is invisible in the output is called an **equivalent mutant**, and behavioral tests cannot see it. A structural check can: `roundtrip-and-lowering` now also requires that the row reduction loads and stores `%alloc[%arg, %c0]` (row index first, constant zero second), and with that check the mutation fails one test. It is a fair question whether such a check tests behavior or implementation. Here it does the latter, deliberately, because the behavior is indistinguishable and the implementation is wrong: on a different layout, or after a later optimization that trusts the declared bounds, the bug would surface.
 

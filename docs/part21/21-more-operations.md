@@ -201,7 +201,7 @@ Five lines: `a + a * a`, `(a + a) * a`, `a - b @ a` (here `b` is the identity, s
 --8<-- "docs/part21/code/demo_out.txt:138:159"
 ```
 
-`a @ I = a`, `a - a = 0`, `a / a = 1` (wherever `a` is not zero) and `-(-a) = a`. When you add an operation to a compiler, checking such identities is a cheap, independent way to catch a lowering bug, because they hold regardless of what the numbers are.
+`a @ I = a`, `a - a = 0`, `a / a = 1` (wherever `a` is not zero) and `-(-a) = a`. When you add an operation to a compiler, checking such identities is a cheap, independent way to catch a lowering bug, because they hold regardless of what the numbers are. They have blind spots, though: `-(-a) = a` cannot tell a real negation from one that does nothing (two no-ops also give back `a`), so negation gets its own direct checks (`16_negate.mg`, below).
 
 ### 10. One compiled matmul, many shapes
 
@@ -277,7 +277,7 @@ Both comparisons print `yes`. The second run, `./app mismatch`, calls `matmul` o
 
 ## Tests
 
-Fifteen new tests in `test/ops/`, and three more in `test/tour/` for the language tour (suite: 78). Like Chapter 20's, the program tests run the real example files rather than copies.
+Seventeen test files in `test/ops/` (fifteen written with the chapter and two added after the review below), and three more in `test/tour/` for the language tour. Like Chapter 20's, the program tests run the real example files rather than copies.
 
 | Test | What it checks |
 |---|---|
@@ -295,7 +295,9 @@ Fifteen new tests in `test/ops/`, and three more in `test/tour/` for the languag
 | `matmul-mismatch-aborts` | run-time abort, message on stderr, empty stdout |
 | `front-end-errors` | both error files, exact text |
 | `ptx-new-ops` | the GPU path: four kernels for the chain, two for matmul, with the arithmetic instructions |
-| `cpp-interop-ops` | the C++ program builds with `-Wall -Werror`, matches the plain C++ loops, and aborts with the message on mismatch |
+| `cpp-interop-ops` | the C++ program builds with `-Wall -Werror`; every function's result matches exact hand-computed values; `matmul` matches a plain C++ loop, including on a deliberately dirtied heap; and a mismatch aborts with the message |
+| `elementwise-mismatch-aborts` | added after the review: `sub`, `mul` and `div` abort on a run-time shape mismatch, naming the operation, with empty stdout |
+| `negate-and-dynamic-divide` | added after the review: `neg` on static and dynamic shapes; dynamic division with order-sensitive numbers |
 
 Do the tests fail when the code is wrong? `prove_tests_can_fail.sh` runs the new tests against Chapter 20's `mg-opt` (which has none of the new ops) and against six broken copies of the front end and driver:
 
@@ -317,9 +319,63 @@ Front-end bugs are cheap to inject. Bugs in the lowering need `mg-opt` rebuilt (
 --8<-- "docs/part21/code/lowering_mutation_out.txt"
 ```
 
-Read the second list closely: **removing the zero-fill is caught by only two of the fifteen tests**, the lowering-structure test and the 7x5-by-5x9 comparison in the C++ test. None of the tests that print small results noticed, because `malloc` returned fresh, already-zero memory for a small buffer, so the accumulators happened to start at zero anyway. The bug is real and the program is wrong, but it would pass every small example by luck. This is exactly why the structure test (which looks for the zero-fill loop) and the larger independent comparison exist, and a reminder that a test which passes on a tiny input proves little about memory the program forgot to initialize.
+Read the second list closely, and read the corrected account that follows it (an independent review found that my first explanation here was wrong): **removing the zero-fill was caught by only two of the original fifteen tests**, the lowering-structure test and, as it turned out, the C++ program. No `.mg` program that prints a result noticed.
 
-The same list shows the three other groups of tests doing their jobs. Ignoring the `reversed` flag is caught by `values`; dropping the run-time inner-dimension check is caught by three tests; compiling `div` as a multiply, and compiling `neg` as the identity, are caught by the tests that check results (`division-ieee`, `precedence-and-identities`). Notice that `neg` is caught by only one test; the `values` test does not use negation at all.
+The same list shows the other mutations doing what they should. Ignoring the `reversed` flag is caught by `values`; dropping the run-time inner-dimension check is caught by three tests; compiling `div` as a multiply, and `neg` as the identity, were each caught by a single check, which is thinner than it looks (the review below made them direct).
+
+## After an independent review
+
+I asked a second model (Opus) to review these mutation results and the tests behind them, without editing anything. It found real problems, which I confirmed before acting, and which this section records. This is the kind of thing a mutation run is for, and the kind of thing I missed on my own.
+
+**1. My explanation of the zero-fill result was wrong.** I had written that `malloc` returned "fresh, already-zero memory for a small buffer". The real reason is different and more important: **the generated code never frees anything** (`LowerToAffine.cpp` contains no `dealloc`), so in a program run with `mgc run` every allocation comes from heap memory nobody has used yet, which the operating system hands out zeroed, whatever its size. **No program written in Mountain Goat can ever catch a missing zero-fill**, because it cannot reuse freed memory. The C++ wrapper does free its results (`take()` calls `std::free`), so a C++ program *can* reuse memory, and that is why the C++ test noticed. But it noticed by accident of how the C library recycles blocks: against the broken build, the *second* 2x2 matmul in the C++ program printed `NO`, because it reused a small block freed earlier, while the large 7x5-by-5x9 comparison printed `yes`, because its block was fresh. I had credited the large comparison; it was the small one. A test that passes or fails depending on the allocator is not a test to rely on.
+
+**2. A deterministic test now exists.** The C++ program allocates a small block, fills it with `1000`s, frees it, and *then* calls `matmul`. With the zero-fill, the result is `7 10 15 22`. Without it, the accumulators start from the leftover 1000s and the result is `7 10 1015 1022`, every time. The check is `dirty-heap matmul: 7 10 15 22` in `cpp-interop-ops`.
+
+**3. Results that were printed but never checked.** The C++ program printed the results of `sub`, `hadamard`, `divide`, `gram` and `affine`, but the test only checked `matmul`; under the mutation that compiled `div` as a multiply, that test still passed. The test now checks every function's output against hand-computed values. (The program's own header comment said "compare every result against plain C++ loops"; only `matmul` was. The comment is corrected.)
+
+**4. The run-time shape check was only tested for `+`.** `sub`, `mul` and `div` share a lowering template with their own copy of the check (`assertSameShape`), and nothing exercised it for them. New examples `15_elementwise_mismatch.mg`, `15b_mul_mismatch.mg` and `15c_div_mismatch.mg` abort with `mg.sub:`, `mg.mul:` and `mg.div: operand shapes differ at runtime in dimension 0`, with an empty stdout (test `elementwise-mismatch-aborts`).
+
+**5. `neg` and dynamic `div` now have direct tests** (`16_negate.mg`, `17_dynamic_divide.mg`; test `negate-and-dynamic-divide`): negation on static and dynamic shapes with a negative input, and a dynamic division with numbers where order matters (`[[1, 4], [9, 3]] / [[2, 8], [3, 4]]` is `[[0.5, 0.5], [3, 0.75]]`). Negation had been caught by exactly one check line, and `-(-a)`, which I had cited as an identity check, cannot see a negation that does nothing.
+
+**6. `dynamic-ops` now checks every value** it prints, including the `2x1` and `3x2` cases that previously only had their sizes checked.
+
+Three **new mutations** accompany these, and the script was rerun in full (eight rebuilds):
+
+```text
+--8<-- "docs/part21/code/lowering_mutation_out.txt"
+```
+
+Before and after, for the five original mutants, counting the test files that fail out of the seventeen:
+
+| Mutation | Before the review | After | Who catches it now |
+|---|---|---|---|
+| matmul accumulator not zero-filled | 2 (one by allocator luck) | 2 | structure test, and the dirty-heap check (deterministic) |
+| scalar op ignores `reversed` | 1 | 1 | `values`: `10 - a` and `16 / a` have a direct, deterministic check |
+| matmul skips the run-time inner-dimension check | 3 | 3 | structure, the abort test, the C++ abort run |
+| `div` computed as a multiply | 2 | 4 | division, identities, dynamic divide, C++ output |
+| `neg` computed as the identity | 1 | 2 | identities, and the new direct `neg` test |
+
+The three new mutations are each caught as well: operands swapped (4 tests), the elementwise run-time shape check removed (1 test, the new `elementwise-mismatch-aborts`, which is the only thing that exercises that code), and the matmul output width read from the wrong operand (2 tests).
+
+Two honest remarks. First, "caught by only one test" is not automatically a weakness: `reversed` and the shape check are each caught by a *direct, deterministic* check of exactly that behavior, which is what you want. What was a weakness was a catch that depended on chance (the allocator) or on a test that did not look at the thing it printed. Second, the zero-fill mutant is still caught by only two checks, and one of them (the structure test) looks at the implementation, not the behavior. That is the best available: the language cannot observe the bug, so only the C++ side, which can reuse memory, can.
+
+The full suite after these additions:
+
+```text
+--8<-- "docs/part15/code/run_out_90.txt"
+```
+
+The new examples' real output:
+
+```text
+--8<-- "docs/part21/code/demo_review_out.txt"
+```
+
+The C++ program's output, with the new check:
+
+```text
+--8<-- "docs/part21/code/cpp/run_out.txt"
+```
 
 The full suite against the Chapter 21 build:
 
@@ -366,7 +422,7 @@ cd ../../part15/code && ./run_lit.sh # 78 tests
 - Fourteen worked examples ran for real, including a linear layer, a Gram matrix, a dynamic matmul and a run-time abort.
 - The GPU path produced PTX for all of it, which exposed two real gaps (no `scf-to-cf` for loops inside kernels; a decoder that printed only the first kernel), both fixed.
 - C++ calls the new operations and matches a plain C++ loop on a 7x5 by 5x9 product.
-- Fifteen new tests (plus three for the tour, 78 total), each shown able to fail.
+- Seventeen test files (plus three for the tour); each file was shown to fail under at least one injected bug, and an independent review then found and fixed the places where a single check was carrying too much.
 
 ## Self-check questions
 
@@ -390,7 +446,7 @@ Each answer is collapsed; try the question first.
 4. Why must the result of a matmul be zero-filled first?
 
     ??? note "Answer"
-        The main loop *accumulates*: it reads the current value at `result[i][j]`, adds a product, and writes it back. `memref.alloc` gives memory with unspecified contents, so without the fill every sum would start from garbage. The lowering therefore runs a separate loop nest that stores 0.0 everywhere before the accumulate nest. One of this chapter's mutations removes exactly this step, and the tests fail.
+        The main loop *accumulates*: it reads the current value at `result[i][j]`, adds a product, and writes it back. `memref.alloc` gives memory with unspecified contents, so without the fill every sum would start from garbage. The lowering therefore runs a separate loop nest that stores 0.0 everywhere before the accumulate nest. One of this chapter's mutations removes exactly this step. Only the lowering-structure test and one deliberately dirtied-heap test in the C++ program reliably notice (see "After an independent review" below); no program written in the language itself can, because the generated code never reuses memory.
 
 5. `mg.matmul`'s verifier does not require the two operand shapes to be equal. What does it require, and what happens when a dimension is `?`?
 

@@ -1,0 +1,52 @@
+################ ./mgc run examples/15_elementwise_mismatch.mg
+  | # The run-time shape check is not only for '+': subtract, multiply and divide each abort on a dimension mismatch,
+  | # naming the operation. Here 1x3 minus 2x1: the 1x3 is a ?-typed parameter, so nothing broadcasts and the check runs.
+  | def f(a: tensor[?x?], b: tensor[?x?]) = a - b
+  | print f([[1, 2, 3]], [[1], [2]])
+  ----- output
+mg.sub: operand shapes differ at runtime in dimension 0
+Aborted
+  ----- exit status 134
+
+################ ./mgc run examples/15b_mul_mismatch.mg
+  | def f(a: tensor[?x?], b: tensor[?x?]) = a * b
+  | print f([[1, 2, 3]], [[1], [2]])
+  ----- output
+mg.mul: operand shapes differ at runtime in dimension 0
+Aborted
+  ----- exit status 134
+
+################ ./mgc run examples/15c_div_mismatch.mg
+  | def f(a: tensor[?x?], b: tensor[?x?]) = a / b
+  | print f([[1, 2, 3]], [[1], [2]])
+  ----- output
+mg.div: operand shapes differ at runtime in dimension 0
+Aborted
+  ----- exit status 134
+
+################ ./mgc run examples/16_negate.mg
+  | # Negation, on its own: static and dynamic shapes. (-(-a) = a cannot tell a real negation from a no-op; these can.)
+  | def h(a: tensor[?x?]) = -a
+  | print h([[1, -2, 3]])
+  | print -[[0.5, -4]]
+  | print h([[7], [-8]])
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 3] strides = [3, 1] data = 
+[[-1,   2,   -3]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 2] strides = [2, 1] data = 
+[[-0.5,   4]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 1] strides = [1, 1] data = 
+[[-7], 
+ [8]]
+  ----- exit status 0
+
+################ ./mgc run examples/17_dynamic_divide.mg
+  | # Division on dynamic shapes, with numbers where the order matters (a / b is not b / a).
+  | def g(a: tensor[?x?], b: tensor[?x?]) = a / b
+  | print g([[1, 4], [9, 3]], [[2, 8], [3, 4]])
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[0.5,   0.5], 
+ [3,   0.75]]
+  ----- exit status 0
+

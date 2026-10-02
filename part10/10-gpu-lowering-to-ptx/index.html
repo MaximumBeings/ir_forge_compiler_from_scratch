@@ -1026,6 +1026,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#primer-1-how-a-gpu-runs-a-function" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Primer 1: how a GPU runs a function
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#primer-2-the-stack-of-representations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Primer 2: the stack of representations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#what-this-sandbox-can-and-cannot-do-checked-not-assumed" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1077,6 +1099,23 @@
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Step 4: real PTX">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#reading-the-body" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reading the body
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1407,6 +1446,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#primer-1-how-a-gpu-runs-a-function" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Primer 1: how a GPU runs a function
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#primer-2-the-stack-of-representations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Primer 2: the stack of representations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#what-this-sandbox-can-and-cannot-do-checked-not-assumed" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1458,6 +1519,23 @@
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Step 4: real PTX">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#reading-the-body" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reading the body
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1534,20 +1612,85 @@
 
 
 <h1 id="10-gpu-lowering-mountain-goat-to-the-gpu-dialect-nvvm-and-real-ptx">10. GPU Lowering: Mountain Goat to the <code>gpu</code> Dialect, NVVM, and Real PTX<a class="headerlink" href="#10-gpu-lowering-mountain-goat-to-the-gpu-dialect-nvvm-and-real-ptx" title="Permanent link">&para;</a></h1>
-<p><strong>What you will understand:</strong> how a real Mountain Goat program (<code>mg.add</code>) is carried from Chapter 4's own <code>affine</code> loops, through MLIR's own real <code>gpu</code> dialect and its real <code>nvvm</code> dialect, down to real PTX text emitted by LLVM's own NVPTX backend -- and how that real, machine-generated PTX compares, instruction for instruction, against a real hand-written CUDA-style kernel compiled by <code>clang-18</code>. This chapter also says plainly what it could <strong>not</strong> do: launch the kernel. This book's own sandbox has no GPU.</p>
-<p><strong>What you need to know first:</strong> Chapter 4's own <code>--convert-mg-to-affine</code> output, Chapter 7's own <code>affine</code> loop passes, and Chapter 5's own memref-descriptor calling convention (each <code>memref</code> argument becomes several scalar parameters). New ground here: the <code>gpu</code> dialect's host/device split (<code>gpu.module</code>, <code>gpu.launch_func</code>) and PTX as an assembly language.</p>
+<p><strong>What you will understand:</strong> how a real Mountain Goat program (<code>mg.add</code>) is carried from Chapter 4's own <code>affine</code> loops, through MLIR's own <code>gpu</code> dialect and its <code>nvvm</code> dialect, down to real PTX text emitted by LLVM's own NVPTX backend, and how that machine-generated PTX compares, instruction for instruction, against a hand-written CUDA-style kernel compiled by <code>clang-18</code>. This chapter also says plainly what it could <strong>not</strong> do: launch the kernel. This book's sandbox has no GPU. Every file and output on this page is embedded from the repository, so nothing is elided and nothing is paraphrased.</p>
+<p><strong>What you need to know first:</strong> Chapter 4's <code>--convert-mg-to-affine</code> output, Chapter 7's <code>affine</code> loop passes, and Chapter 5's memref-descriptor calling convention (each <code>memref</code> argument becomes several scalar parameters). New ground here: the <code>gpu</code> dialect's host/device split (<code>gpu.module</code>, <code>gpu.launch_func</code>) and PTX as an assembly language. A short primer on both comes first.</p>
+<h2 id="primer-1-how-a-gpu-runs-a-function">Primer 1: how a GPU runs a function<a class="headerlink" href="#primer-1-how-a-gpu-runs-a-function" title="Permanent link">&para;</a></h2>
+<p>A CPU function runs once per call. A <strong>GPU kernel</strong> is launched once but executes on <em>many threads at the same time</em>, and every thread runs the same code. Threads are organized in two levels:</p>
+<ul>
+<li>A <strong>block</strong> (also called a thread block or CTA) is a group of threads.</li>
+<li>A <strong>grid</strong> is the group of blocks one launch creates.</li>
+</ul>
+<p>Each thread can ask "which block am I in, and which thread am I within it?" (<code>blockIdx</code>/<code>threadIdx</code> in CUDA; <code>gpu.block_id</code>/<code>gpu.thread_id</code> in MLIR; the PTX special registers <code>%ctaid</code> and <code>%tid</code>), and uses the answer to pick which piece of data to work on. For this book's 2x2 matrix addition the natural mapping is one thread per output element: <strong>2 blocks of 2 threads</strong>, the block index selecting the row and the thread index the column. That is what the compiler is about to be asked to build from Chapter 4's loop nest, whose outer loop becomes the blocks and whose inner loop becomes the threads.</p>
+<h2 id="primer-2-the-stack-of-representations">Primer 2: the stack of representations<a class="headerlink" href="#primer-2-the-stack-of-representations" title="Permanent link">&para;</a></h2>
+<p>Four layers appear in this chapter, from most to least portable:</p>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>What it is</th>
+<th>Where it appears</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>gpu</code> dialect</td>
+<td>MLIR's vendor-neutral model of "host code plus device kernels": <code>gpu.module</code> holds kernels, <code>gpu.launch_func</code> starts one</td>
+<td>Step 2</td>
+</tr>
+<tr>
+<td><code>nvvm</code> dialect</td>
+<td>MLIR's model of NVIDIA-specific operations (special-register reads, the <code>nvvm.kernel</code> marker)</td>
+<td>Step 3</td>
+</tr>
+<tr>
+<td>LLVM IR with the NVPTX target</td>
+<td>ordinary LLVM IR that LLVM's <code>nvptx64</code> backend knows how to compile</td>
+<td>inside Step 4</td>
+</tr>
+<tr>
+<td><strong>PTX</strong></td>
+<td>NVIDIA's <em>virtual</em> assembly language, which a vendor tool (<code>ptxas</code>) later turns into the actual machine code for a specific chip</td>
+<td>Step 4</td>
+</tr>
+</tbody>
+</table>
+<p>PTX is assembly in the sense that each line is one instruction (<code>ld.global.f64</code> loads a 64-bit float from global memory, <code>add.rn.f64</code> adds two with round-to-nearest) and values live in numbered virtual registers (<code>%rd7</code>, <code>%fd3</code>, ...). It is <em>virtual</em> in that the register count is unlimited and the target chip decides the rest later. This chapter produces PTX but, as the next section shows, cannot assemble or run it.</p>
 <h2 id="what-this-sandbox-can-and-cannot-do-checked-not-assumed">What this sandbox can and cannot do (checked, not assumed)<a class="headerlink" href="#what-this-sandbox-can-and-cannot-do-checked-not-assumed" title="Permanent link">&para;</a></h2>
-<p>Before writing a single pass, this chapter's own environment was probed directly:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>$ which nvcc nvidia-smi          # (no output: neither exists)
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>$ ls /dev | grep -i nvidia       # (no output)
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>$ nvptx-arch
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>Failed to &#39;dlopen&#39; libcuda.so.1
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>$ llc-18 --version | grep -iE &quot;nvptx|amdgcn&quot;
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    amdgcn      - AMD GCN GPUs
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    nvptx       - NVIDIA PTX 32-bit
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    nvptx64     - NVIDIA PTX 64-bit
+<p>Before writing a single pass, the environment was probed. <code>probe.sh</code> records exactly what exists; its unedited output (<code>probe_out.txt</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="ch">#!/bin/sh</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="c1"># Chapter 10&#39;s sandbox probe: what GPU tooling exists here? Output: probe_out.txt</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;$ which nvcc nvidia-smi&#39;</span><span class="p">;</span><span class="w"> </span>which<span class="w"> </span>nvcc<span class="w"> </span>nvidia-smi<span class="p">;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;(exit status </span><span class="nv">$?</span><span class="s2">)&quot;</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;$ ls /dev | grep -i nvidia&#39;</span><span class="p">;</span><span class="w"> </span>ls<span class="w"> </span>/dev<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-i<span class="w"> </span>nvidia<span class="p">;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;(exit status </span><span class="nv">$?</span><span class="s2">)&quot;</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;$ nvptx-arch&#39;</span><span class="p">;</span><span class="w"> </span>/usr/lib/llvm-18/bin/nvptx-arch<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="p">;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;(exit status </span><span class="nv">$?</span><span class="s2">)&quot;</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;$ llc-18 --version | grep -iE &quot;nvptx|amdgcn&quot;&#39;</span><span class="p">;</span><span class="w"> </span>llc-18<span class="w"> </span>--version<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-iE<span class="w"> </span><span class="s2">&quot;nvptx|amdgcn&quot;</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;$ mlir-opt-18 --help | grep -E &quot;convert-gpu-to-nvvm|nvvm-attach-target|gpu-module-to-binary|gpu-lower-to-nvvm-pipeline&quot;&#39;</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>mlir-opt-18<span class="w"> </span>--help<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span>--<span class="w"> </span><span class="s2">&quot;--(convert-gpu-to-nvvm|nvvm-attach-target|gpu-module-to-binary|gpu-lower-to-nvvm-pipeline) &quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>cut<span class="w"> </span>-c1-110
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="nb">printf</span><span class="w"> </span><span class="s1">&#39;%s\n&#39;</span><span class="w"> </span><span class="s1">&#39;$ mlir-opt-18 --show-dialects &lt; /dev/null | tr &quot;,&quot; &quot;\n&quot; | grep -E &quot;gpu|nvvm|rocdl&quot;&#39;</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>mlir-opt-18<span class="w"> </span>--show-dialects<span class="w"> </span>&lt;<span class="w"> </span>/dev/null<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span><span class="s1">&#39;,&#39;</span><span class="w"> </span><span class="s1">&#39;\n&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s2">&quot;^(gpu|nvvm|rocdl|nvgpu)</span>$<span class="s2">&quot;</span>
 </code></pre></div>
-<p>So: <strong>no GPU, no CUDA driver (<code>libcuda.so.1</code>), no <code>nvcc</code>, no CUDA SDK.</strong> But the real <code>nvptx64</code> code generator <em>is</em> compiled into this LLVM, and <code>mlir-opt-18</code> really does carry the <code>gpu</code>, <code>nvvm</code> and <code>rocdl</code> dialects and the passes between them (<code>--convert-gpu-to-nvvm</code>, <code>--nvvm-attach-target</code>, <code>--gpu-module-to-binary</code>, all confirmed present in <code>mlir-opt-18 --help</code>). That decides this chapter's honest scope:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>$ which nvcc nvidia-smi
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>(exit status 1)
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>$ ls /dev | grep -i nvidia
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>(exit status 1)
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>$ nvptx-arch
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>Failed to &#39;dlopen&#39; libcuda.so.1
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>(exit status 1)
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>$ llc-18 --version | grep -iE &quot;nvptx|amdgcn&quot;
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    amdgcn      - AMD GCN GPUs
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    nvptx       - NVIDIA PTX 32-bit
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    nvptx64     - NVIDIA PTX 64-bit
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>$ mlir-opt-18 --help | grep -E &quot;convert-gpu-to-nvvm|nvvm-attach-target|gpu-module-to-binary|gpu-lower-to-nvvm-pipeline&quot;
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>      --convert-gpu-to-nvvm                                  -   Generate NVVM operations for gpu operations
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>      --gpu-module-to-binary                                 -   Transforms a GPU module into a GPU binary.
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>      --nvvm-attach-target                                   -   Attaches an NVVM target attribute to a GPU Mo
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>      --gpu-lower-to-nvvm-pipeline                           -   The default pipeline lowers main dialects (ar
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>$ mlir-opt-18 --show-dialects &lt; /dev/null | tr &quot;,&quot; &quot;\n&quot; | grep -E &quot;gpu|nvvm|rocdl&quot;
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>gpu
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>nvgpu
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>nvvm
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>rocdl
+</code></pre></div>
+<p>So: <strong>no GPU, no CUDA driver (<code>libcuda.so.1</code>), no <code>nvcc</code>, no CUDA SDK.</strong> But the <code>nvptx64</code> code generator <em>is</em> compiled into this LLVM, and <code>mlir-opt-18</code> carries the <code>gpu</code>, <code>nvvm</code> and <code>rocdl</code> dialects and the passes between them. That decides this chapter's honest scope:</p>
 <table>
 <thead>
 <tr>
@@ -1574,78 +1717,118 @@
 </tr>
 <tr>
 <td>Assemble PTX to a cubin (<code>ptxas</code>), launch it, read results back</td>
-<td><strong>No</strong> -- no GPU, no <code>ptxas</code>, no driver</td>
+<td><strong>No</strong> (no GPU, no <code>ptxas</code>, no driver)</td>
 </tr>
 </tbody>
 </table>
 <p>Because nothing here was executed on a GPU, <strong>this chapter does not claim the PTX computes the right answer on hardware.</strong> What it establishes is that real MLIR and real LLVM accept every stage and produce the PTX shown. The numeric <code>[[6, 8], [10, 12]]</code> check Chapters 5 through 9 ended with has no equivalent in this chapter, and that absence is the chapter's most important caveat. The <code>-nocudainc -nocudalib</code> CUDA kernel below is likewise compiled, not run.</p>
 <h2 id="step-1-the-same-mgadd-as-before-lowered-to-affine">Step 1: the same <code>mg.add</code> as before, lowered to <code>affine</code><a class="headerlink" href="#step-1-the-same-mgadd-as-before-lowered-to-affine" title="Permanent link">&para;</a></h2>
 <p>The input is Chapter 8's own unmodified <code>add_tensors.mlir</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>func.func @add_tensors(%a: tensor&lt;2x2xf64&gt;, %b: tensor&lt;2x2xf64&gt;) -&gt; tensor&lt;2x2xf64&gt; {
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  %0 = mg.add %a, %b : tensor&lt;2x2xf64&gt;, tensor&lt;2x2xf64&gt; -&gt; tensor&lt;2x2xf64&gt;
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  func.return %0 : tensor&lt;2x2xf64&gt;
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>}
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>func.func @add_tensors(%a: tensor&lt;2x2xf64&gt;, %b: tensor&lt;2x2xf64&gt;) -&gt; tensor&lt;2x2xf64&gt; {
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  %0 = mg.add %a, %b : tensor&lt;2x2xf64&gt;, tensor&lt;2x2xf64&gt; -&gt; tensor&lt;2x2xf64&gt;
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  func.return %0 : tensor&lt;2x2xf64&gt;
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>}
 </code></pre></div>
-<p><code>mg-opt</code> was rebuilt from this book's own published sources (Chapter 3's dialect files, Chapter 5's <code>LowerToAffine.cpp</code>, Chapter 6's bufferization model, Chapter 7's <code>mg-opt.cpp</code> and <code>CMakeLists.txt</code>) and run:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>./mg-opt<span class="w"> </span>add_tensors.mlir<span class="w"> </span>--convert-mg-to-affine<span class="w"> </span>-o<span class="w"> </span>add_affine.mlir
-</code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>func.func @add_tensors(%arg0: memref&lt;2x2xf64&gt;, %arg1: memref&lt;2x2xf64&gt;) -&gt; memref&lt;2x2xf64&gt; {
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  %alloc = memref.alloc() : memref&lt;2x2xf64&gt;
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  affine.for %arg2 = 0 to 2 {
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    affine.for %arg3 = 0 to 2 {
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>      %0 = affine.load %arg0[%arg2, %arg3] : memref&lt;2x2xf64&gt;
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>      %1 = affine.load %arg1[%arg2, %arg3] : memref&lt;2x2xf64&gt;
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>      %2 = arith.addf %0, %1 : f64
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>      affine.store %2, %alloc[%arg2, %arg3] : memref&lt;2x2xf64&gt;
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    }
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>  }
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>  return %alloc : memref&lt;2x2xf64&gt;
-<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>}
+<p><code>mg-opt</code> was rebuilt from this book's published sources (Chapter 3's dialect files, Chapter 5's <code>LowerToAffine.cpp</code>, Chapter 6's bufferization model, Chapter 7's <code>mg-opt.cpp</code> and <code>CMakeLists.txt</code>) and run as <code>./mg-opt add_tensors.mlir --convert-mg-to-affine -o add_affine.mlir</code>. The result: the tensors became memrefs, and the add became a pair of nested loops.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>module {
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  func.func @add_tensors(%arg0: memref&lt;2x2xf64&gt;, %arg1: memref&lt;2x2xf64&gt;) -&gt; memref&lt;2x2xf64&gt; {
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    %alloc = memref.alloc() : memref&lt;2x2xf64&gt;
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    affine.for %arg2 = 0 to 2 {
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>      affine.for %arg3 = 0 to 2 {
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>        %0 = affine.load %arg0[%arg2, %arg3] : memref&lt;2x2xf64&gt;
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>        %1 = affine.load %arg1[%arg2, %arg3] : memref&lt;2x2xf64&gt;
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>        %2 = arith.addf %0, %1 : f64
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>        affine.store %2, %alloc[%arg2, %arg3] : memref&lt;2x2xf64&gt;
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>      }
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>    }
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>    return %alloc : memref&lt;2x2xf64&gt;
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>  }
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>}
 </code></pre></div>
 <h2 id="step-2-a-real-false-start-then-the-route-that-works">Step 2: a real false start, then the route that works<a class="headerlink" href="#step-2-a-real-false-start-then-the-route-that-works" title="Permanent link">&para;</a></h2>
-<p>The obvious pass for this job is <code>--convert-affine-for-to-gpu</code>. The first attempt failed twice, in two different ways:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>$ mlir-opt-18 add_affine.mlir --convert-affine-for-to-gpu=&quot;gpu-block-dims=1 gpu-thread-dims=1&quot;
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>&lt;unknown&gt;:0: error: unable to schedule pass &#39;ConvertAffineForToGPU&#39; on a PassManager
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>intended to run on &#39;builtin.module&#39;!
+<p>The obvious pass for this job is <code>--convert-affine-for-to-gpu</code>, which converts top-level <code>affine.for</code> loops into GPU kernels. The first attempt failed twice, in two different ways. <code>false_starts.sh</code> records both verbatim (<code>false_starts_out.txt</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="ch">#!/bin/sh</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="c1"># Chapter 10&#39;s first attempt at the affine-&gt;gpu step (--convert-affine-for-to-gpu), saved verbatim. Output: false_starts_out.txt</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="nb">cd</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>dirname<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$0</span><span class="s2">&quot;</span><span class="k">)</span><span class="s2">&quot;</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;$ mlir-opt-18 add_affine.mlir --convert-affine-for-to-gpu=&quot;gpu-block-dims=1 gpu-thread-dims=1&quot;&#39;</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>mlir-opt-18<span class="w"> </span>add_affine.mlir<span class="w"> </span>--convert-affine-for-to-gpu<span class="o">=</span><span class="s2">&quot;gpu-block-dims=1 gpu-thread-dims=1&quot;</span><span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>cut<span class="w"> </span>-c1-200
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="nb">echo</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;\$ mlir-opt-18 add_affine.mlir --pass-pipeline=&#39;builtin.module(func.func(convert-affine-for-to-gpu{gpu-block-dims=1 gpu-thread-dims=1}))&#39;&quot;</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>mlir-opt-18<span class="w"> </span>add_affine.mlir<span class="w"> </span>--pass-pipeline<span class="o">=</span><span class="s1">&#39;builtin.module(func.func(convert-affine-for-to-gpu{gpu-block-dims=1 gpu-thread-dims=1}))&#39;</span><span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-3<span class="w"> </span><span class="p">|</span><span class="w"> </span>cut<span class="w"> </span>-c1-200
 </code></pre></div>
-<p>It is a <code>func.func</code> pass, so it has to be nested (<code>--pass-pipeline='builtin.module(func.func(...))'</code>). Nested, it fails differently:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>add_affine.mlir:6:14: error: &#39;affine.load&#39; op index must be a valid dimension or symbol identifier
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>$ mlir-opt-18 add_affine.mlir --convert-affine-for-to-gpu=&quot;gpu-block-dims=1 gpu-thread-dims=1&quot;
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>&lt;unknown&gt;:0: error: unable to schedule pass &#39;ConvertAffineForToGPU&#39; on a PassManager intended to run on &#39;builtin.module&#39;!
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>$ mlir-opt-18 add_affine.mlir --pass-pipeline=&#39;builtin.module(func.func(convert-affine-for-to-gpu{gpu-block-dims=1 gpu-thread-dims=1}))&#39;
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>add_affine.mlir:6:14: error: &#39;affine.load&#39; op index must be a valid dimension or symbol identifier
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>        %0 = affine.load %arg0[%arg2, %arg3] : memref&lt;2x2xf64&gt;
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>             ^
 </code></pre></div>
-<p>That pass leaves <code>affine.load</code> inside the new kernel body indexed by values (the GPU block/thread ids) that are not valid affine dimensions or symbols, so the result does not verify. This chapter did not dig into why further than that, and does not claim this is a bug in the pass as opposed to a use this chapter got wrong; it simply abandoned that route.</p>
+<p>The pass works on a <code>func.func</code>, not a whole module, so it has to be nested (<code>--pass-pipeline='builtin.module(func.func(...))'</code>). Nested, it fails differently: it leaves <code>affine.load</code> inside the new kernel body indexed by values (the GPU block and thread ids) that are not valid affine dimensions or symbols, so the result does not verify. This chapter did not dig into why further than that, and does not claim this is a bug in the pass as opposed to a use this chapter got wrong; it simply abandoned that route.</p>
 <p>The route that worked goes through loop <em>parallelism</em> rather than loop <em>conversion</em>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>mlir-opt-18<span class="w"> </span>add_affine.mlir<span class="w"> </span>--pass-pipeline<span class="o">=</span><span class="s1">&#39;builtin.module(</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="s1">  func.func(affine-parallelize, lower-affine, gpu-map-parallel-loops,</span>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="s1">            convert-parallel-loops-to-gpu),</span>
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="s1">  gpu-kernel-outlining)&#39;</span><span class="w"> </span>-o<span class="w"> </span>add_gpu.mlir
 </code></pre></div>
-<p><code>affine-parallelize</code> proves the two <code>affine.for</code> loops have no loop-carried dependence and rewrites them as <code>affine.parallel</code>; <code>lower-affine</code> (Chapter 5's own pass) turns that into <code>scf.parallel</code>; <code>gpu-map-parallel-loops</code> assigns the outer loop to GPU <em>blocks</em> and the inner loop to GPU <em>threads</em>; <code>convert-parallel-loops-to-gpu</code> builds a <code>gpu.launch</code>; and <code>gpu-kernel-outlining</code> moves its body into a real <code>gpu.module</code>/<code>gpu.func</code>. Real output:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>module attributes {gpu.container_module} {
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  func.func @add_tensors(%arg0: memref&lt;2x2xf64&gt;, %arg1: memref&lt;2x2xf64&gt;) -&gt; memref&lt;2x2xf64&gt; {
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>    %alloc = memref.alloc() : memref&lt;2x2xf64&gt;
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>    ...
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    gpu.launch_func  @add_tensors_kernel::@add_tensors_kernel
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>        blocks in (%0, %c1_0, %c1_0) threads in (%1, %c1_0, %c1_0)
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>        args(%c1 : index, %c0 : index, %arg0 : memref&lt;2x2xf64&gt;,
-<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>             %arg1 : memref&lt;2x2xf64&gt;, %alloc : memref&lt;2x2xf64&gt;)
-<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>    return %alloc : memref&lt;2x2xf64&gt;
-<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>  }
-<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>  gpu.module @add_tensors_kernel {
-<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>    gpu.func @add_tensors_kernel(%arg0: index, %arg1: index, %arg2: memref&lt;2x2xf64&gt;,
-<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>        %arg3: memref&lt;2x2xf64&gt;, %arg4: memref&lt;2x2xf64&gt;) kernel {
-<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>      %0 = gpu.block_id  x
-<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>      ...
-<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>      %3 = gpu.thread_id  x
-<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>      ...
-<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a>      %14 = memref.load %arg2[%12, %13] : memref&lt;2x2xf64&gt;
-<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a>      %15 = memref.load %arg3[%12, %13] : memref&lt;2x2xf64&gt;
-<a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a>      %16 = arith.addf %14, %15 : f64
-<a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a>      memref.store %16, %arg4[%12, %13] : memref&lt;2x2xf64&gt;
-<a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a>      gpu.return
-<a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a>    }
-<a id="__codelineno-7-24" name="__codelineno-7-24" href="#__codelineno-7-24"></a>  }
-<a id="__codelineno-7-25" name="__codelineno-7-25" href="#__codelineno-7-25"></a>}
+<ul>
+<li><code>affine-parallelize</code> proves the two <code>affine.for</code> loops have no loop-carried dependence and rewrites them as <code>affine.parallel</code>.</li>
+<li><code>lower-affine</code> (Chapter 5's own pass) turns that into <code>scf.parallel</code>.</li>
+<li><code>gpu-map-parallel-loops</code> assigns the outer loop to GPU <em>blocks</em> and the inner loop to GPU <em>threads</em>.</li>
+<li><code>convert-parallel-loops-to-gpu</code> builds a <code>gpu.launch</code>.</li>
+<li><code>gpu-kernel-outlining</code> moves its body into a real <code>gpu.module</code>/<code>gpu.func</code>.</li>
+</ul>
+<p>The complete real output, nothing elided (<code>add_gpu.mlir</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>#map = affine_map&lt;(d0)[s0, s1] -&gt; ((d0 - s0) ceildiv s1)&gt;
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>#map1 = affine_map&lt;(d0)[s0, s1] -&gt; (d0 * s0 + s1)&gt;
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>module attributes {gpu.container_module} {
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>  func.func @add_tensors(%arg0: memref&lt;2x2xf64&gt;, %arg1: memref&lt;2x2xf64&gt;) -&gt; memref&lt;2x2xf64&gt; {
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    %alloc = memref.alloc() : memref&lt;2x2xf64&gt;
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>    %c0 = arith.constant 0 : index
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>    %c2 = arith.constant 2 : index
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>    %c1 = arith.constant 1 : index
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>    %c1_0 = arith.constant 1 : index
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>    %0 = affine.apply #map(%c2)[%c0, %c1]
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>    %c2_1 = arith.constant 2 : index
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>    %c0_2 = arith.constant 0 : index
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>    %c1_3 = arith.constant 1 : index
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>    %1 = affine.apply #map(%c2_1)[%c0_2, %c1_3]
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>    gpu.launch_func  @add_tensors_kernel::@add_tensors_kernel blocks in (%0, %c1_0, %c1_0) threads in (%1, %c1_0, %c1_0)  args(%c1 : index, %c0 : index, %arg0 : memref&lt;2x2xf64&gt;, %arg1 : memref&lt;2x2xf64&gt;, %alloc : memref&lt;2x2xf64&gt;)
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>    return %alloc : memref&lt;2x2xf64&gt;
+<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>  }
+<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a>  gpu.module @add_tensors_kernel {
+<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a>    gpu.func @add_tensors_kernel(%arg0: index, %arg1: index, %arg2: memref&lt;2x2xf64&gt;, %arg3: memref&lt;2x2xf64&gt;, %arg4: memref&lt;2x2xf64&gt;) kernel {
+<a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a>      %0 = gpu.block_id  x
+<a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a>      %1 = gpu.block_id  y
+<a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a>      %2 = gpu.block_id  z
+<a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a>      %3 = gpu.thread_id  x
+<a id="__codelineno-7-24" name="__codelineno-7-24" href="#__codelineno-7-24"></a>      %4 = gpu.thread_id  y
+<a id="__codelineno-7-25" name="__codelineno-7-25" href="#__codelineno-7-25"></a>      %5 = gpu.thread_id  z
+<a id="__codelineno-7-26" name="__codelineno-7-26" href="#__codelineno-7-26"></a>      %6 = gpu.grid_dim  x
+<a id="__codelineno-7-27" name="__codelineno-7-27" href="#__codelineno-7-27"></a>      %7 = gpu.grid_dim  y
+<a id="__codelineno-7-28" name="__codelineno-7-28" href="#__codelineno-7-28"></a>      %8 = gpu.grid_dim  z
+<a id="__codelineno-7-29" name="__codelineno-7-29" href="#__codelineno-7-29"></a>      %9 = gpu.block_dim  x
+<a id="__codelineno-7-30" name="__codelineno-7-30" href="#__codelineno-7-30"></a>      %10 = gpu.block_dim  y
+<a id="__codelineno-7-31" name="__codelineno-7-31" href="#__codelineno-7-31"></a>      %11 = gpu.block_dim  z
+<a id="__codelineno-7-32" name="__codelineno-7-32" href="#__codelineno-7-32"></a>      cf.br ^bb1
+<a id="__codelineno-7-33" name="__codelineno-7-33" href="#__codelineno-7-33"></a>    ^bb1:  // pred: ^bb0
+<a id="__codelineno-7-34" name="__codelineno-7-34" href="#__codelineno-7-34"></a>      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+<a id="__codelineno-7-35" name="__codelineno-7-35" href="#__codelineno-7-35"></a>      %c0 = arith.constant 0 : index
+<a id="__codelineno-7-36" name="__codelineno-7-36" href="#__codelineno-7-36"></a>      %c2 = arith.constant 2 : index
+<a id="__codelineno-7-37" name="__codelineno-7-37" href="#__codelineno-7-37"></a>      %c1 = arith.constant 1 : index
+<a id="__codelineno-7-38" name="__codelineno-7-38" href="#__codelineno-7-38"></a>      %c1_0 = arith.constant 1 : index
+<a id="__codelineno-7-39" name="__codelineno-7-39" href="#__codelineno-7-39"></a>      %c0_1 = arith.constant 0 : index
+<a id="__codelineno-7-40" name="__codelineno-7-40" href="#__codelineno-7-40"></a>      %13 = affine.apply #map1(%3)[%c1_0, %c0_1]
+<a id="__codelineno-7-41" name="__codelineno-7-41" href="#__codelineno-7-41"></a>      %14 = memref.load %arg2[%12, %13] : memref&lt;2x2xf64&gt;
+<a id="__codelineno-7-42" name="__codelineno-7-42" href="#__codelineno-7-42"></a>      %15 = memref.load %arg3[%12, %13] : memref&lt;2x2xf64&gt;
+<a id="__codelineno-7-43" name="__codelineno-7-43" href="#__codelineno-7-43"></a>      %16 = arith.addf %14, %15 : f64
+<a id="__codelineno-7-44" name="__codelineno-7-44" href="#__codelineno-7-44"></a>      memref.store %16, %arg4[%12, %13] : memref&lt;2x2xf64&gt;
+<a id="__codelineno-7-45" name="__codelineno-7-45" href="#__codelineno-7-45"></a>      gpu.return
+<a id="__codelineno-7-46" name="__codelineno-7-46" href="#__codelineno-7-46"></a>    }
+<a id="__codelineno-7-47" name="__codelineno-7-47" href="#__codelineno-7-47"></a>  }
+<a id="__codelineno-7-48" name="__codelineno-7-48" href="#__codelineno-7-48"></a>}
 </code></pre></div>
-<p>(<code>...</code> marks lines elided for length; the full file is <code>code/add_gpu.mlir</code>.) The real shape of the launch: <strong>2 blocks of 2 threads, one thread per matrix element</strong>, block id as the row and thread id as the column. The kernel's first two arguments (<code>%c1</code>, <code>%c0</code>) are the original loop's step and lower bound, which the generated index math reuses as <code>block_id * step + lb</code>.</p>
+<p>Reading it. <strong>Host side</strong> (lines 4 to 17): the <code>gpu.launch_func</code> names the kernel, a grid (<code>blocks in</code>) and a block (<code>threads in</code>), each three-dimensional with the unused y and z dimensions set to 1, and passes the arguments. The real shape of the launch is <strong>2 blocks of 2 threads, one thread per matrix element</strong>. <strong>Device side</strong> (lines 18 to 47): the <code>gpu.module</code> holds one <code>gpu.func ... kernel</code> whose first two arguments (<code>%arg0</code>, <code>%arg1</code>) are the original loop's step and lower bound, which the generated index arithmetic uses as <code>block_id * step + lb</code>. It reads <code>block_id</code>, <code>thread_id</code>, <code>grid_dim</code> and <code>block_dim</code> in all three dimensions (most are never used and disappear later), computes the row and column, and does the load/add/store.</p>
 <h2 id="step-3-lowering-the-kernel-to-the-nvvm-dialect">Step 3: lowering the kernel to the <code>nvvm</code> dialect<a class="headerlink" href="#step-3-lowering-the-kernel-to-the-nvvm-dialect" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>mlir-opt-18<span class="w"> </span>add_gpu.mlir<span class="w"> </span>--pass-pipeline<span class="o">=</span><span class="s1">&#39;builtin.module(</span>
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="s1">  lower-affine,</span>
@@ -1653,91 +1836,282 @@
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="s1">  gpu.module(convert-gpu-to-nvvm{index-bitwidth=64}, reconcile-unrealized-casts))&#39;</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">  </span>-o<span class="w"> </span>add_nvvm.mlir
 </code></pre></div>
-<p><code>nvvm-attach-target</code> stamps the <code>gpu.module</code> with <code>#nvvm.target&lt;chip = "sm_70"&gt;</code> (a Volta-generation target, chosen arbitrarily since nothing here runs); <code>convert-gpu-to-nvvm</code> rewrites <code>gpu.block_id x</code> into <code>nvvm.read.ptx.sreg.ctaid.x</code> and <code>gpu.thread_id x</code> into <code>nvvm.read.ptx.sreg.tid.x</code>, and converts the body into the <code>llvm</code> dialect. Real excerpt:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>gpu.module @add_tensors_kernel [#nvvm.target&lt;chip = &quot;sm_70&quot;&gt;]  {
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>  llvm.func @add_tensors_kernel(%arg0: i64, %arg1: i64, %arg2: !llvm.ptr, %arg3: !llvm.ptr,
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>      %arg4: i64, %arg5: i64, %arg6: i64, %arg7: i64, %arg8: i64, %arg9: !llvm.ptr, ...
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>      %arg22: i64) attributes {gpu.kernel, nvvm.kernel} {
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>    ...
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>    %24 = nvvm.read.ptx.sreg.ctaid.x : i32
-<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>    %25 = llvm.sext %24 : i32 to i64
-<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>    %26 = nvvm.read.ptx.sreg.tid.x : i32
-<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>    %27 = llvm.sext %26 : i32 to i64
-<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>    ...
-<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>    %40 = llvm.fadd %34, %39  : f64
-<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>    llvm.store %40, %44 : f64, !llvm.ptr
-<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a>    llvm.return
-<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a>  }
-<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a>}
+<p><code>nvvm-attach-target</code> stamps the <code>gpu.module</code> with <code>#nvvm.target&lt;chip = "sm_70"&gt;</code> (a Volta-generation target, chosen arbitrarily since nothing here runs). <code>convert-gpu-to-nvvm</code> rewrites <code>gpu.block_id x</code> into <code>nvvm.read.ptx.sreg.ctaid.x</code> and <code>gpu.thread_id x</code> into <code>nvvm.read.ptx.sreg.tid.x</code>, and converts the body into the <code>llvm</code> dialect. The three parts of the result that matter, from the real <code>add_nvvm.mlir</code>: the module header and the kernel signature,</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>  gpu.module @add_tensors_kernel [#nvvm.target&lt;chip = &quot;sm_70&quot;&gt;]  {
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>    llvm.func @add_tensors_kernel(%arg0: i64, %arg1: i64, %arg2: !llvm.ptr, %arg3: !llvm.ptr, %arg4: i64, %arg5: i64, %arg6: i64, %arg7: i64, %arg8: i64, %arg9: !llvm.ptr, %arg10: !llvm.ptr, %arg11: i64, %arg12: i64, %arg13: i64, %arg14: i64, %arg15: i64, %arg16: !llvm.ptr, %arg17: !llvm.ptr, %arg18: i64, %arg19: i64, %arg20: i64, %arg21: i64, %arg22: i64) attributes {gpu.kernel, nvvm.kernel} {
 </code></pre></div>
-<p>Notice the kernel's signature: <strong>23 parameters.</strong> Each of the three <code>memref&lt;2x2xf64&gt;</code> arguments was expanded by Chapter 1's own descriptor rule into 7 scalars (allocated pointer, aligned pointer, offset, two sizes, two strides), plus the 2 index arguments: 2 + 3 x 7 = 23. The kernel then spends 21 <code>llvm.insertvalue</code> operations rebuilding descriptor structs it barely uses.</p>
+<p>the special-register reads,</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>      %24 = nvvm.read.ptx.sreg.ctaid.x : i32
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>      %25 = llvm.sext %24 : i32 to i64
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>      %26 = nvvm.read.ptx.sreg.tid.x : i32
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>      %27 = llvm.sext %26 : i32 to i64
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>      llvm.br ^bb1
+</code></pre></div>
+<p>and the computation (note the three <code>getelementptr</code> and <code>load</code>/<code>store</code> pairs, the <code>fadd</code>, and where the pointers come from):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>    ^bb1:  // pred: ^bb0
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>      %28 = llvm.mul %25, %arg0  : i64
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>      %29 = llvm.add %28, %arg1  : i64
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>      %30 = llvm.mlir.constant(2 : index) : i64
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>      %31 = llvm.mul %29, %30  : i64
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>      %32 = llvm.add %31, %27  : i64
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>      %33 = llvm.getelementptr %arg3[%32] : (!llvm.ptr, i64) -&gt; !llvm.ptr, f64
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>      %34 = llvm.load %33 : !llvm.ptr -&gt; f64
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>      %35 = llvm.mlir.constant(2 : index) : i64
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>      %36 = llvm.mul %29, %35  : i64
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>      %37 = llvm.add %36, %27  : i64
+<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>      %38 = llvm.getelementptr %arg10[%37] : (!llvm.ptr, i64) -&gt; !llvm.ptr, f64
+<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>      %39 = llvm.load %38 : !llvm.ptr -&gt; f64
+<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a>      %40 = llvm.fadd %34, %39  : f64
+<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a>      %41 = llvm.mlir.constant(2 : index) : i64
+<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a>      %42 = llvm.mul %29, %41  : i64
+<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a>      %43 = llvm.add %42, %27  : i64
+<a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a>      %44 = llvm.getelementptr %arg17[%43] : (!llvm.ptr, i64) -&gt; !llvm.ptr, f64
+<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a>      llvm.store %40, %44 : f64, !llvm.ptr
+<a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a>      llvm.return
+</code></pre></div>
+<p>The signature in the first excerpt is worth counting: <strong>23 parameters.</strong> A <code>memref&lt;2x2xf64&gt;</code> is not a bare pointer. By Chapter 1's descriptor rule it is an allocated pointer, an aligned pointer, an offset, two sizes and two strides, which is <strong>seven</strong> scalars; three memrefs plus the two index arguments give 2 + 3 x 7 = 23. The kernel then spends 21 <code>llvm.insertvalue</code> operations rebuilding descriptor structs it barely uses. The complete file, for anyone who wants every line:</p>
+<details class="note">
+<summary>Full <code>add_nvvm.mlir</code> (70 lines)</summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>module attributes {gpu.container_module} {
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>  func.func @add_tensors(%arg0: memref&lt;2x2xf64&gt;, %arg1: memref&lt;2x2xf64&gt;) -&gt; memref&lt;2x2xf64&gt; {
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>    %alloc = memref.alloc() : memref&lt;2x2xf64&gt;
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>    %c0 = arith.constant 0 : index
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>    %c2 = arith.constant 2 : index
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>    %c1 = arith.constant 1 : index
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>    %c1_0 = arith.constant 1 : index
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>    %c2_1 = arith.constant 2 : index
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>    %c2_2 = arith.constant 2 : index
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>    %c0_3 = arith.constant 0 : index
+<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a>    %c1_4 = arith.constant 1 : index
+<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a>    %c2_5 = arith.constant 2 : index
+<a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a>    gpu.launch_func  @add_tensors_kernel::@add_tensors_kernel blocks in (%c2_1, %c1_0, %c1_0) threads in (%c2_5, %c1_0, %c1_0)  args(%c1 : index, %c0 : index, %arg0 : memref&lt;2x2xf64&gt;, %arg1 : memref&lt;2x2xf64&gt;, %alloc : memref&lt;2x2xf64&gt;)
+<a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a>    return %alloc : memref&lt;2x2xf64&gt;
+<a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a>  }
+<a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a>  gpu.module @add_tensors_kernel [#nvvm.target&lt;chip = &quot;sm_70&quot;&gt;]  {
+<a id="__codelineno-12-17" name="__codelineno-12-17" href="#__codelineno-12-17"></a>    llvm.func @add_tensors_kernel(%arg0: i64, %arg1: i64, %arg2: !llvm.ptr, %arg3: !llvm.ptr, %arg4: i64, %arg5: i64, %arg6: i64, %arg7: i64, %arg8: i64, %arg9: !llvm.ptr, %arg10: !llvm.ptr, %arg11: i64, %arg12: i64, %arg13: i64, %arg14: i64, %arg15: i64, %arg16: !llvm.ptr, %arg17: !llvm.ptr, %arg18: i64, %arg19: i64, %arg20: i64, %arg21: i64, %arg22: i64) attributes {gpu.kernel, nvvm.kernel} {
+<a id="__codelineno-12-18" name="__codelineno-12-18" href="#__codelineno-12-18"></a>      %0 = llvm.mlir.undef : !llvm.struct&lt;(ptr, ptr, i64, array&lt;2 x i64&gt;, array&lt;2 x i64&gt;)&gt;
+<a id="__codelineno-12-19" name="__codelineno-12-19" href="#__codelineno-12-19"></a>      %1 = llvm.insertvalue %arg2, %0[0] : !llvm.struct&lt;(ptr, ptr, i64, array&lt;2 x i64&gt;, array&lt;2 x i64&gt;)&gt; 
+<a id="__codelineno-12-20" name="__codelineno-12-20" href="#__codelineno-12-20"></a>      %2 = llvm.insertvalue %arg3, %1[1] : !llvm.struct&lt;(ptr, ptr, i64, array&lt;2 x i64&gt;, array&lt;2 x i64&gt;)&gt; 
+<a id="__codelineno-12-21" name="__codelineno-12-21" href="#__codelineno-12-21"></a>      %3 = llvm.insertvalue %arg4, %2[2] : !llvm.struct&lt;(ptr, ptr, i64, array&lt;2 x i64&gt;, array&lt;2 x i64&gt;)&gt; 
+<a id="__codelineno-12-22" name="__codelineno-12-22" href="#__codelineno-12-22"></a>      %4 = llvm.insertvalue %arg5, %3[3, 0] : !llvm.struct&lt;(ptr, ptr, i64, array&lt;2 x i64&gt;, array&lt;2 x i64&gt;)&gt; 
+<a id="__codelineno-12-23" name="__codelineno-12-23" href="#__codelineno-12-23"></a>      %5 = llvm.insertvalue %arg7, %4[4, 0] : !llvm.struct&lt;(ptr, ptr, i64, array&lt;2 x i64&gt;, array&lt;2 x i64&gt;)&gt; 
+<a id="__codelineno-12-24" name="__codelineno-12-24" href="#__codelineno-12-24"></a>      %6 = llvm.insertvalue %arg6, %5[3, 1] : !llvm.struct&lt;(ptr, ptr, i64, array&lt;2 x i64&gt;, array&lt;2 x i64&gt;)&gt; 
+<a id="__codelineno-12-25" name="__codelineno-12-25" href="#__codelineno-12-25"></a>      %7 = llvm.insertvalue %arg8, %6[4, 1] : !llvm.struct&lt;(ptr, ptr, i64, array&lt;2 x i64&gt;, array&lt;2 x i64&gt;)&gt; 
+<a id="__codelineno-12-26" name="__codelineno-12-26" href="#__codelineno-12-26"></a>      %8 = llvm.mlir.undef : !llvm.struct&lt;(ptr, ptr, i64, array&lt;2 x i64&gt;, array&lt;2 x i64&gt;)&gt;
+<a id="__codelineno-12-27" name="__codelineno-12-27" href="#__codelineno-12-27"></a>      %9 = llvm.insertvalue %arg9, %8[0] : !llvm.struct&lt;(ptr, ptr, i64, array&lt;2 x i64&gt;, array&lt;2 x i64&gt;)&gt; 
+<a id="__codelineno-12-28" name="__codelineno-12-28" href="#__codelineno-12-28"></a>      %10 = llvm.insertvalue %arg10, %9[1] : !llvm.struct&lt;(ptr, ptr, i64, array&lt;2 x i64&gt;, array&lt;2 x i64&gt;)&gt; 
+<a id="__codelineno-12-29" name="__codelineno-12-29" href="#__codelineno-12-29"></a>      %11 = llvm.insertvalue %arg11, %10[2] : !llvm.struct&lt;(ptr, ptr, i64, array&lt;2 x i64&gt;, array&lt;2 x i64&gt;)&gt; 
+<a id="__codelineno-12-30" name="__codelineno-12-30" href="#__codelineno-12-30"></a>      %12 = llvm.insertvalue %arg12, %11[3, 0] : !llvm.struct&lt;(ptr, ptr, i64, array&lt;2 x i64&gt;, array&lt;2 x i64&gt;)&gt; 
+<a id="__codelineno-12-31" name="__codelineno-12-31" href="#__codelineno-12-31"></a>      %13 = llvm.insertvalue %arg14, %12[4, 0] : !llvm.struct&lt;(ptr, ptr, i64, array&lt;2 x i64&gt;, array&lt;2 x i64&gt;)&gt; 
+<a id="__codelineno-12-32" name="__codelineno-12-32" href="#__codelineno-12-32"></a>      %14 = llvm.insertvalue %arg13, %13[3, 1] : !llvm.struct&lt;(ptr, ptr, i64, array&lt;2 x i64&gt;, array&lt;2 x i64&gt;)&gt; 
+<a id="__codelineno-12-33" name="__codelineno-12-33" href="#__codelineno-12-33"></a>      %15 = llvm.insertvalue %arg15, %14[4, 1] : !llvm.struct&lt;(ptr, ptr, i64, array&lt;2 x i64&gt;, array&lt;2 x i64&gt;)&gt; 
+<a id="__codelineno-12-34" name="__codelineno-12-34" href="#__codelineno-12-34"></a>      %16 = llvm.mlir.undef : !llvm.struct&lt;(ptr, ptr, i64, array&lt;2 x i64&gt;, array&lt;2 x i64&gt;)&gt;
+<a id="__codelineno-12-35" name="__codelineno-12-35" href="#__codelineno-12-35"></a>      %17 = llvm.insertvalue %arg16, %16[0] : !llvm.struct&lt;(ptr, ptr, i64, array&lt;2 x i64&gt;, array&lt;2 x i64&gt;)&gt; 
+<a id="__codelineno-12-36" name="__codelineno-12-36" href="#__codelineno-12-36"></a>      %18 = llvm.insertvalue %arg17, %17[1] : !llvm.struct&lt;(ptr, ptr, i64, array&lt;2 x i64&gt;, array&lt;2 x i64&gt;)&gt; 
+<a id="__codelineno-12-37" name="__codelineno-12-37" href="#__codelineno-12-37"></a>      %19 = llvm.insertvalue %arg18, %18[2] : !llvm.struct&lt;(ptr, ptr, i64, array&lt;2 x i64&gt;, array&lt;2 x i64&gt;)&gt; 
+<a id="__codelineno-12-38" name="__codelineno-12-38" href="#__codelineno-12-38"></a>      %20 = llvm.insertvalue %arg19, %19[3, 0] : !llvm.struct&lt;(ptr, ptr, i64, array&lt;2 x i64&gt;, array&lt;2 x i64&gt;)&gt; 
+<a id="__codelineno-12-39" name="__codelineno-12-39" href="#__codelineno-12-39"></a>      %21 = llvm.insertvalue %arg21, %20[4, 0] : !llvm.struct&lt;(ptr, ptr, i64, array&lt;2 x i64&gt;, array&lt;2 x i64&gt;)&gt; 
+<a id="__codelineno-12-40" name="__codelineno-12-40" href="#__codelineno-12-40"></a>      %22 = llvm.insertvalue %arg20, %21[3, 1] : !llvm.struct&lt;(ptr, ptr, i64, array&lt;2 x i64&gt;, array&lt;2 x i64&gt;)&gt; 
+<a id="__codelineno-12-41" name="__codelineno-12-41" href="#__codelineno-12-41"></a>      %23 = llvm.insertvalue %arg22, %22[4, 1] : !llvm.struct&lt;(ptr, ptr, i64, array&lt;2 x i64&gt;, array&lt;2 x i64&gt;)&gt; 
+<a id="__codelineno-12-42" name="__codelineno-12-42" href="#__codelineno-12-42"></a>      %24 = nvvm.read.ptx.sreg.ctaid.x : i32
+<a id="__codelineno-12-43" name="__codelineno-12-43" href="#__codelineno-12-43"></a>      %25 = llvm.sext %24 : i32 to i64
+<a id="__codelineno-12-44" name="__codelineno-12-44" href="#__codelineno-12-44"></a>      %26 = nvvm.read.ptx.sreg.tid.x : i32
+<a id="__codelineno-12-45" name="__codelineno-12-45" href="#__codelineno-12-45"></a>      %27 = llvm.sext %26 : i32 to i64
+<a id="__codelineno-12-46" name="__codelineno-12-46" href="#__codelineno-12-46"></a>      llvm.br ^bb1
+<a id="__codelineno-12-47" name="__codelineno-12-47" href="#__codelineno-12-47"></a>    ^bb1:  // pred: ^bb0
+<a id="__codelineno-12-48" name="__codelineno-12-48" href="#__codelineno-12-48"></a>      %28 = llvm.mul %25, %arg0  : i64
+<a id="__codelineno-12-49" name="__codelineno-12-49" href="#__codelineno-12-49"></a>      %29 = llvm.add %28, %arg1  : i64
+<a id="__codelineno-12-50" name="__codelineno-12-50" href="#__codelineno-12-50"></a>      %30 = llvm.mlir.constant(2 : index) : i64
+<a id="__codelineno-12-51" name="__codelineno-12-51" href="#__codelineno-12-51"></a>      %31 = llvm.mul %29, %30  : i64
+<a id="__codelineno-12-52" name="__codelineno-12-52" href="#__codelineno-12-52"></a>      %32 = llvm.add %31, %27  : i64
+<a id="__codelineno-12-53" name="__codelineno-12-53" href="#__codelineno-12-53"></a>      %33 = llvm.getelementptr %arg3[%32] : (!llvm.ptr, i64) -&gt; !llvm.ptr, f64
+<a id="__codelineno-12-54" name="__codelineno-12-54" href="#__codelineno-12-54"></a>      %34 = llvm.load %33 : !llvm.ptr -&gt; f64
+<a id="__codelineno-12-55" name="__codelineno-12-55" href="#__codelineno-12-55"></a>      %35 = llvm.mlir.constant(2 : index) : i64
+<a id="__codelineno-12-56" name="__codelineno-12-56" href="#__codelineno-12-56"></a>      %36 = llvm.mul %29, %35  : i64
+<a id="__codelineno-12-57" name="__codelineno-12-57" href="#__codelineno-12-57"></a>      %37 = llvm.add %36, %27  : i64
+<a id="__codelineno-12-58" name="__codelineno-12-58" href="#__codelineno-12-58"></a>      %38 = llvm.getelementptr %arg10[%37] : (!llvm.ptr, i64) -&gt; !llvm.ptr, f64
+<a id="__codelineno-12-59" name="__codelineno-12-59" href="#__codelineno-12-59"></a>      %39 = llvm.load %38 : !llvm.ptr -&gt; f64
+<a id="__codelineno-12-60" name="__codelineno-12-60" href="#__codelineno-12-60"></a>      %40 = llvm.fadd %34, %39  : f64
+<a id="__codelineno-12-61" name="__codelineno-12-61" href="#__codelineno-12-61"></a>      %41 = llvm.mlir.constant(2 : index) : i64
+<a id="__codelineno-12-62" name="__codelineno-12-62" href="#__codelineno-12-62"></a>      %42 = llvm.mul %29, %41  : i64
+<a id="__codelineno-12-63" name="__codelineno-12-63" href="#__codelineno-12-63"></a>      %43 = llvm.add %42, %27  : i64
+<a id="__codelineno-12-64" name="__codelineno-12-64" href="#__codelineno-12-64"></a>      %44 = llvm.getelementptr %arg17[%43] : (!llvm.ptr, i64) -&gt; !llvm.ptr, f64
+<a id="__codelineno-12-65" name="__codelineno-12-65" href="#__codelineno-12-65"></a>      llvm.store %40, %44 : f64, !llvm.ptr
+<a id="__codelineno-12-66" name="__codelineno-12-66" href="#__codelineno-12-66"></a>      llvm.return
+<a id="__codelineno-12-67" name="__codelineno-12-67" href="#__codelineno-12-67"></a>    }
+<a id="__codelineno-12-68" name="__codelineno-12-68" href="#__codelineno-12-68"></a>  }
+<a id="__codelineno-12-69" name="__codelineno-12-69" href="#__codelineno-12-69"></a>}
+</code></pre></div>
+</details>
 <h2 id="step-4-real-ptx">Step 4: real PTX<a class="headerlink" href="#step-4-real-ptx" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>mlir-opt-18<span class="w"> </span>add_nvvm.mlir<span class="w"> </span>--gpu-module-to-binary<span class="o">=</span><span class="s2">&quot;format=isa&quot;</span><span class="w"> </span>-o<span class="w"> </span>add_bin.mlir
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>python3<span class="w"> </span>decode_ptx.py<span class="w"> </span>add_bin.mlir<span class="w"> </span>&gt;<span class="w"> </span>add_tensors_mlir.ptx
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>mlir-opt-18<span class="w"> </span>add_nvvm.mlir<span class="w"> </span>--gpu-module-to-binary<span class="o">=</span><span class="s2">&quot;format=isa&quot;</span><span class="w"> </span>-o<span class="w"> </span>add_bin.mlir
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>python3<span class="w"> </span>decode_ptx.py<span class="w"> </span>add_bin.mlir<span class="w"> </span>&gt;<span class="w"> </span>add_tensors_mlir.ptx
 </code></pre></div>
-<p><code>--gpu-module-to-binary</code> with <code>format=isa</code> runs LLVM's NVPTX backend and stores the PTX as a string attribute on a <code>gpu.binary</code> op, escaped as hex (<code>\0A</code> for a newline), which is why <code>decode_ptx.py</code> exists; the first attempt at decoding it with a naive <code>unicode_escape</code> produced garbled text, caught only by looking at the output. After removing the 23 <code>.param</code> declarations for length, the real body is:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>ld.param.u64    %rd1, [add_tensors_kernel_param_0];
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>ld.param.u64    %rd2, [add_tensors_kernel_param_17];
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>cvta.to.global.u64  %rd3, %rd2;
-<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>ld.param.u64    %rd4, [add_tensors_kernel_param_1];
-<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>ld.param.u64    %rd5, [add_tensors_kernel_param_10];
-<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>cvta.to.global.u64  %rd6, %rd5;
-<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>ld.param.u64    %rd7, [add_tensors_kernel_param_3];
-<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>cvta.to.global.u64  %rd8, %rd7;
-<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>mov.u32     %r1, %ctaid.x;
-<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>cvt.s64.s32     %rd9, %r1;
-<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>mov.u32     %r2, %tid.x;
-<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>cvt.s64.s32     %rd10, %r2;
-<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>mul.lo.s64  %rd11, %rd9, %rd1;
-<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a>add.s64     %rd12, %rd11, %rd4;
-<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a>shl.b64     %rd13, %rd12, 1;
-<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a>add.s64     %rd14, %rd13, %rd10;
-<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a>shl.b64     %rd15, %rd14, 3;
-<a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a>add.s64     %rd16, %rd8, %rd15;
-<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a>ld.global.f64   %fd1, [%rd16];
-<a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a>add.s64     %rd17, %rd6, %rd15;
-<a id="__codelineno-11-21" name="__codelineno-11-21" href="#__codelineno-11-21"></a>ld.global.f64   %fd2, [%rd17];
-<a id="__codelineno-11-22" name="__codelineno-11-22" href="#__codelineno-11-22"></a>add.rn.f64  %fd3, %fd1, %fd2;
-<a id="__codelineno-11-23" name="__codelineno-11-23" href="#__codelineno-11-23"></a>add.s64     %rd18, %rd3, %rd15;
-<a id="__codelineno-11-24" name="__codelineno-11-24" href="#__codelineno-11-24"></a>st.global.f64   [%rd18], %fd3;
-<a id="__codelineno-11-25" name="__codelineno-11-25" href="#__codelineno-11-25"></a>ret;
+<p><code>--gpu-module-to-binary</code> with <code>format=isa</code> runs LLVM's NVPTX backend and stores the PTX as a string attribute on a <code>gpu.binary</code> op, escaped as hex (<code>\0A</code> for a newline). That is why <code>decode_ptx.py</code> exists; the first attempt at decoding it with a naive <code>unicode_escape</code> produced garbled text, caught only by looking at the output:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="c1"># --gpu-module-to-binary stores the PTX as a hex-escaped string attribute (\0A for newline).</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="c1"># This pulls it back out as plain PTX text: python3 decode_ptx.py add_bin.mlir &gt; out.ptx</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="kn">import</span> <span class="nn">re</span><span class="o">,</span> <span class="nn">sys</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="n">s</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;assembly\s*=\s*&quot;((?:[^&quot;</span><span class="se">\\</span><span class="s1">]|</span><span class="se">\\</span><span class="s1">.)*)&quot;&#39;</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="n">t</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">([0-9A-Fa-f]</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">chr</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="mi">16</span><span class="p">)),</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\x00</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
 </code></pre></div>
-<p>You can read the program in it: two special-register reads (<code>%ctaid.x</code>, <code>%tid.x</code>), index arithmetic, two <code>ld.global.f64</code>, one <code>add.rn.f64</code>, one <code>st.global.f64</code>. The backend also deleted everything the kernel never used without being asked: the <code>block_id y</code>/<code>z</code>, <code>grid_dim</code> and <code>block_dim</code> reads and all the rebuilt descriptor structs are gone, and of the 23 declared parameters the body loads only 5 (<code>param_0</code>, <code>_1</code>, <code>_3</code>, <code>_10</code>, <code>_17</code>: the loop step, the lower bound, and the three aligned data pointers).</p>
+<p>The real PTX, header and parameter list (the 23 declared parameters):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>//
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>// Generated by LLVM NVPTX Back-End
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>//
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>.version 6.0
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>.target sm_70
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a>.address_size 64
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a>
+<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a>    // .globl   add_tensors_kernel
+<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a>
+<a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a>.visible .entry add_tensors_kernel(
+<a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a>    .param .u64 add_tensors_kernel_param_0,
+<a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a>    .param .u64 add_tensors_kernel_param_1,
+<a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a>    .param .u64 add_tensors_kernel_param_2,
+<a id="__codelineno-15-15" name="__codelineno-15-15" href="#__codelineno-15-15"></a>    .param .u64 add_tensors_kernel_param_3,
+<a id="__codelineno-15-16" name="__codelineno-15-16" href="#__codelineno-15-16"></a>    .param .u64 add_tensors_kernel_param_4,
+<a id="__codelineno-15-17" name="__codelineno-15-17" href="#__codelineno-15-17"></a>    .param .u64 add_tensors_kernel_param_5,
+<a id="__codelineno-15-18" name="__codelineno-15-18" href="#__codelineno-15-18"></a>    .param .u64 add_tensors_kernel_param_6,
+<a id="__codelineno-15-19" name="__codelineno-15-19" href="#__codelineno-15-19"></a>    .param .u64 add_tensors_kernel_param_7,
+<a id="__codelineno-15-20" name="__codelineno-15-20" href="#__codelineno-15-20"></a>    .param .u64 add_tensors_kernel_param_8,
+<a id="__codelineno-15-21" name="__codelineno-15-21" href="#__codelineno-15-21"></a>    .param .u64 add_tensors_kernel_param_9,
+<a id="__codelineno-15-22" name="__codelineno-15-22" href="#__codelineno-15-22"></a>    .param .u64 add_tensors_kernel_param_10,
+<a id="__codelineno-15-23" name="__codelineno-15-23" href="#__codelineno-15-23"></a>    .param .u64 add_tensors_kernel_param_11,
+<a id="__codelineno-15-24" name="__codelineno-15-24" href="#__codelineno-15-24"></a>    .param .u64 add_tensors_kernel_param_12,
+<a id="__codelineno-15-25" name="__codelineno-15-25" href="#__codelineno-15-25"></a>    .param .u64 add_tensors_kernel_param_13,
+<a id="__codelineno-15-26" name="__codelineno-15-26" href="#__codelineno-15-26"></a>    .param .u64 add_tensors_kernel_param_14,
+<a id="__codelineno-15-27" name="__codelineno-15-27" href="#__codelineno-15-27"></a>    .param .u64 add_tensors_kernel_param_15,
+<a id="__codelineno-15-28" name="__codelineno-15-28" href="#__codelineno-15-28"></a>    .param .u64 add_tensors_kernel_param_16,
+<a id="__codelineno-15-29" name="__codelineno-15-29" href="#__codelineno-15-29"></a>    .param .u64 add_tensors_kernel_param_17,
+<a id="__codelineno-15-30" name="__codelineno-15-30" href="#__codelineno-15-30"></a>    .param .u64 add_tensors_kernel_param_18,
+<a id="__codelineno-15-31" name="__codelineno-15-31" href="#__codelineno-15-31"></a>    .param .u64 add_tensors_kernel_param_19,
+<a id="__codelineno-15-32" name="__codelineno-15-32" href="#__codelineno-15-32"></a>    .param .u64 add_tensors_kernel_param_20,
+<a id="__codelineno-15-33" name="__codelineno-15-33" href="#__codelineno-15-33"></a>    .param .u64 add_tensors_kernel_param_21,
+<a id="__codelineno-15-34" name="__codelineno-15-34" href="#__codelineno-15-34"></a>    .param .u64 add_tensors_kernel_param_22
+<a id="__codelineno-15-35" name="__codelineno-15-35" href="#__codelineno-15-35"></a>)
+<a id="__codelineno-15-36" name="__codelineno-15-36" href="#__codelineno-15-36"></a>{
+</code></pre></div>
+<p>and the body, where the computation happens:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>    .reg .b32   %r&lt;3&gt;;
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>    .reg .b64   %rd&lt;19&gt;;
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>    .reg .f64   %fd&lt;4&gt;;
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>    ld.param.u64    %rd1, [add_tensors_kernel_param_0];
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>    ld.param.u64    %rd2, [add_tensors_kernel_param_17];
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a>    cvta.to.global.u64  %rd3, %rd2;
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>    ld.param.u64    %rd4, [add_tensors_kernel_param_1];
+<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a>    ld.param.u64    %rd5, [add_tensors_kernel_param_10];
+<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a>    cvta.to.global.u64  %rd6, %rd5;
+<a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a>    ld.param.u64    %rd7, [add_tensors_kernel_param_3];
+<a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a>    cvta.to.global.u64  %rd8, %rd7;
+<a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a>    mov.u32     %r1, %ctaid.x;
+<a id="__codelineno-16-14" name="__codelineno-16-14" href="#__codelineno-16-14"></a>    cvt.s64.s32     %rd9, %r1;
+<a id="__codelineno-16-15" name="__codelineno-16-15" href="#__codelineno-16-15"></a>    mov.u32     %r2, %tid.x;
+<a id="__codelineno-16-16" name="__codelineno-16-16" href="#__codelineno-16-16"></a>    cvt.s64.s32     %rd10, %r2;
+<a id="__codelineno-16-17" name="__codelineno-16-17" href="#__codelineno-16-17"></a>    mul.lo.s64  %rd11, %rd9, %rd1;
+<a id="__codelineno-16-18" name="__codelineno-16-18" href="#__codelineno-16-18"></a>    add.s64     %rd12, %rd11, %rd4;
+<a id="__codelineno-16-19" name="__codelineno-16-19" href="#__codelineno-16-19"></a>    shl.b64     %rd13, %rd12, 1;
+<a id="__codelineno-16-20" name="__codelineno-16-20" href="#__codelineno-16-20"></a>    add.s64     %rd14, %rd13, %rd10;
+<a id="__codelineno-16-21" name="__codelineno-16-21" href="#__codelineno-16-21"></a>    shl.b64     %rd15, %rd14, 3;
+<a id="__codelineno-16-22" name="__codelineno-16-22" href="#__codelineno-16-22"></a>    add.s64     %rd16, %rd8, %rd15;
+<a id="__codelineno-16-23" name="__codelineno-16-23" href="#__codelineno-16-23"></a>    ld.global.f64   %fd1, [%rd16];
+<a id="__codelineno-16-24" name="__codelineno-16-24" href="#__codelineno-16-24"></a>    add.s64     %rd17, %rd6, %rd15;
+<a id="__codelineno-16-25" name="__codelineno-16-25" href="#__codelineno-16-25"></a>    ld.global.f64   %fd2, [%rd17];
+<a id="__codelineno-16-26" name="__codelineno-16-26" href="#__codelineno-16-26"></a>    add.rn.f64  %fd3, %fd1, %fd2;
+<a id="__codelineno-16-27" name="__codelineno-16-27" href="#__codelineno-16-27"></a>    add.s64     %rd18, %rd3, %rd15;
+<a id="__codelineno-16-28" name="__codelineno-16-28" href="#__codelineno-16-28"></a>    st.global.f64   [%rd18], %fd3;
+<a id="__codelineno-16-29" name="__codelineno-16-29" href="#__codelineno-16-29"></a>    ret;
+<a id="__codelineno-16-30" name="__codelineno-16-30" href="#__codelineno-16-30"></a>
+<a id="__codelineno-16-31" name="__codelineno-16-31" href="#__codelineno-16-31"></a>}
+</code></pre></div>
+<h3 id="reading-the-body">Reading the body<a class="headerlink" href="#reading-the-body" title="Permanent link">&para;</a></h3>
+<p>The instruction meanings below are PTX's, stated from the instruction names and this program's behavior; this chapter did not consult NVIDIA's PTX manual.</p>
+<ul>
+<li><strong>Lines 41 to 48, loading parameters.</strong> The body loads only what it needs: <code>param_0</code> (the loop step), <code>param_1</code> (the lower bound), and the three <strong>aligned data pointers</strong> (<code>param_3</code>, <code>param_10</code>, <code>param_17</code>: the second slot of each seven-field descriptor group). <code>cvta.to.global</code> converts each generic address to a global-memory address.</li>
+<li><strong>Lines 49 to 52, who am I.</strong> <code>mov.u32 %r1, %ctaid.x</code> reads the block index and <code>mov.u32 %r2, %tid.x</code> the thread index; each is widened to 64 bits with <code>cvt.s64.s32</code>.</li>
+<li><strong>Lines 53 to 58, which element.</strong> <code>mul.lo.s64</code>/<code>add.s64</code> compute <code>block * step + lb</code>, the row. <code>shl.b64 ..., 1</code> multiplies by 2 (the row stride of a 2-column matrix). Adding the thread index gives the element number; <code>shl.b64 ..., 3</code> multiplies by 8 (bytes per <code>f64</code>); adding the base pointer gives the address.</li>
+<li><strong>Lines 59 to 64, the computation.</strong> Two <code>ld.global.f64</code> loads, one <code>add.rn.f64</code>, one <code>st.global.f64</code>. This is the whole mathematical content of the kernel.</li>
+</ul>
+<p>The backend also deleted, without being asked, everything the kernel never used: the <code>block_id y</code>/<code>z</code>, <code>grid_dim</code> and <code>block_dim</code> reads and all the rebuilt descriptor structs are gone, and of the 23 declared parameters the body loads only <strong>5</strong> (<code>param_0</code>, <code>_1</code>, <code>_3</code>, <code>_10</code>, <code>_17</code>).</p>
 <h2 id="step-5-the-same-kernel-as-cuda-compiled-by-clang-18">Step 5: the same kernel as CUDA, compiled by <code>clang-18</code><a class="headerlink" href="#step-5-the-same-kernel-as-cuda-compiled-by-clang-18" title="Permanent link">&para;</a></h2>
 <p><code>nvcc</code> is unavailable, but <code>clang-18</code> can compile CUDA's device side itself. The CUDA headers that define <code>threadIdx</code>/<code>blockIdx</code> are also absent, so the kernel calls the NVVM builtins those names expand to (the first attempt spelled them <code>__builtin_nvvm_...</code> and clang's own error suggested the real name, <code>__nvvm_...</code>):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="k">extern</span><span class="w"> </span><span class="s">&quot;C&quot;</span><span class="w"> </span><span class="n">__attribute__</span><span class="p">((</span><span class="n">global</span><span class="p">))</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">add_cuda</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">row</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">__nvvm_read_ptx_sreg_ctaid_x</span><span class="p">();</span>
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">__nvvm_read_ptx_sreg_tid_x</span><span class="p">();</span>
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">row</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">col</span><span class="p">;</span>
-<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">  </span><span class="n">c</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
-<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1">// Equivalent hand-written CUDA-style kernel, compiled without the CUDA SDK.</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="c1">// &#39;threadIdx.x&#39;/&#39;blockIdx.x&#39; are NVVM builtins in disguise; we call them directly.</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="k">extern</span><span class="w"> </span><span class="s">&quot;C&quot;</span><span class="w"> </span><span class="n">__attribute__</span><span class="p">((</span><span class="n">global</span><span class="p">))</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">add_cuda</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">row</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">__nvvm_read_ptx_sreg_ctaid_x</span><span class="p">();</span>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">__nvvm_read_ptx_sreg_tid_x</span><span class="p">();</span>
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">row</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">col</span><span class="p">;</span>
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="w">  </span><span class="n">c</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="p">}</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>clang-18<span class="w"> </span>-x<span class="w"> </span>cuda<span class="w"> </span>--cuda-device-only<span class="w"> </span>--cuda-gpu-arch<span class="o">=</span>sm_70<span class="w"> </span>-nocudainc<span class="w"> </span>-nocudalib<span class="w"> </span>-S<span class="w"> </span>-O1<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span>cuda_add.cu<span class="w"> </span>-o<span class="w"> </span>cuda_add.ptx
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>clang-18<span class="w"> </span>-x<span class="w"> </span>cuda<span class="w"> </span>--cuda-device-only<span class="w"> </span>--cuda-gpu-arch<span class="o">=</span>sm_70<span class="w"> </span>-nocudainc<span class="w"> </span>-nocudalib<span class="w"> </span>-S<span class="w"> </span>-O1<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">  </span>cuda_add.cu<span class="w"> </span>-o<span class="w"> </span>cuda_add.ptx
 </code></pre></div>
-<p>Real PTX body:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>ld.param.u64    %rd1, [add_cuda_param_0];
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>ld.param.u64    %rd2, [add_cuda_param_2];
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>cvta.to.global.u64  %rd3, %rd2;
-<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>ld.param.u64    %rd4, [add_cuda_param_1];
-<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>cvta.to.global.u64  %rd5, %rd4;
-<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>cvta.to.global.u64  %rd6, %rd1;
-<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>mov.u32     %r1, %ctaid.x;
-<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a>mov.u32     %r2, %tid.x;
-<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a>shl.b32     %r3, %r1, 1;
-<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a>add.s32     %r4, %r3, %r2;
-<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a>mul.wide.s32    %rd7, %r4, 8;
-<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a>add.s64     %rd8, %rd6, %rd7;
-<a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a>ld.global.f64   %fd1, [%rd8];
-<a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a>add.s64     %rd9, %rd5, %rd7;
-<a id="__codelineno-14-15" name="__codelineno-14-15" href="#__codelineno-14-15"></a>ld.global.f64   %fd2, [%rd9];
-<a id="__codelineno-14-16" name="__codelineno-14-16" href="#__codelineno-14-16"></a>add.f64     %fd3, %fd1, %fd2;
-<a id="__codelineno-14-17" name="__codelineno-14-17" href="#__codelineno-14-17"></a>add.s64     %rd10, %rd3, %rd7;
-<a id="__codelineno-14-18" name="__codelineno-14-18" href="#__codelineno-14-18"></a>st.global.f64   [%rd10], %fd3;
-<a id="__codelineno-14-19" name="__codelineno-14-19" href="#__codelineno-14-19"></a>ret;
+<p>The real PTX it produced:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>.visible .entry add_cuda(
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>    .param .u64 add_cuda_param_0,
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>    .param .u64 add_cuda_param_1,
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>    .param .u64 add_cuda_param_2
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>)
+<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>{
+<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a>    .reg .b32   %r&lt;5&gt;;
+<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a>    .reg .b64   %rd&lt;11&gt;;
+<a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a>    .reg .f64   %fd&lt;4&gt;;
+<a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a>
+<a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a>// %bb.0:
+<a id="__codelineno-19-12" name="__codelineno-19-12" href="#__codelineno-19-12"></a>    ld.param.u64    %rd1, [add_cuda_param_0];
+<a id="__codelineno-19-13" name="__codelineno-19-13" href="#__codelineno-19-13"></a>    ld.param.u64    %rd2, [add_cuda_param_2];
+<a id="__codelineno-19-14" name="__codelineno-19-14" href="#__codelineno-19-14"></a>    cvta.to.global.u64  %rd3, %rd2;
+<a id="__codelineno-19-15" name="__codelineno-19-15" href="#__codelineno-19-15"></a>    ld.param.u64    %rd4, [add_cuda_param_1];
+<a id="__codelineno-19-16" name="__codelineno-19-16" href="#__codelineno-19-16"></a>    cvta.to.global.u64  %rd5, %rd4;
+<a id="__codelineno-19-17" name="__codelineno-19-17" href="#__codelineno-19-17"></a>    cvta.to.global.u64  %rd6, %rd1;
+<a id="__codelineno-19-18" name="__codelineno-19-18" href="#__codelineno-19-18"></a>    mov.u32     %r1, %ctaid.x;
+<a id="__codelineno-19-19" name="__codelineno-19-19" href="#__codelineno-19-19"></a>    mov.u32     %r2, %tid.x;
+<a id="__codelineno-19-20" name="__codelineno-19-20" href="#__codelineno-19-20"></a>    shl.b32     %r3, %r1, 1;
+<a id="__codelineno-19-21" name="__codelineno-19-21" href="#__codelineno-19-21"></a>    add.s32     %r4, %r3, %r2;
+<a id="__codelineno-19-22" name="__codelineno-19-22" href="#__codelineno-19-22"></a>    mul.wide.s32    %rd7, %r4, 8;
+<a id="__codelineno-19-23" name="__codelineno-19-23" href="#__codelineno-19-23"></a>    add.s64     %rd8, %rd6, %rd7;
+<a id="__codelineno-19-24" name="__codelineno-19-24" href="#__codelineno-19-24"></a>    ld.global.f64   %fd1, [%rd8];
+<a id="__codelineno-19-25" name="__codelineno-19-25" href="#__codelineno-19-25"></a>    add.s64     %rd9, %rd5, %rd7;
+<a id="__codelineno-19-26" name="__codelineno-19-26" href="#__codelineno-19-26"></a>    ld.global.f64   %fd2, [%rd9];
+<a id="__codelineno-19-27" name="__codelineno-19-27" href="#__codelineno-19-27"></a>    add.f64     %fd3, %fd1, %fd2;
+<a id="__codelineno-19-28" name="__codelineno-19-28" href="#__codelineno-19-28"></a>    add.s64     %rd10, %rd3, %rd7;
+<a id="__codelineno-19-29" name="__codelineno-19-29" href="#__codelineno-19-29"></a>    st.global.f64   [%rd10], %fd3;
+<a id="__codelineno-19-30" name="__codelineno-19-30" href="#__codelineno-19-30"></a>    ret;
+<a id="__codelineno-19-31" name="__codelineno-19-31" href="#__codelineno-19-31"></a>                                        // -- End function
+<a id="__codelineno-19-32" name="__codelineno-19-32" href="#__codelineno-19-32"></a>}
 </code></pre></div>
+<p>The same shape as the MLIR kernel, with the loop bounds and row stride written into the source (<code>row * 2 + col</code>) instead of passed in: three parameters, 32-bit index arithmetic (<code>shl.b32</code>, <code>add.s32</code>), and the same two loads, add and store.</p>
 <h2 id="the-real-comparison">The real comparison<a class="headerlink" href="#the-real-comparison" title="Permanent link">&para;</a></h2>
-<p>Counts taken by <code>grep</code> over the three <code>.ptx</code> files in <code>code/</code>: <code>.param</code> lines are declarations (the 64-bit run's <code>add_tensors_mlir.ptx</code>, the <code>index-bitwidth=32</code> run's <code>add_tensors_mlir_idx32.ptx</code>, and <code>cuda_add.ptx</code>); instructions counts the <code>ld</code>/<code>st</code>/<code>mul</code>/<code>add</code>/<code>shl</code>/<code>cvt</code>/<code>mad</code>/<code>cvta</code>/<code>mov</code>/<code>ret</code> lines.</p>
+<p>The numbers below are computed by <code>compare.sh</code> from the three <code>.ptx</code> files, not counted by hand. <code>.param</code> lines are declarations; "instructions" counts the <code>ld</code>/<code>st</code>/<code>mul</code>/<code>add</code>/<code>shl</code>/<code>cvt</code>/<code>mad</code>/<code>cvta</code>/<code>mov</code>/<code>ret</code> lines:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="ch">#!/bin/sh</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="c1"># Recomputes the numbers in Chapter 10&#39;s comparison table from the three PTX files. Output: compare_out.txt</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="nb">cd</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>dirname<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$0</span><span class="s2">&quot;</span><span class="k">)</span><span class="s2">&quot;</span>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="nb">printf</span><span class="w"> </span><span class="s2">&quot;%-34s %8s %13s\n&quot;</span><span class="w"> </span>file<span class="w"> </span><span class="s2">&quot;.param&quot;</span><span class="w"> </span><span class="s2">&quot;instructions&quot;</span>
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="k">for</span><span class="w"> </span>f<span class="w"> </span><span class="k">in</span><span class="w"> </span>add_tensors_mlir.ptx<span class="w"> </span>add_tensors_mlir_idx32.ptx<span class="w"> </span>cuda_add.ptx<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="w">  </span><span class="nv">p</span><span class="o">=</span><span class="k">$(</span>grep<span class="w"> </span>-cE<span class="w"> </span><span class="s1">&#39;^[[:space:]]*\.param&#39;</span><span class="w"> </span><span class="nv">$f</span><span class="k">)</span>
+<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="w">  </span><span class="nv">i</span><span class="o">=</span><span class="k">$(</span>grep<span class="w"> </span>-cE<span class="w"> </span><span class="s1">&#39;^[[:space:]]+(ld|st|mul|add|shl|cvt|mad|cvta|mov|ret)&#39;</span><span class="w"> </span><span class="nv">$f</span><span class="k">)</span>
+<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span class="w">  </span><span class="nb">printf</span><span class="w"> </span><span class="s2">&quot;%-34s %8s %13s\n&quot;</span><span class="w"> </span><span class="nv">$f</span><span class="w"> </span><span class="nv">$p</span><span class="w"> </span><span class="nv">$i</span>
+<a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a><span class="k">done</span>
+<a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a><span class="nb">echo</span>
+<a id="__codelineno-20-11" name="__codelineno-20-11" href="#__codelineno-20-11"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;memory operations in each file (global loads / stores):&quot;</span>
+<a id="__codelineno-20-12" name="__codelineno-20-12" href="#__codelineno-20-12"></a><span class="k">for</span><span class="w"> </span>f<span class="w"> </span><span class="k">in</span><span class="w"> </span>add_tensors_mlir.ptx<span class="w"> </span>add_tensors_mlir_idx32.ptx<span class="w"> </span>cuda_add.ptx<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<a id="__codelineno-20-13" name="__codelineno-20-13" href="#__codelineno-20-13"></a><span class="w">  </span><span class="nb">printf</span><span class="w"> </span><span class="s2">&quot;%-34s %s loads, %s stores\n&quot;</span><span class="w"> </span><span class="nv">$f</span><span class="w"> </span><span class="k">$(</span>grep<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;ld.global.f64&#39;</span><span class="w"> </span><span class="nv">$f</span><span class="k">)</span><span class="w"> </span><span class="k">$(</span>grep<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;st.global.f64&#39;</span><span class="w"> </span><span class="nv">$f</span><span class="k">)</span>
+<a id="__codelineno-20-14" name="__codelineno-20-14" href="#__codelineno-20-14"></a><span class="k">done</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>file                                 .param  instructions
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>add_tensors_mlir.ptx                     23            25
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>add_tensors_mlir_idx32.ptx               23            22
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>cuda_add.ptx                              3            19
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>
+<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a>memory operations in each file (global loads / stores):
+<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a>add_tensors_mlir.ptx               2 loads, 1 stores
+<a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a>add_tensors_mlir_idx32.ptx         2 loads, 1 stores
+<a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a>cuda_add.ptx                       2 loads, 1 stores
+</code></pre></div>
 <table>
 <thead>
 <tr>
@@ -1774,17 +2148,41 @@
 </tr>
 </tbody>
 </table>
-<p>The <code>index-bitwidth=32</code> column came from a second real run (<code>add_gpu.mlir</code> through <code>canonicalize</code>, then <code>convert-gpu-to-nvvm{index-bitwidth=32}</code>); it is also in <code>pipeline.sh</code>. What the table honestly shows:</p>
+<p>The <code>index-bitwidth=32</code> column came from a second real run (<code>add_gpu.mlir</code> through <code>canonicalize</code>, then <code>convert-gpu-to-nvvm{index-bitwidth=32}</code>). The complete script that produces every artifact in this chapter:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="ch">#!/bin/sh</span>
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="c1"># Chapter 10&#39;s whole real pipeline, start to finish. Needs ./mg-opt (Chapter 7&#39;s build) on PATH or in cwd.</span>
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="nb">set</span><span class="w"> </span>-e
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="nv">MG</span><span class="o">=</span><span class="si">${</span><span class="nv">MG</span><span class="k">:-</span><span class="p">./mg-opt</span><span class="si">}</span>
+<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="nv">$MG</span><span class="w"> </span>add_tensors.mlir<span class="w"> </span>--convert-mg-to-affine<span class="w"> </span>-o<span class="w"> </span>add_affine.mlir
+<a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a>mlir-opt-18<span class="w"> </span>add_affine.mlir<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a><span class="w">  </span>--pass-pipeline<span class="o">=</span><span class="s1">&#39;builtin.module(func.func(affine-parallelize,lower-affine,gpu-map-parallel-loops,convert-parallel-loops-to-gpu),gpu-kernel-outlining)&#39;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a><span class="w">  </span>-o<span class="w"> </span>add_gpu.mlir
+<a id="__codelineno-22-9" name="__codelineno-22-9" href="#__codelineno-22-9"></a>mlir-opt-18<span class="w"> </span>add_gpu.mlir<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-22-10" name="__codelineno-22-10" href="#__codelineno-22-10"></a><span class="w">  </span>--pass-pipeline<span class="o">=</span><span class="s1">&#39;builtin.module(lower-affine,nvvm-attach-target{chip=sm_70 features=+ptx60},gpu.module(convert-gpu-to-nvvm{index-bitwidth=64},reconcile-unrealized-casts))&#39;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-22-11" name="__codelineno-22-11" href="#__codelineno-22-11"></a><span class="w">  </span>-o<span class="w"> </span>add_nvvm.mlir
+<a id="__codelineno-22-12" name="__codelineno-22-12" href="#__codelineno-22-12"></a>mlir-opt-18<span class="w"> </span>add_nvvm.mlir<span class="w"> </span>--gpu-module-to-binary<span class="o">=</span><span class="s2">&quot;format=isa&quot;</span><span class="w"> </span>-o<span class="w"> </span>add_bin.mlir<span class="w">   </span><span class="c1"># PTX text, hex-escaped inside the .mlir</span>
+<a id="__codelineno-22-13" name="__codelineno-22-13" href="#__codelineno-22-13"></a>mlir-opt-18<span class="w"> </span>add_gpu.mlir<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-22-14" name="__codelineno-22-14" href="#__codelineno-22-14"></a><span class="w">  </span>--pass-pipeline<span class="o">=</span><span class="s1">&#39;builtin.module(lower-affine,canonicalize,nvvm-attach-target{chip=sm_70 features=+ptx60},gpu.module(convert-gpu-to-nvvm{index-bitwidth=32},reconcile-unrealized-casts),gpu-module-to-binary{format=isa})&#39;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-22-15" name="__codelineno-22-15" href="#__codelineno-22-15"></a><span class="w">  </span>-o<span class="w"> </span>add_bin32.mlir
+<a id="__codelineno-22-16" name="__codelineno-22-16" href="#__codelineno-22-16"></a>clang-18<span class="w"> </span>-x<span class="w"> </span>cuda<span class="w"> </span>--cuda-device-only<span class="w"> </span>--cuda-gpu-arch<span class="o">=</span>sm_70<span class="w"> </span>-nocudainc<span class="w"> </span>-nocudalib<span class="w"> </span>-S<span class="w"> </span>-O1<span class="w"> </span>cuda_add.cu<span class="w"> </span>-o<span class="w"> </span>cuda_add.ptx
+</code></pre></div>
+<p>What the table honestly shows:</p>
 <ul>
-<li><strong>The memory traffic is identical.</strong> Both artifacts do exactly two 8-byte global loads, one <code>add</code> and one 8-byte global store. The mathematical work Mountain Goat's <code>mg.add</code> expresses survived the whole pipeline intact.</li>
-<li><strong>The gap is the calling convention and index width, not the arithmetic.</strong> MLIR's kernel takes 23 parameters against CUDA's 3 because Chapter 1's memref-descriptor ABI carries sizes, strides and offsets the CUDA kernel simply hard-codes (<code>row * 2 + col</code>). Narrowing the index to 32 bits closes most of the instruction-count gap (25 to 22 against CUDA's 19) but does nothing about the parameter count: that is a property of the <code>memref</code> type, not a pass option this chapter found to turn off. <em>(Correction, added after Chapter 12: this was wrong. <code>--gpu-lower-to-nvvm-pipeline</code> has a <code>kernel-bare-ptr-calling-convention</code> option that cuts the kernel to 5 parameters when all shapes are static; see Chapter 12.)</em></li>
+<li><strong>The memory traffic is identical.</strong> Both artifacts do exactly two 8-byte global loads, one add and one 8-byte global store. The mathematical work Mountain Goat's <code>mg.add</code> expresses survived the whole pipeline intact.</li>
+<li><strong>The gap is the calling convention and index width, not the arithmetic.</strong> MLIR's kernel takes 23 parameters against CUDA's 3 because Chapter 1's memref-descriptor ABI carries sizes, strides and offsets the CUDA kernel simply hard-codes. Narrowing the index to 32 bits closes most of the instruction-count gap (25 to 22 against CUDA's 19) but does nothing about the parameter count: that is a property of the <code>memref</code> type, not a pass option this chapter found to turn off. <em>(Correction, added after Chapter 12: this was wrong. <code>--gpu-lower-to-nvvm-pipeline</code> has a <code>kernel-bare-ptr-calling-convention</code> option that cuts the kernel to 5 parameters when all shapes are static; see Chapter 12.)</em></li>
 <li><strong>What this comparison cannot tell you:</strong> which kernel is faster. Neither was run, and a 4-element add is dominated by launch overhead anyway. Instruction counts are a static proxy, not a measurement.</li>
 <li><strong>The CUDA kernel is not a fair "idiomatic CUDA" sample.</strong> It was written to match the MLIR kernel's launch shape (2 blocks x 2 threads) and uses raw builtins because the CUDA headers are missing.</li>
 </ul>
 <h2 id="what-is-still-missing-from-a-real-gpu-path">What is still missing from a real GPU path<a class="headerlink" href="#what-is-still-missing-from-a-real-gpu-path" title="Permanent link">&para;</a></h2>
 <p><code>gpu.launch_func</code> still sits in the host function, unlowered. <em>(Correction, added after Chapter 11: it is not <code>--gpu-to-llvm</code> alone that lowers the launch in this toolchain, and the load call is named <code>mgpuModuleLoadJIT</code>; see Chapter 11 for what actually happened.)</em> Turning it into real driver calls needs a GPU runtime (<code>mgpuModuleLoadJIT</code>, <code>mgpuLaunchKernel</code>, ...), and this machine has no such runtime library installed (<code>ls /usr/lib/llvm-18/lib | grep -iE "cuda|rocm"</code> found nothing GPU-related besides a Vulkan-transform static library). The host side also needs the memrefs to live somewhere the device can reach: right now <code>memref.alloc</code> is ordinary host memory, so on a real GPU this program would need <code>gpu.alloc</code>/<code>gpu.memcpy</code> or unified memory, which this chapter did not attempt. Those are the concrete steps between this chapter's PTX and a real launch, left open rather than papered over.</p>
 <h2 id="reproducing-this-chapter">Reproducing this chapter<a class="headerlink" href="#reproducing-this-chapter" title="Permanent link">&para;</a></h2>
-<p>Everything above is regenerated by <code>code/pipeline.sh</code> (verified here by running it in an empty directory and byte-comparing every output against the files in <code>code/</code>). It needs a built <code>mg-opt</code> (<code>MG=/path/to/mg-opt ./pipeline.sh</code>) plus <code>mlir-opt-18</code> and <code>clang-18</code>. Packages beyond Chapter 1's own: <code>mlir-18-tools libmlir-18-dev</code> as before, and in this chapter's sandbox <code>llvm-18-dev</code> also had to be installed (after an <code>apt-get update</code>) before CMake could find LLVM for rebuilding <code>mg-opt</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="nb">cd</span><span class="w"> </span>docs/part10/code
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>./probe.sh<span class="w">        </span>&gt;<span class="w"> </span>probe_out.txt<span class="w">          </span><span class="c1"># what GPU tooling exists here</span>
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>./false_starts.sh<span class="w"> </span>&gt;<span class="w"> </span>false_starts_out.txt<span class="w">   </span><span class="c1"># the abandoned --convert-affine-for-to-gpu attempt</span>
+<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="nv">MG</span><span class="o">=</span>/path/to/mg-opt<span class="w"> </span>./pipeline.sh<span class="w">           </span><span class="c1"># every artifact in the chapter (needs a built mg-opt)</span>
+<a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a>./compare.sh<span class="w">      </span>&gt;<span class="w"> </span>compare_out.txt<span class="w">        </span><span class="c1"># the comparison table&#39;s numbers</span>
+</code></pre></div>
+<p><code>pipeline.sh</code> was verified by running it in an empty directory and byte-comparing every output against the files in <code>code/</code>. It needs a built <code>mg-opt</code> plus <code>mlir-opt-18</code> and <code>clang-18</code>. Packages beyond Chapter 1's own: <code>mlir-18-tools libmlir-18-dev</code> as before, and in this chapter's sandbox <code>llvm-18-dev</code> also had to be installed (after an <code>apt-get update</code>) before CMake could find LLVM for rebuilding <code>mg-opt</code>. One real trap recorded in <code>probe.sh</code>: <code>mlir-opt-18 --show-dialects</code> keeps waiting for input after printing, so scripts must give it <code>&lt; /dev/null</code>.</p>
 <h2 id="what-this-chapter-does-not-cite">What this chapter does not cite<a class="headerlink" href="#what-this-chapter-does-not-cite" title="Permanent link">&para;</a></h2>
 <p>Chapters 1 through 9 cite the <code>llvm/llvm-project</code> repository's own <code>mlir/docs/</code> for claims about MLIR's design. This chapter does not: every statement above about what a pass does is taken from running it and reading its output (and <code>mlir-opt-18 --help</code> descriptions), not from the project's documentation, which was not read for this chapter. Treat the explanations of <em>why</em> <code>convert-affine-for-to-gpu</code> failed, and of the ABI cost of memref descriptors, as observations from this one small example.</p>
 

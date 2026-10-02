@@ -1,0 +1,9 @@
+file                                 .param  instructions
+add_tensors_mlir.ptx                     23            25
+add_tensors_mlir_idx32.ptx               23            22
+cuda_add.ptx                              3            19
+
+memory operations in each file (global loads / stores):
+add_tensors_mlir.ptx               2 loads, 1 stores
+add_tensors_mlir_idx32.ptx         2 loads, 1 stores
+cuda_add.ptx                       2 loads, 1 stores

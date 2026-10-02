@@ -78,11 +78,24 @@ CI passed.      whole job: about two minutes
 
 That settles three of the four open items: **GitHub accepted the file** (a parse is not validation, but the run exists with every step listed), the **package names resolve on a fresh runner** (the install step took 25 seconds and everything after it found its tools), and the **run is far inside the 45-minute limit**. It also shows something the local run could not: the compiler builds from nothing in 46 seconds on a GitHub runner, much faster than the several minutes I had guessed above. The test suite took 24 seconds there (the Chapter 9 test, which builds a C++ program against MLIR, finished last).
 
+**Runs 2 and 3: the cache, and a bug in my own workflow.** The push that recorded the paragraph above only touched documentation, so the compiler sources were unchanged and the cache key matched. Run 2 passed, and its log says `Cache hit occurred on the primary key mg-opt-Linux-…, not saving cache`: **the cache was restored.** But the summary also said `PASS build the compiler 35s`. A restored cache that still takes 35 seconds to "build" is a cache doing nothing. The reason is in `build.sh`: it copies the source files into a `tree/` directory on every run, so every file has a fresh modification time, newer than the restored object files, and `make` correctly decides everything is out of date and rebuilds it. (The 35 seconds against the first run's 46 is runner variance, not a saving.)
+
+The fix is to use the information the cache step already gives: an *exact* hit on a key that is a hash of all the compiler's sources means the restored build is current. The step now has an `id`, and the `./ci.sh` step sets `CI_SKIP_BUILD=1` when `steps.cache.outputs.cache-hit` is true (the script already knew how to reuse an existing build). Run 3, on the commit that made that change, shows it working in its log:
+
+```text
+PASS check tools            1s       PASS run the test suite     24s
+PASS check workflow file    1s       PASS build the documentation 4s
+PASS build the compiler     0s       CI passed.      (whole job: 66 s, against 95 s for run 2)
+Cache hit occurred on the primary key mg-opt-Linux-…, not saving cache.
+```
+
+So the cache restore **is** established, and so is the fix. The lesson is a general one about caching: a cache can hit and still save nothing, and the only way to know is to look at what the cached step cost afterwards. This one would have gone on looking healthy ("Cache restored") while saving nothing.
+
 **Still not established:**
 
-- **That the cache is restored.** The first run had an empty cache and *saved* one (the log says `Cache saved with key: mg-opt-Linux-…`). A restore needs a second run with unchanged compiler sources. A documentation-only push such as the one that records this paragraph should hit it; whether it did is a thing to look at in that run's log, not something to assume.
-- **One run is one run.** It is evidence that the setup works, not that it is stable. A different runner image, a changed package version, or a flaky test would show up only over many runs.
-- **The warning the run printed.** GitHub reports that `actions/checkout@v4`, `actions/cache@v4` and `actions/setup-python@v5` target Node.js 20, which is deprecated, and is forcing them onto Node.js 24. They worked, but the versions will need bumping eventually; the workflow is not changed here because a change that is not needed yet is a change that can break a run that works.
+- **Stability over time.** Three runs, all passing, are evidence that the setup works, not that it will keep working: a new runner image, a changed package version or a flaky test would show up only over many runs.
+- **A failing run on GitHub.** Every GitHub run so far passed. That `ci.sh` exits 1 and so would turn a run red is shown locally (below), but a red run has not been seen on GitHub itself.
+- **The warning the runs print.** GitHub reports that `actions/checkout@v4`, `actions/cache@v4` and `actions/setup-python@v5` target Node.js 20, which is deprecated, and is forcing them onto Node.js 24. They work; the versions will need bumping eventually, and the workflow is not changed for that here.
 
 ## CI must be able to fail
 
@@ -126,7 +139,7 @@ Every damage is caught by the test for that chapter, and nothing else fails. The
 
 ## Limits and what is not established
 
-- **One real run so far** (above), which passed; cache restore and stability over time are not yet observed.
+- **Three real runs so far** (above), all passed; no failing run has been seen on GitHub, and stability over many runs is not yet observed.
 - **The documentation step only checks that the site builds.** It does not check that the pages say true things; the tests and the "FAIL is expected" notes exist for that.
 - **Only the newest compiler build is built and tested.** The older chapters' own builds (Chapters 2 to 7, 13, 14, 19, 20, 21, 22) are not rebuilt by CI; their `build.sh` scripts were run once when written. A change that broke only an old chapter's build would not be noticed.
 - **The negative controls and mutation scripts are not run by CI** (they take minutes and several rebuild the compiler). They are evidence about the tests, run by hand and recorded.
@@ -150,7 +163,7 @@ cd docs/part15/code && ./run_lit.sh        # 102 tests
 - `ci.sh` checks the tools, checks the workflow, builds the newest compiler, runs the 102-test suite and builds the docs with `--strict`; it exits 1 on any failure, and a failed build skips the tests that depend on it.
 - It was shown able to fail: against an old compiler, 49 tests fail and `ci.sh` exits 1.
 - Three new tests give Chapters 1, 2 and 9 automated coverage of their own files; four deliberate damages to those files are all caught.
-- The chapter first said the workflow had not been run by GitHub rather than claiming CI works; its first real run then passed (102 tests, compiler built from nothing in 46 s), which is recorded above, with the cache restore and long-run stability still to be observed.
+- The chapter first said the workflow had not been run by GitHub rather than claiming CI works; its first real run then passed (102 tests, compiler built from nothing in 46 s), and a second and third run showed the cache restoring but initially saving nothing (fixed). A failing run on GitHub and long-run stability are still to be observed.
 
 ## Self-check questions
 
@@ -179,7 +192,7 @@ Each answer is collapsed; try the question first.
 5. Why is the compiler build cached, and what decides when the cache is used?
 
     ??? note "Answer"
-        Building the compiler takes several minutes on a fresh machine, so rebuilding it on every push wastes time. The cache stores the build directory under a key that is a hash of every source file that goes into the compiler; if none changed, the key matches and the build is restored, and if any changed the key differs, so a fresh build runs and a new cache is saved.
+        Building the compiler takes several minutes on a fresh machine, so rebuilding it on every push wastes time. The cache stores the build directory under a key that is a hash of every source file that goes into the compiler; if none changed, the key matches and the build is restored, and if any changed the key differs, so a fresh build runs and a new cache is saved. A hit alone does not skip the build, though: in this repository `build.sh` recopies the sources, which makes `make` rebuild everything, so the workflow also tells `ci.sh` to skip building on an exact hit. The first version of the workflow had the cache and still took 35 seconds to build; only reading the timing in the log showed it.
 
 6. Why does `ci.sh` skip the test step when the build step fails?
 

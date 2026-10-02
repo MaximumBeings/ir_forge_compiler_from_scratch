@@ -1,0 +1,4 @@
+mixed with a=3x2, b=3x2 -> 3x2: 11 22 33 44 55 66
+mg.add: operand shapes differ at runtime in dimension 0
+Aborted
+exit status: 134

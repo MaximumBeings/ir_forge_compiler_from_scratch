@@ -1143,6 +1143,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#background-what-a-pass-pipeline-is" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background: what a pass pipeline is
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#scope-which-production-compilers-and-which-not" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1154,13 +1165,52 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#finding-1-the-real-gpu-pipelines-pass-order-and-what-it-settles" class="md-nav__link">
+  <a href="#finding-1-the-real-gpu-pipelines-pass-order" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Finding 1: the real GPU pipeline's pass order, and what it settles
+        Finding 1: the real GPU pipeline's pass order
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Finding 1: the real GPU pipeline&#39;s pass order">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dead-end-1-the-crash" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dead end 1: the crash
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dead-end-2-gpualloc-and-gpumemcpy-silently-not-lowered" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dead end 2: gpu.alloc and gpu.memcpy silently not lowered
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dead-end-3-got-23-kernel-operands-but-expected-5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dead end 3: "got 23 kernel operands but expected 5"
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1363,6 +1413,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#background-what-a-pass-pipeline-is" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background: what a pass pipeline is
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#scope-which-production-compilers-and-which-not" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1374,13 +1435,52 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#finding-1-the-real-gpu-pipelines-pass-order-and-what-it-settles" class="md-nav__link">
+  <a href="#finding-1-the-real-gpu-pipelines-pass-order" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Finding 1: the real GPU pipeline's pass order, and what it settles
+        Finding 1: the real GPU pipeline's pass order
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Finding 1: the real GPU pipeline&#39;s pass order">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dead-end-1-the-crash" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dead end 1: the crash
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dead-end-2-gpualloc-and-gpumemcpy-silently-not-lowered" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dead end 2: gpu.alloc and gpu.memcpy silently not lowered
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dead-end-3-got-23-kernel-operands-but-expected-5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dead end 3: "got 23 kernel operands but expected 5"
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1446,55 +1546,261 @@
 
 
 <h1 id="12-reading-mlirs-own-production-pipelines-what-this-books-compiler-is-missing">12. Reading MLIR's Own Production Pipelines: What This Book's Compiler Is Missing<a class="headerlink" href="#12-reading-mlirs-own-production-pipelines-what-this-books-compiler-is-missing" title="Permanent link">&para;</a></h1>
-<p><strong>What you will understand:</strong> how this book's Mountain Goat pipeline compares to the real, in-tree pass pipelines that ship inside MLIR itself -- read directly from the source, not recalled -- and what that comparison settles. It also settles three explanations Chapter 11 could only call hypotheses, and corrects one claim Chapter 10 got wrong.</p>
-<p><strong>What you need to know first:</strong> Chapters 10 and 11's GPU pipeline. New ground: reading MLIR's own pipeline-construction C++.</p>
+<p><strong>What you will understand:</strong> how this book's Mountain Goat pipeline compares to the real, in-tree pass pipelines that ship inside MLIR itself, read directly from the source and shown on this page, not recalled. It also settles three explanations Chapter 11 could only call hypotheses, by pairing each real symptom with the exact lines of MLIR's source that cause it, and it corrects one claim Chapter 10 got wrong. Every excerpt of LLVM code below is embedded from an unmodified copy kept in the repository (with its provenance and license in <code>code/llvm-18.1.3/NOTICE.md</code>).</p>
+<p><strong>What you need to know first:</strong> Chapters 10 and 11's GPU pipeline. New ground: reading MLIR's own pipeline-construction C++, and the idea that a "pipeline" is just an ordered list of passes.</p>
+<h2 id="background-what-a-pass-pipeline-is">Background: what a pass pipeline is<a class="headerlink" href="#background-what-a-pass-pipeline-is" title="Permanent link">&para;</a></h2>
+<p>A compiler built on MLIR does its work as a sequence of <strong>passes</strong>, each rewriting the IR one step closer to machine code. A <em>pass pipeline</em> is nothing more than a list of those passes in a fixed order, optionally with options. Everything in Chapters 4 through 11 was an <code>mlir-opt-18</code> command line naming passes in order. MLIR also ships a few <em>packaged</em> pipelines, written in C++, that bundle a recommended order behind one name. Reading them answers a useful question: where does a pipeline that someone who knows MLIR well wrote differ from the one this book assembled by trial and error?</p>
 <h2 id="scope-which-production-compilers-and-which-not">Scope: which "production" compilers, and which not<a class="headerlink" href="#scope-which-production-compilers-and-which-not" title="Permanent link">&para;</a></h2>
 <p>Part 7 was queued as "how this book's design choices compare to real production MLIR-based compilers' own real, public lowering pipelines." This chapter does <strong>less</strong> than that, deliberately. The only source reachable and read here is the <code>llvm/llvm-project</code> repository itself, sparse-cloned at the exact tag matching this book's toolchain (<code>llvmorg-18.1.3</code>, commit <code>c13b748</code>). That gives two real pipelines that live inside MLIR:</p>
 <ul>
-<li><code>mlir/lib/Dialect/GPU/Pipelines/GPUToNVVMPipeline.cpp</code> (130 lines), the source of <code>--gpu-lower-to-nvvm-pipeline</code> that Chapter 11 ran.</li>
-<li><code>mlir/lib/Dialect/SparseTensor/Pipelines/SparseTensorPipelines.cpp</code> (117 lines), the source of the sparse-tensor "sparsifier" pipeline.</li>
+<li><code>GPUToNVVMPipeline.cpp</code> (130 lines), the source of <code>--gpu-lower-to-nvvm-pipeline</code> that Chapter 11 ran.</li>
+<li><code>SparseTensorPipelines.cpp</code> (117 lines), the source of the sparse-tensor "sparsifier" pipeline.</li>
 </ul>
-<p><strong>Out-of-tree compilers built on MLIR (IREE, for example, or Triton or XLA) were not read, and nothing here is claimed about them.</strong> Nor does this chapter claim that these two pipelines are what any such compiler ships; the GPU pipeline file's own header comment calls it "a pass for <strong>testing</strong> the lowering to NVVM as a generally usable sink pass." That wording matters: it is MLIR's own reference pipeline, not a production compiler.</p>
-<h2 id="finding-1-the-real-gpu-pipelines-pass-order-and-what-it-settles">Finding 1: the real GPU pipeline's pass order, and what it settles<a class="headerlink" href="#finding-1-the-real-gpu-pipelines-pass-order-and-what-it-settles" title="Permanent link">&para;</a></h2>
+<p><strong>Out-of-tree compilers built on MLIR (IREE, for example, or Triton or XLA) were not read, and nothing here is claimed about them.</strong> Nor does this chapter claim that these two pipelines are what any such compiler ships. The GPU pipeline file's own header says what it is:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1">// This file implements a pass for testing the lowering to NVVM as a generally</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="c1">// usable sink pass.</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1">//</span>
+</code></pre></div>
+<p>"A pass for <strong>testing</strong> the lowering to NVVM as a generally usable sink pass." That wording matters: it is MLIR's own reference pipeline, not a production compiler.</p>
+<h2 id="finding-1-the-real-gpu-pipelines-pass-order">Finding 1: the real GPU pipeline's pass order<a class="headerlink" href="#finding-1-the-real-gpu-pipelines-pass-order" title="Permanent link">&para;</a></h2>
 <p>The core of <code>GPUToNVVMPipeline.cpp</code>, as read from the repository:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kt">void</span><span class="w"> </span><span class="nf">mlir::gpu::buildLowerToNVVMPassPipeline</span><span class="p">(</span><span class="n">OpPassManager</span><span class="w"> </span><span class="o">&amp;</span><span class="n">pm</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">GPUToNVVMPipelineOptions</span><span class="w"> </span><span class="o">&amp;</span><span class="n">options</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="n">buildCommonPassPipeline</span><span class="p">(</span><span class="n">pm</span><span class="p">,</span><span class="w"> </span><span class="n">options</span><span class="p">);</span><span class="w">   </span><span class="c1">// outlining, scf-&gt;cf, func-&gt;llvm, expand-strided-metadata,</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">                                          </span><span class="c1">// nvvm-attach-target, lower-affine, arith-&gt;llvm, index-&gt;llvm,</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">                                          </span><span class="c1">// canonicalize, cse</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="n">buildGpuPassPipeline</span><span class="p">(</span><span class="n">pm</span><span class="p">,</span><span class="w"> </span><span class="n">options</span><span class="p">);</span><span class="w">      </span><span class="c1">// nested in gpu.module: strip-debug-info, convert-gpu-to-nvvm,</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">                                          </span><span class="c1">// canonicalize, cse, reconcile-unrealized-casts</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="n">buildHostPostPipeline</span><span class="p">(</span><span class="n">pm</span><span class="p">,</span><span class="w"> </span><span class="n">options</span><span class="p">);</span><span class="w">     </span><span class="c1">// gpu-to-llvm, THEN gpu-module-to-binary,</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">                                          </span><span class="c1">// canonicalize, cse, reconcile-unrealized-casts</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1">//===----------------------------------------------------------------------===//</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="c1">// Common pipeline</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1">//===----------------------------------------------------------------------===//</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="kt">void</span><span class="w"> </span><span class="nf">buildCommonPassPipeline</span><span class="p">(</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="n">OpPassManager</span><span class="w"> </span><span class="o">&amp;</span><span class="n">pm</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">gpu</span><span class="o">::</span><span class="n">GPUToNVVMPipelineOptions</span><span class="w"> </span><span class="o">&amp;</span><span class="n">options</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createConvertNVGPUToNVVMPass</span><span class="p">());</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createGpuKernelOutliningPass</span><span class="p">());</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createConvertVectorToSCFPass</span><span class="p">());</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createConvertSCFToCFPass</span><span class="p">());</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createConvertNVVMToLLVMPass</span><span class="p">());</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createConvertMathToLLVMPass</span><span class="p">());</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createConvertFuncToLLVMPass</span><span class="p">());</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">memref</span><span class="o">::</span><span class="n">createExpandStridedMetadataPass</span><span class="p">());</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">  </span><span class="n">GpuNVVMAttachTargetOptions</span><span class="w"> </span><span class="n">nvvmTargetOptions</span><span class="p">;</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">  </span><span class="n">nvvmTargetOptions</span><span class="p">.</span><span class="n">triple</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">options</span><span class="p">.</span><span class="n">cubinTriple</span><span class="p">;</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">  </span><span class="n">nvvmTargetOptions</span><span class="p">.</span><span class="n">chip</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">options</span><span class="p">.</span><span class="n">cubinChip</span><span class="p">;</span>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">  </span><span class="n">nvvmTargetOptions</span><span class="p">.</span><span class="n">features</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">options</span><span class="p">.</span><span class="n">cubinFeatures</span><span class="p">;</span>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="w">  </span><span class="n">nvvmTargetOptions</span><span class="p">.</span><span class="n">optLevel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">options</span><span class="p">.</span><span class="n">optLevel</span><span class="p">;</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createGpuNVVMAttachTarget</span><span class="p">(</span><span class="n">nvvmTargetOptions</span><span class="p">));</span>
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createLowerAffinePass</span><span class="p">());</span>
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createArithToLLVMConversionPass</span><span class="p">());</span>
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="w">  </span><span class="n">ConvertIndexToLLVMPassOptions</span><span class="w"> </span><span class="n">convertIndexToLLVMPassOpt</span><span class="p">;</span>
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="w">  </span><span class="n">convertIndexToLLVMPassOpt</span><span class="p">.</span><span class="n">indexBitwidth</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">options</span><span class="p">.</span><span class="n">indexBitWidth</span><span class="p">;</span>
+<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createConvertIndexToLLVMPass</span><span class="p">(</span><span class="n">convertIndexToLLVMPassOpt</span><span class="p">));</span>
+<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createCanonicalizerPass</span><span class="p">());</span>
+<a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createCSEPass</span><span class="p">());</span>
+<a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="p">}</span>
+<a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a>
+<a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="c1">//===----------------------------------------------------------------------===//</span>
+<a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="c1">// GPUModule-specific stuff.</span>
+<a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="c1">//===----------------------------------------------------------------------===//</span>
+<a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a><span class="kt">void</span><span class="w"> </span><span class="nf">buildGpuPassPipeline</span><span class="p">(</span><span class="n">OpPassManager</span><span class="w"> </span><span class="o">&amp;</span><span class="n">pm</span><span class="p">,</span>
+<a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a><span class="w">                          </span><span class="k">const</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">gpu</span><span class="o">::</span><span class="n">GPUToNVVMPipelineOptions</span><span class="w"> </span><span class="o">&amp;</span><span class="n">options</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addNestedPass</span><span class="o">&lt;</span><span class="n">gpu</span><span class="o">::</span><span class="n">GPUModuleOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">createStripDebugInfoPass</span><span class="p">());</span>
+<a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a><span class="w">  </span><span class="n">ConvertGpuOpsToNVVMOpsOptions</span><span class="w"> </span><span class="n">opt</span><span class="p">;</span>
+<a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a><span class="w">  </span><span class="n">opt</span><span class="p">.</span><span class="n">useBarePtrCallConv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">options</span><span class="p">.</span><span class="n">kernelUseBarePtrCallConv</span><span class="p">;</span>
+<a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a><span class="w">  </span><span class="n">opt</span><span class="p">.</span><span class="n">indexBitwidth</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">options</span><span class="p">.</span><span class="n">indexBitWidth</span><span class="p">;</span>
+<a id="__codelineno-1-39" name="__codelineno-1-39" href="#__codelineno-1-39"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addNestedPass</span><span class="o">&lt;</span><span class="n">gpu</span><span class="o">::</span><span class="n">GPUModuleOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">createConvertGpuOpsToNVVMOps</span><span class="p">(</span><span class="n">opt</span><span class="p">));</span>
+<a id="__codelineno-1-40" name="__codelineno-1-40" href="#__codelineno-1-40"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addNestedPass</span><span class="o">&lt;</span><span class="n">gpu</span><span class="o">::</span><span class="n">GPUModuleOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">createCanonicalizerPass</span><span class="p">());</span>
+<a id="__codelineno-1-41" name="__codelineno-1-41" href="#__codelineno-1-41"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addNestedPass</span><span class="o">&lt;</span><span class="n">gpu</span><span class="o">::</span><span class="n">GPUModuleOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">createCSEPass</span><span class="p">());</span>
+<a id="__codelineno-1-42" name="__codelineno-1-42" href="#__codelineno-1-42"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addNestedPass</span><span class="o">&lt;</span><span class="n">gpu</span><span class="o">::</span><span class="n">GPUModuleOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">createReconcileUnrealizedCastsPass</span><span class="p">());</span>
+<a id="__codelineno-1-43" name="__codelineno-1-43" href="#__codelineno-1-43"></a><span class="p">}</span>
+<a id="__codelineno-1-44" name="__codelineno-1-44" href="#__codelineno-1-44"></a>
+<a id="__codelineno-1-45" name="__codelineno-1-45" href="#__codelineno-1-45"></a><span class="c1">//===----------------------------------------------------------------------===//</span>
+<a id="__codelineno-1-46" name="__codelineno-1-46" href="#__codelineno-1-46"></a><span class="c1">// Host Post-GPU pipeline</span>
+<a id="__codelineno-1-47" name="__codelineno-1-47" href="#__codelineno-1-47"></a><span class="c1">//===----------------------------------------------------------------------===//</span>
+<a id="__codelineno-1-48" name="__codelineno-1-48" href="#__codelineno-1-48"></a><span class="kt">void</span><span class="w"> </span><span class="nf">buildHostPostPipeline</span><span class="p">(</span><span class="n">OpPassManager</span><span class="w"> </span><span class="o">&amp;</span><span class="n">pm</span><span class="p">,</span>
+<a id="__codelineno-1-49" name="__codelineno-1-49" href="#__codelineno-1-49"></a><span class="w">                           </span><span class="k">const</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">gpu</span><span class="o">::</span><span class="n">GPUToNVVMPipelineOptions</span><span class="w"> </span><span class="o">&amp;</span><span class="n">options</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-50" name="__codelineno-1-50" href="#__codelineno-1-50"></a><span class="w">  </span><span class="n">GpuToLLVMConversionPassOptions</span><span class="w"> </span><span class="n">opt</span><span class="p">;</span>
+<a id="__codelineno-1-51" name="__codelineno-1-51" href="#__codelineno-1-51"></a><span class="w">  </span><span class="n">opt</span><span class="p">.</span><span class="n">hostBarePtrCallConv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">options</span><span class="p">.</span><span class="n">hostUseBarePtrCallConv</span><span class="p">;</span>
+<a id="__codelineno-1-52" name="__codelineno-1-52" href="#__codelineno-1-52"></a><span class="w">  </span><span class="n">opt</span><span class="p">.</span><span class="n">kernelBarePtrCallConv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">options</span><span class="p">.</span><span class="n">kernelUseBarePtrCallConv</span><span class="p">;</span>
+<a id="__codelineno-1-53" name="__codelineno-1-53" href="#__codelineno-1-53"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createGpuToLLVMConversionPass</span><span class="p">(</span><span class="n">opt</span><span class="p">));</span>
+<a id="__codelineno-1-54" name="__codelineno-1-54" href="#__codelineno-1-54"></a>
+<a id="__codelineno-1-55" name="__codelineno-1-55" href="#__codelineno-1-55"></a><span class="w">  </span><span class="n">GpuModuleToBinaryPassOptions</span><span class="w"> </span><span class="n">gpuModuleToBinaryPassOptions</span><span class="p">;</span>
+<a id="__codelineno-1-56" name="__codelineno-1-56" href="#__codelineno-1-56"></a><span class="w">  </span><span class="n">gpuModuleToBinaryPassOptions</span><span class="p">.</span><span class="n">compilationTarget</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">options</span><span class="p">.</span><span class="n">cubinFormat</span><span class="p">;</span>
+<a id="__codelineno-1-57" name="__codelineno-1-57" href="#__codelineno-1-57"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createGpuModuleToBinaryPass</span><span class="p">(</span><span class="n">gpuModuleToBinaryPassOptions</span><span class="p">));</span>
+<a id="__codelineno-1-58" name="__codelineno-1-58" href="#__codelineno-1-58"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createCanonicalizerPass</span><span class="p">());</span>
+<a id="__codelineno-1-59" name="__codelineno-1-59" href="#__codelineno-1-59"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createCSEPass</span><span class="p">());</span>
+<a id="__codelineno-1-60" name="__codelineno-1-60" href="#__codelineno-1-60"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createReconcileUnrealizedCastsPass</span><span class="p">());</span>
+<a id="__codelineno-1-61" name="__codelineno-1-61" href="#__codelineno-1-61"></a><span class="p">}</span>
+<a id="__codelineno-1-62" name="__codelineno-1-62" href="#__codelineno-1-62"></a>
+<a id="__codelineno-1-63" name="__codelineno-1-63" href="#__codelineno-1-63"></a><span class="p">}</span><span class="w"> </span><span class="c1">// namespace</span>
+<a id="__codelineno-1-64" name="__codelineno-1-64" href="#__codelineno-1-64"></a>
+<a id="__codelineno-1-65" name="__codelineno-1-65" href="#__codelineno-1-65"></a><span class="kt">void</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">gpu</span><span class="o">::</span><span class="n">buildLowerToNVVMPassPipeline</span><span class="p">(</span>
+<a id="__codelineno-1-66" name="__codelineno-1-66" href="#__codelineno-1-66"></a><span class="w">    </span><span class="n">OpPassManager</span><span class="w"> </span><span class="o">&amp;</span><span class="n">pm</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">GPUToNVVMPipelineOptions</span><span class="w"> </span><span class="o">&amp;</span><span class="n">options</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-67" name="__codelineno-1-67" href="#__codelineno-1-67"></a><span class="w">  </span><span class="c1">// Common pipelines</span>
+<a id="__codelineno-1-68" name="__codelineno-1-68" href="#__codelineno-1-68"></a><span class="w">  </span><span class="n">buildCommonPassPipeline</span><span class="p">(</span><span class="n">pm</span><span class="p">,</span><span class="w"> </span><span class="n">options</span><span class="p">);</span>
+<a id="__codelineno-1-69" name="__codelineno-1-69" href="#__codelineno-1-69"></a>
+<a id="__codelineno-1-70" name="__codelineno-1-70" href="#__codelineno-1-70"></a><span class="w">  </span><span class="c1">// GPUModule-specific stuff</span>
+<a id="__codelineno-1-71" name="__codelineno-1-71" href="#__codelineno-1-71"></a><span class="w">  </span><span class="n">buildGpuPassPipeline</span><span class="p">(</span><span class="n">pm</span><span class="p">,</span><span class="w"> </span><span class="n">options</span><span class="p">);</span>
+<a id="__codelineno-1-72" name="__codelineno-1-72" href="#__codelineno-1-72"></a>
+<a id="__codelineno-1-73" name="__codelineno-1-73" href="#__codelineno-1-73"></a><span class="w">  </span><span class="c1">// Host post-GPUModule-specific stuff</span>
+<a id="__codelineno-1-74" name="__codelineno-1-74" href="#__codelineno-1-74"></a><span class="w">  </span><span class="n">buildHostPostPipeline</span><span class="p">(</span><span class="n">pm</span><span class="p">,</span><span class="w"> </span><span class="n">options</span><span class="p">);</span>
+<a id="__codelineno-1-75" name="__codelineno-1-75" href="#__codelineno-1-75"></a><span class="p">}</span>
+<a id="__codelineno-1-76" name="__codelineno-1-76" href="#__codelineno-1-76"></a>
+<a id="__codelineno-1-77" name="__codelineno-1-77" href="#__codelineno-1-77"></a><span class="kt">void</span><span class="w"> </span><span class="n">mlir</span><span class="o">::</span><span class="n">gpu</span><span class="o">::</span><span class="n">registerGPUToNVVMPipeline</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-78" name="__codelineno-1-78" href="#__codelineno-1-78"></a><span class="w">  </span><span class="n">PassPipelineRegistration</span><span class="o">&lt;</span><span class="n">GPUToNVVMPipelineOptions</span><span class="o">&gt;</span><span class="p">(</span>
+<a id="__codelineno-1-79" name="__codelineno-1-79" href="#__codelineno-1-79"></a><span class="w">      </span><span class="s">&quot;gpu-lower-to-nvvm-pipeline&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-80" name="__codelineno-1-80" href="#__codelineno-1-80"></a><span class="w">      </span><span class="s">&quot;The default pipeline lowers main dialects (arith, memref, scf, &quot;</span>
+<a id="__codelineno-1-81" name="__codelineno-1-81" href="#__codelineno-1-81"></a><span class="w">      </span><span class="s">&quot;vector, gpu, and nvgpu) to NVVM. It starts by lowering GPU code to the &quot;</span>
+<a id="__codelineno-1-82" name="__codelineno-1-82" href="#__codelineno-1-82"></a><span class="w">      </span><span class="s">&quot;specified compilation target (default is fatbin) then lowers the host &quot;</span>
+<a id="__codelineno-1-83" name="__codelineno-1-83" href="#__codelineno-1-83"></a><span class="w">      </span><span class="s">&quot;code.&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-84" name="__codelineno-1-84" href="#__codelineno-1-84"></a><span class="w">      </span><span class="n">buildLowerToNVVMPassPipeline</span><span class="p">);</span>
+<a id="__codelineno-1-85" name="__codelineno-1-85" href="#__codelineno-1-85"></a><span class="p">}</span>
+<a id="__codelineno-1-86" name="__codelineno-1-86" href="#__codelineno-1-86"></a>
+<a id="__codelineno-1-87" name="__codelineno-1-87" href="#__codelineno-1-87"></a><span class="cp">#endif </span><span class="c1">// MLIR_CUDA_CONVERSIONS_ENABLED</span>
 </code></pre></div>
-<p>(Comments condensed from the file's own pass lists; the real file is 130 lines.) Compare with Chapter 11's three dead ends:</p>
-<ol>
-<li><strong>The crash.</strong> Chapter 11 found <code>gpu-to-llvm</code> crashing <code>mlir-opt-18</code> when run <em>after</em> <code>gpu-module-to-binary</code>, top frame <code>GPUModuleOp::getTargetsAttr()</code>, and left the cause as a hypothesis. The real pipeline runs them in the opposite order: <code>gpu-to-llvm</code> first, <code>gpu-module-to-binary</code> second. And the source of the launch pattern (<code>GPUToLLVMConversion.cpp</code>, <code>ConvertLaunchFuncOpToGpuRuntimeCallPattern::matchAndRewrite</code>) reads:</li>
-</ol>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">gpu</span><span class="o">::</span><span class="n">GPUModuleOp</span><span class="w"> </span><span class="n">kernelModule</span><span class="p">;</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="p">...</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">kernelModule</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SymbolTable</span><span class="o">::</span><span class="n">lookupNearestSymbolFrom</span><span class="o">&lt;</span><span class="n">gpu</span><span class="o">::</span><span class="n">GPUModuleOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">launchOp</span><span class="p">,</span><span class="w"> </span><span class="n">launchOp</span><span class="p">.</span><span class="n">getKernelModuleName</span><span class="p">());</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">assert</span><span class="p">(</span><span class="n">kernelModule</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="s">&quot;expected a kernel module&quot;</span><span class="p">);</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="c1">// If the module has Targets then just update the op operands.</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ArrayAttr</span><span class="w"> </span><span class="n">targets</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kernelModule</span><span class="p">.</span><span class="n">getTargetsAttr</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<p>Three functions, called in this order: <code>buildCommonPassPipeline</code> (outline the kernel, lower control flow, function signatures and memrefs on the host, attach the NVVM target, lower affine, arithmetic and index, then canonicalize and CSE), <code>buildGpuPassPipeline</code> (nested inside each <code>gpu.module</code>: strip debug info, convert to NVVM, canonicalize, CSE, reconcile casts) and <code>buildHostPostPipeline</code> (<strong><code>gpu-to-llvm</code>, then <code>gpu-module-to-binary</code></strong>, then canonicalize, CSE, reconcile casts). Chapter 11's three dead ends, each with the real symptom and the lines that explain it:</p>
+<h3 id="dead-end-1-the-crash">Dead end 1: the crash<a class="headerlink" href="#dead-end-1-the-crash" title="Permanent link">&para;</a></h3>
+<p>Chapter 11 found <code>gpu-to-llvm</code> crashing <code>mlir-opt-18</code> when run <em>after</em> <code>gpu-module-to-binary</code>. <code>symptoms.sh</code> reproduces it and saves the top of the crash report:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>Stack dump:
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>0.  Program arguments: mlir-opt-18 symptoms/async.mlir &quot;--pass-pipeline=builtin.module(lower-affine,nvvm-attach-
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a> #0 0x00007fd60f7a63bf llvm::sys::PrintStackTrace(llvm::raw_ostream&amp;, int) (/usr/lib/llvm-18/bin/../lib/libLLVM.so.18.1+0xda63bf)
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a> #4 0x000055fed77ded5b mlir::gpu::GPUModuleOp::getTargetsAttr() (/usr/lib/llvm-18/bin/mlir-opt+0x14a0d5b)
 </code></pre></div>
-<p>The lookup is typed to <code>gpu::GPUModuleOp</code>. Once <code>gpu-module-to-binary</code> has replaced that op with a <code>gpu.binary</code>, the lookup finds nothing and returns null. The <code>assert</code> that is meant to catch this vanishes in a release build such as Ubuntu's, and <code>kernelModule.getTargetsAttr()</code> then dereferences null. That matches the observed top frame exactly. <strong>This is now an established cause, not a hypothesis</strong> (reading the code is evidence; it was not confirmed by rebuilding with assertions on, which would show the assert firing instead of a segfault).
-2. <strong>The silent non-lowering of <code>gpu.alloc</code>/<code>gpu.memcpy</code>.</strong> The same file contains:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">op</span><span class="p">.</span><span class="n">getAsyncDependencies</span><span class="p">().</span><span class="n">size</span><span class="p">()</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">rewriter</span><span class="p">.</span><span class="n">notifyMatchFailure</span><span class="p">(</span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Can only convert with exactly one async dependency.&quot;</span><span class="p">);</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">op</span><span class="p">.</span><span class="n">getAsyncToken</span><span class="p">())</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">rewriter</span><span class="p">.</span><span class="n">notifyMatchFailure</span><span class="p">(</span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Can convert only async version.&quot;</span><span class="p">);</span>
+<p>The top frame is <code>GPUModuleOp::getTargetsAttr()</code>. The real pipeline above runs the two passes in the <strong>opposite</strong> order. And the source of the launch pattern (<code>GPUToLLVMConversion.cpp</code>, <code>ConvertLaunchFuncOpToGpuRuntimeCallPattern::matchAndRewrite</code>) reads:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="w">  </span><span class="n">Location</span><span class="w"> </span><span class="n">loc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">launchOp</span><span class="p">.</span><span class="n">getLoc</span><span class="p">();</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="c1">// Create an LLVM global with CUBIN extracted from the kernel annotation and</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="c1">// obtain a pointer to the first byte in it.</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">  </span><span class="n">gpu</span><span class="o">::</span><span class="n">GPUModuleOp</span><span class="w"> </span><span class="n">kernelModule</span><span class="p">;</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">cachedModuleTable</span><span class="p">)</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="n">kernelModule</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cachedModuleTable</span><span class="o">-&gt;</span><span class="n">lookup</span><span class="o">&lt;</span><span class="n">gpu</span><span class="o">::</span><span class="n">GPUModuleOp</span><span class="o">&gt;</span><span class="p">(</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">        </span><span class="n">launchOp</span><span class="p">.</span><span class="n">getKernelModuleName</span><span class="p">());</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">  </span><span class="k">else</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">    </span><span class="n">kernelModule</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SymbolTable</span><span class="o">::</span><span class="n">lookupNearestSymbolFrom</span><span class="o">&lt;</span><span class="n">gpu</span><span class="o">::</span><span class="n">GPUModuleOp</span><span class="o">&gt;</span><span class="p">(</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">        </span><span class="n">launchOp</span><span class="p">,</span><span class="w"> </span><span class="n">launchOp</span><span class="p">.</span><span class="n">getKernelModuleName</span><span class="p">());</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="w">  </span><span class="n">assert</span><span class="p">(</span><span class="n">kernelModule</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="s">&quot;expected a kernel module&quot;</span><span class="p">);</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">  </span><span class="c1">// If the module has Targets then just update the op operands.</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ArrayAttr</span><span class="w"> </span><span class="n">targets</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kernelModule</span><span class="p">.</span><span class="n">getTargetsAttr</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="w">    </span><span class="n">Value</span><span class="w"> </span><span class="n">stream</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Value</span><span class="p">();</span>
 </code></pre></div>
-<p>which is exactly why a non-async <code>gpu.alloc</code> was left alone until <code>gpu-async-region</code> ran, and why a match failure is silent: <code>notifyMatchFailure</code> is not an error. Note also that <strong>the real pipeline does not contain <code>gpu-async-region</code>.</strong> It expects its input to already be in async form (or to use only ops that lower synchronously); running that pass is the caller's job, which is what Chapter 11 ended up doing.
-3. <strong>"got 23 kernel operands but expected 5".</strong> The branch quoted above, "If the module has Targets then just update the op operands," is the code that rewrote the launch with <code>promoteOperands(...)</code>, expanding each memref into its descriptor scalars, then re-created a <code>gpu.launch_func</code> with those. The launch pattern only takes that branch when the module has targets (<code>nvvm-attach-target</code> having run). Run before the kernel is converted, the expanded launch and the unconverted kernel disagree, which is the verifier error observed.</p>
+<p>The lookup is typed to <code>gpu::GPUModuleOp</code>. Once <code>gpu-module-to-binary</code> has replaced that op with a <code>gpu.binary</code>, the lookup finds nothing and returns null. The <code>assert</code> that is meant to catch this (line 1126) vanishes in a release build such as Ubuntu's, and <code>kernelModule.getTargetsAttr()</code> on the next lines then dereferences null. That matches the observed top frame exactly. <strong>This is now an established cause, not a hypothesis</strong>: reading the code is evidence, though it was not confirmed by rebuilding LLVM with assertions on, which would show the assert firing instead of a segfault.</p>
+<h3 id="dead-end-2-gpualloc-and-gpumemcpy-silently-not-lowered">Dead end 2: <code>gpu.alloc</code> and <code>gpu.memcpy</code> silently not lowered<a class="headerlink" href="#dead-end-2-gpualloc-and-gpumemcpy-silently-not-lowered" title="Permanent link">&para;</a></h3>
+<p>On the book's original, non-async host function, <code>gpu-to-llvm</code> ran without error and left the ops it was supposed to lower. <code>symptoms.sh</code> saves exactly which ones survive:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>%memref = gpu.alloc  () : memref&lt;2x2xf64&gt;
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>%memref_0 = gpu.alloc  () : memref&lt;2x2xf64&gt;
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>%memref_1 = gpu.alloc  () : memref&lt;2x2xf64&gt;
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>gpu.memcpy  %memref, %8 : memref&lt;2x2xf64&gt;, memref&lt;2x2xf64&gt;
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>gpu.memcpy  %memref_0, %17 : memref&lt;2x2xf64&gt;, memref&lt;2x2xf64&gt;
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>gpu.memcpy  %62, %memref_1 : memref&lt;2x2xf64&gt;, memref&lt;2x2xf64&gt;
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>gpu.dealloc  %memref : memref&lt;2x2xf64&gt;
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>gpu.dealloc  %memref_0 : memref&lt;2x2xf64&gt;
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>gpu.dealloc  %memref_1 : memref&lt;2x2xf64&gt;
+</code></pre></div>
+<p>and, on the same input after <code>gpu-async-region</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>gpu.alloc|memcpy|dealloc ops left WITH gpu-async-region: 0
+</code></pre></div>
+<p>The source explains why. The helper that the alloc, dealloc and memcpy patterns call first:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">static</span><span class="w"> </span><span class="n">LogicalResult</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="nf">isAsyncWithOneDependency</span><span class="p">(</span><span class="n">ConversionPatternRewriter</span><span class="w"> </span><span class="o">&amp;</span><span class="n">rewriter</span><span class="p">,</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">                         </span><span class="n">gpu</span><span class="o">::</span><span class="n">AsyncOpInterface</span><span class="w"> </span><span class="n">op</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">op</span><span class="p">.</span><span class="n">getAsyncDependencies</span><span class="p">().</span><span class="n">size</span><span class="p">()</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">rewriter</span><span class="p">.</span><span class="n">notifyMatchFailure</span><span class="p">(</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">        </span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Can only convert with exactly one async dependency.&quot;</span><span class="p">);</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">op</span><span class="p">.</span><span class="n">getAsyncToken</span><span class="p">())</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">rewriter</span><span class="p">.</span><span class="n">notifyMatchFailure</span><span class="p">(</span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Can convert only async version.&quot;</span><span class="p">);</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">success</span><span class="p">();</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="p">}</span>
+</code></pre></div>
+<p>A synchronous op fails the second test (<code>!op.getAsyncToken()</code>), and <strong><code>notifyMatchFailure</code> is not an error</strong>: the pattern simply does not apply, and the op is left for a later legality check to complain about, which is the <code>failed to legalize operation 'builtin.unrealized_conversion_cast'</code> Chapter 11 saw. Note also that <strong>the real pipeline does not contain <code>gpu-async-region</code></strong>. It expects its input to already be in async form; running that pass is the caller's job, which is what Chapter 11 ended up doing.</p>
+<h3 id="dead-end-3-got-23-kernel-operands-but-expected-5">Dead end 3: "got 23 kernel operands but expected 5"<a class="headerlink" href="#dead-end-3-got-23-kernel-operands-but-expected-5" title="Permanent link">&para;</a></h3>
+<p>Putting <code>gpu-to-llvm</code> <em>before</em> the kernel conversion got past the crash but failed verification (<code>3_operands_before_kernel_conversion.txt</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>symptoms/async.mlir:13:10: error: &#39;gpu.launch_func&#39; op got 23 kernel operands but expected 5
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>    %3 = gpu.launch_func async [%2] @add_tensors_kernel::@add_tensors_kernel blocks in (%c2, %c1, %c1) threads in (%c2, %c1, %c1)  args(%c1 : index, %c0 : index, %memref : memref&lt;2x2xf64&gt;, %memref_0 :
+</code></pre></div>
+<p>The branch quoted above, "If the module has Targets then just update the op operands", is what produced it:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="w">  </span><span class="c1">// If the module has Targets then just update the op operands.</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ArrayAttr</span><span class="w"> </span><span class="n">targets</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kernelModule</span><span class="p">.</span><span class="n">getTargetsAttr</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span><span class="n">Value</span><span class="w"> </span><span class="n">stream</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Value</span><span class="p">();</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">adaptor</span><span class="p">.</span><span class="n">getAsyncDependencies</span><span class="p">().</span><span class="n">empty</span><span class="p">())</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">      </span><span class="n">stream</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">adaptor</span><span class="p">.</span><span class="n">getAsyncDependencies</span><span class="p">().</span><span class="n">front</span><span class="p">();</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">    </span><span class="c1">// If the async keyword is present and there are no dependencies, then a</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">    </span><span class="c1">// stream must be created to pass to subsequent operations.</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">    </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">launchOp</span><span class="p">.</span><span class="n">getAsyncToken</span><span class="p">())</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="w">      </span><span class="n">stream</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">streamCreateCallBuilder</span><span class="p">.</span><span class="n">create</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span><span class="w"> </span><span class="n">rewriter</span><span class="p">,</span><span class="w"> </span><span class="p">{}).</span><span class="n">getResult</span><span class="p">();</span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="w">    </span><span class="c1">// Lower the kernel operands to match kernel parameters.</span>
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="w">    </span><span class="c1">// Note: If `useBarePtrCallConv` is set in the type converter&#39;s options,</span>
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="w">    </span><span class="c1">// the value of `kernelBarePtrCallConv` will be ignored.</span>
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="w">    </span><span class="n">SmallVector</span><span class="o">&lt;</span><span class="n">Value</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="o">&gt;</span><span class="w"> </span><span class="n">arguments</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getTypeConverter</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">promoteOperands</span><span class="p">(</span>
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="w">        </span><span class="n">loc</span><span class="p">,</span><span class="w"> </span><span class="n">launchOp</span><span class="p">.</span><span class="n">getKernelOperands</span><span class="p">(),</span><span class="w"> </span><span class="n">adaptor</span><span class="p">.</span><span class="n">getKernelOperands</span><span class="p">(),</span>
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="w">        </span><span class="n">rewriter</span><span class="p">,</span><span class="w"> </span><span class="cm">/*useBarePtrCallConv=*/</span><span class="n">kernelBarePtrCallConv</span><span class="p">);</span>
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a>
+<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">optional</span><span class="o">&lt;</span><span class="n">gpu</span><span class="o">::</span><span class="n">KernelDim3</span><span class="o">&gt;</span><span class="w"> </span><span class="n">clusterSize</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">nullopt</span><span class="p">;</span>
+<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">launchOp</span><span class="p">.</span><span class="n">hasClusterSize</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a><span class="w">      </span><span class="n">clusterSize</span><span class="w"> </span><span class="o">=</span>
+<a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a><span class="w">          </span><span class="n">gpu</span><span class="o">::</span><span class="n">KernelDim3</span><span class="p">{</span><span class="n">adaptor</span><span class="p">.</span><span class="n">getClusterSizeX</span><span class="p">(),</span><span class="w"> </span><span class="n">adaptor</span><span class="p">.</span><span class="n">getClusterSizeY</span><span class="p">(),</span>
+<a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a><span class="w">                          </span><span class="n">adaptor</span><span class="p">.</span><span class="n">getClusterSizeZ</span><span class="p">()};</span>
+<a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-8-24" name="__codelineno-8-24" href="#__codelineno-8-24"></a><span class="w">    </span><span class="n">rewriter</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">gpu</span><span class="o">::</span><span class="n">LaunchFuncOp</span><span class="o">&gt;</span><span class="p">(</span>
+<a id="__codelineno-8-25" name="__codelineno-8-25" href="#__codelineno-8-25"></a><span class="w">        </span><span class="n">launchOp</span><span class="p">.</span><span class="n">getLoc</span><span class="p">(),</span><span class="w"> </span><span class="n">launchOp</span><span class="p">.</span><span class="n">getKernelAttr</span><span class="p">(),</span>
+<a id="__codelineno-8-26" name="__codelineno-8-26" href="#__codelineno-8-26"></a><span class="w">        </span><span class="n">gpu</span><span class="o">::</span><span class="n">KernelDim3</span><span class="p">{</span><span class="n">adaptor</span><span class="p">.</span><span class="n">getGridSizeX</span><span class="p">(),</span><span class="w"> </span><span class="n">adaptor</span><span class="p">.</span><span class="n">getGridSizeY</span><span class="p">(),</span>
+<a id="__codelineno-8-27" name="__codelineno-8-27" href="#__codelineno-8-27"></a><span class="w">                        </span><span class="n">adaptor</span><span class="p">.</span><span class="n">getGridSizeZ</span><span class="p">()},</span>
+<a id="__codelineno-8-28" name="__codelineno-8-28" href="#__codelineno-8-28"></a><span class="w">        </span><span class="n">gpu</span><span class="o">::</span><span class="n">KernelDim3</span><span class="p">{</span><span class="n">adaptor</span><span class="p">.</span><span class="n">getBlockSizeX</span><span class="p">(),</span><span class="w"> </span><span class="n">adaptor</span><span class="p">.</span><span class="n">getBlockSizeY</span><span class="p">(),</span>
+<a id="__codelineno-8-29" name="__codelineno-8-29" href="#__codelineno-8-29"></a><span class="w">                        </span><span class="n">adaptor</span><span class="p">.</span><span class="n">getBlockSizeZ</span><span class="p">()},</span>
+<a id="__codelineno-8-30" name="__codelineno-8-30" href="#__codelineno-8-30"></a><span class="w">        </span><span class="n">adaptor</span><span class="p">.</span><span class="n">getDynamicSharedMemorySize</span><span class="p">(),</span><span class="w"> </span><span class="n">arguments</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">,</span><span class="w"> </span><span class="n">clusterSize</span><span class="p">);</span>
+<a id="__codelineno-8-31" name="__codelineno-8-31" href="#__codelineno-8-31"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">launchOp</span><span class="p">.</span><span class="n">getAsyncToken</span><span class="p">())</span>
+<a id="__codelineno-8-32" name="__codelineno-8-32" href="#__codelineno-8-32"></a><span class="w">      </span><span class="n">rewriter</span><span class="p">.</span><span class="n">replaceOp</span><span class="p">(</span><span class="n">launchOp</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="n">stream</span><span class="p">});</span>
+<a id="__codelineno-8-33" name="__codelineno-8-33" href="#__codelineno-8-33"></a><span class="w">    </span><span class="k">else</span>
+<a id="__codelineno-8-34" name="__codelineno-8-34" href="#__codelineno-8-34"></a><span class="w">      </span><span class="n">rewriter</span><span class="p">.</span><span class="n">eraseOp</span><span class="p">(</span><span class="n">launchOp</span><span class="p">);</span>
+<a id="__codelineno-8-35" name="__codelineno-8-35" href="#__codelineno-8-35"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">success</span><span class="p">();</span>
+<a id="__codelineno-8-36" name="__codelineno-8-36" href="#__codelineno-8-36"></a><span class="w">  </span><span class="p">}</span>
+</code></pre></div>
+<p><code>promoteOperands(...)</code> expands each memref launch argument into its descriptor scalars (the 23, again), and the pattern re-creates a <code>gpu.launch_func</code> with those. It takes this branch only when the module has targets (so <code>nvvm-attach-target</code> must already have run, which the legality rule at lines 607 to 622 also demands):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="w">  </span><span class="c1">// Preserve GPU modules if they have target attributes.</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="n">target</span><span class="p">.</span><span class="n">addDynamicallyLegalOp</span><span class="o">&lt;</span><span class="n">gpu</span><span class="o">::</span><span class="n">GPUModuleOp</span><span class="o">&gt;</span><span class="p">(</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">      </span><span class="p">[](</span><span class="n">gpu</span><span class="o">::</span><span class="n">GPUModuleOp</span><span class="w"> </span><span class="k">module</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">module</span><span class="p">.</span><span class="n">getTargetsAttr</span><span class="p">()</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="k">nullptr</span><span class="p">;</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">      </span><span class="p">});</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">  </span><span class="c1">// Accept as legal LaunchFuncOps if they refer to GPU Modules with targets and</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">  </span><span class="c1">// the operands have been lowered.</span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">  </span><span class="n">target</span><span class="p">.</span><span class="n">addDynamicallyLegalOp</span><span class="o">&lt;</span><span class="n">gpu</span><span class="o">::</span><span class="n">LaunchFuncOp</span><span class="o">&gt;</span><span class="p">(</span>
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">      </span><span class="p">[</span><span class="o">&amp;</span><span class="p">](</span><span class="n">gpu</span><span class="o">::</span><span class="n">LaunchFuncOp</span><span class="w"> </span><span class="n">op</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="w">        </span><span class="k">auto</span><span class="w"> </span><span class="k">module</span><span class="w"> </span><span class="o">=</span>
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="w">            </span><span class="n">symbolTable</span><span class="p">.</span><span class="n">lookup</span><span class="o">&lt;</span><span class="n">gpu</span><span class="o">::</span><span class="n">GPUModuleOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">op</span><span class="p">.</span><span class="n">getKernelModuleName</span><span class="p">());</span>
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">converter</span><span class="p">.</span><span class="n">isLegal</span><span class="p">(</span><span class="n">op</span><span class="o">-&gt;</span><span class="n">getOperandTypes</span><span class="p">())</span><span class="w"> </span><span class="o">&amp;&amp;</span>
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="w">               </span><span class="n">converter</span><span class="p">.</span><span class="n">isLegal</span><span class="p">(</span><span class="n">op</span><span class="o">-&gt;</span><span class="n">getResultTypes</span><span class="p">())</span><span class="w"> </span><span class="o">&amp;&amp;</span>
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a><span class="w">               </span><span class="p">(</span><span class="k">module</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="k">module</span><span class="p">.</span><span class="n">getTargetsAttr</span><span class="p">()</span><span class="w"> </span><span class="o">&amp;&amp;</span>
+<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a><span class="w">                </span><span class="o">!</span><span class="k">module</span><span class="p">.</span><span class="n">getTargetsAttr</span><span class="p">().</span><span class="n">empty</span><span class="p">());</span>
+<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a><span class="w">      </span><span class="p">});</span>
+</code></pre></div>
+<p>Run before the kernel itself is converted, the expanded launch and the unconverted kernel (still taking 5 memref arguments) disagree, which is the verifier error observed.</p>
 <h2 id="finding-2-chapter-10-was-wrong-about-the-23-parameters">Finding 2: Chapter 10 was wrong about the 23 parameters<a class="headerlink" href="#finding-2-chapter-10-was-wrong-about-the-23-parameters" title="Permanent link">&para;</a></h2>
-<p>Chapter 10 said narrowing the index to 32 bits "does nothing about the parameter count: that is a property of the <code>memref</code> type, not a pass option this chapter found to turn off." The real pipeline's option list (<code>mlir-opt-18 --help</code> on <code>--gpu-lower-to-nvvm-pipeline</code>) includes <code>kernel-bare-ptr-calling-convention</code>, and the source threads it into both <code>convert-gpu-to-nvvm</code> (<code>useBarePtrCallConv</code>) and <code>gpu-to-llvm</code> (<code>kernelBarePtrCallConv</code>). This chapter's first use of it:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>mlir-opt-18<span class="w"> </span>async.mlir<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span>--gpu-lower-to-nvvm-pipeline<span class="o">=</span><span class="s2">&quot;cubin-chip=sm_70 cubin-features=+ptx60 cubin-format=isa \</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="s2">                                kernel-bare-ptr-calling-convention=1&quot;</span><span class="w"> </span>-o<span class="w"> </span>bare_out.mlir
+<p>Chapter 10 said narrowing the index to 32 bits "does nothing about the parameter count: that is a property of the <code>memref</code> type, not a pass option this chapter found to turn off." The packaged pipeline's option list (<code>mlir-opt-18 --help</code> on <code>--gpu-lower-to-nvvm-pipeline</code>) includes <code>kernel-bare-ptr-calling-convention</code>, and the source above threads it into both <code>convert-gpu-to-nvvm</code> (<code>useBarePtrCallConv</code>) and <code>gpu-to-llvm</code> (<code>kernelBarePtrCallConv</code>). A <strong>bare pointer</strong> convention passes each memref as one raw pointer instead of the seven-scalar descriptor. That loses the size and stride information, so it only works because every shape in this book is static. This chapter's first use of it, as a script:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="ch">#!/bin/sh</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="c1"># Chapter 12: the same Chapter 11 pipeline with the kernel bare-pointer calling convention turned on.</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="c1"># Run from this directory; reuses Chapter 11&#39;s inputs (async.mlir is Chapter 11&#39;s gpu-async-region output).</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="nb">set</span><span class="w"> </span>-e
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="nv">P</span><span class="o">=</span>../../part11/code
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>mlir-opt-18<span class="w"> </span><span class="nv">$P</span>/async.mlir<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="w">  </span>--gpu-lower-to-nvvm-pipeline<span class="o">=</span><span class="s2">&quot;cubin-chip=sm_70 cubin-features=+ptx60 cubin-format=isa kernel-bare-ptr-calling-convention=1&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="w">  </span>-o<span class="w"> </span>bare_out.mlir
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>python3<span class="w"> </span>../../part10/code/decode_ptx.py<span class="w"> </span>bare_out.mlir<span class="w"> </span>&gt;<span class="w"> </span>bare.ptx
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>mlir-translate-18<span class="w"> </span>--mlir-to-llvmir<span class="w"> </span>bare_out.mlir<span class="w"> </span>-o<span class="w"> </span>bare.ll
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;kernel .param declarations: </span><span class="k">$(</span>grep<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;^[[:space:]]*\.param&#39;</span><span class="w"> </span>bare.ptx<span class="k">)</span><span class="s2">&quot;</span>
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>clang-18<span class="w"> </span>-c<span class="w"> </span>bare.ll<span class="w"> </span>-o<span class="w"> </span>bare.o<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>clang-18<span class="w"> </span><span class="nv">$P</span>/harness.c<span class="w"> </span>bare.o<span class="w"> </span><span class="nv">$P</span>/stub_gpu_runtime.c<span class="w"> </span>-o<span class="w"> </span>bare_demo
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>./bare_demo
 </code></pre></div>
-<p>Real results (<code>code/pipeline.sh</code>; the PTX is <code>code/bare.ptx</code>):</p>
+<p>Real PTX header it produced (<code>bare.ptx</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>.visible .entry add_tensors_kernel(
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>    .param .u64 add_tensors_kernel_param_0,
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>    .param .u64 add_tensors_kernel_param_1,
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>    .param .u64 add_tensors_kernel_param_2,
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>    .param .u64 add_tensors_kernel_param_3,
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>    .param .u64 add_tensors_kernel_param_4
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>)
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>{
+</code></pre></div>
+<p>and the launch call in the translated host code, whose last argument is now the parameter count:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="w">  </span><span class="k">call</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="vg">@mgpuLaunchKernel</span><span class="p">(</span><span class="kt">ptr</span><span class="w"> </span><span class="nv nv-Anonymous">%32</span><span class="p">,</span><span class="w"> </span><span class="kt">i64</span><span class="w"> </span><span class="m">2</span><span class="p">,</span><span class="w"> </span><span class="kt">i64</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="kt">i64</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="kt">i64</span><span class="w"> </span><span class="m">2</span><span class="p">,</span><span class="w"> </span><span class="kt">i64</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="kt">i64</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="kt">i32</span><span class="w"> </span><span class="m">0</span><span class="p">,</span><span class="w"> </span><span class="kt">ptr</span><span class="w"> </span><span class="nv nv-Anonymous">%15</span><span class="p">,</span><span class="w"> </span><span class="kt">ptr</span><span class="w"> </span><span class="nv nv-Anonymous">%20</span><span class="p">,</span><span class="w"> </span><span class="kt">ptr</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"> </span><span class="kt">i64</span><span class="w"> </span><span class="m">5</span><span class="p">)</span>
+</code></pre></div>
 <table>
 <thead>
 <tr>
@@ -1525,16 +1831,160 @@
 </tr>
 </tbody>
 </table>
-<p>The five parameters are the loop step and lower bound plus one raw pointer per matrix; the CUDA kernel's three are the pointers alone. The instruction count did not move (it is Chapter 10's 64-bit-index count), so the descriptor ABI cost 18 parameters but zero instructions, since the backend had already deleted the unused ones. The bare-pointer convention loses the size and stride information, so it only works because every shape here is static; the option's own help text in this build says so for the host side ("All memrefs must have static shape").</p>
-<p>The host glue still works with the narrower launch. Chapter 11's stub runtime was extended to accept either layout (23 parameters: data pointers at indices 3, 10, 17; 5 parameters: at 2, 3, 4), and the bare-pointer build printed the same answer:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>[stub] launch add_tensors_kernel: grid=(2,1,1) block=(2,1,1) nparams=5
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>add_tensors([[1,2],[3,4]], [[5,6],[7,8]]) =
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>6 8
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>10 12
+<p>The five parameters are the loop step and lower bound plus one raw pointer per matrix; the CUDA kernel's three are the pointers alone. The instruction count did not move (it is Chapter 10's 64-bit-index count), so the descriptor ABI cost 18 parameters but zero instructions, since the backend had already deleted the unused ones. The host glue still works with the narrower launch: Chapter 11's stub runtime was extended to accept either layout, and the bare-pointer build printed the same answer. The unedited run (<code>run_out.txt</code>: the stub's trace, then the program output):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>[stub] stream create
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>[stub] alloc 32 bytes
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>[stub] alloc 32 bytes
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>[stub] alloc 32 bytes
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>[stub] memcpy 32 bytes
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>[stub] memcpy 32 bytes
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>[stub] module load: optLevel=2, PTX has .entry add_tensors_kernel: yes
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>[stub] launch add_tensors_kernel: grid=(2,1,1) block=(2,1,1) nparams=5
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>[stub] stream create
+<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a>[stub] memcpy 32 bytes
+<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a>kernel .param declarations: 5
+<a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a>add_tensors([[1,2],[3,4]], [[5,6],[7,8]]) =
+<a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a>6 8 
+<a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a>10 12 
 </code></pre></div>
 <p>As in Chapter 11, this verifies the host-side parameter packing against a stub, not the PTX. Chapter 10 and Chapter 11's own text were updated in the same commit to point here.</p>
 <h2 id="finding-3-passes-the-real-pipelines-use-that-this-book-never-did">Finding 3: passes the real pipelines use that this book never did<a class="headerlink" href="#finding-3-passes-the-real-pipelines-use-that-this-book-never-did" title="Permanent link">&para;</a></h2>
-<p>Reading both files side by side with Chapters 1 through 11 (the lists below are from the two files; "never used" was checked against this book's own pipelines, not assumed):</p>
+<p>The sparse-tensor pipeline, for comparison. It is longer (about seventy lines of pass additions) and shows what a pipeline for a more complex dialect looks like:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="kt">void</span><span class="w"> </span><span class="nf">mlir::sparse_tensor::buildSparsifier</span><span class="p">(</span><span class="n">OpPassManager</span><span class="w"> </span><span class="o">&amp;</span><span class="n">pm</span><span class="p">,</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">                                          </span><span class="k">const</span><span class="w"> </span><span class="n">SparsifierOptions</span><span class="w"> </span><span class="o">&amp;</span><span class="n">options</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">  </span><span class="c1">// Rewrite named linalg ops into generic ops.</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addNestedPass</span><span class="o">&lt;</span><span class="n">func</span><span class="o">::</span><span class="n">FuncOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">createLinalgGeneralizationPass</span><span class="p">());</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="w">  </span><span class="c1">// Sparsification and bufferization mini-pipeline.</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createSparsificationAndBufferizationPass</span><span class="p">(</span>
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="w">      </span><span class="n">getBufferizationOptionsForSparsification</span><span class="p">(</span>
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="w">          </span><span class="n">options</span><span class="p">.</span><span class="n">testBufferizationAnalysisOnly</span><span class="p">),</span>
+<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="w">      </span><span class="n">options</span><span class="p">.</span><span class="n">sparsificationOptions</span><span class="p">(),</span><span class="w"> </span><span class="n">options</span><span class="p">.</span><span class="n">createSparseDeallocs</span><span class="p">,</span>
+<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="w">      </span><span class="n">options</span><span class="p">.</span><span class="n">enableRuntimeLibrary</span><span class="p">,</span><span class="w"> </span><span class="n">options</span><span class="p">.</span><span class="n">enableBufferInitialization</span><span class="p">,</span>
+<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a><span class="w">      </span><span class="n">options</span><span class="p">.</span><span class="n">vectorLength</span><span class="p">,</span>
+<a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a><span class="w">      </span><span class="cm">/*enableVLAVectorization=*/</span><span class="n">options</span><span class="p">.</span><span class="n">armSVE</span><span class="p">,</span>
+<a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a><span class="w">      </span><span class="cm">/*enableSIMDIndex32=*/</span><span class="n">options</span><span class="p">.</span><span class="n">force32BitVectorIndices</span><span class="p">,</span>
+<a id="__codelineno-14-15" name="__codelineno-14-15" href="#__codelineno-14-15"></a><span class="w">      </span><span class="n">options</span><span class="p">.</span><span class="n">enableGPULibgen</span><span class="p">));</span>
+<a id="__codelineno-14-16" name="__codelineno-14-16" href="#__codelineno-14-16"></a>
+<a id="__codelineno-14-17" name="__codelineno-14-17" href="#__codelineno-14-17"></a><span class="w">  </span><span class="c1">// Bail-early for test setup.</span>
+<a id="__codelineno-14-18" name="__codelineno-14-18" href="#__codelineno-14-18"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">options</span><span class="p">.</span><span class="n">testBufferizationAnalysisOnly</span><span class="p">)</span>
+<a id="__codelineno-14-19" name="__codelineno-14-19" href="#__codelineno-14-19"></a><span class="w">    </span><span class="k">return</span><span class="p">;</span>
+<a id="__codelineno-14-20" name="__codelineno-14-20" href="#__codelineno-14-20"></a>
+<a id="__codelineno-14-21" name="__codelineno-14-21" href="#__codelineno-14-21"></a><span class="w">  </span><span class="c1">// Storage specifier lowering and bufferization wrap-up.</span>
+<a id="__codelineno-14-22" name="__codelineno-14-22" href="#__codelineno-14-22"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createStorageSpecifierToLLVMPass</span><span class="p">());</span>
+<a id="__codelineno-14-23" name="__codelineno-14-23" href="#__codelineno-14-23"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addNestedPass</span><span class="o">&lt;</span><span class="n">func</span><span class="o">::</span><span class="n">FuncOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">createCanonicalizerPass</span><span class="p">());</span>
+<a id="__codelineno-14-24" name="__codelineno-14-24" href="#__codelineno-14-24"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addNestedPass</span><span class="o">&lt;</span><span class="n">func</span><span class="o">::</span><span class="n">FuncOp</span><span class="o">&gt;</span><span class="p">(</span>
+<a id="__codelineno-14-25" name="__codelineno-14-25" href="#__codelineno-14-25"></a><span class="w">      </span><span class="n">mlir</span><span class="o">::</span><span class="n">bufferization</span><span class="o">::</span><span class="n">createFinalizingBufferizePass</span><span class="p">());</span>
+<a id="__codelineno-14-26" name="__codelineno-14-26" href="#__codelineno-14-26"></a>
+<a id="__codelineno-14-27" name="__codelineno-14-27" href="#__codelineno-14-27"></a><span class="w">  </span><span class="c1">// GPU code generation.</span>
+<a id="__codelineno-14-28" name="__codelineno-14-28" href="#__codelineno-14-28"></a><span class="w">  </span><span class="k">const</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">gpuCodegen</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">options</span><span class="p">.</span><span class="n">gpuTriple</span><span class="p">.</span><span class="n">hasValue</span><span class="p">();</span>
+<a id="__codelineno-14-29" name="__codelineno-14-29" href="#__codelineno-14-29"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">gpuCodegen</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-14-30" name="__codelineno-14-30" href="#__codelineno-14-30"></a><span class="w">    </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createSparseGPUCodegenPass</span><span class="p">());</span>
+<a id="__codelineno-14-31" name="__codelineno-14-31" href="#__codelineno-14-31"></a><span class="w">    </span><span class="n">pm</span><span class="p">.</span><span class="n">addNestedPass</span><span class="o">&lt;</span><span class="n">gpu</span><span class="o">::</span><span class="n">GPUModuleOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">createStripDebugInfoPass</span><span class="p">());</span>
+<a id="__codelineno-14-32" name="__codelineno-14-32" href="#__codelineno-14-32"></a><span class="w">    </span><span class="n">pm</span><span class="p">.</span><span class="n">addNestedPass</span><span class="o">&lt;</span><span class="n">gpu</span><span class="o">::</span><span class="n">GPUModuleOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">createConvertSCFToCFPass</span><span class="p">());</span>
+<a id="__codelineno-14-33" name="__codelineno-14-33" href="#__codelineno-14-33"></a><span class="w">    </span><span class="n">pm</span><span class="p">.</span><span class="n">addNestedPass</span><span class="o">&lt;</span><span class="n">gpu</span><span class="o">::</span><span class="n">GPUModuleOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">createConvertGpuOpsToNVVMOps</span><span class="p">());</span>
+<a id="__codelineno-14-34" name="__codelineno-14-34" href="#__codelineno-14-34"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-14-35" name="__codelineno-14-35" href="#__codelineno-14-35"></a>
+<a id="__codelineno-14-36" name="__codelineno-14-36" href="#__codelineno-14-36"></a><span class="w">  </span><span class="c1">// Progressively lower to LLVM. Note that the convert-vector-to-llvm</span>
+<a id="__codelineno-14-37" name="__codelineno-14-37" href="#__codelineno-14-37"></a><span class="w">  </span><span class="c1">// pass is repeated on purpose.</span>
+<a id="__codelineno-14-38" name="__codelineno-14-38" href="#__codelineno-14-38"></a><span class="w">  </span><span class="c1">// TODO(springerm): Add sparse support to the BufferDeallocation pass and add</span>
+<a id="__codelineno-14-39" name="__codelineno-14-39" href="#__codelineno-14-39"></a><span class="w">  </span><span class="c1">// it to this pipeline.</span>
+<a id="__codelineno-14-40" name="__codelineno-14-40" href="#__codelineno-14-40"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addNestedPass</span><span class="o">&lt;</span><span class="n">func</span><span class="o">::</span><span class="n">FuncOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">createConvertLinalgToLoopsPass</span><span class="p">());</span>
+<a id="__codelineno-14-41" name="__codelineno-14-41" href="#__codelineno-14-41"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addNestedPass</span><span class="o">&lt;</span><span class="n">func</span><span class="o">::</span><span class="n">FuncOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">createConvertVectorToSCFPass</span><span class="p">());</span>
+<a id="__codelineno-14-42" name="__codelineno-14-42" href="#__codelineno-14-42"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addNestedPass</span><span class="o">&lt;</span><span class="n">func</span><span class="o">::</span><span class="n">FuncOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">memref</span><span class="o">::</span><span class="n">createExpandReallocPass</span><span class="p">());</span>
+<a id="__codelineno-14-43" name="__codelineno-14-43" href="#__codelineno-14-43"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addNestedPass</span><span class="o">&lt;</span><span class="n">func</span><span class="o">::</span><span class="n">FuncOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">createConvertSCFToCFPass</span><span class="p">());</span>
+<a id="__codelineno-14-44" name="__codelineno-14-44" href="#__codelineno-14-44"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">memref</span><span class="o">::</span><span class="n">createExpandStridedMetadataPass</span><span class="p">());</span>
+<a id="__codelineno-14-45" name="__codelineno-14-45" href="#__codelineno-14-45"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createLowerAffinePass</span><span class="p">());</span>
+<a id="__codelineno-14-46" name="__codelineno-14-46" href="#__codelineno-14-46"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createConvertVectorToLLVMPass</span><span class="p">(</span><span class="n">options</span><span class="p">.</span><span class="n">lowerVectorToLLVMOptions</span><span class="p">()));</span>
+<a id="__codelineno-14-47" name="__codelineno-14-47" href="#__codelineno-14-47"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createFinalizeMemRefToLLVMConversionPass</span><span class="p">());</span>
+<a id="__codelineno-14-48" name="__codelineno-14-48" href="#__codelineno-14-48"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addNestedPass</span><span class="o">&lt;</span><span class="n">func</span><span class="o">::</span><span class="n">FuncOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">createConvertComplexToStandardPass</span><span class="p">());</span>
+<a id="__codelineno-14-49" name="__codelineno-14-49" href="#__codelineno-14-49"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addNestedPass</span><span class="o">&lt;</span><span class="n">func</span><span class="o">::</span><span class="n">FuncOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">arith</span><span class="o">::</span><span class="n">createArithExpandOpsPass</span><span class="p">());</span>
+<a id="__codelineno-14-50" name="__codelineno-14-50" href="#__codelineno-14-50"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addNestedPass</span><span class="o">&lt;</span><span class="n">func</span><span class="o">::</span><span class="n">FuncOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">createConvertMathToLLVMPass</span><span class="p">());</span>
+<a id="__codelineno-14-51" name="__codelineno-14-51" href="#__codelineno-14-51"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createConvertMathToLibmPass</span><span class="p">());</span>
+<a id="__codelineno-14-52" name="__codelineno-14-52" href="#__codelineno-14-52"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createConvertComplexToLibmPass</span><span class="p">());</span>
+<a id="__codelineno-14-53" name="__codelineno-14-53" href="#__codelineno-14-53"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createConvertVectorToLLVMPass</span><span class="p">(</span><span class="n">options</span><span class="p">.</span><span class="n">lowerVectorToLLVMOptions</span><span class="p">()));</span>
+<a id="__codelineno-14-54" name="__codelineno-14-54" href="#__codelineno-14-54"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createConvertComplexToLLVMPass</span><span class="p">());</span>
+<a id="__codelineno-14-55" name="__codelineno-14-55" href="#__codelineno-14-55"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createConvertVectorToLLVMPass</span><span class="p">(</span><span class="n">options</span><span class="p">.</span><span class="n">lowerVectorToLLVMOptions</span><span class="p">()));</span>
+<a id="__codelineno-14-56" name="__codelineno-14-56" href="#__codelineno-14-56"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createConvertFuncToLLVMPass</span><span class="p">());</span>
+<a id="__codelineno-14-57" name="__codelineno-14-57" href="#__codelineno-14-57"></a>
+<a id="__codelineno-14-58" name="__codelineno-14-58" href="#__codelineno-14-58"></a><span class="w">  </span><span class="c1">// Finalize GPU code generation.</span>
+<a id="__codelineno-14-59" name="__codelineno-14-59" href="#__codelineno-14-59"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">gpuCodegen</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-14-60" name="__codelineno-14-60" href="#__codelineno-14-60"></a><span class="w">    </span><span class="n">GpuNVVMAttachTargetOptions</span><span class="w"> </span><span class="n">nvvmTargetOptions</span><span class="p">;</span>
+<a id="__codelineno-14-61" name="__codelineno-14-61" href="#__codelineno-14-61"></a><span class="w">    </span><span class="n">nvvmTargetOptions</span><span class="p">.</span><span class="n">triple</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">options</span><span class="p">.</span><span class="n">gpuTriple</span><span class="p">;</span>
+<a id="__codelineno-14-62" name="__codelineno-14-62" href="#__codelineno-14-62"></a><span class="w">    </span><span class="n">nvvmTargetOptions</span><span class="p">.</span><span class="n">chip</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">options</span><span class="p">.</span><span class="n">gpuChip</span><span class="p">;</span>
+<a id="__codelineno-14-63" name="__codelineno-14-63" href="#__codelineno-14-63"></a><span class="w">    </span><span class="n">nvvmTargetOptions</span><span class="p">.</span><span class="n">features</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">options</span><span class="p">.</span><span class="n">gpuFeatures</span><span class="p">;</span>
+<a id="__codelineno-14-64" name="__codelineno-14-64" href="#__codelineno-14-64"></a><span class="w">    </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createGpuNVVMAttachTarget</span><span class="p">(</span><span class="n">nvvmTargetOptions</span><span class="p">));</span>
+<a id="__codelineno-14-65" name="__codelineno-14-65" href="#__codelineno-14-65"></a><span class="w">    </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createGpuToLLVMConversionPass</span><span class="p">());</span>
+<a id="__codelineno-14-66" name="__codelineno-14-66" href="#__codelineno-14-66"></a><span class="w">    </span><span class="n">GpuModuleToBinaryPassOptions</span><span class="w"> </span><span class="n">gpuModuleToBinaryPassOptions</span><span class="p">;</span>
+<a id="__codelineno-14-67" name="__codelineno-14-67" href="#__codelineno-14-67"></a><span class="w">    </span><span class="n">gpuModuleToBinaryPassOptions</span><span class="p">.</span><span class="n">compilationTarget</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">options</span><span class="p">.</span><span class="n">gpuFormat</span><span class="p">;</span>
+<a id="__codelineno-14-68" name="__codelineno-14-68" href="#__codelineno-14-68"></a><span class="w">    </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createGpuModuleToBinaryPass</span><span class="p">(</span><span class="n">gpuModuleToBinaryPassOptions</span><span class="p">));</span>
+<a id="__codelineno-14-69" name="__codelineno-14-69" href="#__codelineno-14-69"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-14-70" name="__codelineno-14-70" href="#__codelineno-14-70"></a>
+<a id="__codelineno-14-71" name="__codelineno-14-71" href="#__codelineno-14-71"></a><span class="w">  </span><span class="c1">// Ensure all casts are realized.</span>
+<a id="__codelineno-14-72" name="__codelineno-14-72" href="#__codelineno-14-72"></a><span class="w">  </span><span class="n">pm</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">createReconcileUnrealizedCastsPass</span><span class="p">());</span>
+<a id="__codelineno-14-73" name="__codelineno-14-73" href="#__codelineno-14-73"></a><span class="p">}</span>
+</code></pre></div>
+<p>Reading both files side by side with Chapters 1 through 11, the claim "this book never used these" is checked by <code>checks.sh</code> (section A counts how many files in the whole book mention each pass), and the output is real:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="ch">#!/bin/sh</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="c1"># Chapter 12&#39;s claims about THIS repository, as commands. Run from docs/part12/code. Output: checks_out.txt</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="nv">D</span><span class="o">=</span><span class="k">$(</span><span class="nb">cd</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>dirname<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$0</span><span class="s2">&quot;</span><span class="k">)</span><span class="s2">/../..&quot;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">pwd</span><span class="k">)</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;### A. passes the real pipelines use: does ANY chapter (1-12) or any code directory mention them?&quot;</span>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="k">for</span><span class="w"> </span>p<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="s2">&quot;cse&quot;</span><span class="w"> </span><span class="s2">&quot;strip-debug-info&quot;</span><span class="w"> </span><span class="s2">&quot;expand-strided-metadata&quot;</span><span class="w"> </span><span class="s2">&quot;convert-math-to-llvm&quot;</span><span class="w"> </span><span class="s2">&quot;convert-index-to-llvm&quot;</span><span class="w"> </span><span class="s2">&quot;convert-vector-to-scf&quot;</span><span class="w"> </span><span class="s2">&quot;linalg&quot;</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="w">  </span><span class="nv">hits</span><span class="o">=</span><span class="k">$(</span>grep<span class="w"> </span>-rlE<span class="w"> </span>--<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$p</span><span class="s2">&quot;</span><span class="w"> </span><span class="nv">$D</span>/part<span class="o">[</span><span class="m">1</span>-9<span class="o">]</span>/<span class="w"> </span><span class="nv">$D</span>/part10/<span class="w"> </span><span class="nv">$D</span>/part11/<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="p">|</span><span class="w"> </span>wc<span class="w"> </span>-l<span class="k">)</span>
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="w">  </span><span class="nb">printf</span><span class="w"> </span><span class="s2">&quot;%-26s files mentioning it: %s\n&quot;</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$p</span><span class="s2">&quot;</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$hits</span><span class="s2">&quot;</span>
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="k">done</span>
+<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="nb">echo</span>
+<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;### B. tensor/memref types appearing in every chapter&#39;s .mlir files (count, type):&quot;</span>
+<a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a>grep<span class="w"> </span>-rhoE<span class="w"> </span><span class="s2">&quot;tensor&lt;[^&gt;]*&gt;|memref&lt;[^&gt;]*&gt;&quot;</span><span class="w"> </span><span class="nv">$D</span>/part<span class="o">[</span><span class="m">1</span>-9<span class="o">]</span>/code<span class="w"> </span><span class="nv">$D</span>/part10/code<span class="w"> </span><span class="nv">$D</span>/part11/code<span class="w"> </span>--include<span class="o">=</span>*.mlir<span class="w"> </span><span class="p">|</span><span class="w"> </span>sort<span class="w"> </span><span class="p">|</span><span class="w"> </span>uniq<span class="w"> </span>-c<span class="w"> </span><span class="p">|</span><span class="w"> </span>sort<span class="w"> </span>-rn<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-8
+<a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a><span class="nb">echo</span>
+<a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;### C. any dynamic (?) dimension in any .mlir file of Chapters 1-11?&quot;</span>
+<a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a>grep<span class="w"> </span>-rlE<span class="w"> </span><span class="s2">&quot;\?x|x\?&quot;</span><span class="w"> </span><span class="nv">$D</span>/part<span class="o">[</span><span class="m">1</span>-9<span class="o">]</span>/code<span class="w"> </span><span class="nv">$D</span>/part10/code<span class="w"> </span><span class="nv">$D</span>/part11/code<span class="w"> </span>--include<span class="o">=</span>*.mlir<span class="w"> </span><span class="p">|</span><span class="w"> </span>wc<span class="w"> </span>-l<span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span><span class="s1">&#39;s/^/files containing a ? dimension: /&#39;</span>
+<a id="__codelineno-15-15" name="__codelineno-15-15" href="#__codelineno-15-15"></a><span class="nb">echo</span>
+<a id="__codelineno-15-16" name="__codelineno-15-16" href="#__codelineno-15-16"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;### D. files tracked OUTSIDE docs/ (from the repository root). When Chapter 12 was written this was the whole list;&quot;</span>
+<a id="__codelineno-15-17" name="__codelineno-15-17" href="#__codelineno-15-17"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;###    the test suite added in Chapter 15 lives INSIDE docs/ (docs/part15/code/test), so it does not show up here.&quot;</span>
+<a id="__codelineno-15-18" name="__codelineno-15-18" href="#__codelineno-15-18"></a>git<span class="w"> </span>-C<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$D</span><span class="s2">/..&quot;</span><span class="w"> </span>ls-files<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-v<span class="w"> </span><span class="s2">&quot;^docs/&quot;</span><span class="w"> </span>
+<a id="__codelineno-15-19" name="__codelineno-15-19" href="#__codelineno-15-19"></a><span class="nb">echo</span>
+<a id="__codelineno-15-20" name="__codelineno-15-20" href="#__codelineno-15-20"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;### E. the four mg operations, and their element type:&quot;</span>
+<a id="__codelineno-15-21" name="__codelineno-15-21" href="#__codelineno-15-21"></a>grep<span class="w"> </span>-n<span class="w"> </span><span class="s2">&quot;^def .*Op :&quot;</span><span class="w"> </span><span class="nv">$D</span>/part3/code/MgOps.td
+<a id="__codelineno-15-22" name="__codelineno-15-22" href="#__codelineno-15-22"></a>grep<span class="w"> </span>-n<span class="w"> </span><span class="s2">&quot;F64&quot;</span><span class="w"> </span><span class="nv">$D</span>/part3/code/MgOps.td<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-4
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>### A. passes the real pipelines use: does ANY chapter (1-12) or any code directory mention them?
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>cse                        files mentioning it: 0
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>strip-debug-info           files mentioning it: 0
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>expand-strided-metadata    files mentioning it: 0
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>convert-math-to-llvm       files mentioning it: 0
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>convert-index-to-llvm      files mentioning it: 0
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a>convert-vector-to-scf      files mentioning it: 0
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>linalg                     files mentioning it: 0
+<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a>
+<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a>### B. tensor/memref types appearing in every chapter&#39;s .mlir files (count, type):
+<a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a>    109 tensor&lt;2x2xf64&gt;
+<a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a>     99 memref&lt;2x2xf64&gt;
+<a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a>      6 memref&lt;*xf64&gt;
+<a id="__codelineno-16-14" name="__codelineno-16-14" href="#__codelineno-16-14"></a>      4 tensor&lt;3xf64&gt;
+<a id="__codelineno-16-15" name="__codelineno-16-15" href="#__codelineno-16-15"></a>      4 tensor&lt;2x3xf64&gt;
+<a id="__codelineno-16-16" name="__codelineno-16-16" href="#__codelineno-16-16"></a>      3 memref&lt;1x1xf64&gt;
+<a id="__codelineno-16-17" name="__codelineno-16-17" href="#__codelineno-16-17"></a>      2 memref&lt;5xi32&gt;
+<a id="__codelineno-16-18" name="__codelineno-16-18" href="#__codelineno-16-18"></a>
+<a id="__codelineno-16-19" name="__codelineno-16-19" href="#__codelineno-16-19"></a>### C. any dynamic (?) dimension in any .mlir file of Chapters 1-11?
+<a id="__codelineno-16-20" name="__codelineno-16-20" href="#__codelineno-16-20"></a>files containing a ? dimension: 0
+<a id="__codelineno-16-21" name="__codelineno-16-21" href="#__codelineno-16-21"></a>
+<a id="__codelineno-16-22" name="__codelineno-16-22" href="#__codelineno-16-22"></a>### D. files tracked OUTSIDE docs/ (from the repository root). When Chapter 12 was written this was the whole list;
+<a id="__codelineno-16-23" name="__codelineno-16-23" href="#__codelineno-16-23"></a>###    the test suite added in Chapter 15 lives INSIDE docs/ (docs/part15/code/test), so it does not show up here.
+<a id="__codelineno-16-24" name="__codelineno-16-24" href="#__codelineno-16-24"></a>.gitignore
+<a id="__codelineno-16-25" name="__codelineno-16-25" href="#__codelineno-16-25"></a>TABLE_OF_CONTENTS.md
+<a id="__codelineno-16-26" name="__codelineno-16-26" href="#__codelineno-16-26"></a>mkdocs.yml
+<a id="__codelineno-16-27" name="__codelineno-16-27" href="#__codelineno-16-27"></a>
+<a id="__codelineno-16-28" name="__codelineno-16-28" href="#__codelineno-16-28"></a>### E. the four mg operations, and their element type:
+<a id="__codelineno-16-29" name="__codelineno-16-29" href="#__codelineno-16-29"></a>9:def ConstantOp : Mg_Op&lt;&quot;constant&quot;,
+<a id="__codelineno-16-30" name="__codelineno-16-30" href="#__codelineno-16-30"></a>29:def AddOp : Mg_Op&lt;&quot;add&quot;, [Pure]&gt; {
+<a id="__codelineno-16-31" name="__codelineno-16-31" href="#__codelineno-16-31"></a>48:def TransposeOp : Mg_Op&lt;&quot;transpose&quot;, [Pure]&gt; {
+<a id="__codelineno-16-32" name="__codelineno-16-32" href="#__codelineno-16-32"></a>57:def PrintOp : Mg_Op&lt;&quot;print&quot;&gt; {
+<a id="__codelineno-16-33" name="__codelineno-16-33" href="#__codelineno-16-33"></a>23:  let arguments = (ins F64ElementsAttr:$value);
+<a id="__codelineno-16-34" name="__codelineno-16-34" href="#__codelineno-16-34"></a>24:  let results = (outs F64Tensor:$result);
+<a id="__codelineno-16-35" name="__codelineno-16-35" href="#__codelineno-16-35"></a>33:    dialect&#39;s first chapter: without it, ODS&#39;s own `F64Tensor` constraint
+<a id="__codelineno-16-36" name="__codelineno-16-36" href="#__codelineno-16-36"></a>41:  let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
+</code></pre></div>
 <table>
 <thead>
 <tr>
@@ -1581,18 +2031,23 @@
 </tr>
 </tbody>
 </table>
-<p>Both pipelines are, structurally, <strong>just ordered lists of passes</strong> (about 120 lines each), parameterized by an options struct. Neither contains the interesting parts: those live in the passes. By that measure this book's own deliverable is the same kind of thing: Chapter 11's whole lowering is one <code>mlir-opt-18</code> command line.</p>
+<p>Both pipelines are, structurally, <strong>just ordered lists of passes</strong>, parameterized by an options struct. Neither contains the interesting parts: those live in the passes. By that measure this book's own deliverable is the same kind of thing: Chapter 11's whole lowering is one <code>mlir-opt-18</code> command line.</p>
 <h2 id="finding-4-what-is-missing-for-production-viability">Finding 4: what is missing for production viability<a class="headerlink" href="#finding-4-what-is-missing-for-production-viability" title="Permanent link">&para;</a></h2>
-<p>Only things established by looking:</p>
+<p>Only things established by looking. Sections B to E of the check output above are the evidence:</p>
 <ul>
-<li><strong>Dynamic shapes are untested.</strong> Across every <code>.mlir</code> file in all chapters' <code>code/</code> directories, the tensor/memref types are <code>2x2xf64</code> (109 and 99 occurrences), <code>3xf64</code>, <code>2x3xf64</code>, <code>1x1xf64</code> and <code>5xi32</code>; no <code>?</code> dimension appears anywhere. Whether the <code>mg</code> dialect and its lowerings handle dynamic shapes is <strong>unknown</strong>, not "no". <em>(Update, added after Chapter 13: now known. They did not, in three ways; Chapter 13 fixed the lowerings and found and fixed two more bugs.)</em> The bare-pointer GPU path above explicitly cannot.</li>
-<li><strong>There is no test suite.</strong> <em>(Update, added after Chapter 15: a 22-test <code>lit</code>/<code>FileCheck</code> suite now exists for Chapters 3 through 14's compiler behavior, with no CI; see Chapter 15.)</em> The repository's tracked files outside <code>docs/</code> are <code>.gitignore</code>, <code>TABLE_OF_CONTENTS.md</code> and <code>mkdocs.yml</code>: no <code>lit</code>/<code>FileCheck</code> tests, no CI. Every claim in this book rests on a command having been run once and its output pasted. The in-tree pipelines are exercised by MLIR's own regression tests; this one by nobody but its author, which is why each chapter also records a reproduction script.</li>
-<li><strong>Four operations.</strong> <code>mg.constant</code>, <code>mg.add</code>, <code>mg.transpose</code>, <code>mg.print</code> (checked in <code>MgOps.td</code>), all on <code>f64</code>. No matmul, no control flow, no user-defined functions beyond what <code>func</code> already provides.</li>
+<li><strong>Dynamic shapes are untested</strong> (section C: zero <code>.mlir</code> files contain a <code>?</code> dimension; section B: the types are <code>2x2xf64</code> (109 and 99 occurrences), <code>3xf64</code>, <code>2x3xf64</code>, <code>1x1xf64</code> and <code>5xi32</code>). Whether the <code>mg</code> dialect and its lowerings handle dynamic shapes is <strong>unknown</strong>, not "no". <em>(Update, added after Chapter 13: now known. They did not, in three ways; Chapter 13 fixed the lowerings and found and fixed two more bugs.)</em> The bare-pointer GPU path above explicitly cannot.</li>
+<li><strong>There is no test suite</strong> (section D: the only tracked files outside <code>docs/</code> are <code>.gitignore</code>, <code>TABLE_OF_CONTENTS.md</code> and <code>mkdocs.yml</code>: no <code>lit</code>/<code>FileCheck</code> tests, no CI). <em>(Update, added after Chapter 15: a 22-test <code>lit</code>/<code>FileCheck</code> suite now exists for Chapters 3 through 14's compiler behavior, with no CI; see Chapter 15.)</em> Every claim in this book at the time rested on a command having been run once and its output pasted. The in-tree pipelines are exercised by MLIR's own regression tests; this one by nobody but its author, which is why each chapter also records a reproduction script.</li>
+<li><strong>Four operations</strong> (section E): <code>mg.constant</code>, <code>mg.add</code>, <code>mg.transpose</code>, <code>mg.print</code>, all on <code>f64</code>. No matmul, no control flow, no user-defined functions beyond what <code>func</code> already provides.</li>
 <li><strong>Nothing was ever executed on a GPU,</strong> as Chapters 10 and 11 state. The real pipelines' end-to-end behavior on hardware is outside what this sandbox can test.</li>
 <li><strong>Single toolchain, single machine:</strong> MLIR 18.1.3 on x86_64. Chapter 11's finding that <code>gpu.launch_func</code> is lowered at translation time describes this version; the repository is at a different state today and this chapter did not look.</li>
 </ul>
 <h2 id="reproducing-this-chapter">Reproducing this chapter<a class="headerlink" href="#reproducing-this-chapter" title="Permanent link">&para;</a></h2>
-<p><code>code/pipeline.sh</code> (verified in a clean run: <code>bare_out.mlir</code> byte-identical to the experiment's) rebuilds the bare-pointer variant from Chapter 11's <code>async.mlir</code>. The source excerpts above were read from <code>llvm/llvm-project</code> at tag <code>llvmorg-18.1.3</code> with <code>git clone --depth 1 --filter=blob:none --sparse</code> and <code>git sparse-checkout set</code> on the directories named; quoted lines are verbatim, comments in the pipeline excerpt are condensed and marked as such. As with Chapters 10 and 11, no documentation pages were read -- only source code.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="nb">cd</span><span class="w"> </span>docs/part12/code
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>./pipeline.sh<span class="w">     </span><span class="c1"># the bare-pointer variant, from Chapter 11&#39;s async.mlir</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>./symptoms.sh<span class="w">     </span><span class="c1"># the three Chapter 11 symptoms, with real saved output</span>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>./checks.sh<span class="w">       </span><span class="c1"># the grep/count evidence for Findings 3 and 4 -&gt; checks_out.txt</span>
+</code></pre></div>
+<p>The LLVM source was read from <code>llvm/llvm-project</code> at tag <code>llvmorg-18.1.3</code> with <code>git clone --depth 1 --filter=blob:none --sparse</code> and <code>git sparse-checkout set</code> on the directories named in <code>code/llvm-18.1.3/NOTICE.md</code>; the copies there are unmodified and every quoted line is embedded from them. As with Chapters 10 and 11, no documentation pages were read, only source code.</p>
 
 
 

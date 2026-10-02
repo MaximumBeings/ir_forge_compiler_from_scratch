@@ -1,0 +1,4 @@
+unranked.mlir:2:8: error: 'mg.transpose' op mg.transpose only supports rank-2 tensors
+  %0 = mg.transpose %a : tensor<*xf64> to tensor<*xf64>
+       ^
+unranked.mlir:2:8: note: see current operation: %0 = "mg.transpose"(%arg0) : (tensor<*xf64>) -> tensor<*xf64>

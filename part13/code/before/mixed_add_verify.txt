@@ -1,0 +1,4 @@
+mixed_add.mlir:2:8: error: 'mg.add' op mg.add operands must have the same shape, got 'tensor<?x2xf64>' and 'tensor<3x2xf64>'
+  %0 = mg.add %a, %b : tensor<?x2xf64>, tensor<3x2xf64> -> tensor<?x2xf64>
+       ^
+mixed_add.mlir:2:8: note: see current operation: %0 = "mg.add"(%arg0, %arg1) : (tensor<?x2xf64>, tensor<3x2xf64>) -> tensor<?x2xf64>

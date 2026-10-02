@@ -1,0 +1,4 @@
+dyn_add.mlir:2:8: error: 'memref.alloc' op dimension operand count does not equal memref dynamic dimension count
+  %0 = mg.add %a, %b : tensor<?x?xf64>, tensor<?x?xf64> -> tensor<?x?xf64>
+       ^
+dyn_add.mlir:2:8: note: see current operation: %0 = "memref.alloc"() <{operandSegmentSizes = array<i32: 0, 0>}> : () -> memref<?x?xf64>

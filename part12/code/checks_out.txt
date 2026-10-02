@@ -1,0 +1,36 @@
+### A. passes the real pipelines use: does ANY chapter (1-12) or any code directory mention them?
+cse                        files mentioning it: 0
+strip-debug-info           files mentioning it: 0
+expand-strided-metadata    files mentioning it: 0
+convert-math-to-llvm       files mentioning it: 0
+convert-index-to-llvm      files mentioning it: 0
+convert-vector-to-scf      files mentioning it: 0
+linalg                     files mentioning it: 0
+
+### B. tensor/memref types appearing in every chapter's .mlir files (count, type):
+    109 tensor<2x2xf64>
+     99 memref<2x2xf64>
+      6 memref<*xf64>
+      4 tensor<3xf64>
+      4 tensor<2x3xf64>
+      3 memref<1x1xf64>
+      2 memref<5xi32>
+
+### C. any dynamic (?) dimension in any .mlir file of Chapters 1-11?
+files containing a ? dimension: 0
+
+### D. files tracked OUTSIDE docs/ (from the repository root). When Chapter 12 was written this was the whole list;
+###    the test suite added in Chapter 15 lives INSIDE docs/ (docs/part15/code/test), so it does not show up here.
+.gitignore
+TABLE_OF_CONTENTS.md
+mkdocs.yml
+
+### E. the four mg operations, and their element type:
+9:def ConstantOp : Mg_Op<"constant",
+29:def AddOp : Mg_Op<"add", [Pure]> {
+48:def TransposeOp : Mg_Op<"transpose", [Pure]> {
+57:def PrintOp : Mg_Op<"print"> {
+23:  let arguments = (ins F64ElementsAttr:$value);
+24:  let results = (outs F64Tensor:$result);
+33:    dialect's first chapter: without it, ODS's own `F64Tensor` constraint
+41:  let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);

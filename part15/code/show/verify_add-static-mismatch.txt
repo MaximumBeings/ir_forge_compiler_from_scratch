@@ -1,0 +1,4 @@
+verifier/add-static-mismatch.mlir:5:8: error: 'mg.add' op mg.add operands must have compatible shapes, got 'tensor<2x2xf64>' and 'tensor<2x3xf64>' -> 'tensor<2x2xf64>'
+  %0 = mg.add %a, %b : tensor<2x2xf64>, tensor<2x3xf64> -> tensor<2x2xf64>
+       ^
+verifier/add-static-mismatch.mlir:5:8: note: see current operation: %0 = "mg.add"(%arg0, %arg1) : (tensor<2x2xf64>, tensor<2x3xf64>) -> tensor<2x2xf64>

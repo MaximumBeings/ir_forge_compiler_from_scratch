@@ -1,0 +1,4 @@
+verifier/transpose-rank3.mlir:4:8: error: 'mg.transpose' op mg.transpose only supports rank-2 tensors
+  %0 = mg.transpose %a : tensor<2x2x2xf64> to tensor<2x2x2xf64>
+       ^
+verifier/transpose-rank3.mlir:4:8: note: see current operation: %0 = "mg.transpose"(%arg0) : (tensor<2x2x2xf64>) -> tensor<2x2x2xf64>

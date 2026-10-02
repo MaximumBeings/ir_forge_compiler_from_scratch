@@ -1,0 +1,18 @@
+# A bigram language model, trained by gradient descent. The model predicts the NEXT token from the CURRENT token alone: a 5x5 matrix w whose row i
+# holds the scores (logits) for what follows token i. The data are 14 (current, next) pairs, written as one-hot rows: x is 14x5 and y is 14x5.
+
+# log of the softmax of each row, computed as  s - max - log(sum(exp(s - max)))  so that no probability is ever formed and log never sees a 0
+def log_softmax(s: tensor[14x5]) = s - row_max(s) - log(row_sum(exp(s - row_max(s))))
+
+# the cross-entropy loss: minus the average, over the 14 pairs, of the log-probability the model gave to the token that really came next
+# (y is one-hot, so y * log_softmax keeps one number per pair; row_sum picks it; col_sum adds the 14 of them; 0.0714... is 1/14)
+def loss(w: tensor[5x5], x: tensor[14x5], y: tensor[14x5]) = col_sum(row_sum(y * log_softmax(x @ w))) * -0.07142857142857142
+
+# the gradient of that loss with respect to w, derived by hand (see the page):  transpose(x) @ (softmax(x @ w) - y) / 14
+def gradient(w: tensor[5x5], x: tensor[14x5], y: tensor[14x5]) = transpose(x) @ (exp(log_softmax(x @ w)) - y) * 0.07142857142857142
+
+# one step of gradient descent with learning rate 8
+def step(w: tensor[5x5], x: tensor[14x5], y: tensor[14x5]) = w - gradient(w, x, y) * 8
+
+# the model's probabilities: row i is the softmax of row i of w, the chance of each token following token i
+def probabilities(w: tensor[5x5]) = exp(w - row_max(w)) / row_sum(exp(w - row_max(w)))

@@ -1,0 +1,42 @@
+-- training against the independent Python trainer
+  ok   loss after 0 steps equals the reference (1.609438)
+  ok   loss after 1 steps equals the reference (0.992623)
+  ok   loss after 2 steps equals the reference (0.845013)
+  ok   loss after 5 steps equals the reference (0.718402)
+  ok   loss after 10 steps equals the reference (0.666934)
+  ok   loss after 25 steps equals the reference (0.634284)
+  ok   loss after 50 steps equals the reference (0.623229)
+  ok   loss after 100 steps equals the reference (0.617695)
+  ok   loss after 200 steps equals the reference (0.614931)
+  ok   loss after 400 steps equals the reference (0.613551)
+  ok   weights after 400 steps equal the reference
+  ok   probabilities equal the reference
+  ok   the gradient at the end equals the reference gradient (relative)
+  ok   each row of probabilities sums to 1
+-- the loss
+  ok   the loss is strictly decreasing at the checkpoints
+  ok   the loss never goes below the conditional entropy of the data (0.612174), the best any bigram model can do
+  ok   after 400 steps the loss is within 0.002 of that bound
+  ok   before training the loss is log(5) = 1.609438: every token equally likely
+-- what it learned
+  ok   token 0: learned probabilities [0.0, 0.799, 0.199, 0.0, 0.0] are within 0.01 of the observed [0.0, 0.8, 0.2, 0.0, 0.0]
+  ok   token 1: learned probabilities [0.001, 0.001, 0.5, 0.25, 0.25] are within 0.01 of the observed [0.0, 0.0, 0.5, 0.25, 0.25]
+  ok   token 2: learned probabilities [0.666, 0.001, 0.001, 0.332, 0.001] are within 0.01 of the observed [0.667, 0.0, 0.0, 0.333, 0.0]
+  ok   token 3: learned probabilities [0.998, 0.0, 0.0, 0.0, 0.0] are within 0.01 of the observed [1.0, 0.0, 0.0, 0.0, 0.0]
+-- the unseen row
+  ok   token 4 is never a current token: its row of weights is still exactly 0
+  ok   its gradient is exactly 0
+  ok   so its probabilities are exactly uniform (0.2 each)
+-- the gradient against finite differences (central difference of the loss, step 0.01)
+  ok   random weights #1: largest difference between the gradient and the finite-difference estimate is 4.1e-04
+  ok   random weights #1: gradient and loss equal the reference
+  ok   random weights #2: largest difference between the gradient and the finite-difference estimate is 3.4e-04
+  ok   random weights #2: gradient and loss equal the reference
+  ok   random weights #3: largest difference between the gradient and the finite-difference estimate is 4.6e-04
+  ok   random weights #3: gradient and loss equal the reference
+-- stress: weights of +-1000
+  ok   no nan and no inf anywhere in the output
+  ok   the loss equals the reference (429.7430)
+  ok   the gradient equals the reference
+  ok   the probabilities equal the reference (each row is a one-hot-like 0 and 1)
+all checks pass

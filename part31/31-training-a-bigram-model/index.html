@@ -1,0 +1,2906 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A Toy Language Compiled Through a Real MLIR Dialect, Down to Real Native Machine Code">
+      
+      
+        <meta name="author" content="Oluwaseyi Awoga">
+      
+      
+      
+        <link rel="prev" href="../../part30/30-a-small-transformer/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>31. Training a Language Model: Gradient Descent on a Bigram - IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#31-training-a-language-model-gradient-descent-on-a-bigram" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-header__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              31. Training a Language Model: Gradient Descent on a Bigram
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-nav__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../background/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background (LLVM and MLIR in Twenty Minutes)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tour/language-tour/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Mountain Goat Language: A Short Tour
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part1/01-why-a-multi-level-ir-at-all/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1. Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part2/02-a-minimal-dialect-from-scratch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2. A Minimal Dialect From Scratch: Mountain Goat's Own mg Dialect
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part3/03-the-pass-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3. The Real Pass Infrastructure: Canonicalizing Mountain Goat
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 3 -- Progressive Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 3 -- Progressive Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part4/04-progressive-lowering-to-affine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4. Progressive Lowering: Mountain Goat to affine, Two Real Ways
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part5/05-affine-to-scf-to-llvm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5. Finishing Progressive Lowering: affine to scf to llvm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 4 -- Optimization Across Levels
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 4 -- Optimization Across Levels
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/06-real-bufferization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6. Real Bufferization: Closing Chapter 4's Own Honest Gap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part7/07-real-loop-transforms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    7. Real Loop Transforms: Fusion, Tiling, and Unrolling at the affine Level
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 5 -- Code Generation via LLVM
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 5 -- Code Generation via LLVM
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part8/08-a-standalone-native-executable/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    8. A Standalone Native Executable: Mountain Goat Without MLIR At Runtime
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part9/09-the-execution-engine-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    9. MLIR's Own Real C++ ExecutionEngine API, Called In-Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 6 -- GPU Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 6 -- GPU Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part10/10-gpu-lowering-to-ptx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10. GPU Lowering: Mountain Goat to the gpu Dialect, NVVM, and Real PTX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part11/11-the-gpu-host-side/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    11. The GPU Host Side: Device Memory, Real Runtime Calls, and a Stub Device
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 7 -- Case Studies
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 7 -- Case Studies
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part12/12-reading-the-production-pipelines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    12. Reading MLIR's Own Production Pipelines: What This Book's Compiler Is Missing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part13/13-dynamic-shapes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    13. Dynamic Shapes: Closing Chapter 12's Biggest Unknown
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part14/14-runtime-shape-checks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    14. A Runtime Shape Check: Closing Chapter 13's Memory-Safety Hole
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part15/15-a-real-test-suite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    15. A Real Test Suite: lit, FileCheck, and Proof That the Tests Can Fail
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part16/16-testing-the-gpu-path-and-loop-transforms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    16. Testing the GPU Path and the Loop Transforms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part17/17-loop-transforms-on-dynamic-bounds/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    17. Loop Transforms on Dynamic Bounds
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part18/18-why-fusion-declines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    18. Why Fusion Declines: Reading the Pass, and a Second Bug Found Along the Way
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part19/19-a-better-abort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    19. A Better Abort: Reporting Assertion Failures on stderr
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part20/20-the-mountain-goat-demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    20. The Mountain Goat Demo: A Surface Syntax, a Driver, and C++ Calling Compiled Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part21/21-more-operations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    21. More Operations: Subtract, Hadamard, Divide, Matrix Product, and Scalars
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part22/22-broadcasting-reductions-and-relu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    22. Broadcasting, Reductions and relu: Enough Operations for a Neural-Network Layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part23/23-measuring-performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    23. Measuring Performance: Does Any of It Make the Code Fast?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part24/24-closing-the-matmul-gap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    24. Closing the Gap: A Matrix Product That Walks Memory in a Better Order
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part25/25-keeping-it-working/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    25. Keeping It Working: Continuous Integration and the Tests the Early Chapters Never Had
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part26/26-learning-from-data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    26. Learning From Data: Gradient Descent in Mountain Goat
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part27/27-tensor-contractions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    27. Tensor Contractions as Matrix Products
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part28/28-contraction-in-mountain-goat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    28. Tensor Contractions in Mountain Goat Itself
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part29/29-softmax-and-attention/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    29. Softmax and Attention
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part30/30-a-small-transformer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    30. A Small Transformer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    31. Training a Language Model: Gradient Descent on a Bigram
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    31. Training a Language Model: Gradient Descent on a Bigram
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-task" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The task
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-new-operation-log" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The new operation: log
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-loss-cross-entropy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The loss: cross-entropy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-model-and-its-gradient" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The model and its gradient
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#one-step-by-hand" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One step, by hand
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The definitions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#training" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Training
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mistakes-the-compiler-reports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mistakes the compiler reports
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#are-the-checks-good-enough-run-twelve-wrong-trainers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Are the checks good enough? Run twelve wrong trainers.
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compiler-mutations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compiler mutations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limits-and-what-is-not-established" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits and what is not established
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-task" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The task
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-new-operation-log" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The new operation: log
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-loss-cross-entropy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The loss: cross-entropy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-model-and-its-gradient" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The model and its gradient
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#one-step-by-hand" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One step, by hand
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The definitions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#training" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Training
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mistakes-the-compiler-reports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mistakes the compiler reports
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#are-the-checks-good-enough-run-twelve-wrong-trainers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Are the checks good enough? Run twelve wrong trainers.
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compiler-mutations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compiler mutations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limits-and-what-is-not-established" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits and what is not established
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="31-training-a-language-model-gradient-descent-on-a-bigram">31. Training a Language Model: Gradient Descent on a Bigram<a class="headerlink" href="#31-training-a-language-model-gradient-descent-on-a-bigram" title="Permanent link">&para;</a></h1>
+<p><strong>What you will understand:</strong> how a model <em>learns</em>, shown on the smallest language model there is, and how a Mountain Goat program trains it. The model reads one token and predicts the next. Training is gradient descent on the <strong>cross-entropy loss</strong>, with a gradient derived by hand, run for 400 steps, and every claim checked: the loss falls and cannot go below a bound that follows from the data, the model ends up predicting exactly the frequencies it saw, a token it never saw as input keeps exactly the weights it started with, and the hand-derived gradient agrees with a numerical estimate. Mountain Goat gets one new operation, <code>log</code>.</p>
+<p><strong>What you need to know first:</strong> Chapter 26 (gradient descent on a linear model; this chapter does the same with a softmax output), Chapter 29 (softmax) and Chapter 30 (what a transformer predicts). The model here is the simplest relative of Chapter 30's: it looks at one token instead of a whole sequence. Training the transformer itself is <strong>not</strong> done (see Limits).</p>
+<div class="admonition tip">
+<p class="admonition-title">Compile and run</p>
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">cd</span><span class="w"> </span>docs/part31/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./build.sh<span class="w">                 </span><span class="c1"># once: the newest compiler (adds mg.log)</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>python3<span class="w"> </span>make_examples.py<span class="w">                          </span><span class="c1"># (re)writes the examples from bigram.mg.defs</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>./mgc<span class="w"> </span>run<span class="w"> </span>examples/04_training.mg<span class="w">                 </span><span class="c1"># train: 400 gradient-descent steps</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>./run_examples.sh<span class="w"> </span>&gt;<span class="w"> </span>examples_out.txt<span class="w">              </span><span class="c1"># every example and every error example on this page</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>./check_bigram.py<span class="w">                                 </span><span class="c1"># the trainer against the reference and against facts about the data</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>./model_mutation.py<span class="w"> </span>&gt;<span class="w"> </span>model_mutation_out.txt<span class="w">      </span><span class="c1"># runs 12 WRONG trainers through the checker</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>./mutation.sh<span class="w"> </span>&gt;<span class="w"> </span>mutation_out.txt<span class="w">                  </span><span class="c1"># breaks the compiler on purpose, six ways</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="nb">cd</span><span class="w"> </span>../../part15/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_lit.sh<span class="w">              </span><span class="c1"># the whole test suite</span>
+</code></pre></div>
+Every listing and output on this page comes from these commands.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Why this page shows nan, -inf, FAIL lines and error messages, and why that is good</p>
+<p>Example 1 prints <code>-inf</code> and <code>nan</code> on purpose: they are what <code>log</code> of 0 and of a negative number are. The three error examples are programs the compiler must reject. The two mutation outputs are negative controls: wrong trainers and a deliberately broken compiler run against the checks, where "caught" is the wanted result and "NOT CAUGHT" would be a gap.</p>
+</div>
+<h2 id="the-task">The task<a class="headerlink" href="#the-task" title="Permanent link">&para;</a></h2>
+<p>A <strong>language model</strong> assigns a probability to every possible next token given what came before. The <em>bigram</em> model looks at only the most recent token. It has a table <code>w</code> with one row per token and one column per possible next token; row <em>i</em> holds <strong>scores</strong> (logits) for what follows token <em>i</em>, and a softmax turns the row into probabilities.</p>
+<p>The data is a 15-token text over five tokens, numbered 0 to 4:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>0 1 2 0 1 3 0 1 2 0 2 3 0 1 4
+</code></pre></div>
+<p>It contains 14 (current, next) pairs. Counting them gives the table the model should end up reproducing (rows are the current token, columns the next):</p>
+<table>
+<thead>
+<tr>
+<th>current</th>
+<th>next 0</th>
+<th>next 1</th>
+<th>next 2</th>
+<th>next 3</th>
+<th>next 4</th>
+<th>observed probabilities of the next token</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>0</td>
+<td>4</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0.8 for token 1, 0.2 for token 2</td>
+</tr>
+<tr>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>2</td>
+<td>1</td>
+<td>1</td>
+<td>0.5 for token 2, 0.25 for token 3, 0.25 for token 4</td>
+</tr>
+<tr>
+<td>2</td>
+<td>2</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td>2/3 for token 0, 1/3 for token 3</td>
+</tr>
+<tr>
+<td>3</td>
+<td>2</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>1.0 for token 0</td>
+</tr>
+<tr>
+<td>4</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>(never a current token: no data)</td>
+</tr>
+</tbody>
+</table>
+<p>Token 4 appears only as the last token, so it never has a successor in the data. That is deliberate and will matter.</p>
+<h2 id="the-new-operation-log">The new operation: <code>log</code><a class="headerlink" href="#the-new-operation-log" title="Permanent link">&para;</a></h2>
+<p>The loss needs a logarithm, which Mountain Goat did not have. <code>log(m)</code> takes the natural logarithm of every element, added the way <code>exp</code> and <code>sqrt</code> were: <code>mg.log</code> in the dialect with a shape verifier, a loop-nest lowering that uses <code>math.log</code>, and a built-in in the front end.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>################ mgc run 01_log.mg
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  | # log(x) is the natural logarithm: the power e must be raised to in order to get x. It undoes exp.
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  | print log([[1, 2.718281828459045, 10], [0.5, 100, 0.001]])      # log(1) = 0, log(e) = 1, log(10) = 2.30259; numbers below 1 give negative logs
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>  | print exp(log([[1, 2, 10], [0.5, 100, 0.001]]))                  # exp undoes log (to the printed digits)
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>  | print log([[0]])                                                 # log of 0 is minus infinity: no power of e is 0
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>  | print log([[-1]])                                                # log of a negative number is not a number (nan)
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>  | # log turns products into sums: log(a*b) = log(a) + log(b). Both lines print the same two numbers.
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>  | print log([[6, 0.5]] * [[7, 8]])
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>  | print log([[6, 0.5]]) + log([[7, 8]])
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>  ----- output
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 3] strides = [3, 1] data = 
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>[[0,   1,   2.30259], 
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a> [-0.693147,   4.60517,   -6.90776]]
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 3] strides = [3, 1] data = 
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>[[1,   2,   10], 
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a> [0.5,   100,   0.001]]
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>[[-inf]]
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>[[-nan]]
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 2] strides = [2, 1] data = 
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a>[[3.73767,   1.38629]]
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 2] strides = [2, 1] data = 
+<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a>[[3.73767,   1.38629]]
+<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a>  ----- exit status 0
+</code></pre></div>
+<p><code>log(1) = 0</code>, <code>log(e) = 1</code>, <code>log(10) = 2.30259</code>, and numbers below 1 have negative logs. <code>exp</code> undoes <code>log</code>. <code>log(0)</code> is minus infinity (no power of <em>e</em> is 0) and the log of a negative number is not a number. The last two lines show the property that makes logs useful for probabilities: <code>log(a·b) = log(a) + log(b)</code>; the product of probabilities becomes a sum, and the sum does not underflow.</p>
+<h2 id="the-loss-cross-entropy">The loss: cross-entropy<a class="headerlink" href="#the-loss-cross-entropy" title="Permanent link">&para;</a></h2>
+<p>How good is a model's prediction? For each pair, look at the probability the model gave to the token that <em>really</em> came next, call it <em>p</em>, and take <strong>−log p</strong>: the model's <em>surprise</em>. A probability of 1 costs 0; a probability near 0 costs a lot. The <strong>loss</strong> is the average surprise over the data.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>################ mgc run 02_cross_entropy.mg
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  | # Cross-entropy: how surprised a model is by what really happened. For each case, y is a one-hot row marking the token that really came next and p is
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  | # the model&#39;s probability row; y * log(p) keeps only the log-probability the model gave the right token, and minus its average is the loss.
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>  | # Four cases (rows) over three tokens: a model with no idea, a confident correct model, a confident WRONG model, and a coin-flip between two.
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>  | let p = [[0.3333333333333333, 0.3333333333333333, 0.3333333333333333], [0.98, 0.01, 0.01], [0.01, 0.98, 0.01], [0.5, 0.5, 0.0000001]]
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>  | let y = [[1, 0, 0], [1, 0, 0], [1, 0, 0], [1, 0, 0]]
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>  | print row_sum(y * log(p)) * -1                      # the surprise of each case: log(3) = 1.0986, 0.0202, 4.6052 (very wrong), 0.6931 (one bit)
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>  | print col_sum(row_sum(y * log(p))) * -0.25          # the loss: the average surprise, (1.0986 + 0.0202 + 4.6052 + 0.6931) / 4 = 1.6043
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>  ----- output
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [4, 1] strides = [1, 1] data = 
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>[[1.09861], 
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a> [0.0202027], 
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a> [4.60517], 
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a> [0.693147]]
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>[[1.60428]]
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>  ----- exit status 0
+</code></pre></div>
+<p>Four cases over three tokens (the true token is always token 0): a model with no idea (uniform, 1/3 each) costs <code>log 3 = 1.0986</code>; a confident correct model (0.98) costs <code>0.0202</code>; a confident <em>wrong</em> model (0.01 on the right token) costs <code>4.605</code>, which is the steepest penalty; a coin flip between two costs <code>0.6931</code>. The loss is their average, <code>1.60428</code>. In the program, <code>y</code> is a one-hot row marking the true token, so <code>y * log(p)</code> keeps one number per case and <code>row_sum</code> picks it.</p>
+<h2 id="the-model-and-its-gradient">The model and its gradient<a class="headerlink" href="#the-model-and-its-gradient" title="Permanent link">&para;</a></h2>
+<p>The data go in as two <code>14x5</code> matrices of one-hot rows: <code>x</code> holds the current tokens and <code>y</code> the next tokens. Then <code>x @ w</code> is a <code>14x5</code> matrix of scores: since each row of <code>x</code> has a single 1, multiplying by it <em>selects</em> the matching row of <code>w</code>. The probabilities are the softmax of each row, and the loss is the average of <code>−log</code> of the right entry.</p>
+<p>To learn, we need the <strong>gradient</strong>: how the loss changes when each of the 25 weights changes, since gradient descent moves every weight a little downhill. For one pair with scores <code>z</code>, probabilities <code>p = softmax(z)</code> and one-hot target <code>y</code>, the loss is <code>−log p_k</code> where <em>k</em> is the true token, and a short calculation gives</p>
+<p>∂(−log p_k)/∂z_j = p_j − y_j</p>
+<p>(the probability of each token, minus 1 for the true one). The scores come from <code>w</code> by <code>z = x_t · w</code>, so the pair's gradient on row <em>a</em> of <code>w</code> (where <em>a</em> is the current token) is that vector <code>p − y</code>. Summing the pairs and dividing by the 14 that were averaged gives, for the whole data set,</p>
+<p><strong>gradient = xᵀ · (softmax(x · w) − y) / 14</strong></p>
+<p>a <code>5x5</code> matrix. Nothing about that was found by a program: it is derived by hand, and only trusted because it is <em>checked</em> (below, against a numerical estimate). The step is <code>w ← w − (learning rate) · gradient</code>.</p>
+<h2 id="one-step-by-hand">One step, by hand<a class="headerlink" href="#one-step-by-hand" title="Permanent link">&para;</a></h2>
+<p>Before the full run, a case small enough to do on paper. Two tokens, four pairs (<code>0→1, 0→1, 0→0, 1→0</code>), weights zero (so every probability is 1/2), learning rate 1:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>################ mgc run 03_one_gradient_step.mg
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>  | # One step of gradient descent by hand. Two tokens (0 and 1) and four (current, next) pairs: 0 -&gt; 1, 0 -&gt; 1, 0 -&gt; 0, 1 -&gt; 0.
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>  | # w starts at zero, so every probability is 1/2. The gradient of the loss is  transpose(x) @ (softmax(x @ w) - y) / 4.
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>  | # Row 0 of w sees three pairs: two push toward token 1, one toward token 0, so the gradient is [0.5, -0.5] / 4 = [0.125, -0.125]. Row 1 sees one pair (1 -&gt; 0): [-0.125, 0.125].
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>  | def log_softmax(s: tensor[4x2]) = s - row_max(s) - log(row_sum(exp(s - row_max(s))))
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>  | def loss(w: tensor[2x2], x: tensor[4x2], y: tensor[4x2]) = col_sum(row_sum(y * log_softmax(x @ w))) * -0.25
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>  | def gradient(w: tensor[2x2], x: tensor[4x2], y: tensor[4x2]) = transpose(x) @ (exp(log_softmax(x @ w)) - y) * 0.25
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>  | let x = [[1, 0], [1, 0], [1, 0], [0, 1]]
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>  | let y = [[0, 1], [0, 1], [1, 0], [1, 0]]
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>  | let w = [[0, 0], [0, 0]]
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>  | print loss(w, x, y)                      # log(2) = 0.693147: with no information every token is a coin flip
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>  | print gradient(w, x, y)                  # [[0.125, -0.125], [-0.125, 0.125]]
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>  | let w1 = w - gradient(w, x, y)           # one step with learning rate 1
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>  | print w1                                 # [[-0.125, 0.125], [0.125, -0.125]]: each row moves toward the token that followed it more often
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>  | print loss(w1, x, y)                     # smaller than before: the step helped
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>  ----- output
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>[[0.693147]]
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>[[0.125,   -0.125], 
+<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a> [-0.125,   0.125]]
+<a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+<a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a>[[-0.125,   0.125], 
+<a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a> [0.125,   -0.125]]
+<a id="__codelineno-4-25" name="__codelineno-4-25" href="#__codelineno-4-25"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-4-26" name="__codelineno-4-26" href="#__codelineno-4-26"></a>[[0.638439]]
+<a id="__codelineno-4-27" name="__codelineno-4-27" href="#__codelineno-4-27"></a>  ----- exit status 0
+</code></pre></div>
+<p>Row 0 of <code>w</code> sees three pairs: two push toward token 1 and one toward token 0, so its gradient is <code>[0.5, −0.5]/4 = [0.125, −0.125]</code>; row 1 sees one pair (<code>1→0</code>) and gets <code>[−0.125, 0.125]</code>. The step subtracts the gradient: each row moves toward the token that followed it more often, and the loss falls from <code>0.693147</code> (= log 2, a coin flip) to <code>0.638439</code>. You can reproduce that last number by hand: the new probabilities are <code>0.5622</code> and <code>0.4378</code>, and <code>−(2·ln 0.5622 + ln 0.4378 + ln 0.5622)/4 = 0.6384</code>.</p>
+<h2 id="the-definitions">The definitions<a class="headerlink" href="#the-definitions" title="Permanent link">&para;</a></h2>
+<p>The whole trainer, as functions:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a># A bigram language model, trained by gradient descent. The model predicts the NEXT token from the CURRENT token alone: a 5x5 matrix w whose row i
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a># holds the scores (logits) for what follows token i. The data are 14 (current, next) pairs, written as one-hot rows: x is 14x5 and y is 14x5.
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a># log of the softmax of each row, computed as  s - max - log(sum(exp(s - max)))  so that no probability is ever formed and log never sees a 0
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>def log_softmax(s: tensor[14x5]) = s - row_max(s) - log(row_sum(exp(s - row_max(s))))
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a># the cross-entropy loss: minus the average, over the 14 pairs, of the log-probability the model gave to the token that really came next
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a># (y is one-hot, so y * log_softmax keeps one number per pair; row_sum picks it; col_sum adds the 14 of them; 0.0714... is 1/14)
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>def loss(w: tensor[5x5], x: tensor[14x5], y: tensor[14x5]) = col_sum(row_sum(y * log_softmax(x @ w))) * -0.07142857142857142
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a># the gradient of that loss with respect to w, derived by hand (see the page):  transpose(x) @ (softmax(x @ w) - y) / 14
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>def gradient(w: tensor[5x5], x: tensor[14x5], y: tensor[14x5]) = transpose(x) @ (exp(log_softmax(x @ w)) - y) * 0.07142857142857142
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a># one step of gradient descent with learning rate 8
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>def step(w: tensor[5x5], x: tensor[14x5], y: tensor[14x5]) = w - gradient(w, x, y) * 8
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>
+<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a># the model&#39;s probabilities: row i is the softmax of row i of w, the chance of each token following token i
+<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>def probabilities(w: tensor[5x5]) = exp(w - row_max(w)) / row_sum(exp(w - row_max(w)))
+</code></pre></div>
+<p><code>log_softmax</code> is the log of the softmax, computed as <code>s − max − log(sum(exp(s − max)))</code>. It is written this way rather than as <code>log(softmax(s))</code> for a reason that is easy to miss: a softmax probability can <strong>underflow to exactly 0</strong> when a score is far below the maximum, and the log of 0 is minus infinity, which times a 0 in <code>y</code> gives <code>nan</code>. The <code>log-sum-exp</code> form never builds the probability, so it cannot do that. The stress check below pushes it to scores of ±1000. <code>gradient</code> is the formula above, <code>step</code> subtracts it with learning rate 8, and <code>probabilities</code> is the softmax of the weight rows.</p>
+<h2 id="training">Training<a class="headerlink" href="#training" title="Permanent link">&para;</a></h2>
+<p><code>examples/04_training.mg</code> is the definitions followed by the data and 400 <code>let w1 = step(w0, x, y)</code> lines (a generated file; it has no loop because the language has none, and each step is one call), then it prints the loss at ten checkpoints, the final weights, the final probabilities and the final gradient:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>################ mgc run 04_training.mg
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>  | (436 lines: the definitions are bigram.mg.defs, followed by the data, the unrolled training steps and the prints; see the file)
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>  ----- output
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>[[1.60944]]
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>[[0.992623]]
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>[[0.845013]]
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>[[0.718402]]
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>[[0.666934]]
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>[[0.634284]]
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>[[0.623229]]
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a>[[0.617695]]
+<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a>[[0.614931]]
+<a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a>[[0.613551]]
+<a id="__codelineno-6-24" name="__codelineno-6-24" href="#__codelineno-6-24"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [5, 5] strides = [5, 1] data = 
+<a id="__codelineno-6-25" name="__codelineno-6-25" href="#__codelineno-6-25"></a>[[-2.81579,   4.91782,   3.52955,   -2.81579,   -2.81579], 
+<a id="__codelineno-6-26" name="__codelineno-6-26" href="#__codelineno-6-26"></a> [-3.70466,   -3.70466,   2.93245,   2.23843,   2.23843], 
+<a id="__codelineno-6-27" name="__codelineno-6-27" href="#__codelineno-6-27"></a> [4.36153,   -2.67619,   -2.67619,   3.66706,   -2.67619], 
+<a id="__codelineno-6-28" name="__codelineno-6-28" href="#__codelineno-6-28"></a> [6.18336,   -1.54584,   -1.54584,   -1.54584,   -1.54584], 
+<a id="__codelineno-6-29" name="__codelineno-6-29" href="#__codelineno-6-29"></a> [0,   0,   0,   0,   0]]
+<a id="__codelineno-6-30" name="__codelineno-6-30" href="#__codelineno-6-30"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [5, 5] strides = [5, 1] data = 
+<a id="__codelineno-6-31" name="__codelineno-6-31" href="#__codelineno-6-31"></a>[[0.000350059,   0.799476,   0.199474,   0.000350059,   0.000350059], 
+<a id="__codelineno-6-32" name="__codelineno-6-32" href="#__codelineno-6-32"></a> [0.000654832,   0.000654832,   0.499564,   0.249563,   0.249563], 
+<a id="__codelineno-6-33" name="__codelineno-6-33" href="#__codelineno-6-33"></a> [0.665791,   0.000584647,   0.000584647,   0.332455,   0.000584647], 
+<a id="__codelineno-6-34" name="__codelineno-6-34" href="#__codelineno-6-34"></a> [0.998244,   0.000439023,   0.000439023,   0.000439023,   0.000439023], 
+<a id="__codelineno-6-35" name="__codelineno-6-35" href="#__codelineno-6-35"></a> [0.2,   0.2,   0.2,   0.2,   0.2]]
+<a id="__codelineno-6-36" name="__codelineno-6-36" href="#__codelineno-6-36"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [5, 5] strides = [5, 1] data = 
+<a id="__codelineno-6-37" name="__codelineno-6-37" href="#__codelineno-6-37"></a>[[0.000125021,   -0.000187222,   -0.000187841,   0.000125021,   0.000125021], 
+<a id="__codelineno-6-38" name="__codelineno-6-38" href="#__codelineno-6-38"></a> [0.000187095,   0.000187095,   -0.000124547,   -0.000124821,   -0.000124821], 
+<a id="__codelineno-6-39" name="__codelineno-6-39" href="#__codelineno-6-39"></a> [-0.000187715,   0.000125282,   0.000125282,   -0.00018813,   0.000125282], 
+<a id="__codelineno-6-40" name="__codelineno-6-40" href="#__codelineno-6-40"></a> [-0.00025087,   6.27176e-05,   6.27176e-05,   6.27176e-05,   6.27176e-05], 
+<a id="__codelineno-6-41" name="__codelineno-6-41" href="#__codelineno-6-41"></a> [0,   0,   0,   0,   0]]
+<a id="__codelineno-6-42" name="__codelineno-6-42" href="#__codelineno-6-42"></a>  ----- exit status 0
+</code></pre></div>
+<p>Read it in order:</p>
+<ul>
+<li><strong>The loss</strong> starts at <code>1.60944</code>, which is exactly <code>log 5</code>: the model begins knowing nothing, so every token is equally likely (1/5), and the surprise is <code>−log(1/5)</code>. It falls at every checkpoint, quickly at first (<code>0.99</code> after one step) and then more slowly, to <code>0.613551</code> after 400.</li>
+<li><strong>It cannot fall below 0.612174.</strong> That number is the <strong>conditional entropy of the data</strong>: the best average surprise any bigram model could possibly have, reached when each row of probabilities equals the <em>observed</em> frequencies in the table above. (A model cannot be less surprised than the data itself is random.) After 400 steps the loss is within <code>0.0014</code> of that floor.</li>
+<li><strong>The weights and probabilities.</strong> The probabilities row by row: token 0 is followed by token 1 with probability <code>0.799476</code> (observed 0.8) and token 2 with <code>0.199474</code> (observed 0.2); token 1 by tokens 2, 3, 4 with <code>0.4996</code>, <code>0.2496</code>, <code>0.2496</code> (observed 0.5, 0.25, 0.25); token 2 by token 0 with <code>0.665791</code> (observed 2/3) and token 3 with <code>0.332455</code> (observed 1/3); token 3 by token 0 with <code>0.998244</code> (observed 1). The model has learned the table.</li>
+<li><strong>Zero counts are approached, never reached.</strong> The probabilities for pairs never seen (such as token 0 followed by token 3) are about <code>0.00035</code>, not 0. The weights for those entries are <code>−2.8</code> and still drifting down: a softmax probability is exactly 0 only when its score is minus infinity. With more steps the numbers shrink without ever vanishing.</li>
+<li><strong>Row 4 never moved.</strong> Token 4 is never a current token, so no pair pushes on its row: its gradient is exactly zero, its weights are exactly <code>0</code> after 400 steps, and its probabilities are exactly <code>0.2</code>, uniform. The model has no information about what follows token 4 and says so.</li>
+<li><strong>The final gradient</strong> is small (about 10<sup>−4</sup>) everywhere and exactly 0 in row 4: nearly at the bottom, but still pulling very slightly.</li>
+</ul>
+<h2 id="mistakes-the-compiler-reports">Mistakes the compiler reports<a class="headerlink" href="#mistakes-the-compiler-reports" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>################ mgc run errors/e1_wrong_number_of_pairs.mg
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  | # The data are 14 pairs. Thirteen rows do not fit the 14x5 parameters, and the compiler says so.
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  | def log_softmax(s: tensor[14x5]) = s - row_max(s) - log(row_sum(exp(s - row_max(s))))
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>  | def loss(w: tensor[5x5], x: tensor[14x5], y: tensor[14x5]) = col_sum(row_sum(y * log_softmax(x @ w))) * -0.07142857142857142
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>  | let w = [[0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0]]
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>  | let x13 = [[1, 0, 0, 0, 0], [0, 1, 0, 0, 0], [0, 0, 1, 0, 0], [1, 0, 0, 0, 0], [0, 1, 0, 0, 0], [0, 0, 0, 1, 0], [1, 0, 0, 0, 0], [0, 1, 0, 0, 0], [0, 0, 1, 0, 0], [1, 0, 0, 0, 0], [0, 0, 1, 0, 0], [0, 0, 0, 1, 0], [1, 0, 0, 0
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>  | let y13 = [[0, 1, 0, 0, 0], [0, 0, 1, 0, 0], [1, 0, 0, 0, 0], [0, 1, 0, 0, 0], [0, 0, 0, 1, 0], [1, 0, 0, 0, 0], [0, 1, 0, 0, 0], [0, 0, 1, 0, 0], [1, 0, 0, 0, 0], [0, 0, 1, 0, 0], [0, 0, 0, 1, 0], [1, 0, 0, 0, 0], [0, 1, 0, 0
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>  | print loss(w, x13, y13)
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>  ----- output
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>errors/e1_wrong_number_of_pairs.mg:7: error: argument shape 13x5 does not fit parameter 14x5
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>  ----- exit status 1
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>################ mgc run errors/e2_log_of_a_scalar.mg
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>  | # log is applied to a matrix. A bare number in the source is a compile-time scalar.
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>  | print log(2)
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>  ----- output
+<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>errors/e2_log_of_a_scalar.mg:2: error: log needs a matrix, not a scalar
+<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a>  ----- exit status 1
+<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a>
+<a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a>################ mgc run errors/e3_weights_the_wrong_size.mg
+<a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a>  | # The weights must be 5x5 (one row per token, one column per next token). A 4x5 matrix does not fit.
+<a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a>  | def log_softmax(s: tensor[14x5]) = s - row_max(s) - log(row_sum(exp(s - row_max(s))))
+<a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a>  | def loss(w: tensor[5x5], x: tensor[14x5], y: tensor[14x5]) = col_sum(row_sum(y * log_softmax(x @ w))) * -0.07142857142857142
+<a id="__codelineno-7-24" name="__codelineno-7-24" href="#__codelineno-7-24"></a>  | def gradient(w: tensor[5x5], x: tensor[14x5], y: tensor[14x5]) = transpose(x) @ (exp(log_softmax(x @ w)) - y) * 0.07142857142857142
+<a id="__codelineno-7-25" name="__codelineno-7-25" href="#__codelineno-7-25"></a>  | def step(w: tensor[5x5], x: tensor[14x5], y: tensor[14x5]) = w - gradient(w, x, y) * 8
+<a id="__codelineno-7-26" name="__codelineno-7-26" href="#__codelineno-7-26"></a>  | let w = [[0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0]]
+<a id="__codelineno-7-27" name="__codelineno-7-27" href="#__codelineno-7-27"></a>  | let x = [[1, 0, 0, 0, 0], [0, 1, 0, 0, 0], [0, 0, 1, 0, 0], [1, 0, 0, 0, 0], [0, 1, 0, 0, 0], [0, 0, 0, 1, 0], [1, 0, 0, 0, 0], [0, 1, 0, 0, 0], [0, 0, 1, 0, 0], [1, 0, 0, 0, 0], [0, 0, 1, 0, 0], [0, 0, 0, 1, 0], [1, 0, 0, 0, 
+<a id="__codelineno-7-28" name="__codelineno-7-28" href="#__codelineno-7-28"></a>  | let y = [[0, 1, 0, 0, 0], [0, 0, 1, 0, 0], [1, 0, 0, 0, 0], [0, 1, 0, 0, 0], [0, 0, 0, 1, 0], [1, 0, 0, 0, 0], [0, 1, 0, 0, 0], [0, 0, 1, 0, 0], [1, 0, 0, 0, 0], [0, 0, 1, 0, 0], [0, 0, 0, 1, 0], [1, 0, 0, 0, 0], [0, 1, 0, 0, 
+<a id="__codelineno-7-29" name="__codelineno-7-29" href="#__codelineno-7-29"></a>  | print step(w, x, y)
+<a id="__codelineno-7-30" name="__codelineno-7-30" href="#__codelineno-7-30"></a>  ----- output
+<a id="__codelineno-7-31" name="__codelineno-7-31" href="#__codelineno-7-31"></a>errors/e3_weights_the_wrong_size.mg:9: error: argument shape 4x5 does not fit parameter 5x5
+<a id="__codelineno-7-32" name="__codelineno-7-32" href="#__codelineno-7-32"></a>  ----- exit status 1
+</code></pre></div>
+<p>Thirteen rows passed where the data are 14; <code>log</code> of a bare number; and a 4-row weight matrix where <code>5x5</code> is required. As in earlier chapters the shapes are types: a trainer cannot be connected to the wrong-sized data or weights.</p>
+<h2 id="tests">Tests<a class="headerlink" href="#tests" title="Permanent link">&para;</a></h2>
+<p>Five new <code>lit</code> files in <code>test/bigram31/</code> (the suite is now 127 tests):</p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>What it checks</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>examples</code></td>
+<td>the <code>log</code>, cross-entropy and one-step examples (worked out by hand above) and the training run's outputs</td>
+</tr>
+<tr>
+<td><code>errors</code></td>
+<td>the three mistakes give the exact messages, with file and line</td>
+</tr>
+<tr>
+<td><code>verifiers</code></td>
+<td><code>mg.log</code> given a result of a different shape is rejected by the dialect</td>
+</tr>
+<tr>
+<td><code>ir</code></td>
+<td>log-softmax is a max-reduce, exp, sum-reduce, <code>mg.log</code> of the row sums, in that order</td>
+</tr>
+<tr>
+<td><code>against-reference</code></td>
+<td><code>check_bigram.py</code>, below</td>
+</tr>
+</tbody>
+</table>
+<p><code>check_bigram.py</code> compares the Mountain Goat trainer with an <strong>independent</strong> Python trainer (plain lists, <code>math.exp</code>, <code>math.log</code>, with the gradient written from the definition of each pair's contribution rather than as a matrix formula), and checks facts that must be true whatever the code looks like:</p>
+<ol>
+<li><strong>Training.</strong> The loss at all ten checkpoints and the final weights, probabilities and gradient equal the reference's (to <code>mgc</code>'s six printed digits).</li>
+<li><strong>The loss.</strong> Strictly decreasing at the checkpoints; never below the conditional entropy; within 0.002 of it at the end; exactly <code>log 5</code> before training.</li>
+<li><strong>What it learned.</strong> Every trained probability is within 0.01 of the observed frequency, for every token that has a successor in the data.</li>
+<li><strong>The unseen row.</strong> Token 4's weights and gradient are exactly 0 and its probabilities exactly uniform.</li>
+<li><strong>The gradient.</strong> The hand-derived gradient agrees with a <strong>finite-difference</strong> estimate for three random weight matrices: for each of the 25 weights, the loss is computed with that weight raised and lowered by 0.01, and <code>(L₊ − L₋)/0.02</code> must match the gradient entry. The agreement is within about <code>4·10⁻⁴</code>, and the tolerance is <code>2·10⁻³</code>. It is not tighter because <code>mgc</code> prints the loss to only six digits, which limits a finite-difference estimate with step 0.01 to errors around a few times <code>10⁻⁵</code>, plus the estimate's own truncation error.</li>
+<li><strong>Stress.</strong> Weights of ±1000 (where <code>exp</code> overflows): no <code>nan</code> or <code>inf</code>, and the loss, gradient and probabilities equal the reference.</li>
+</ol>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>-- training against the independent Python trainer
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>  ok   loss after 0 steps equals the reference (1.609438)
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>  ok   loss after 1 steps equals the reference (0.992623)
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>  ok   loss after 2 steps equals the reference (0.845013)
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>  ok   loss after 5 steps equals the reference (0.718402)
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>  ok   loss after 10 steps equals the reference (0.666934)
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>  ok   loss after 25 steps equals the reference (0.634284)
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>  ok   loss after 50 steps equals the reference (0.623229)
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>  ok   loss after 100 steps equals the reference (0.617695)
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>  ok   loss after 200 steps equals the reference (0.614931)
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>  ok   loss after 400 steps equals the reference (0.613551)
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>  ok   weights after 400 steps equal the reference
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>  ok   probabilities equal the reference
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>  ok   the gradient at the end equals the reference gradient (relative)
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>  ok   each row of probabilities sums to 1
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a>-- the loss
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a>  ok   the loss is strictly decreasing at the checkpoints
+<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a>  ok   the loss never goes below the conditional entropy of the data (0.612174), the best any bigram model can do
+<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a>  ok   after 400 steps the loss is within 0.002 of that bound
+<a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a>  ok   before training the loss is log(5) = 1.609438: every token equally likely
+<a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a>-- what it learned
+<a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a>  ok   token 0: learned probabilities [0.0, 0.799, 0.199, 0.0, 0.0] are within 0.01 of the observed [0.0, 0.8, 0.2, 0.0, 0.0]
+<a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a>  ok   token 1: learned probabilities [0.001, 0.001, 0.5, 0.25, 0.25] are within 0.01 of the observed [0.0, 0.0, 0.5, 0.25, 0.25]
+<a id="__codelineno-8-24" name="__codelineno-8-24" href="#__codelineno-8-24"></a>  ok   token 2: learned probabilities [0.666, 0.001, 0.001, 0.332, 0.001] are within 0.01 of the observed [0.667, 0.0, 0.0, 0.333, 0.0]
+<a id="__codelineno-8-25" name="__codelineno-8-25" href="#__codelineno-8-25"></a>  ok   token 3: learned probabilities [0.998, 0.0, 0.0, 0.0, 0.0] are within 0.01 of the observed [1.0, 0.0, 0.0, 0.0, 0.0]
+<a id="__codelineno-8-26" name="__codelineno-8-26" href="#__codelineno-8-26"></a>-- the unseen row
+<a id="__codelineno-8-27" name="__codelineno-8-27" href="#__codelineno-8-27"></a>  ok   token 4 is never a current token: its row of weights is still exactly 0
+<a id="__codelineno-8-28" name="__codelineno-8-28" href="#__codelineno-8-28"></a>  ok   its gradient is exactly 0
+<a id="__codelineno-8-29" name="__codelineno-8-29" href="#__codelineno-8-29"></a>  ok   so its probabilities are exactly uniform (0.2 each)
+<a id="__codelineno-8-30" name="__codelineno-8-30" href="#__codelineno-8-30"></a>-- the gradient against finite differences (central difference of the loss, step 0.01)
+<a id="__codelineno-8-31" name="__codelineno-8-31" href="#__codelineno-8-31"></a>  ok   random weights #1: largest difference between the gradient and the finite-difference estimate is 4.1e-04
+<a id="__codelineno-8-32" name="__codelineno-8-32" href="#__codelineno-8-32"></a>  ok   random weights #1: gradient and loss equal the reference
+<a id="__codelineno-8-33" name="__codelineno-8-33" href="#__codelineno-8-33"></a>  ok   random weights #2: largest difference between the gradient and the finite-difference estimate is 3.4e-04
+<a id="__codelineno-8-34" name="__codelineno-8-34" href="#__codelineno-8-34"></a>  ok   random weights #2: gradient and loss equal the reference
+<a id="__codelineno-8-35" name="__codelineno-8-35" href="#__codelineno-8-35"></a>  ok   random weights #3: largest difference between the gradient and the finite-difference estimate is 4.6e-04
+<a id="__codelineno-8-36" name="__codelineno-8-36" href="#__codelineno-8-36"></a>  ok   random weights #3: gradient and loss equal the reference
+<a id="__codelineno-8-37" name="__codelineno-8-37" href="#__codelineno-8-37"></a>-- stress: weights of +-1000
+<a id="__codelineno-8-38" name="__codelineno-8-38" href="#__codelineno-8-38"></a>  ok   no nan and no inf anywhere in the output
+<a id="__codelineno-8-39" name="__codelineno-8-39" href="#__codelineno-8-39"></a>  ok   the loss equals the reference (429.7430)
+<a id="__codelineno-8-40" name="__codelineno-8-40" href="#__codelineno-8-40"></a>  ok   the gradient equals the reference
+<a id="__codelineno-8-41" name="__codelineno-8-41" href="#__codelineno-8-41"></a>  ok   the probabilities equal the reference (each row is a one-hot-like 0 and 1)
+<a id="__codelineno-8-42" name="__codelineno-8-42" href="#__codelineno-8-42"></a>all checks pass
+</code></pre></div>
+<h3 id="are-the-checks-good-enough-run-twelve-wrong-trainers">Are the checks good enough? Run twelve wrong trainers.<a class="headerlink" href="#are-the-checks-good-enough-run-twelve-wrong-trainers" title="Permanent link">&para;</a></h3>
+<p><code>model_mutation.py</code> writes twelve versions of <code>bigram.mg.defs</code>, each with one deliberate mistake (the gradient with the wrong sign, forgotten averaging, forgotten targets, the loss with the wrong sign, the naive log-sum-exp, the step uphill, and so on), and runs the checker on each:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>NOTE: this script deliberately runs wrong trainers. &#39;caught&#39; lines are EXPECTED: they show the checker can detect the mistake.
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>baseline (nothing broken): checker passes (expected)
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>the gradient has the wrong sign (y minus p instead of p minus y): caught by 25 failing checks (the reference, the loss, what it learned, finite differences)
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>the gradient is not averaged over the 14 pairs: caught by 24 failing checks (the reference, the loss, what it learned, finite differences)
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>the gradient forgets to subtract the targets y: caught by 25 failing checks (the reference, the loss, what it learned, finite differences)
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>the gradient uses x instead of its transpose: caught (the program did not even run: RuntimeError: mgc failed (1): /tmp/tmpgpz9dwh3.mg:12: error: cannot multiply (matmul) shapes 14x5 and 14x5: in)
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>the loss has the wrong sign: caught by 20 failing checks (the reference, the loss, finite differences)
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>the loss is averaged over 5, not 14: caught by 19 failing checks (the reference, the loss, finite differences)
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>the loss does not use the targets (it sums every token&#39;s log-probability): caught by 20 failing checks (the reference, the loss, finite differences)
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>log_softmax forgets the log of the sum (it only subtracts the maximum): caught by 27 failing checks (the reference, the loss, what it learned, finite differences)
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>log_softmax does not subtract the row maximum (the naive log-sum-exp): caught by 3 failing checks (other, the reference)
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>the step moves uphill (adds the gradient): caught by 18 failing checks (the reference, the loss, what it learned)
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a>the learning rate is 4, not 8: caught by 13 failing checks (the reference, the loss)
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a>the probabilities do not subtract the row maximum (naive softmax): caught by 2 failing checks (other, the reference)
+</code></pre></div>
+<p>All twelve are caught. As in Chapter 30, <strong>two were not caught at first</strong>: the naive log-sum-exp (no maximum subtracted) and the naive softmax in <code>probabilities</code>. The first version of the stress check used weights of ±400, and <code>exp(400)</code> is large but still representable (overflow starts near 709), so a naive formula gave the right answer. Raising the stress weights to ±1000 made the naive versions produce <code>inf</code> and <code>nan</code>, and the script was re-run. A numerical-stability test must actually reach the instability.</p>
+<h3 id="compiler-mutations">Compiler mutations<a class="headerlink" href="#compiler-mutations" title="Permanent link">&para;</a></h3>
+<p><code>log</code> is a new compiler operation, so the compiler is also broken on purpose, six ways:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="ch">#!/bin/sh</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="c1"># READ THIS FIRST: this script breaks the Chapter 31 code on purpose, one way at a time, and re-runs the Chapter 31 tests (test/bigram31).</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="c1">#   &quot;caught by ...&quot; (a test failed) is the EXPECTED, wanted result: it shows the tests can notice that mistake.</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="c1">#   &quot;NOT CAUGHT&quot; would be a test gap. Part 1 edits the front end (mgfront.py) and the driver (mgc) in place; part 2 rebuilds mg-opt with one bug</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="c1">#   injected into the dialect or the lowering (a full rebuild each, in work/mut/N). Every edited file is restored afterwards. Output: mutation_out.txt</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="nv">HERE</span><span class="o">=</span><span class="k">$(</span><span class="nb">cd</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>dirname<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$0</span><span class="s2">&quot;</span><span class="k">)</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">pwd</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="nv">LIT</span><span class="o">=</span><span class="nv">$HERE</span>/../../part15/code/run_lit.sh<span class="p">;</span><span class="w"> </span><span class="nv">W</span><span class="o">=</span><span class="nv">$HERE</span>/work/mut<span class="p">;</span><span class="w"> </span>rm<span class="w"> </span>-rf<span class="w"> </span><span class="nv">$W</span><span class="p">;</span><span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span><span class="nv">$W</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="nv">FILTER</span><span class="o">=</span><span class="s1">&#39;:: bigram31/&#39;</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;NOTE: this script deliberately breaks the compiler code. &#39;caught&#39; lines are EXPECTED: they show the tests can detect the mistake.&quot;</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="nv">F</span><span class="o">=</span><span class="nv">$HERE</span>/mgfront.py<span class="p">;</span><span class="w"> </span><span class="nv">G</span><span class="o">=</span><span class="nv">$HERE</span>/mgc<span class="p">;</span><span class="w"> </span>cp<span class="w"> </span><span class="nv">$F</span><span class="w"> </span><span class="nv">$W</span>/mgfront.orig<span class="p">;</span><span class="w"> </span>cp<span class="w"> </span><span class="nv">$G</span><span class="w"> </span><span class="nv">$W</span>/mgc.orig
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>restore<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w"> </span>cp<span class="w"> </span><span class="nv">$W</span>/mgfront.orig<span class="w"> </span><span class="nv">$F</span><span class="p">;</span><span class="w"> </span>cp<span class="w"> </span><span class="nv">$W</span>/mgc.orig<span class="w"> </span><span class="nv">$G</span><span class="p">;</span><span class="w"> </span><span class="o">}</span>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="nb">trap</span><span class="w"> </span>restore<span class="w"> </span>EXIT
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>fails_of<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w"> </span>grep<span class="w"> </span><span class="s1">&#39;^FAIL&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span><span class="s1">&#39;s/.*:: //; s/ (.*//&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span><span class="s1">&#39;\n&#39;</span><span class="w"> </span><span class="s1">&#39; &#39;</span><span class="p">;</span><span class="w"> </span><span class="o">}</span>
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="nv">out</span><span class="o">=</span><span class="k">$(</span><span class="nv">MG_TEST_TMP</span><span class="o">=</span><span class="nv">$W</span>/out<span class="w"> </span>sh<span class="w"> </span><span class="nv">$LIT</span><span class="w"> </span>--filter<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$FILTER</span><span class="s2">&quot;</span><span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;baseline (nothing broken): </span><span class="k">$(</span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$out</span><span class="s2">&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-q<span class="w"> </span><span class="s1">&#39;^FAIL&#39;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;UNEXPECTED FAILURE&#39;</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;tests pass (expected)&#39;</span><span class="k">)</span><span class="s2">&quot;</span>
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>echo<span class="p">;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;== Part 1: the front end and the driver&quot;</span>
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>fe<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w">  </span><span class="c1"># label file sed-expr</span>
+<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a><span class="w">  </span>restore<span class="p">;</span><span class="w"> </span>sed<span class="w"> </span>-i<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$3</span><span class="s2">&quot;</span><span class="w"> </span><span class="nv">$2</span>
+<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span>cmp<span class="w"> </span>-s<span class="w"> </span><span class="nv">$F</span><span class="w"> </span><span class="nv">$W</span>/mgfront.orig<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>cmp<span class="w"> </span>-s<span class="w"> </span><span class="nv">$G</span><span class="w"> </span><span class="nv">$W</span>/mgc.orig<span class="p">;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$1</span><span class="s2">: MUTATION DID NOT APPLY&quot;</span><span class="p">;</span><span class="w"> </span><span class="k">return</span><span class="p">;</span><span class="w"> </span><span class="k">fi</span>
+<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a><span class="w">  </span><span class="nv">f</span><span class="o">=</span><span class="k">$(</span><span class="nv">MG_TEST_TMP</span><span class="o">=</span><span class="nv">$W</span>/out<span class="w"> </span>sh<span class="w"> </span><span class="nv">$LIT</span><span class="w"> </span>--filter<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$FILTER</span><span class="s2">&quot;</span><span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>fails_of<span class="k">)</span>
+<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-n<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$f</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$1</span><span class="s2">: caught by </span><span class="nv">$f</span><span class="s2">&quot;</span><span class="p">;</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$1</span><span class="s2">: NOT CAUGHT (a test gap)&quot;</span><span class="p">;</span><span class="w"> </span><span class="k">fi</span>
+<a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a><span class="w">  </span>restore
+<a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a><span class="o">}</span>
+<a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a>fe<span class="w"> </span><span class="s2">&quot;log is compiled as relu by the front end&quot;</span><span class="w">                           </span><span class="nv">$F</span><span class="w"> </span><span class="s1">&#39;s/{r} = mg.log {v}/{r} = mg.relu {v}/&#39;</span>
+<a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a>restore
+<a id="__codelineno-10-24" name="__codelineno-10-24" href="#__codelineno-10-24"></a>
+<a id="__codelineno-10-25" name="__codelineno-10-25" href="#__codelineno-10-25"></a>echo<span class="p">;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;== Part 2: the dialect verifier and the lowering (a full rebuild per mutation)&quot;</span>
+<a id="__codelineno-10-26" name="__codelineno-10-26" href="#__codelineno-10-26"></a><span class="nv">n</span><span class="o">=</span><span class="m">0</span>
+<a id="__codelineno-10-27" name="__codelineno-10-27" href="#__codelineno-10-27"></a>try<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w">  </span><span class="c1"># label file sed-expr</span>
+<a id="__codelineno-10-28" name="__codelineno-10-28" href="#__codelineno-10-28"></a><span class="w">  </span><span class="nv">n</span><span class="o">=</span><span class="k">$((</span><span class="nv">n</span><span class="o">+</span><span class="m">1</span><span class="k">))</span><span class="p">;</span><span class="w"> </span><span class="nv">d</span><span class="o">=</span><span class="nv">$W</span>/<span class="nv">$n</span><span class="p">;</span><span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span><span class="nv">$d</span>/build<span class="p">;</span><span class="w"> </span>cp<span class="w"> </span>-r<span class="w"> </span><span class="nv">$HERE</span>/tree<span class="w"> </span><span class="nv">$d</span>/tree<span class="p">;</span><span class="w"> </span>rm<span class="w"> </span>-rf<span class="w"> </span><span class="nv">$d</span>/tree/build
+<a id="__codelineno-10-29" name="__codelineno-10-29" href="#__codelineno-10-29"></a><span class="w">  </span><span class="nv">tgt</span><span class="o">=</span><span class="nv">$d</span>/tree/lib/<span class="nv">$2</span><span class="p">;</span><span class="w"> </span>cp<span class="w"> </span><span class="nv">$tgt</span><span class="w"> </span><span class="nv">$d</span>/before<span class="p">;</span><span class="w"> </span>sed<span class="w"> </span>-i<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$3</span><span class="s2">&quot;</span><span class="w"> </span><span class="nv">$tgt</span>
+<a id="__codelineno-10-30" name="__codelineno-10-30" href="#__codelineno-10-30"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span>cmp<span class="w"> </span>-s<span class="w"> </span><span class="nv">$d</span>/before<span class="w"> </span><span class="nv">$tgt</span><span class="p">;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$1</span><span class="s2">: MUTATION DID NOT APPLY&quot;</span><span class="p">;</span><span class="w"> </span><span class="k">return</span><span class="p">;</span><span class="w"> </span><span class="k">fi</span>
+<a id="__codelineno-10-31" name="__codelineno-10-31" href="#__codelineno-10-31"></a><span class="w">  </span><span class="o">(</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span><span class="nv">$d</span>/build<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>cmake<span class="w"> </span><span class="nv">$d</span>/tree<span class="w"> </span>-DMLIR_DIR<span class="o">=</span>/usr/lib/llvm-18/lib/cmake/mlir<span class="w"> </span>-DLLVM_DIR<span class="o">=</span>/usr/lib/llvm-18/lib/cmake/llvm<span class="w"> </span>-DCMAKE_BUILD_TYPE<span class="o">=</span>Release<span class="w"> </span>-DLLVM_ENABLE_ASSERTIONS<span class="o">=</span>OFF<span class="w"> </span>&gt;/dev/null<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span>include/mg<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>make<span class="w"> </span>-j8<span class="w"> </span>&gt;/dev/null<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="o">)</span>
+<a id="__codelineno-10-32" name="__codelineno-10-32" href="#__codelineno-10-32"></a><span class="w">  </span><span class="o">[</span><span class="w"> </span>-x<span class="w"> </span><span class="nv">$d</span>/build/mg-opt<span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$1</span><span class="s2">: BUILD FAILED&quot;</span><span class="p">;</span><span class="w"> </span><span class="k">return</span><span class="p">;</span><span class="w"> </span><span class="o">}</span>
+<a id="__codelineno-10-33" name="__codelineno-10-33" href="#__codelineno-10-33"></a><span class="w">  </span><span class="nv">f</span><span class="o">=</span><span class="k">$(</span><span class="nv">MG_OPT</span><span class="o">=</span><span class="nv">$d</span>/build/mg-opt<span class="w"> </span><span class="nv">MG_TEST_TMP</span><span class="o">=</span><span class="nv">$d</span>/out<span class="w"> </span>sh<span class="w"> </span><span class="nv">$LIT</span><span class="w"> </span>--filter<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$FILTER</span><span class="s2">&quot;</span><span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>fails_of<span class="k">)</span>
+<a id="__codelineno-10-34" name="__codelineno-10-34" href="#__codelineno-10-34"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-n<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$f</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$1</span><span class="s2">: caught by </span><span class="nv">$f</span><span class="s2">&quot;</span><span class="p">;</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$1</span><span class="s2">: NOT CAUGHT (a test gap)&quot;</span><span class="p">;</span><span class="w"> </span><span class="k">fi</span>
+<a id="__codelineno-10-35" name="__codelineno-10-35" href="#__codelineno-10-35"></a><span class="o">}</span>
+<a id="__codelineno-10-36" name="__codelineno-10-36" href="#__codelineno-10-36"></a>try<span class="w"> </span><span class="s2">&quot;log copies its input (computes nothing)&quot;</span><span class="w">                           </span>LowerToAffine.cpp<span class="w"> </span><span class="s1">&#39;s/b.create&lt;math::LogOp&gt;(l, x)/x/&#39;</span>
+<a id="__codelineno-10-37" name="__codelineno-10-37" href="#__codelineno-10-37"></a>try<span class="w"> </span><span class="s2">&quot;log computes exp instead&quot;</span><span class="w">                                           </span>LowerToAffine.cpp<span class="w"> </span><span class="s1">&#39;s/b.create&lt;math::LogOp&gt;(l, x)/b.create&lt;math::ExpOp&gt;(l, x)/&#39;</span>
+<a id="__codelineno-10-38" name="__codelineno-10-38" href="#__codelineno-10-38"></a>try<span class="w"> </span><span class="s2">&quot;log computes the square root instead&quot;</span><span class="w">                               </span>LowerToAffine.cpp<span class="w"> </span><span class="s1">&#39;s/b.create&lt;math::LogOp&gt;(l, x)/b.create&lt;math::SqrtOp&gt;(l, x)/&#39;</span>
+<a id="__codelineno-10-39" name="__codelineno-10-39" href="#__codelineno-10-39"></a>try<span class="w"> </span><span class="s2">&quot;mg.log&#39;s verifier accepts anything&quot;</span><span class="w">                                 </span>MgDialect.cpp<span class="w"> </span><span class="s1">&#39;s/return verifyElementwise(\*this, {getInput().getType(), getResult().getType()}, &quot;mg.log&quot;); }/return mlir::success(); }/&#39;</span>
+<a id="__codelineno-10-40" name="__codelineno-10-40" href="#__codelineno-10-40"></a>try<span class="w"> </span><span class="s2">&quot;a sum starts from 1 instead of 0 (every row_sum and col_sum is off by one)&quot;</span><span class="w"> </span>LowerToAffine.cpp<span class="w"> </span><span class="s1">&#39;s/double initVal = isMax ? -std::numeric_limits&lt;double&gt;::infinity() : 0.0;/double initVal = isMax ? -std::numeric_limits&lt;double&gt;::infinity() : 1.0;/&#39;</span>
+<a id="__codelineno-10-41" name="__codelineno-10-41" href="#__codelineno-10-41"></a>restore
+<a id="__codelineno-10-42" name="__codelineno-10-42" href="#__codelineno-10-42"></a>echo<span class="p">;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;restored: </span><span class="k">$(</span>cmp<span class="w"> </span>-s<span class="w"> </span><span class="nv">$F</span><span class="w"> </span><span class="nv">$W</span>/mgfront.orig<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>cmp<span class="w"> </span>-s<span class="w"> </span><span class="nv">$G</span><span class="w"> </span><span class="nv">$W</span>/mgc.orig<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;mgfront.py and mgc are back to their originals&#39;</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;RESTORE FAILED&#39;</span><span class="k">)</span><span class="s2">&quot;</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>NOTE: this script deliberately breaks the compiler code. &#39;caught&#39; lines are EXPECTED: they show the tests can detect the mistake.
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>baseline (nothing broken): tests pass (expected)
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>== Part 1: the front end and the driver
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>log is compiled as relu by the front end: caught by bigram31/ir.mlir bigram31/examples.mlir bigram31/against-reference.mlir 
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>== Part 2: the dialect verifier and the lowering (a full rebuild per mutation)
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>log copies its input (computes nothing): caught by bigram31/examples.mlir bigram31/against-reference.mlir 
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>log computes exp instead: caught by bigram31/examples.mlir bigram31/against-reference.mlir 
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>log computes the square root instead: caught by bigram31/examples.mlir bigram31/against-reference.mlir 
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>mg.log&#39;s verifier accepts anything: caught by bigram31/verifiers.mlir 
+<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>a sum starts from 1 instead of 0 (every row_sum and col_sum is off by one): caught by bigram31/examples.mlir bigram31/against-reference.mlir 
+<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>
+<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a>restored: mgfront.py and mgc are back to their originals
+</code></pre></div>
+<p>All six are caught. As in Chapter 30, the verifier mutation is caught only by the dedicated <code>verifiers</code> test (no program the front end writes can reach it), and the last mutation, a sum that starts from 1 instead of 0, is not about <code>log</code>: it breaks <code>row_sum</code> and <code>col_sum</code>, which the loss and the log-softmax lean on, so the training tests would also notice a regression in an operation from an earlier chapter.</p>
+<p>The full suite:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>-- Testing: 127 tests, 4 workers --
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>PASS: IR Forge / Mountain Goat :: attention29/against-reference.mlir (1 of 127)
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>PASS: IR Forge / Mountain Goat :: contraction/tensor-contraction.mlir (2 of 127)
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>PASS: IR Forge / Mountain Goat :: contraction28/against-definition.mlir (3 of 127)
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>PASS: IR Forge / Mountain Goat :: learning/gradient-descent.mlir (4 of 127)
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>PASS: IR Forge / Mountain Goat :: tour/gallery.mlir (5 of 127)
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>PASS: IR Forge / Mountain Goat :: transformer30/against-reference.mlir (6 of 127)
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>PASS: IR Forge / Mountain Goat :: contraction28/examples.mlir (7 of 127)
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>PASS: IR Forge / Mountain Goat :: attention29/examples.mlir (8 of 127)
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>PASS: IR Forge / Mountain Goat :: bigram31/against-reference.mlir (9 of 127)
+<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a>PASS: IR Forge / Mountain Goat :: perf/options-same-results.mlir (10 of 127)
+<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a>PASS: IR Forge / Mountain Goat :: tour/more-examples.mlir (11 of 127)
+<a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a>PASS: IR Forge / Mountain Goat :: loop-order/results-identical.mlir (12 of 127)
+<a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a>PASS: IR Forge / Mountain Goat :: broadcast/values.mlir (13 of 127)
+<a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a>PASS: IR Forge / Mountain Goat :: tour/tour-examples.mlir (14 of 127)
+<a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a>PASS: IR Forge / Mountain Goat :: bigram31/examples.mlir (15 of 127)
+<a id="__codelineno-12-17" name="__codelineno-12-17" href="#__codelineno-12-17"></a>PASS: IR Forge / Mountain Goat :: loop-order/bitwise-identical.mlir (16 of 127)
+<a id="__codelineno-12-18" name="__codelineno-12-18" href="#__codelineno-12-18"></a>PASS: IR Forge / Mountain Goat :: transformer30/examples.mlir (17 of 127)
+<a id="__codelineno-12-19" name="__codelineno-12-19" href="#__codelineno-12-19"></a>PASS: IR Forge / Mountain Goat :: contraction/mismatch-trap.mlir (18 of 127)
+<a id="__codelineno-12-20" name="__codelineno-12-20" href="#__codelineno-12-20"></a>PASS: IR Forge / Mountain Goat :: ops/values.mlir (19 of 127)
+<a id="__codelineno-12-21" name="__codelineno-12-21" href="#__codelineno-12-21"></a>PASS: IR Forge / Mountain Goat :: frontend/more-examples.mlir (20 of 127)
+<a id="__codelineno-12-22" name="__codelineno-12-22" href="#__codelineno-12-22"></a>PASS: IR Forge / Mountain Goat :: broadcast/cpp-interop-reductions.mlir (21 of 127)
+<a id="__codelineno-12-23" name="__codelineno-12-23" href="#__codelineno-12-23"></a>PASS: IR Forge / Mountain Goat :: loop-order/cpp-ikj.mlir (22 of 127)
+<a id="__codelineno-12-24" name="__codelineno-12-24" href="#__codelineno-12-24"></a>PASS: IR Forge / Mountain Goat :: ops/cpp-interop-ops.mlir (23 of 127)
+<a id="__codelineno-12-25" name="__codelineno-12-25" href="#__codelineno-12-25"></a>PASS: IR Forge / Mountain Goat :: execution/gpu-host-with-stub-runtime.mlir (24 of 127)
+<a id="__codelineno-12-26" name="__codelineno-12-26" href="#__codelineno-12-26"></a>PASS: IR Forge / Mountain Goat :: frontend/cpp-interop.mlir (25 of 127)
+<a id="__codelineno-12-27" name="__codelineno-12-27" href="#__codelineno-12-27"></a>PASS: IR Forge / Mountain Goat :: ops/elementwise-mismatch-aborts.mlir (26 of 127)
+<a id="__codelineno-12-28" name="__codelineno-12-28" href="#__codelineno-12-28"></a>PASS: IR Forge / Mountain Goat :: ops/negate-and-dynamic-divide.mlir (27 of 127)
+<a id="__codelineno-12-29" name="__codelineno-12-29" href="#__codelineno-12-29"></a>PASS: IR Forge / Mountain Goat :: ops/composed-programs.mlir (28 of 127)
+<a id="__codelineno-12-30" name="__codelineno-12-30" href="#__codelineno-12-30"></a>PASS: IR Forge / Mountain Goat :: frontend/dynamic-runs.mlir (29 of 127)
+<a id="__codelineno-12-31" name="__codelineno-12-31" href="#__codelineno-12-31"></a>PASS: IR Forge / Mountain Goat :: tour/scientific-literals.mlir (30 of 127)
+<a id="__codelineno-12-32" name="__codelineno-12-32" href="#__codelineno-12-32"></a>PASS: IR Forge / Mountain Goat :: ops/dynamic-ops.mlir (31 of 127)
+<a id="__codelineno-12-33" name="__codelineno-12-33" href="#__codelineno-12-33"></a>PASS: IR Forge / Mountain Goat :: perf/flags-reach-clang.mlir (32 of 127)
+<a id="__codelineno-12-34" name="__codelineno-12-34" href="#__codelineno-12-34"></a>PASS: IR Forge / Mountain Goat :: broadcast/dynamic-reductions.mlir (33 of 127)
+<a id="__codelineno-12-35" name="__codelineno-12-35" href="#__codelineno-12-35"></a>PASS: IR Forge / Mountain Goat :: loop-order/flag-reaches-pass.mlir (34 of 127)
+<a id="__codelineno-12-36" name="__codelineno-12-36" href="#__codelineno-12-36"></a>PASS: IR Forge / Mountain Goat :: broadcast/networks.mlir (35 of 127)
+<a id="__codelineno-12-37" name="__codelineno-12-37" href="#__codelineno-12-37"></a>PASS: IR Forge / Mountain Goat :: frontend/runtime-mismatch-aborts.mlir (36 of 127)
+<a id="__codelineno-12-38" name="__codelineno-12-38" href="#__codelineno-12-38"></a>PASS: IR Forge / Mountain Goat :: broadcast/identities.mlir (37 of 127)
+<a id="__codelineno-12-39" name="__codelineno-12-39" href="#__codelineno-12-39"></a>PASS: IR Forge / Mountain Goat :: perf/tiling-structure.mlir (38 of 127)
+<a id="__codelineno-12-40" name="__codelineno-12-40" href="#__codelineno-12-40"></a>PASS: IR Forge / Mountain Goat :: frontend/hello-and-static.mlir (39 of 127)
+<a id="__codelineno-12-41" name="__codelineno-12-41" href="#__codelineno-12-41"></a>PASS: IR Forge / Mountain Goat :: ops/precedence-and-identities.mlir (40 of 127)
+<a id="__codelineno-12-42" name="__codelineno-12-42" href="#__codelineno-12-42"></a>PASS: IR Forge / Mountain Goat :: execution/mismatch-columns-aborts.mlir (41 of 127)
+<a id="__codelineno-12-43" name="__codelineno-12-43" href="#__codelineno-12-43"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/message-on-stderr.mlir (42 of 127)
+<a id="__codelineno-12-44" name="__codelineno-12-44" href="#__codelineno-12-44"></a>PASS: IR Forge / Mountain Goat :: execution/mismatch-aborts.mlir (43 of 127)
+<a id="__codelineno-12-45" name="__codelineno-12-45" href="#__codelineno-12-45"></a>PASS: IR Forge / Mountain Goat :: contraction28/errors.mlir (44 of 127)
+<a id="__codelineno-12-46" name="__codelineno-12-46" href="#__codelineno-12-46"></a>PASS: IR Forge / Mountain Goat :: execution/dynamic-shapes-run.mlir (45 of 127)
+<a id="__codelineno-12-47" name="__codelineno-12-47" href="#__codelineno-12-47"></a>PASS: IR Forge / Mountain Goat :: ops/ptx-new-ops.mlir (46 of 127)
+<a id="__codelineno-12-48" name="__codelineno-12-48" href="#__codelineno-12-48"></a>PASS: IR Forge / Mountain Goat :: tour/tour-errors.mlir (47 of 127)
+<a id="__codelineno-12-49" name="__codelineno-12-49" href="#__codelineno-12-49"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/tiling-runs.mlir (48 of 127)
+<a id="__codelineno-12-50" name="__codelineno-12-50" href="#__codelineno-12-50"></a>PASS: IR Forge / Mountain Goat :: chapters/ch09-execution-engine.mlir (49 of 127)
+<a id="__codelineno-12-51" name="__codelineno-12-51" href="#__codelineno-12-51"></a>PASS: IR Forge / Mountain Goat :: execution/static-add-runs.mlir (50 of 127)
+<a id="__codelineno-12-52" name="__codelineno-12-52" href="#__codelineno-12-52"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/runtime-check-survives-transforms.mlir (51 of 127)
+<a id="__codelineno-12-53" name="__codelineno-12-53" href="#__codelineno-12-53"></a>PASS: IR Forge / Mountain Goat :: attention29/errors.mlir (52 of 127)
+<a id="__codelineno-12-54" name="__codelineno-12-54" href="#__codelineno-12-54"></a>PASS: IR Forge / Mountain Goat :: ops/matmul-mismatch-aborts.mlir (53 of 127)
+<a id="__codelineno-12-55" name="__codelineno-12-55" href="#__codelineno-12-55"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/unroll-runs.mlir (54 of 127)
+<a id="__codelineno-12-56" name="__codelineno-12-56" href="#__codelineno-12-56"></a>PASS: IR Forge / Mountain Goat :: execution/mixed-static-dynamic.mlir (55 of 127)
+<a id="__codelineno-12-57" name="__codelineno-12-57" href="#__codelineno-12-57"></a>PASS: IR Forge / Mountain Goat :: transformer30/errors.mlir (56 of 127)
+<a id="__codelineno-12-58" name="__codelineno-12-58" href="#__codelineno-12-58"></a>PASS: IR Forge / Mountain Goat :: ops/division-ieee.mlir (57 of 127)
+<a id="__codelineno-12-59" name="__codelineno-12-59" href="#__codelineno-12-59"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/nested-assert-runs.mlir (58 of 127)
+<a id="__codelineno-12-60" name="__codelineno-12-60" href="#__codelineno-12-60"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/fusion-after-tiling.mlir (59 of 127)
+<a id="__codelineno-12-61" name="__codelineno-12-61" href="#__codelineno-12-61"></a>PASS: IR Forge / Mountain Goat :: broadcast/ptx-layer.mlir (60 of 127)
+<a id="__codelineno-12-62" name="__codelineno-12-62" href="#__codelineno-12-62"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/message-bytes-exact.mlir (61 of 127)
+<a id="__codelineno-12-63" name="__codelineno-12-63" href="#__codelineno-12-63"></a>PASS: IR Forge / Mountain Goat :: execution/strided-view.mlir (62 of 127)
+<a id="__codelineno-12-64" name="__codelineno-12-64" href="#__codelineno-12-64"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/valid-shapes-still-pass.mlir (63 of 127)
+<a id="__codelineno-12-65" name="__codelineno-12-65" href="#__codelineno-12-65"></a>PASS: IR Forge / Mountain Goat :: chapters/ch01-pipeline.mlir (64 of 127)
+<a id="__codelineno-12-66" name="__codelineno-12-66" href="#__codelineno-12-66"></a>PASS: IR Forge / Mountain Goat :: gpu/pass-order-crash.mlir (65 of 127)
+<a id="__codelineno-12-67" name="__codelineno-12-67" href="#__codelineno-12-67"></a>PASS: IR Forge / Mountain Goat :: bigram31/errors.mlir (66 of 127)
+<a id="__codelineno-12-68" name="__codelineno-12-68" href="#__codelineno-12-68"></a>PASS: IR Forge / Mountain Goat :: frontend/ptx-from-source.mlir (67 of 127)
+<a id="__codelineno-12-69" name="__codelineno-12-69" href="#__codelineno-12-69"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/fusion-needs-constant-trip-counts.mlir (68 of 127)
+<a id="__codelineno-12-70" name="__codelineno-12-70" href="#__codelineno-12-70"></a>PASS: IR Forge / Mountain Goat :: gpu/ptx-bare-pointers.mlir (69 of 127)
+<a id="__codelineno-12-71" name="__codelineno-12-71" href="#__codelineno-12-71"></a>PASS: IR Forge / Mountain Goat :: contraction28/ir.mlir (70 of 127)
+<a id="__codelineno-12-72" name="__codelineno-12-72" href="#__codelineno-12-72"></a>PASS: IR Forge / Mountain Goat :: gpu/host-runtime-calls-bare.mlir (71 of 127)
+<a id="__codelineno-12-73" name="__codelineno-12-73" href="#__codelineno-12-73"></a>PASS: IR Forge / Mountain Goat :: gpu/host-runtime-calls.mlir (72 of 127)
+<a id="__codelineno-12-74" name="__codelineno-12-74" href="#__codelineno-12-74"></a>PASS: IR Forge / Mountain Goat :: gpu/ptx-default.mlir (73 of 127)
+<a id="__codelineno-12-75" name="__codelineno-12-75" href="#__codelineno-12-75"></a>PASS: IR Forge / Mountain Goat :: frontend/front-end-errors.mlir (74 of 127)
+<a id="__codelineno-12-76" name="__codelineno-12-76" href="#__codelineno-12-76"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/unroll-full-needs-constant-trip-count.mlir (75 of 127)
+<a id="__codelineno-12-77" name="__codelineno-12-77" href="#__codelineno-12-77"></a>PASS: IR Forge / Mountain Goat :: chapters/ch02-example-programs.mlir (76 of 127)
+<a id="__codelineno-12-78" name="__codelineno-12-78" href="#__codelineno-12-78"></a>PASS: IR Forge / Mountain Goat :: gpu/ptx-index32.mlir (77 of 127)
+<a id="__codelineno-12-79" name="__codelineno-12-79" href="#__codelineno-12-79"></a>PASS: IR Forge / Mountain Goat :: loop-order/structure.mlir (78 of 127)
+<a id="__codelineno-12-80" name="__codelineno-12-80" href="#__codelineno-12-80"></a>PASS: IR Forge / Mountain Goat :: broadcast/front-end-errors.mlir (79 of 127)
+<a id="__codelineno-12-81" name="__codelineno-12-81" href="#__codelineno-12-81"></a>PASS: IR Forge / Mountain Goat :: ops/front-end-errors.mlir (80 of 127)
+<a id="__codelineno-12-82" name="__codelineno-12-82" href="#__codelineno-12-82"></a>PASS: IR Forge / Mountain Goat :: bigram31/ir.mlir (81 of 127)
+<a id="__codelineno-12-83" name="__codelineno-12-83" href="#__codelineno-12-83"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/static-unchanged.mlir (82 of 127)
+<a id="__codelineno-12-84" name="__codelineno-12-84" href="#__codelineno-12-84"></a>PASS: IR Forge / Mountain Goat :: attention29/ir.mlir (83 of 127)
+<a id="__codelineno-12-85" name="__codelineno-12-85" href="#__codelineno-12-85"></a>PASS: IR Forge / Mountain Goat :: broadcast/roundtrip-and-lowering.mlir (84 of 127)
+<a id="__codelineno-12-86" name="__codelineno-12-86" href="#__codelineno-12-86"></a>PASS: IR Forge / Mountain Goat :: ops/matmul-lowering-structure.mlir (85 of 127)
+<a id="__codelineno-12-87" name="__codelineno-12-87" href="#__codelineno-12-87"></a>PASS: IR Forge / Mountain Goat :: gpu/nvvm-lowering.mlir (86 of 127)
+<a id="__codelineno-12-88" name="__codelineno-12-88" href="#__codelineno-12-88"></a>PASS: IR Forge / Mountain Goat :: gpu/kernel-outlining.mlir (87 of 127)
+<a id="__codelineno-12-89" name="__codelineno-12-89" href="#__codelineno-12-89"></a>PASS: IR Forge / Mountain Goat :: gpu/cuda-comparison.mlir (88 of 127)
+<a id="__codelineno-12-90" name="__codelineno-12-90" href="#__codelineno-12-90"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/guard-nested-assert.mlir (89 of 127)
+<a id="__codelineno-12-91" name="__codelineno-12-91" href="#__codelineno-12-91"></a>PASS: IR Forge / Mountain Goat :: transformer30/ir.mlir (90 of 127)
+<a id="__codelineno-12-92" name="__codelineno-12-92" href="#__codelineno-12-92"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/unroll-epilogue.mlir (91 of 127)
+<a id="__codelineno-12-93" name="__codelineno-12-93" href="#__codelineno-12-93"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/rewrite-structure.mlir (92 of 127)
+<a id="__codelineno-12-94" name="__codelineno-12-94" href="#__codelineno-12-94"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/fusion-declines.mlir (93 of 127)
+<a id="__codelineno-12-95" name="__codelineno-12-95" href="#__codelineno-12-95"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/tiling-structure.mlir (94 of 127)
+<a id="__codelineno-12-96" name="__codelineno-12-96" href="#__codelineno-12-96"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/fusion-fires-when-static.mlir (95 of 127)
+<a id="__codelineno-12-97" name="__codelineno-12-97" href="#__codelineno-12-97"></a>PASS: IR Forge / Mountain Goat :: verifier/add-static-mismatch.mlir (96 of 127)
+<a id="__codelineno-12-98" name="__codelineno-12-98" href="#__codelineno-12-98"></a>PASS: IR Forge / Mountain Goat :: loops/unroll-full.mlir (97 of 127)
+<a id="__codelineno-12-99" name="__codelineno-12-99" href="#__codelineno-12-99"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/run-twice-no-collision.mlir (98 of 127)
+<a id="__codelineno-12-100" name="__codelineno-12-100" href="#__codelineno-12-100"></a>PASS: IR Forge / Mountain Goat :: frontend/emit-mlir.mlir (99 of 127)
+<a id="__codelineno-12-101" name="__codelineno-12-101" href="#__codelineno-12-101"></a>PASS: IR Forge / Mountain Goat :: verifier/transpose-bad-shape.mlir (100 of 127)
+<a id="__codelineno-12-102" name="__codelineno-12-102" href="#__codelineno-12-102"></a>PASS: IR Forge / Mountain Goat :: lowering/bufferize-dynamic-add.mlir (101 of 127)
+<a id="__codelineno-12-103" name="__codelineno-12-103" href="#__codelineno-12-103"></a>PASS: IR Forge / Mountain Goat :: contraction28/verifiers.mlir (102 of 127)
+<a id="__codelineno-12-104" name="__codelineno-12-104" href="#__codelineno-12-104"></a>PASS: IR Forge / Mountain Goat :: lowering/mixed-add-one-check.mlir (103 of 127)
+<a id="__codelineno-12-105" name="__codelineno-12-105" href="#__codelineno-12-105"></a>PASS: IR Forge / Mountain Goat :: canonicalize/transpose-twice-dynamic-mixed.mlir (104 of 127)
+<a id="__codelineno-12-106" name="__codelineno-12-106" href="#__codelineno-12-106"></a>PASS: IR Forge / Mountain Goat :: lowering/dynamic-add-affine.mlir (105 of 127)
+<a id="__codelineno-12-107" name="__codelineno-12-107" href="#__codelineno-12-107"></a>PASS: IR Forge / Mountain Goat :: ops/elementwise-static-mismatch.mlir (106 of 127)
+<a id="__codelineno-12-108" name="__codelineno-12-108" href="#__codelineno-12-108"></a>PASS: IR Forge / Mountain Goat :: lowering/bufferize-static-add.mlir (107 of 127)
+<a id="__codelineno-12-109" name="__codelineno-12-109" href="#__codelineno-12-109"></a>PASS: IR Forge / Mountain Goat :: lowering/dynamic-transpose-no-check.mlir (108 of 127)
+<a id="__codelineno-12-110" name="__codelineno-12-110" href="#__codelineno-12-110"></a>PASS: IR Forge / Mountain Goat :: loop-order/bad-option.mlir (109 of 127)
+<a id="__codelineno-12-111" name="__codelineno-12-111" href="#__codelineno-12-111"></a>PASS: IR Forge / Mountain Goat :: broadcast/verifier-reduce.mlir (110 of 127)
+<a id="__codelineno-12-112" name="__codelineno-12-112" href="#__codelineno-12-112"></a>PASS: IR Forge / Mountain Goat :: verifier/transpose-rank3.mlir (111 of 127)
+<a id="__codelineno-12-113" name="__codelineno-12-113" href="#__codelineno-12-113"></a>PASS: IR Forge / Mountain Goat :: ops/matmul-inner-mismatch.mlir (112 of 127)
+<a id="__codelineno-12-114" name="__codelineno-12-114" href="#__codelineno-12-114"></a>PASS: IR Forge / Mountain Goat :: ops/scalar-bad-op.mlir (113 of 127)
+<a id="__codelineno-12-115" name="__codelineno-12-115" href="#__codelineno-12-115"></a>PASS: IR Forge / Mountain Goat :: verifier/unranked-rejected.mlir (114 of 127)
+<a id="__codelineno-12-116" name="__codelineno-12-116" href="#__codelineno-12-116"></a>PASS: IR Forge / Mountain Goat :: loops/fusion.mlir (115 of 127)
+<a id="__codelineno-12-117" name="__codelineno-12-117" href="#__codelineno-12-117"></a>PASS: IR Forge / Mountain Goat :: verifier/dynamic-accepted.mlir (116 of 127)
+<a id="__codelineno-12-118" name="__codelineno-12-118" href="#__codelineno-12-118"></a>PASS: IR Forge / Mountain Goat :: bigram31/verifiers.mlir (117 of 127)
+<a id="__codelineno-12-119" name="__codelineno-12-119" href="#__codelineno-12-119"></a>PASS: IR Forge / Mountain Goat :: lowering/static-add-affine.mlir (118 of 127)
+<a id="__codelineno-12-120" name="__codelineno-12-120" href="#__codelineno-12-120"></a>PASS: IR Forge / Mountain Goat :: attention29/verifiers.mlir (119 of 127)
+<a id="__codelineno-12-121" name="__codelineno-12-121" href="#__codelineno-12-121"></a>PASS: IR Forge / Mountain Goat :: ops/dynamic-accepted.mlir (120 of 127)
+<a id="__codelineno-12-122" name="__codelineno-12-122" href="#__codelineno-12-122"></a>PASS: IR Forge / Mountain Goat :: canonicalize/transpose-twice-dynamic-exact.mlir (121 of 127)
+<a id="__codelineno-12-123" name="__codelineno-12-123" href="#__codelineno-12-123"></a>PASS: IR Forge / Mountain Goat :: broadcast/verifier-broadcast.mlir (122 of 127)
+<a id="__codelineno-12-124" name="__codelineno-12-124" href="#__codelineno-12-124"></a>PASS: IR Forge / Mountain Goat :: canonicalize/fold-constant-add.mlir (123 of 127)
+<a id="__codelineno-12-125" name="__codelineno-12-125" href="#__codelineno-12-125"></a>PASS: IR Forge / Mountain Goat :: ops/matmul-bad-result-shape.mlir (124 of 127)
+<a id="__codelineno-12-126" name="__codelineno-12-126" href="#__codelineno-12-126"></a>PASS: IR Forge / Mountain Goat :: loops/tiling.mlir (125 of 127)
+<a id="__codelineno-12-127" name="__codelineno-12-127" href="#__codelineno-12-127"></a>PASS: IR Forge / Mountain Goat :: canonicalize/transpose-twice.mlir (126 of 127)
+<a id="__codelineno-12-128" name="__codelineno-12-128" href="#__codelineno-12-128"></a>PASS: IR Forge / Mountain Goat :: transformer30/verifiers.mlir (127 of 127)
+<a id="__codelineno-12-129" name="__codelineno-12-129" href="#__codelineno-12-129"></a>
+<a id="__codelineno-12-130" name="__codelineno-12-130" href="#__codelineno-12-130"></a>Testing Time: 15.00s
+<a id="__codelineno-12-131" name="__codelineno-12-131" href="#__codelineno-12-131"></a>
+<a id="__codelineno-12-132" name="__codelineno-12-132" href="#__codelineno-12-132"></a>Total Discovered Tests: 127
+<a id="__codelineno-12-133" name="__codelineno-12-133" href="#__codelineno-12-133"></a>  Passed: 127 (100.00%)
+</code></pre></div>
+<h2 id="limits-and-what-is-not-established">Limits and what is not established<a class="headerlink" href="#limits-and-what-is-not-established" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>A bigram looks at one token.</strong> It cannot represent "after <code>0 1</code> comes 2 but after <code>3 1</code> comes 4"; any context beyond the last token is invisible to it. It is the <em>simplest</em> language model, not a good one.</li>
+<li><strong>Training loss only.</strong> All 14 pairs are used for training and the same 14 for the loss. The model has been shown to <em>fit</em> them (it reaches the entropy bound); nothing here measures how it would do on text it has not seen. With data this small, "learned the frequencies" is also "memorized the data".</li>
+<li><strong>Pairs never seen get tiny probabilities, not zero,</strong> and token 4's successor is left uniform. A real model smooths or regularizes; this one does neither.</li>
+<li><strong>The gradient is derived by hand, for this model.</strong> Mountain Goat has no automatic differentiation. Chapter 26 derived a linear model's gradient; here a softmax model's. <strong>Training Chapter 30's transformer is not done:</strong> that needs the gradient of every operation in it (attention, layer normalization, the residual connections, the feed-forward network) derived by hand, or an automatic differentiation system, and neither exists here. Chapter 30's weights remain random.</li>
+<li><strong>Full-batch gradient descent with a fixed learning rate of 8,</strong> chosen by trying 4 and 8 on this data in plain Python (both converge; 8 is faster). No learning-rate schedule, no momentum, no minibatches, no stopping rule: it just runs 400 steps. The step size is stable here because rows of <code>w</code> are independent and the largest curvature is bounded; nothing says 8 is safe for other data.</li>
+<li><strong>No sampling or argmax.</strong> The program prints probabilities. Choosing the likeliest next token, or generating text, would need an <code>argmax</code> or random choice the language lacks.</li>
+<li><strong>Six digits.</strong> <code>mgc</code> prints six significant digits, so the comparisons with Python are at a relative <code>10⁻⁵</code>, and the finite-difference check can only be as sharp as printing allows (stated above).</li>
+<li><strong><code>exp</code> and <code>log</code> come from the platform's C library;</strong> their last-digit accuracy was not measured. GPU lowering is not covered.</li>
+<li><strong>Platform:</strong> x86-64 Linux, LLVM 18.1.3.</li>
+</ul>
+<h2 id="reproducing">Reproducing<a class="headerlink" href="#reproducing" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nb">cd</span><span class="w"> </span>docs/part31/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./build.sh
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>python3<span class="w"> </span>make_examples.py<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_examples.sh<span class="w"> </span>&gt;<span class="w"> </span>examples_out.txt
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>./check_bigram.py<span class="w"> </span>&gt;<span class="w"> </span>check_bigram_out.txt
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>./model_mutation.py<span class="w"> </span>&gt;<span class="w"> </span>model_mutation_out.txt
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>./mutation.sh<span class="w"> </span>&gt;<span class="w"> </span>mutation_out.txt
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="nb">cd</span><span class="w"> </span>../../part15/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_lit.sh<span class="w">          </span><span class="c1"># 127 tests</span>
+</code></pre></div>
+<h2 id="chapter-summary">Chapter summary<a class="headerlink" href="#chapter-summary" title="Permanent link">&para;</a></h2>
+<ul>
+<li>A language model predicts the next token; the bigram model looks at one token and keeps a table of scores per token. The loss is the average surprise, <code>−log</code> of the probability given to what really came next.</li>
+<li>With <code>log</code> added, training is a few lines of Mountain Goat: the gradient is <code>xᵀ(softmax(xw) − y)/14</code>, derived by hand, and a step subtracts it.</li>
+<li>The loss falls from <code>log 5</code> toward the entropy of the data and cannot go below it; after 400 steps the model's probabilities equal the observed frequencies to about 0.001, and a token with no successors in the data keeps exactly the weights it started with.</li>
+<li>Everything is checked against an independent Python trainer, against theory (the entropy bound), against finite differences, and under overflow-sized weights; twelve wrong trainers and six broken compilers are all caught, and two of the wrong trainers were caught only after the stress test was made big enough.</li>
+<li>It is a toy: one token of context, training loss only, hand-derived gradient. Training a transformer needs gradients Mountain Goat cannot yet produce for itself.</li>
+</ul>
+<h2 id="self-check-questions">Self-check questions<a class="headerlink" href="#self-check-questions" title="Permanent link">&para;</a></h2>
+<p>Each answer is collapsed; try the question first.</p>
+<ol>
+<li>
+<p>Why is the loss exactly <code>log 5 = 1.609438</code> before training?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>All weights are 0, so every score is 0 and every softmax row is uniform: probability 1/5 for each of the five tokens. The surprise of any pair is <code>−log(1/5) = log 5</code>, and the average of equal numbers is the number itself.</p>
+</details>
+</li>
+<li>
+<p>What does it mean that the loss cannot go below 0.612174, and why is that the floor?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>0.612174 is the conditional entropy of the data: the average of <code>−log(observed probability of the next token)</code> when each row of probabilities equals the observed frequencies. Among all ways to assign probabilities to the next token given the current one, matching the observed frequencies gives the smallest average surprise on this data (Gibbs' inequality); any other assignment is worse. A bigram model's rows are free, so it can reach but not beat that value.</p>
+</details>
+</li>
+<li>
+<p>Why are probabilities of unseen pairs (like 0 then 3) small but not exactly 0 after 400 steps?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>A softmax output is <code>e^s / Σ e^s</code>, which is exactly 0 only if a score is minus infinity. Gradient descent keeps lowering the score (here to about −2.8) but each step makes a smaller change, so it only approaches zero. The loss never rewards going all the way: it is already almost at its floor.</p>
+</details>
+</li>
+<li>
+<p>Why does row 4 of the weights stay exactly 0, and what does the model say about the token after 4?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>Token 4 is never a <em>current</em> token, so no row of <code>x</code> has its 1 in column 4, and the gradient <code>xᵀ(…)</code> has a zero row 4 (it is a sum over pairs, and no pair contributes). The step subtracts 0, so those weights stay at their starting value 0, and the softmax of a zero row is uniform: 0.2 each. The model has no information, and reports that rather than inventing something.</p>
+</details>
+</li>
+<li>
+<p>Why is <code>log_softmax</code> written as <code>s − max − log(sum(exp(s − max)))</code> instead of <code>log(softmax(s))</code>?</p>
+<details class="note">
+<summary>Answer</summary>
+<p><code>softmax</code> produces probabilities, and a probability far below the maximum underflows to exactly 0; the log of 0 is minus infinity, and <code>y * (−inf)</code> with a 0 in <code>y</code> is <code>nan</code>. The log-sum-exp form never builds a probability, so it stays finite. It also subtracts the maximum before <code>exp</code>, so <code>exp</code> cannot overflow. The ±1000 stress check exercises both.</p>
+</details>
+</li>
+<li>
+<p>How does the finite-difference check work, and why is its tolerance only <code>2·10⁻³</code>?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>For each weight, compute the loss with that weight raised by 0.01 and lowered by 0.01; the slope <code>(L₊ − L₋)/0.02</code> estimates the derivative, and it should match the gradient entry. The tolerance is loose because <code>mgc</code> prints the loss to six significant digits, so each loss value has an error around <code>10⁻⁶</code>, which divided by 0.02 is a few times <code>10⁻⁵</code>, and because the estimate itself has an error from the finite step. Observed differences are about <code>4·10⁻⁴</code>.</p>
+</details>
+</li>
+<li>
+<p>The gradient formula <code>xᵀ(p − y)/14</code> came from a hand derivation. What makes it trustworthy rather than a guess?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>Two independent checks: it matches a numerical estimate that uses only the loss function (finite differences, which does not use the formula), and training with it reproduces an independent Python trainer step for step and ends at the known optimum (the observed frequencies, the entropy floor). A wrong formula (the wrong sign, a missing 1/14, forgotten targets) fails these, as the wrong-trainer runs show.</p>
+</details>
+</li>
+<li>
+<p>Why were two of the twelve wrong trainers missed at first, and what does that teach about testing numerical code?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>The naive log-sum-exp and the naive softmax compute the same numbers as the stable versions whenever <code>exp</code> does not overflow. The first stress check used scores of ±400, and <code>exp(400)</code> is representable (overflow begins near 709), so both naive formulas were correct on every test. Scores of ±1000 overflow, giving <code>inf</code> and <code>nan</code>, and caught both. A test for a numerical-stability bug must reach the regime where the bug bites.</p>
+</details>
+</li>
+<li>
+<p>Why can a bigram model not represent "what comes after the pair <code>0 1</code>"?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>Its prediction depends only on the current token: the row of <code>w</code> for token 1. In the data, token 1 is followed by 2, 3 and 4, and the model can only give the average over every occurrence of token 1, whatever came before it. Capturing the effect of the earlier token needs a model that sees more than one token at a time, which is what attention in Chapters 29 and 30 provides.</p>
+</details>
+</li>
+<li>
+<p>What would be needed to train the Chapter 30 transformer the way this chapter trained the bigram?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>The gradient of the loss with respect to every weight in it: the embeddings, each head's query, key and value matrices, the output matrices, the layer-norm scales and shifts, the feed-forward weights and biases, and the final projection. That is the chain rule through softmax attention, layer normalization, relu and the residual connections, derived by hand for each, or an automatic differentiation system that does it from the program. Mountain Goat has neither, so Chapter 30's weights remain random numbers; the loss and the training loop of this chapter would carry over unchanged.</p>
+</details>
+</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../../part30/30-a-small-transformer/" class="md-footer__link md-footer__link--prev" aria-label="Previous: 30. A Small Transformer">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                30. A Small Transformer
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 Oluwaseyi Awoga
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,63 @@
+MUTATION 1: message written to fd 1 (stdout) instead of fd 2 (stderr)
+FAIL:    assert-stderr/message-bytes-exact.mlir
+FAIL:    assert-stderr/message-on-stderr.mlir
+FAIL:    assert-stderr/nested-assert-runs.mlir
+PASS:    assert-stderr/guard-nested-assert.mlir
+PASS:    assert-stderr/rewrite-structure.mlir
+PASS:    assert-stderr/run-twice-no-collision.mlir
+PASS:    assert-stderr/static-unchanged.mlir
+PASS:    assert-stderr/valid-shapes-still-pass.mlir
+MUTATION 2: no abort: the failing side falls through to the continuation
+FAIL:    assert-stderr/message-bytes-exact.mlir
+FAIL:    assert-stderr/message-on-stderr.mlir
+FAIL:    assert-stderr/nested-assert-runs.mlir
+FAIL:    assert-stderr/rewrite-structure.mlir
+PASS:    assert-stderr/guard-nested-assert.mlir
+PASS:    assert-stderr/run-twice-no-collision.mlir
+PASS:    assert-stderr/static-unchanged.mlir
+PASS:    assert-stderr/valid-shapes-still-pass.mlir
+MUTATION 3: the func.func-parent guard removed
+FAIL:    assert-stderr/guard-nested-assert.mlir
+FAIL:    assert-stderr/run-twice-no-collision.mlir
+PASS:    assert-stderr/message-bytes-exact.mlir
+PASS:    assert-stderr/message-on-stderr.mlir
+PASS:    assert-stderr/nested-assert-runs.mlir
+PASS:    assert-stderr/rewrite-structure.mlir
+PASS:    assert-stderr/static-unchanged.mlir
+PASS:    assert-stderr/valid-shapes-still-pass.mlir
+MUTATION 4: message length off by two (the last character and the newline are cut)
+FAIL:    assert-stderr/message-bytes-exact.mlir
+FAIL:    assert-stderr/message-on-stderr.mlir
+FAIL:    assert-stderr/nested-assert-runs.mlir
+PASS:    assert-stderr/guard-nested-assert.mlir
+PASS:    assert-stderr/rewrite-structure.mlir
+PASS:    assert-stderr/run-twice-no-collision.mlir
+PASS:    assert-stderr/static-unchanged.mlir
+PASS:    assert-stderr/valid-shapes-still-pass.mlir
+MUTATION 5: branch targets swapped: a TRUE condition goes to the failing side, so VALID programs abort
+FAIL:    assert-stderr/message-bytes-exact.mlir
+FAIL:    assert-stderr/message-on-stderr.mlir
+FAIL:    assert-stderr/nested-assert-runs.mlir
+FAIL:    assert-stderr/valid-shapes-still-pass.mlir
+PASS:    assert-stderr/guard-nested-assert.mlir
+PASS:    assert-stderr/rewrite-structure.mlir
+PASS:    assert-stderr/run-twice-no-collision.mlir
+PASS:    assert-stderr/static-unchanged.mlir
+MUTATION 6: the pass declares @abort even when there is no assert to rewrite (it alters programs it should leave alone)
+FAIL:    assert-stderr/static-unchanged.mlir
+PASS:    assert-stderr/guard-nested-assert.mlir
+PASS:    assert-stderr/message-bytes-exact.mlir
+PASS:    assert-stderr/message-on-stderr.mlir
+PASS:    assert-stderr/nested-assert-runs.mlir
+PASS:    assert-stderr/rewrite-structure.mlir
+PASS:    assert-stderr/run-twice-no-collision.mlir
+PASS:    assert-stderr/valid-shapes-still-pass.mlir
+MUTATION 7: global names always start at 0 again (the uniqueness search is removed): a second run collides
+FAIL:    assert-stderr/message-on-stderr.mlir
+FAIL:    assert-stderr/rewrite-structure.mlir
+FAIL:    assert-stderr/run-twice-no-collision.mlir
+FAIL:    assert-stderr/valid-shapes-still-pass.mlir
+PASS:    assert-stderr/guard-nested-assert.mlir
+PASS:    assert-stderr/message-bytes-exact.mlir
+PASS:    assert-stderr/nested-assert-runs.mlir
+PASS:    assert-stderr/static-unchanged.mlir

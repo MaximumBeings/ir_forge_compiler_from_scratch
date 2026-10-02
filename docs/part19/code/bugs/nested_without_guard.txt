@@ -1,0 +1,4 @@
+nested.mlir:2:3: error: 'affine.for' op expects region #0 to have 0 or 1 blocks
+  affine.for %i = 0 to %n {
+  ^
+nested.mlir:2:3: note: see current operation: 

@@ -1,0 +1,2 @@
+  llvm.mlir.global private constant @mg_assert_stderr_msg_0("top-level check\0A")
+  llvm.mlir.global private constant @mg_assert_stderr_msg_1("value is NaN\0A")

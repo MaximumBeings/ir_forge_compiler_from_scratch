@@ -1,0 +1,16 @@
+################ Chapter 14 lowering (cf.assert -> puts + abort)
+--- stdout is a PIPE, stderr shown:    (command: ./old.exe 2>&1 | cat)
+--- stdout is a FILE, stderr discarded (command: ./old.exe > out.txt 2>/dev/null; cat out.txt)
+(stdout file holds 0 bytes)
+--- stdout discarded, stderr only:      (command: ./old.exe 2>&1 >/dev/null)
+--- exit status of the program itself: 134
+
+################ Chapter 19 pass (cf.assert -> write(2, ...) + abort)
+--- stdout is a PIPE, stderr shown:    (command: ./new.exe 2>&1 | cat)
+mg.add: operand shapes differ at runtime in dimension 0
+--- stdout is a FILE, stderr discarded (command: ./new.exe > out.txt 2>/dev/null; cat out.txt)
+(stdout file holds 0 bytes)
+--- stdout discarded, stderr only:      (command: ./new.exe 2>&1 >/dev/null)
+mg.add: operand shapes differ at runtime in dimension 0
+--- exit status of the program itself: 134
+

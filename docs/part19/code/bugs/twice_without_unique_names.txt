@@ -1,0 +1,4 @@
+twice.mlir:2:3: error: redefinition of symbol named 'mg_assert_stderr_msg_0'
+  cf.assert %ok, "top-level check"
+  ^
+twice.mlir:2:3: note: see current operation: 

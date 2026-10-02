@@ -38,6 +38,8 @@ config.substitutions += [
 ]
 # The language tour (docs/tour): its examples are run in place, like the chapters' examples.
 config.substitutions += [("%tour", os.path.join(config.test_source_root, "..", "..", "..", "tour", "code"))]
+# Chapter 25: tests for the early chapters' own files, run in place ('%docs' is the book's docs directory).
+config.substitutions += [("%docs", os.path.join(config.test_source_root, "..", "..", ".."))]
 # Chapter 24: the matmul loop-order option ('%mgc24' must come before '%mgc').
 ch24 = os.path.join(config.test_source_root, "..", "..", "..", "part24", "code")
 config.substitutions += [

@@ -1,0 +1,22 @@
+NOTE: this script deliberately tests an old compiler build. FAIL lines and 'CI FAILED' below are EXPECTED: they show CI can fail.
+--- a few of the failing tests (the old build lacks features the current tests check):
+FAIL: assert-stderr/guard-nested-assert.mlir
+FAIL: assert-stderr/message-bytes-exact.mlir
+FAIL: assert-stderr/message-on-stderr.mlir
+FAIL: assert-stderr/nested-assert-runs.mlir
+FAIL: assert-stderr/rewrite-structure.mlir
+FAIL: assert-stderr/run-twice-no-collision.mlir
+FAIL: assert-stderr/static-unchanged.mlir
+FAIL: assert-stderr/valid-shapes-still-pass.mlir
+--- the suite's own totals:
+  Passed: 53 (51.96%)
+  Failed: 49 (48.04%)
+--- ci.sh's summary:
+CI summary:
+  PASS check tools                                 0s
+  PASS check workflow file                         0s
+  SKIP build the compiler (testing MG_OPT=/home/user/ir_forge_compiler_from_scratch/docs/part14/code/build/mg-opt)
+  FAIL run the test suite                          2s
+  SKIP build the documentation                 
+CI FAILED in: run the test suite
+exit status of ci.sh: 1   (0 = CI passes, 1 = CI fails; here 1 is the expected result)

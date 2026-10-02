@@ -1,0 +1,46 @@
+# Continuous integration for the Mountain Goat book: build the compiler, run the whole test suite, and build the site.
+# The work is done by ./ci.sh, which you can run on your own machine; this file only prepares an Ubuntu 24.04 runner for it.
+# NOTE: this workflow could not be run from the environment the book was written in (no access to GitHub Actions there);
+# the commands inside it were run there, step by step, by ./ci.sh. Chapter 25 says exactly what that does and does not establish.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  suite:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install LLVM/MLIR 18 and build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-18 llvm-18-dev llvm-18-tools libmlir-18-dev mlir-18-tools cmake make
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install Python tools (lit, mkdocs)
+        run: pip install -r requirements.txt
+
+      # The compiler takes a few minutes to build; reuse it when no source file that goes into it has changed.
+      - name: Cache the compiler build
+        uses: actions/cache@v4
+        with:
+          path: docs/part24/code/build
+          key: mg-opt-${{ runner.os }}-${{ hashFiles('docs/part24/code/*.cpp', 'docs/part24/code/CMakeLists.txt', 'docs/part22/code/MgOps.td', 'docs/part22/code/MgDialect.cpp', 'docs/part3/code/*', 'docs/part14/code/*', 'docs/part19/code/AssertToStderr.cpp') }}
+
+      - name: Build, test, and build the docs
+        run: ./ci.sh

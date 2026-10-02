@@ -1,0 +1,4 @@
+# Python tools used by the test suite and the documentation build (the versions this book was written and checked with).
+lit==23.1.2
+mkdocs==1.6.1
+mkdocs-material==9.7.7

@@ -101,6 +101,7 @@ nav:
       - "22. Broadcasting, Reductions and relu: Enough Operations for a Neural-Network Layer": part22/22-broadcasting-reductions-and-relu.md
       - "23. Measuring Performance: Does Any of It Make the Code Fast?": part23/23-measuring-performance.md
       - "24. Closing the Gap: A Matrix Product That Walks Memory in a Better Order": part24/24-closing-the-matmul-gap.md
+      - "25. Keeping It Working: Continuous Integration and the Tests the Early Chapters Never Had": part25/25-keeping-it-working.md
 
 extra:
   social: []

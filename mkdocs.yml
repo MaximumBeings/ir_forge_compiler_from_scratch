@@ -108,6 +108,7 @@ nav:
       - "28. Tensor Contractions in Mountain Goat Itself": part28/28-contraction-in-mountain-goat.md
       - "29. Softmax and Attention": part29/29-softmax-and-attention.md
       - "30. A Small Transformer": part30/30-a-small-transformer.md
+      - "31. Training a Language Model: Gradient Descent on a Bigram": part31/31-training-a-bigram-model.md
 
 extra:
   social: []

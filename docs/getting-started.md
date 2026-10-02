@@ -58,7 +58,8 @@ Each chapter's page starts with a "Compile and run" box (Chapters 1 to 9, 20 and
 | 25 | `./ci.sh` at the repository root | builds the newest compiler, runs the whole test suite and the docs build; also what the CI workflow runs |
 | 28 | `part28/code/build.sh` | adds `mg.reshape` and `mg.permute`; `part28/code/mgc` runs the examples |
 | 29 | `part29/code/build.sh` | adds `mg.exp`; the newest compiler |
-| 30 | `part30/code/build.sh` | adds `mg.sqrt`; the newest compiler, which `run_lit.sh` and CI use; `part30/code/mgc` runs the transformer |
+| 30 | `part30/code/build.sh` | adds `mg.sqrt`; the compiler as of Chapter 30; `part30/code/mgc` runs the transformer |
+| 31 | `part31/code/build.sh` | adds `mg.log`; the newest compiler, which `run_lit.sh` and CI use; `part31/code/mgc` runs the trainer |
 | the test suite (`part15/code/run_lit.sh`) | any build; it picks the newest that exists | the newest build runs every test |
 
 Every build needs `cmake`, `make`, `llvm-18-dev`, `libmlir-18-dev` and `mlir-18-tools` (see above), and takes a few minutes the first time. Every `run.sh` and `demo.sh` writes its intermediate files under `./work/` or `./show/`, which are git-ignored.

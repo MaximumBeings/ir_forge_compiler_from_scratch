@@ -1,0 +1,8 @@
+$ mlir-opt-18 --debug-only=affine-loop-fusion exp_A.mlir --affine-loop-fusion
+mlir-opt-18: Unknown command line argument '--debug-only=affine-loop-fusion'.  Try: 'mlir-opt-18 --help'
+mlir-opt-18: Did you mean '--debug-pass=affine-loop-fusion'?
+
+$ strings /usr/lib/llvm-18/bin/mlir-opt | grep -c "Non-constant trip count unsupported"
+0
+$ strings /usr/lib/llvm-18/bin/mlir-opt | grep -c "Dynamic shapes not yet supported"
+0

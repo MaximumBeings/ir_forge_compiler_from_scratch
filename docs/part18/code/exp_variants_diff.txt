@@ -1,0 +1,30 @@
+### exp_E vs the static control exp_C
+1c1
+< func.func @C(%a: memref<4x6xf64>, %b: memref<4x6xf64>) -> memref<6x4xf64> {
+---
+> func.func @C(%a: memref<4x6xf64>, %b: memref<4x6xf64>, %n: index) -> memref<6x4xf64> {
+4c4
+<   affine.for %i = 0 to 4 {
+---
+>   affine.for %i = 0 to %n {
+
+### exp_F vs the static control exp_C
+1c1
+< func.func @C(%a: memref<4x6xf64>, %b: memref<4x6xf64>) -> memref<6x4xf64> {
+---
+> func.func @C(%a: memref<4x6xf64>, %b: memref<4x6xf64>, %n: index) -> memref<6x4xf64> {
+5c5
+<     affine.for %j = 0 to 6 {
+---
+>     affine.for %j = 0 to %n {
+
+### exp_G vs the static control exp_C
+1c1
+< func.func @C(%a: memref<4x6xf64>, %b: memref<4x6xf64>) -> memref<6x4xf64> {
+---
+> func.func @C(%a: memref<4x6xf64>, %b: memref<4x6xf64>, %n: index) -> memref<6x4xf64> {
+12c12
+<   affine.for %i = 0 to 6 {
+---
+>   affine.for %i = 0 to %n {
+

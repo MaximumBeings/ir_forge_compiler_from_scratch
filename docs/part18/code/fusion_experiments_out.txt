@@ -1,0 +1,30 @@
+exp  what is dynamic                                                  before  after fusion
+C    nothing (static bounds, static buffers) - control                4       2
+A    BOTH nests' bounds (function-argument symbols); buffers static   4       4
+B    the BUFFERS (memref<?x?xf64>); loop bounds constant              4       2
+E    one loop: producer, outer                                        4       4
+F    one loop: producer, inner                                        4       4
+G    one loop: consumer, outer                                        4       4
+
+WORKAROUND ATTEMPT: tile first (constant tile size), then fuse. Static controls first.
+I1   STATIC 4x6 chain, tiled by 1 (8 loops) then fused: verifies, 4 loops
+I2   STATIC 4x6 chain, tiled by 2 (8 loops) then fused: verifies, 8 loops
+H    DYNAMIC chain, tiled by 4 (8 loops) then fused: VERIFIER ERROR: error: operand #0 does not dominate this use
+
+What the fusion pass did to the tiled dynamic nest (verification off, generic form), first loop-header lines that differ:
+<     "affine.for"(%15, %11) operandSegmentSizes = array<i32: 1, 1, 0>, step = 4 : index, upperBoundMap = #map1
+>     "affine.for"(%arg4, %11, %arg4) operandSegmentSizes = array<i32: 1, 2, 0>, step = 1 : index, upperBoundMap = #map2
+<       "affine.for"(%15, %13) operandSegmentSizes = array<i32: 1, 1, 0>, step = 4 : index, upperBoundMap = #map1
+>       "affine.for"(%arg5, %13, %arg5) operandSegmentSizes = array<i32: 1, 2, 0>, step = 1 : index, upperBoundMap = #map2
+<         "affine.for"(%arg2, %11, %arg2) operandSegmentSizes = array<i32: 1, 2, 0>, step = 1 : index, upperBoundMap = #map2
+>         "affine.for"(%15, %11) operandSegmentSizes = array<i32: 1, 1, 0>, step = 4 : index, upperBoundMap = #map1
+<           "affine.for"(%arg3, %13, %arg3) operandSegmentSizes = array<i32: 1, 2, 0>, step = 1 : index, upperBoundMap = #map2
+>           "affine.for"(%15, %13) operandSegmentSizes = array<i32: 1, 1, 0>, step = 4 : index, upperBoundMap = #map1
+<     "affine.for"(%21, %17) operandSegmentSizes = array<i32: 1, 1, 0>, step = 4 : index, upperBoundMap = #map1
+>     "affine.for"(%arg4, %17, %arg4) operandSegmentSizes = array<i32: 1, 2, 0>, step = 1 : index, upperBoundMap = #map2
+<       "affine.for"(%21, %19) operandSegmentSizes = array<i32: 1, 1, 0>, step = 4 : index, upperBoundMap = #map1
+>       "affine.for"(%arg5, %19, %arg5) operandSegmentSizes = array<i32: 1, 2, 0>, step = 1 : index, upperBoundMap = #map2
+<         "affine.for"(%arg2, %17, %arg2) operandSegmentSizes = array<i32: 1, 2, 0>, step = 1 : index, upperBoundMap = #map2
+>         "affine.for"(%21, %17) operandSegmentSizes = array<i32: 1, 1, 0>, step = 4 : index, upperBoundMap = #map1
+<           "affine.for"(%arg3, %19, %arg3) operandSegmentSizes = array<i32: 1, 2, 0>, step = 1 : index, upperBoundMap = #map2
+>           "affine.for"(%21, %19) operandSegmentSizes = array<i32: 1, 1, 0>, step = 4 : index, upperBoundMap = #map1

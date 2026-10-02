@@ -172,7 +172,7 @@ The result disproves the guess. The dynamic add-then-add chain is *also* left at
 --8<-- "docs/part17/code/show/static_chain_fused.mlir"
 ```
 
-**Why** fusion declines was not established. Plausible explanations include that the intermediate buffer's size is dynamic, or that the dependence analysis cannot prove the two nests' symbolic iteration spaces equal; this chapter did not read the pass's source, as Chapter 12 did for other passes, and no test here distinguishes those explanations. The honest summary is a measured limitation without a verified cause.
+**Why** fusion declines was not established. Plausible explanations include that the intermediate buffer's size is dynamic, or that the dependence analysis cannot prove the two nests' symbolic iteration spaces equal; this chapter did not read the pass's source, as Chapter 12 did for other passes, and no test here distinguishes those explanations. The honest summary is a measured limitation without a verified cause. *(Update, added after Chapter 18: the cause is now established. The pass's profitability analysis requires a constant trip count for every loop in both nests; dynamic buffer shapes alone do not block fusion. Chapter 18 also found that tiling and then fusing dynamic loops produces invalid IR.)*
 
 Two tests pin the pair: one asserts that fusion leaves the dynamic nests at four loops, with a header saying it is *designed to start failing* if a newer toolchain fuses them (in the same spirit as Chapter 16's crash test), and one asserts that the identical chain with static bounds does fuse, so the first test cannot pass merely because fusion is broken everywhere.
 
@@ -219,7 +219,7 @@ All six mutations are caught: a changed tile size, a changed unroll factor, the 
 - **One program, two nests.** Everything above is the add-then-transpose chain and two sibling programs. Other op sequences were not tried.
 - **Eleven shapes is a sample.** The shapes were chosen to include remainders, but eleven is not exhaustive, and very large sizes were not tried.
 - **Correctness only, no performance.** Tiling and unrolling exist to make code faster, but nothing here was timed. A transform can be correct and slower; no claim about speed is made.
-- **Fusion's cause is unexplained,** as stated above, and it is a limitation of this toolchain version's pass on this IR, not a statement about fusion in general.
+- **Fusion's cause is unexplained** *(update, added after Chapter 18: explained there)*, as stated above, and it is a limitation of this toolchain version's pass on this IR, not a statement about fusion in general.
 - **Only Chapter 7's transforms.** No other affine passes (interchange, vectorization, loop-invariant code motion) were examined.
 - **Rank 2 only,** as throughout since Chapter 13.
 - **The GPU path was not run on dynamic shapes;** the bare-pointer option still requires static shapes (Chapter 12).
@@ -262,7 +262,7 @@ Worked answer: a pass that declines to apply reports nothing, so a script or rea
 
 **4. A natural guess is that the transpose's access pattern stops `--affine-loop-fusion` on the dynamic chain. How did the chapter test that guess, and what was the answer?**
 
-Worked answer: it ran fusion on three programs: the dynamic add-then-transpose chain, a dynamic add-then-add chain (identical index patterns, no transpose), and the same add-then-transpose chain with static 4x6 bounds. The dynamic add-then-add chain was also left at 4 loops, while the static add-then-transpose chain fused to 2. So the transpose is not the blocker; dynamic bounds are. The chapter then stops: it did not establish *why* dynamic bounds block fusion, and says no test distinguishes the candidate explanations.
+Worked answer: it ran fusion on three programs: the dynamic add-then-transpose chain, a dynamic add-then-add chain (identical index patterns, no transpose), and the same add-then-transpose chain with static 4x6 bounds. The dynamic add-then-add chain was also left at 4 loops, while the static add-then-transpose chain fused to 2. So the transpose is not the blocker; dynamic bounds are. The chapter then stops: it did not establish *why* dynamic bounds block fusion, and says no test distinguishes the candidate explanations. *(Update, added after Chapter 18: the pass requires constant trip counts for every loop in both nests, found by reading the source and confirmed with six experiments.)*
 
 **5. Why does `fusion-declines.mlir` come with a companion test, `fusion-fires-when-static.mlir`, and what is the first test designed to do if the toolchain changes?**
 

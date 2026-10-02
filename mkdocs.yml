@@ -88,6 +88,7 @@ nav:
       - "15. A Real Test Suite: lit, FileCheck, and Proof That the Tests Can Fail": part15/15-a-real-test-suite.md
       - "16. Testing the GPU Path and the Loop Transforms": part16/16-testing-the-gpu-path-and-loop-transforms.md
       - "17. Loop Transforms on Dynamic Bounds": part17/17-loop-transforms-on-dynamic-bounds.md
+      - "18. Why Fusion Declines: Reading the Pass, and a Second Bug Found Along the Way": part18/18-why-fusion-declines.md
 
 extra:
   social: []

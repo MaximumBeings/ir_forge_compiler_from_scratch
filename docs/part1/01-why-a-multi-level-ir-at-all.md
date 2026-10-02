@@ -213,6 +213,44 @@ sum_array({1,2,3,4,5}) = 15
 
 `1 + 2 + 3 + 4 + 5 = 15` -- the real, correct answer, produced by a real binary that started life as a structured `scf.for` loop, was genuinely unpacked and lowered by real MLIR passes, translated to real LLVM IR, and compiled by the real LLVM backend. Every stage of that real pipeline is now proven, not asserted: this chapter's own next parts (Part 1 onward) can build a real, custom dialect on top of this exact same real lowering-and-execution discipline with confidence that the discipline itself genuinely works.
 
+## The complete source files
+
+The excerpts above show the parts under discussion. These files appear in `code/` and are not shown elsewhere on this page; each is embedded exactly as it exists in the repository, collapsed so the narrative stays readable.
+
+??? note "`compile_warn.txt`"
+
+    ```text
+    --8<-- "docs/part1/code/compile_warn.txt"
+    ```
+
+??? note "`lower_out.txt`"
+
+    ```text
+    --8<-- "docs/part1/code/lower_out.txt"
+    ```
+
+??? note "`run_out.txt`"
+
+    ```text
+    --8<-- "docs/part1/code/run_out.txt"
+    ```
+
+??? note "`translate_out.txt`"
+
+    ```text
+    --8<-- "docs/part1/code/translate_out.txt"
+    ```
+
+??? note "`verify_out.txt`"
+
+    ```text
+    --8<-- "docs/part1/code/verify_out.txt"
+    ```
+
+## What later chapters changed
+
+No later chapter changed this chapter's code. The `lit`/`FileCheck` suite built in Chapters 15 and 16 does not cover it: the `scf.for` demonstration here is untested beyond the single recorded run shown above.
+
 ## Chapter summary
 
 This chapter answered "why a second IR above LLVM IR" concretely rather than abstractly: a real, structured `scf.for` loop was parsed and verified by `mlir-opt-18`, genuinely lowered through four real MLIR passes to MLIR's own `llvm` dialect, where its own loop structure visibly disappeared into three bare basic blocks joined by branches -- exactly the real transformation MLIR's own official rationale names as the reason loop-level transformations (fusion, tiling, interchange) belong at a *structured* level, before that information is lost. The same IR was then translated to real LLVM IR, compiled, and run, producing the correct real answer and confirming the whole real pipeline -- parse, lower, translate, compile, execute -- genuinely works end to end on this book's own confirmed toolchain.

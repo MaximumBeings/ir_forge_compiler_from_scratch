@@ -245,3 +245,31 @@ MG=/path/to/mg-opt ./pipeline.sh           # every artifact in the chapter (need
 ## What this chapter does not cite
 
 Chapters 1 through 9 cite the `llvm/llvm-project` repository's own `mlir/docs/` for claims about MLIR's design. This chapter does not: every statement above about what a pass does is taken from running it and reading its output (and `mlir-opt-18 --help` descriptions), not from the project's documentation, which was not read for this chapter. Treat the explanations of *why* `convert-affine-for-to-gpu` failed, and of the ABI cost of memref descriptors, as observations from this one small example.
+
+## Chapter summary
+
+This chapter carried a real Mountain Goat program, `mg.add`, from Chapter 4's `affine` loops down to real PTX: the loops were proven independent and mapped onto a 2-block-by-2-thread grid (`affine-parallelize`, `gpu-map-parallel-loops`, `convert-parallel-loops-to-gpu`, `gpu-kernel-outlining`), the kernel module was lowered to the `nvvm` dialect (`nvvm-attach-target`, `convert-gpu-to-nvvm`), and LLVM's NVPTX backend produced PTX (`gpu-module-to-binary{format=isa}`). An equivalent CUDA-style kernel was compiled with `clang-18` and compared: identical memory traffic (two global loads, one add, one store), but 23 kernel parameters against 3, because each `memref` crosses the call boundary as a seven-scalar descriptor. A first attempt with `--convert-affine-for-to-gpu` failed and is recorded.
+
+Deliberately out of scope, stated explicitly: nothing was assembled or launched (no GPU, driver or `ptxas` exists in this sandbox), so the chapter makes no claim that the PTX computes the right answer on hardware, and the host side (device allocation, copies, the launch call) is left for Chapter 11. One claim in this chapter, that the 23-parameter count cannot be changed by a pass option, was wrong and is corrected in Chapter 12.
+
+## Self-check questions
+
+**1. The MLIR kernel declares 23 parameters and the CUDA kernel 3, yet both do the same two loads, one add and one store. Where do the 20 extra parameters come from?**
+
+Worked answer: a `memref<2x2xf64>` does not cross a call boundary as a pointer. By Chapter 1's descriptor rule it becomes seven scalars: an allocated pointer, an aligned pointer, an offset, two sizes and two strides. The kernel takes three memrefs, so 3 x 7 = 21, plus two `index` arguments (the loop's step and lower bound), for 23. The CUDA kernel takes three raw pointers and writes the loop bounds and row stride into its source (`row * 2 + col`), so it has nothing else to pass.
+
+**2. Of the 23 declared parameters, the PTX body loads only five. Which five, and why those?**
+
+Worked answer: `param_0` and `param_1` (the loop step and lower bound, used in `block * step + lb`), and `param_3`, `param_10`, `param_17`, the *aligned pointer* slot, the second field, of each of the three descriptor groups (fields 2 to 8, 9 to 15 and 16 to 22 after the two index arguments). Sizes, strides and offsets are never read, because the shape is static and baked into the index arithmetic (`shl 1` for the row stride, `shl 3` for eight bytes per element). The backend deleted every unused read without being asked.
+
+**3. `--convert-affine-for-to-gpu` failed twice. How did the two failures differ, and what did the working route do differently?**
+
+Worked answer: the first failure was a scheduling error: the pass operates on a `func.func`, not on a `builtin.module`, so it must be nested in the pass pipeline. Nested, it produced `affine.load` operations indexed by GPU block and thread ids, which are not valid affine dimensions or symbols, so the result failed verification. The working route went through parallelism instead: `affine-parallelize` proved the loops independent, `lower-affine` turned them into `scf.parallel`, and the GPU mapping passes built the launch, with the kernel body using plain `memref.load`/`memref.store`. The chapter did not establish *why* the first route fails beyond that observation, and says so.
+
+**4. Why does this chapter have no equivalent of the `[[6, 8], [10, 12]]` check that Chapters 5 through 9 ended with, and why is that its most important caveat?**
+
+Worked answer: that check ran a program and compared its output with the independently known answer. Here nothing could be run: there is no GPU, no CUDA driver and no `ptxas`. The chapter therefore establishes only that real MLIR and real LLVM accept every stage and emit the PTX shown, which is a statement about the compiler, not about the kernel's correctness. Reading the PTX, the load, add and store look right, but reading is not executing, and the book's own discipline is that a plausible-looking result is not evidence.
+
+**5. Switching `index-bitwidth` from 64 to 32 changed the instruction count from 25 to 22. What changed in the PTX, and what did not?**
+
+Worked answer: the index arithmetic became 32-bit (`mad.lo.s32`, `shl.b32`, `add.s32` in place of `mul.lo.s64`, `add.s64`, `shl.b64`), and the two index parameters are now declared `.u32`. What did not change is the parameter count (still 23, because that comes from the memref descriptor ABI, not from the index width) and the memory traffic (still two loads and one store). Chapter 12 later showed that a different option, `kernel-bare-ptr-calling-convention`, is what changes the count.

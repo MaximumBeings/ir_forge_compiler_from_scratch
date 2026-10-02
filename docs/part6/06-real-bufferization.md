@@ -303,6 +303,32 @@ Unranked Memref base@ = 0x559b27f1d1f0 rank = 2 offset = 0 sizes = [2, 2] stride
 
 The identical real, correct answer Chapter 5 produced through its own entirely different, hand-written `ConvertMgToAffinePass` -- genuinely confirmed here through a second, independent real path (MLIR's own production `--one-shot-bufferize`, Mountain Goat's own real `BufferizableOpInterface` implementations), reusing every later real stage of the pipeline (`--lower-affine` onward) completely unchanged.
 
+## The complete source files
+
+The excerpts above show the parts under discussion. These files appear in `code/` and are not shown elsewhere on this page; each is embedded exactly as it exists in the repository, collapsed so the narrative stays readable.
+
+??? note "`CMakeLists.txt`"
+
+    ```cmake
+    --8<-- "docs/part6/code/CMakeLists.txt"
+    ```
+
+??? note "`MgBufferizableOpInterfaceImpl.cpp`"
+
+    ```cpp
+    --8<-- "docs/part6/code/MgBufferizableOpInterfaceImpl.cpp"
+    ```
+
+??? note "`mg-opt.cpp`"
+
+    ```cpp
+    --8<-- "docs/part6/code/mg-opt.cpp"
+    ```
+
+## What later chapters changed
+
+Chapters 13 and 14 changed the bufferization models in `MgBufferizableOpInterfaceImpl.cpp`: they now handle dynamic shapes and emit the same runtime shape check as the hand-written path. Chapter 14 also found that any op a bufferization model creates needs its dialect loaded by the model's own registration (`cf` was registered but not loaded, which aborted `mg-opt`). The function-boundary strided layout this chapter found became observable in Chapter 13, where only this path could honor a column-major view. The version in this chapter's `code/` directory is the original.
+
 ## Chapter summary
 
 This chapter closed Chapter 4's own honestly-stated gap: `BufferizableOpInterface` is now genuinely implemented for all four `mg` operations, via real external models (`ConstantOpInterface`, `AddOpInterface`, `TransposeOpInterface`, `PrintOpInterface`), and MLIR's own real, built-in `--one-shot-bufferize` pass now genuinely succeeds where it previously, honestly, failed. Chapter 4's own prediction -- that this would be more work than the hand-written pass, not less -- held up directly: four real methods per operation (`bufferizesToMemoryRead`/`Write`, `bufferizesToAllocation`, `getAliasingValues`), each a specific, conservative claim the whole-function analysis depends on, plus a second real gap (`func.func`'s own external model, not registered by default) this chapter hit the same way Chapter 4 hit its own signature-conversion gap. Two real, honest differences from Chapter 4's own hand-written path emerged directly from running the code, not predicted in advance: One-Shot Bufferize does not fold constant adds away the way dialect conversion did, and its own function-boundary conversion produces a more general, strided memref layout rather than a plain contiguous one. The chapter closed by running this entirely new path through Chapter 5's own unmodified `affine`-to-`llvm` pipeline and `mlir-cpu-runner-18`, producing the identical, real, correct answer Chapter 5 obtained through a completely different route.

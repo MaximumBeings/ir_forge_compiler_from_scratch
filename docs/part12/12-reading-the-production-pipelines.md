@@ -177,3 +177,31 @@ cd docs/part12/code
 ```
 
 The LLVM source was read from `llvm/llvm-project` at tag `llvmorg-18.1.3` with `git clone --depth 1 --filter=blob:none --sparse` and `git sparse-checkout set` on the directories named in `code/llvm-18.1.3/NOTICE.md`; the copies there are unmodified and every quoted line is embedded from them. As with Chapters 10 and 11, no documentation pages were read, only source code.
+
+## Chapter summary
+
+This chapter compared this book's pipeline with two real pipelines inside MLIR, `GPUToNVVMPipeline.cpp` and `SparseTensorPipelines.cpp`, read at tag `llvmorg-18.1.3`, with the exact excerpts embedded from unmodified copies. It turned Chapter 11's three hypotheses into established causes by pairing each reproduced symptom with the lines that cause it: the launch pattern looks the kernel module up by type and dereferences null once it has become a `gpu.binary`; the alloc, memcpy and dealloc patterns refuse non-async ops with a silent match failure; and the launch pattern expands memref operands into descriptor scalars, so running it before the kernel is converted gives "23 kernel operands but expected 5". It corrected a Chapter 10 claim (a `kernel-bare-ptr-calling-convention` option cuts the kernel from 23 parameters to 5), tabulated passes the real pipelines use that this book never did, and listed gaps from evidence.
+
+Deliberately out of scope, stated explicitly: only these two in-tree pipelines were read, nothing is claimed about out-of-tree MLIR compilers, the crash cause was established by reading source and not by rebuilding LLVM with assertions, and the combined sparsification-and-bufferization pass was not read.
+
+## Self-check questions
+
+**1. Why does the real packaged pipeline run `gpu-to-llvm` before `gpu-module-to-binary`, and what happens in this toolchain if the order is reversed?**
+
+Worked answer: `gpu-module-to-binary` replaces each `gpu.module` with a `gpu.binary`, and the launch lowering looks the kernel module up with a lookup typed to `gpu::GPUModuleOp`. After the replacement that lookup returns null; the `assert` guarding it is compiled out of a release build, and the next line calls `getTargetsAttr()` on the null result. The observed symptom is a segmentation fault whose top frame is exactly `GPUModuleOp::getTargetsAttr()`. Running `gpu-to-llvm` first, as the real pipeline does, avoids it.
+
+**2. Which option reduces the kernel from 23 parameters to 5, and what does it cost?**
+
+Worked answer: `kernel-bare-ptr-calling-convention=1` on the packaged pipeline, which passes each memref as one raw pointer instead of the seven-scalar descriptor. The five parameters are the loop step, the lower bound and three pointers. It costs the size and stride information, so it only works because every shape in the book is static (the option's help text says all memrefs must have static shape on the host side). The PTX instruction count did not change, since the backend had already deleted the unused descriptor reads: the ABI cost 18 parameters and zero instructions.
+
+**3. The GPU pipeline's own header comment calls it a pass "for testing". Why does that wording limit what this chapter can claim?**
+
+Worked answer: it says the file is MLIR's reference pipeline for testing the lowering to NVVM, not a production compiler's pipeline. The chapter can therefore say how this book's pass order compares to MLIR's own reference order, but not what any production compiler ships. Compilers built on MLIR outside the `llvm-project` repository were not read, and the chapter makes no claim about them.
+
+**4. The chapter says the book "never used" `expand-strided-metadata`, `cse` and several other passes. How was that established, and why does the method matter?**
+
+Worked answer: `checks.sh` counts, for each pass name, how many files in the whole book (Chapters 1 through 11, pages and code directories) mention it; the recorded result is zero for every one. The method matters because "never used" is a claim about 11 chapters of material, which is easy to assert from memory and wrong; counting turns it into an observation anyone can rerun, and the same script printed the type and shape evidence used for the gap list.
+
+**5. Chapter 12 wrote that dynamic-shape support was "unknown, not no". Why that phrasing, and what did Chapter 13 find?**
+
+Worked answer: at the time, every `.mlir` file in the book used static shapes (the check found no `?` dimension in any of them), so there was no evidence either way, and "no" would have been an unsupported claim. Chapter 13 tested it and found the answer was no in three ways (a verifier that wrongly rejected compatible shapes, and both lowerings failing on a dynamic `memref.alloc`), then fixed them and found two further bugs while doing so.

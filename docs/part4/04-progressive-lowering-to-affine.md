@@ -415,6 +415,20 @@ This is a real, honest negative result, not a workaround or a hidden failure: ML
 
 Implementing that real interface for `mg.constant`/`mg.add`/`mg.transpose` is genuinely more work than this chapter's own hand-written `ConvertMgToAffinePass` needed -- not less -- because it requires correctly answering real, whole-function-level questions about aliasing and in-place bufferization that Approach A's own single-pattern-per-op scheme simply never has to ask. That real work is deliberately left for Part 4's own already-promised subject, "real bufferization," rather than attempted here as an afterthought.
 
+## The complete source files
+
+The excerpts above show the parts under discussion. These files appear in `code/` and are not shown elsewhere on this page; each is embedded exactly as it exists in the repository, collapsed so the narrative stays readable.
+
+??? note "`CMakeLists.txt`"
+
+    ```cmake
+    --8<-- "docs/part4/code/CMakeLists.txt"
+    ```
+
+## What later chapters changed
+
+Chapters 13 and 14 changed `LowerToAffine.cpp`: it now supports dynamic shapes (runtime extents via `memref.dim`, dynamic allocation, operand-bound loops) and, for `mg.add`, emits a runtime shape check (`cf.assert`) before the loop. Static programs take exactly the old code path: the output of `--convert-mg-to-affine` on a static `mg.add` is byte-identical to the one this book stored in Chapter 10, and Chapter 15's suite asserts it stays free of any check. The version in this chapter's `code/` directory is the original.
+
 ## Chapter summary
 
 This chapter crossed the real tensor-to-memref gap `affine.for`/`affine.load`/`affine.store` require, by hand: a real `TypeConverter`, four real `ConversionPattern`s (one of which, `mg.print`, deliberately erases rather than lowers), and a real fix for a real gap this chapter's own first attempt hit directly (function signatures need their own real conversion, via `populateFunctionOpInterfaceTypeConversionPattern`). Running the resulting real pass produced a genuine `affine.for` loop nest for `mg.add`'s general case, and revealed a genuine, honest interaction with Chapter 3's own constant-folder firing automatically during conversion's own legalization attempt -- a real consequence of how MLIR's own dialect-conversion driver actually works, not a scripted demonstration. A second real attempt, reaching directly for MLIR's own built-in `--one-shot-bufferize` instead of hand-written patterns, produced a real, honest failure, with the real documented reason (`BufferizableOpInterface`) and the real, concrete extra work implementing it would require, both stated directly rather than smoothed over.

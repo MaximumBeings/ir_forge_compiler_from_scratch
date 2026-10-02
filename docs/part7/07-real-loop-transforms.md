@@ -201,6 +201,26 @@ Unranked Memref base@ = 0x561326f2cd40 rank = 2 offset = 0 sizes = [2, 2] stride
 
 `transpose(add([[1, 2], [3, 4]], [[5, 6], [7, 8]])) = transpose([[6, 8], [10, 12]]) = [[6, 10], [8, 12]]` -- genuinely the correct, real answer, computed by a program whose own loop structure has been fused, tiled, fully unrolled, and re-canonicalized, through MLIR's own real, built-in passes, three real transforms deep, end to end.
 
+## The complete source files
+
+The excerpts above show the parts under discussion. These files appear in `code/` and are not shown elsewhere on this page; each is embedded exactly as it exists in the repository, collapsed so the narrative stays readable.
+
+??? note "`CMakeLists.txt`"
+
+    ```cmake
+    --8<-- "docs/part7/code/CMakeLists.txt"
+    ```
+
+??? note "`mg-opt.cpp`"
+
+    ```cpp
+    --8<-- "docs/part7/code/mg-opt.cpp"
+    ```
+
+## What later chapters changed
+
+Chapter 15 added a test for `--affine-loop-fusion`, and Chapter 16 added tests for tiling and full unrolling, so this chapter's three transforms are now covered by the `lit`/`FileCheck` suite. These transforms have still **not** been run on dynamic loop bounds (Chapter 13 leaves that open), and full unrolling in particular cannot work without a constant trip count.
+
 ## Chapter summary
 
 This chapter ran all three real transforms Chapter 1's own citation named back in Part 0: `--affine-loop-fusion` genuinely merged Mountain Goat's own add-then-transpose loop nests into one, shrinking an intermediate buffer in the process and reordering iteration to match a real access-pattern permutation; `--affine-loop-tile` genuinely restructured the fused loop into real tile/point loop pairs, honestly using an illustrative tile size since this book's own worked example is too small to show a genuine locality benefit; `--affine-loop-unroll`, run twice (its own real, documented default scope being innermost loops only), genuinely replaced the entire loop nest with real straight-line code. Re-running `--canonicalize` -- the exact same pass already used in Chapters 3 and 4 -- genuinely cleaned up the real index arithmetic unrolling introduced, concretely demonstrating this book's own TOC-promised point: canonicalization is real, general-purpose cleanup invited back after any transform, at any level, not a one-time early pass. The full real sequence, continued through Chapter 5's own unmodified `affine`-to-`llvm` pipeline and genuinely JIT-run, produced the correct real answer.

@@ -162,3 +162,31 @@ It printed zeros, the contents of a fresh `malloc` (those bytes are not guarante
 ## What this chapter does not cite
 
 As in Chapter 10, no `llvm-project` documentation was read for this chapter. Every claim about where a lowering step happens comes from running the pass and reading its output. In particular, the explanations for the three dead ends were, when this chapter was written, the most likely readings of what was observed, not verified root causes; Chapter 12 verified them from source.
+
+## Chapter summary
+
+This chapter built the host side of Chapter 10's kernel as far as a GPU-less sandbox allows. A hand-written host function wraps the kernel in `gpu.alloc`, `gpu.memcpy` and `gpu.dealloc`; `gpu-async-region` rewrites those into the async form MLIR 18's lowering requires; MLIR's own `--gpu-lower-to-nvvm-pipeline` produces the kernel binary and the host runtime calls; and `mlir-translate-18` turns the remaining `gpu.launch_func` into `mgpuModuleLoadJIT`, `mgpuModuleGetFunction`, `mgpuLaunchKernel` and `mgpuModuleUnload` calls with a 2x1x1 grid, a 2x1x1 block and 23 kernel parameters. Linked with Chapter 8's unmodified harness and a CPU stub runtime, the result prints `[[6, 8], [10, 12]]`, and a negative control with the stub's arithmetic removed does not. Three real dead ends are recorded with their outputs.
+
+Deliberately out of scope, stated explicitly: the host function is hand-written (no pass generates it), the stub's "kernel" is C code mirroring the PTX rather than an execution of it, so nothing here shows the PTX is correct or even assembles, and the three dead ends were explained from MLIR's source only afterwards, in Chapter 12.
+
+## Self-check questions
+
+**1. `gpu-to-llvm` ran without error on the original host function and left `gpu.alloc` and `gpu.memcpy` in place. What fixed it, and why was the failure silent?**
+
+Worked answer: `gpu-async-region` fixed it, by rewriting the ops into their async form with `!gpu.async.token`s. The failure was silent because the lowering patterns only match async operations and a pattern that does not match simply leaves the op alone; the first visible error came later, when a conversion pass hit an `unrealized_conversion_cast` it could not legalize. The evidence in this chapter is the before/after listing: nine `gpu.alloc`/`gpu.memcpy`/`gpu.dealloc` ops survive without the pass and none with it. Chapter 12 later read the pattern's source and found the explicit "Can convert only async version" test.
+
+**2. The final `mgpuLaunchKernel` call ends in `i64 23`. What is that number, and what are the arguments before it?**
+
+Worked answer: it is the number of kernel parameters, 23, the same expanded count as the kernel's own signature (2 index arguments plus 3 memrefs of seven scalars each). The arguments in order are the kernel function handle; the grid x, y, z (2, 1, 1); the block x, y, z (2, 1, 1); the shared-memory size (0); the stream; a pointer to an array of 23 pointers, one per kernel parameter; and a null `extra`. The grid and block match Chapter 10's kernel exactly.
+
+**3. Where is `gpu.launch_func` actually turned into runtime calls in this toolchain, and how did the chapter find out?**
+
+Worked answer: at LLVM IR translation time, in `mlir-translate-18`, not in `gpu-to-llvm`. The evidence is a before/after observation: after the packaged pipeline, the MLIR still contains a `gpu.launch_func` (now with a stream operand and the 23 expanded operands) and no launch runtime call, while the translated `host.ll` contains `mgpuModuleLoadJIT`, `mgpuLaunchKernel` and `mgpuModuleUnload`. The chapter reached this from the outputs, not from documentation.
+
+**4. What does linking against the stub runtime establish, and what does it leave open?**
+
+Worked answer: it establishes that the host glue is right: three device allocations of 32 bytes, two copies in, a launch with grid `(2,1,1)` and block `(2,1,1)`, the parameter array packed in the layout the stub reads, one copy out, and the memref descriptor returned correctly through Chapter 8's calling convention. It leaves open everything about the PTX: the stub's kernel is hand-written C mirroring the PTX's five loaded parameters and arithmetic, so a defect in the PTX, or a difference between how a real driver packs the parameter array and how the stub reads it, would be invisible.
+
+**5. Why was the negative control worth running, and what exactly did it show?**
+
+Worked answer: a check that cannot fail proves nothing. The same program was rebuilt with the stub's one arithmetic line removed. It printed zeros (the contents of a fresh `malloc`, which happened to be zero and are not guaranteed to be), not `6 8 / 10 12`. So the correct answer in the real run does depend on the launch being packed and executed correctly, rather than being produced by some other path.

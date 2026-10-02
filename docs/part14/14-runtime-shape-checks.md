@@ -159,3 +159,31 @@ cd docs/part14/code
 ```
 
 Both were run from an empty state (build, tree and work directories deleted first) and `run_out.txt` is their unedited output. Every file and output above is embedded from the repository when the site is built, so this page cannot drift from the code it describes. As in Chapters 10 through 13, no documentation was consulted: every claim comes from running the code or reading it.
+
+## Chapter summary
+
+This chapter closed Chapter 13's out-of-bounds read for `mg.add`: before each dynamic add loop, the lowering reads both operands' sizes with `memref.dim`, compares them with `arith.cmpi`, and asserts with `cf.assert`, from one helper shared by both lowering paths. Dimensions static on both sides are skipped, so static output stays byte-identical to Chapter 10's, and a mixed `?x2` plus `3x2` add gets exactly one check. The book's existing five-pass lowering already turns `cf.assert` into `puts` plus `abort`, so no new pass was needed. Valid shapes matched Chapter 13's recorded output exactly on both paths, and every mismatch case aborted with exit status 134 before any out-of-bounds load. Two real problems are recorded: the bufferization path crashed because the `cf` dialect was registered but never loaded, and the assert's message is lost when stdout is a pipe.
+
+Deliberately out of scope, stated explicitly: the check trusts the caller's descriptors, abort is the only response, only `mg.add` is guarded, the GPU path and loop transforms on dynamic bounds were not examined, and the runtime cost was not measured.
+
+## Self-check questions
+
+**1. Why can no compile-time check catch the 2x3-plus-1x2 call?**
+
+Worked answer: the verifier only sees types, and `tensor<?x?xf64>` plus `tensor<?x?xf64>` is compatible as types. Whether the two sizes agree is a property of the values that arrive at runtime, so the only place left to enforce it is the compiled code, which is why the lowering emits a comparison and an assertion.
+
+**2. Why does the helper skip a dimension that is static on both sides?**
+
+Worked answer: the verifier already rejected any static mismatch, so a check there could never fire and would be dead code. Skipping it is also what keeps static programs untouched: the static add's lowering has no `cf.assert` and no `memref.dim`, and the `--convert-mg-to-affine` output for it is byte-identical to the file stored in Chapter 10.
+
+**3. The bufferization path crashed on first use while the hand-written path worked. What was the cause, and what is the rule?**
+
+Worked answer: One-Shot Bufferize's model created a `cf.assert`, but the `cf` dialect, though registered with `mg-opt`, had not been loaded into the context, and MLIR loads dialects on demand; the build aborted with "Building op `cf.assert` but it isn't known in this MLIRContext". The fix is one `ctx->loadDialect<cf::ControlFlowDialect>()` in the external-model registration. The rule: any op a bufferization model creates should have its dialect loaded by that model's registration instead of relying on something else having loaded it. Why `affine`, `arith` and `memref` never hit this was not investigated.
+
+**4. Run through a pipe, the aborting program printed no message. Why, and does that weaken the safety property?**
+
+Worked answer: the lowered code calls `puts` (stdout) then `abort()`. When stdout is not a terminal it is fully buffered, and `abort()` does not flush stdio buffers, so the message is discarded. The safety property is untouched, since the program still dies with exit status 134 (`SIGABRT`) before any out-of-bounds access; what is lost is the explanation, in exactly the cases (CI logs, captured output) where it is most needed. Under a terminal or line-buffered output the message appears.
+
+**5. What does the check still not guarantee?**
+
+Worked answer: it compares the sizes the caller declared in the descriptors. A caller whose descriptor claims 2x3 over a buffer of two doubles is lying about memory, and no compiled comparison can detect that. The guarantee is that the operand sizes agree, not that each buffer is as large as its descriptor claims; the response to a mismatch is process death, with no recoverable error.

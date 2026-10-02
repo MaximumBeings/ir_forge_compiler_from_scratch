@@ -168,6 +168,10 @@ libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007f158f200000)
 
 Genuinely, only `libc` -- no `libMLIR*.so`, no `libmlir_runner_utils.so`, nothing from MLIR's own runtime at all. This is the real, concrete difference this chapter set out to demonstrate: Chapters 5 through 7's own `mlir-cpu-runner-18` runs require the real MLIR toolchain to be present on whatever machine runs them; `add_tensors_demo` does not -- it could be copied to any other real x86_64 Linux machine, with no MLIR installed whatsoever, and would run identically.
 
+## What later chapters changed
+
+Chapter 8's `harness.c` is linked unmodified by Chapters 11 and 12 (against a CPU stub runtime), and a byte-identical copy (`static_harness.c`) is used by the Chapter 15 test `execution/static-add-runs`, which rebuilds and reruns this chapter's static `add_tensors` on both lowering paths. Nothing in this chapter's own code has changed.
+
 ## Chapter summary
 
 This chapter generalized Chapter 1's own exact real technique -- `mlir-translate-18` to real LLVM IR, `clang-18` compiling it, linked against a real hand-written C harness -- to a genuine Mountain Goat program for the first time, closing an open item this book has carried since Chapter 4. The one real, new fact this chapter needed, not present in Chapter 1's own original example: a *returned* memref packs its own five real descriptor fields into a single LLVM struct, returned by value, rather than unpacking into separate scalar arguments the way a memref *parameter* does -- met on the C side with a matching `struct`, not five more parameters. The resulting binary was confirmed, directly via `ldd`, to depend on nothing but `libc` -- a genuinely standalone artifact, distinct in kind from every prior chapter's own JIT-based execution.

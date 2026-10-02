@@ -414,6 +414,26 @@ module {
 
 `mg-opt` genuinely accepts this -- silently. This is a real, honest gap, stated outright rather than quietly worked around: Mountain Goat's own dialect, as built in this chapter, does not yet verify that `mg.add`'s two operands agree in shape. Fixing it is ordinary, mechanical work (a `hasVerifier = 1` on `AddOp`, mirroring `TransposeOp`'s own real pattern above) -- deliberately left undone here so this chapter's own self-check questions below can ask about it directly, and so Part 2's own real canonicalization/verification-pass work has a genuine, motivating gap to close rather than a strawman.
 
+## The complete source files
+
+The excerpts above show the parts under discussion. These files appear in `code/` and are not shown elsewhere on this page; each is embedded exactly as it exists in the repository, collapsed so the narrative stays readable.
+
+??? note "`cmake_build_out.txt`"
+
+    ```text
+    --8<-- "docs/part2/code/cmake_build_out.txt"
+    ```
+
+??? note "`cmake_configure_out.txt`"
+
+    ```text
+    --8<-- "docs/part2/code/cmake_configure_out.txt"
+    ```
+
+## What later chapters changed
+
+Chapter 3 closed this chapter's stated `mg.add` shape-check gap. Chapter 13 later replaced both verifiers in `MgDialect.cpp` (plain shape equality became a dynamic-aware compatibility check, and the unchecked `cast` to a ranked tensor became a `dyn_cast` with an explicit diagnostic), and Chapter 14 added the `cf` dialect to `mg-opt`'s registry. The dialect's own build, shown here, is not covered by the Chapter 15 test suite.
+
 ## Chapter summary
 
 This chapter built Mountain Goat's own real dialect, `mg`, from nothing: a real `.td` dialect declaration and a real `.td` operation declaration file, compiled by the genuine `mlir-tblgen-18` generator into real C++ classes; two real hand-written C++ methods (`TransposeOp::verify`, `ConstantOp::inferReturnTypes`) supplying what ODS's own declarative language could not express directly; and a real, genuinely-built `mg-opt` tool, constructed on MLIR's own real `MlirOptMain` entry point, that parses, prints, and verifies real Mountain Goat programs. Every real claim in this chapter was run, not asserted: the dialect genuinely compiled, `mg-opt` genuinely parsed a real program, and its real verifier genuinely rejected a real bad input -- and, honestly, genuinely failed to reject another bad input this chapter deliberately left unguarded.

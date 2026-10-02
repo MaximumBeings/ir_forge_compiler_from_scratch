@@ -333,3 +333,31 @@ cd docs/part15/code
 ```
 
 Every file and output shown above is embedded from the repository when the site is built, so this page cannot drift from the code it describes (a missing file fails the build). As in Chapters 10 through 15, no documentation was consulted for any claim; each result comes from running the commands.
+
+## Chapter summary
+
+This chapter extended the suite from 22 to 34 tests, covering Chapter 7's tiling and full unrolling and the whole GPU path of Chapters 10 through 12 without a GPU: kernel outlining, NVVM lowering, real PTX (23 parameters by default, 5 with bare pointers, 3 for the CUDA-style kernel), the `index-bitwidth` option, the host runtime-call sequence, the CUDA comparison compile, and a run of the lowered host code against a CPU stub runtime. One test deliberately pins Chapter 12's LLVM 18.1.3 crash and is designed to start failing when a newer LLVM fixes it. Eight recipe and stub mutations were all caught, though two only because the broken recipe produced no output. Two mistakes are recorded: a wrong expectation (the index parameters become `.u32` at 32-bit width) and a bug in the new mutation script itself (a `sed` expression that inserted lines instead of substituting, so a mutation had never been applied).
+
+Deliberately out of scope, stated explicitly: the PTX is checked only as text and has never been assembled or run, the stub test checks host glue only, pinning PTX instruction choices is brittle across LLVM versions, no CI runs the suite, and Chapters 1, 2 and 9 are still untested.
+
+## Self-check questions
+
+**1. `gpu/pass-order-crash.mlir` is designed to start failing. Why write such a test, and what should someone do when it fails?**
+
+Worked answer: it pins a property of the toolchain, the LLVM 18.1.3 segmentation fault when `gpu-to-llvm` runs after `gpu-module-to-binary`, that Chapters 11 and 12 depend on. If a newer LLVM fixes the bug, the test goes red. That is the signal to revisit those two chapters and the recipe, not a regression in this book, and the test's header says so for whoever sees it fail.
+
+**2. Eight recipe mutations were all caught, but the chapter calls two of the failures weaker evidence. Which two, and why?**
+
+Worked answer: mutation 2 (a different chip) and mutation 5 (a recipe missing `gpu-map-parallel-loops`). In both the broken recipe produced no output at all, so `FileCheck` reported its first pattern missing from an empty input. Those tests failed because the pipeline errored, which shows only that the recipe still works. For the other six (index width, parameter count in two tests, tile structure, unrolled loops, printed numbers) the pipeline ran and a specific value changed, which is the stronger evidence.
+
+**3. What went wrong the first time mutation 1 ran, and what guard was added?**
+
+Worked answer: the `sed` expression `'index-bitwidth=64/s/64/32/'` had no slashes around its address, so `sed` read it as an insert command and added a junk line after every line of the test file instead of substituting. The recipe was never changed, so the unchanged test passed, and the script had treated "the file differs" as "the mutation applied". The expression was corrected and the script now rejects any mutation that changes the file's line count, since a substitution never should.
+
+**4. All 12 new tests pass on the Chapter 7 and Chapter 13 builds. What does that tell you about what they test?**
+
+Worked answer: they pin the GPU and loop pipelines and the toolchain's behavior, which those builds share, not the dynamic-shape features added in Chapters 13 and 14. That is why they cannot tell those builds apart, and it is expected: the earlier 22 tests are the ones that distinguish them.
+
+**5. What does the stub-runtime execution test tell you, and what does it not?**
+
+Worked answer: it checks the host glue: the program prints `6 8 / 10 12` with both the 23-parameter and the 5-parameter launch, and the stub's trace confirms the grid, block and parameter count. It does not execute the PTX, because the stub's kernel is C code written to mirror it. Mutation 8, changing the stub's `a + b` to `a - b`, shows the test catches a wrong stub, which is a statement about the test, not about the real kernel.

@@ -239,3 +239,31 @@ cd docs/part13/code
 ```
 
 Both `build.sh` and `run_tests.sh` were run from this state after the build directories were removed, and `run_out.txt` is their unedited output; `build/`, `tree/` and `work/` are git-ignored. Needs `mlir-18-tools`, `libmlir-18-dev`, `llvm-18-dev`, `cmake`, `clang-18`. Every file and output above is embedded from the repository when the site is built, so this page cannot drift from the code it describes. As in Chapters 10 through 12, no documentation pages were consulted; every claim comes from running the code or reading it.
+
+## Chapter summary
+
+This chapter turned Chapter 12's biggest unknown, dynamic shapes, into measured facts. Run on an unmodified compiler, `tensor<?x?xf64>` parsed, but a mixed `?x2` plus `3x2` add was wrongly rejected and both lowering paths (the hand-written conversion and One-Shot Bufferize) failed on a dynamic `memref.alloc` with no size operands. One shared header (`DynamicShapes.h`) fixed all three lowering sites, reading runtime extents with `memref.dim`, allocating dynamically and bounding loops by operands, while leaving static programs on their old path (byte-identical to Chapter 10's stored output). The work exposed two more bugs: the transpose-of-transpose canonicalizer produced invalid IR on mixed dynamic types (now guarded), and the verifiers cast unranked tensors without checking (now `dyn_cast` with a diagnostic). Native runs of non-square shapes on both paths were correct, and a column-major strided view only the bufferization path could honor showed a real difference between the two.
+
+Deliberately out of scope, stated explicitly: runtime shape agreement was not checked (closed for `mg.add` in Chapter 14), only rank 2 is supported, and loop transforms and the GPU path were not re-run on dynamic bounds.
+
+## Self-check questions
+
+**1. Why can the lowering not simply use `tensorType.getShape()[0]` as a loop bound when the dimension is `?`?**
+
+Worked answer: for a dynamic dimension `getShape()` returns MLIR's sentinel for "dynamic", `-1`, not a size, so the number would become a bogus loop bound. A dynamic extent has to be read at runtime, with a `memref.dim` operation on the buffer, and passed to the loop and to `memref.alloc` as an operand. The unmodified compiler never got as far as running such a loop: the verifier on `memref.alloc` rejected an allocation of a `memref<?x?xf64>` with no size operands.
+
+**2. `tensor<?x2xf64>` plus `tensor<3x2xf64>` was rejected by the original verifier. Why is rejecting it wrong, and what rule replaced it?**
+
+Worked answer: the `?` may be 3 at runtime, so the two shapes can agree, and a compile-time error would reject a valid program. The original check compared shapes with `!=`, which treats `?` and `3` as different. `compatibleDim(a, b)` now accepts two extents if they are equal or if either is dynamic; the verifier applies it to every dimension of both operands and the result.
+
+**3. The canonicalizer bug did not appear when the program was run on the unmodified compiler. Why not, and how was it reproduced?**
+
+Worked answer: on the unmodified build the mixed-type transpose program was rejected earlier, by the old verifier (`?` against `2` counted as unequal), so the canonicalizer never saw it. The bug only appears once the verifier has been relaxed but the pattern has not been guarded, a state reproduced exactly by the build with the relaxed verifiers and the exact-type guard removed, which printed that the function returns `tensor<?x2xf64>` but is declared to return `tensor<?x?xf64>`.
+
+**4. What does the column-major strided-view test show about the two lowering paths?**
+
+Worked answer: the bufferization path's function arguments are strided memref types (`strided<[?, ?], offset: ?>`), so it honors a caller's strides, and it produced the correct transpose of the logical matrix `[[1,3,5],[2,4,6]]`. The hand-written path's arguments are plain row-major memrefs, so passing different strides would violate its type's contract; the test is not run against it and the chapter says that is not a defect of that path. The finding is a capability difference that static 2x2 examples could not show.
+
+**5. Why did the mismatched-size call (2x3 plus 1x2) return numbers instead of failing?**
+
+Worked answer: the loop bounds come from the first operand and nothing compares the operands' runtime sizes, so the loads from the second operand run off the end of its two-element buffer and read whatever memory is there. The first two sums are right because those elements exist in both; the rest are meaningless and not guaranteed to be reproducible. That silent out-of-bounds read is what Chapter 14 closes with a runtime check.

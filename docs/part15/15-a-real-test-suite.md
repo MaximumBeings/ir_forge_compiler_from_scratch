@@ -382,3 +382,31 @@ cd docs/part15/code
 ```
 
 Every test, script and output shown above is embedded from the repository when the site is built, so this page cannot drift from the code it describes (a missing file fails the build). As in Chapters 10 through 14, no documentation was consulted for any claim here; the `not --crash` behavior, the `lit` version mismatch and every result above come from running the commands.
+
+## Chapter summary
+
+This chapter replaced "run once and paste the output" with an assertion-based suite of 22 `lit`/`FileCheck` tests across the verifier, the canonicalizer, both lowering paths, loop fusion and native execution, every one printed on the page beside the real output it matches. A first-run failure (`lit`'s built-in `not` rejecting `--crash`) was fixed by routing `not` through LLVM's own `not-18`. Because a suite that has only passed has not been shown to test anything, the same tests were run against older builds (13 failures on Chapter 7's, 6 on Chapter 13's, each a feature that build lacks) and against three deliberate source bugs, each caught by the tests aimed at it. The mutation check exposed a real gap in the suite as first written, a check covering only dimension 0, closed by a column-only mismatch test.
+
+Deliberately out of scope, stated explicitly: no CI runs the suite on a push, Chapters 1, 2, 9 and the GPU chapters had no tests at the end of this chapter (Chapter 16 covers the GPU path and two more loop transforms), `lit` came from PyPI at a different version from the toolchain, and diagnostics are pinned verbatim, which makes some tests brittle.
+
+## Self-check questions
+
+**1. What does `CHECK-NOT` assert, and which tests lean on it to show that the dynamic-shape work costs static programs nothing?**
+
+Worked answer: `CHECK-NOT: text` requires that `text` does not appear between the surrounding matches. The static lowering tests (`static-add-affine` and `bufferize-static-add`) use `CHECK-NOT: cf.assert` and `CHECK-NOT: memref.dim` after the loop checks, so if the dynamic machinery leaked into a static program the test would fail.
+
+**2. Why is the `mg-opt` under test chosen by an environment variable rather than hard-coded in `lit.cfg.py`?**
+
+Worked answer: so the identical suite can be pointed at other builds. That is how the chapter shows the tests can fail: `older_builds.sh` runs the unchanged tests with `MG_OPT` set to Chapter 7's and Chapter 13's builds, and `mutation.sh` sets it to builds with deliberate bugs. A suite tied to one binary could only ever report on that binary.
+
+**3. The two `not --crash` tests failed on the first run, while the verifier tests written with plain `not` passed. Why was that not good enough, and what was the fix?**
+
+Worked answer: `lit`'s builtin `not` did not support `--crash` ("`not`: command not found" for that form), so those tests could not run. The plain-`not` tests passing was not reassuring either, because at that point a passing `not` test could not be told apart from a broken one. The fix was to define `%not` as LLVM's `not-18`, which supports `--crash`, and use it everywhere; the older-build runs then showed the verifier tests really do fail when the behavior is absent.
+
+**4. What did mutating the code to check only dimension 0 reveal about the suite as first written?**
+
+Worked answer: with 21 tests, that mutation was caught only by tests of the IR's structure (the lowering tests expecting an assert for dimension 1). No native test mismatched the columns while the rows agreed, because the only mismatch case differs in rows first, so a runtime bug in dimension 1 could have passed every executable test. The 22nd test, `mismatch-columns-aborts` (2x3 plus 2x2), was added and the mutation re-run: it now fails there too.
+
+**5. Why is pinning an exact diagnostic message a double-edged choice? Give the example from this chapter.**
+
+Worked answer: it makes the test strict about wording, so it also fails when only the text changes. On Chapter 7's build, `verifier/add-static-mismatch` fails not because the program is accepted but because the message then read "operands must have the same shape" and Chapter 13 changed it to "operands must have compatible shapes". The test was kept pinned deliberately, on the view that a changed message should make a human look, but it is a brittleness a reader should know about.

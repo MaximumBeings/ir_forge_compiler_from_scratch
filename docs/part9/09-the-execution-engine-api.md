@@ -204,6 +204,32 @@ A real, concrete summary, now that all three exist in this book:
 - **A standalone executable** (Chapter 8): genuinely ahead-of-time compiled (`mlir-translate-18` + `clang-18`), producing a real, independent binary this chapter's own `ldd` check confirmed needs no MLIR runtime at all -- but that compilation step is fixed once and for all, at build time, not something a running program can do to new IR it receives later.
 - **`mlir::ExecutionEngine`** (this chapter): genuinely embedded. A real host C++ program -- which could itself be any larger real application -- decides, at its own runtime, which MLIR module to compile and invoke, directly in-process, with no separate tool and no separate compile step a human runs beforehand.
 
+## The complete source files
+
+The excerpts above show the parts under discussion. These files appear in `code/` and are not shown elsewhere on this page; each is embedded exactly as it exists in the repository, collapsed so the narrative stays readable.
+
+??? note "`CMakeLists.txt`"
+
+    ```cmake
+    --8<-- "docs/part9/code/CMakeLists.txt"
+    ```
+
+??? note "`add_tensors.mlir`"
+
+    ```mlir
+    --8<-- "docs/part9/code/add_tensors.mlir"
+    ```
+
+??? note "`run_engine.cpp`"
+
+    ```cpp
+    --8<-- "docs/part9/code/run_engine.cpp"
+    ```
+
+## What later chapters changed
+
+No later chapter changed this chapter's code, and the Chapter 15/16 suite does not cover it: the `ExecutionEngine` host program is still tested only by the recorded run shown above.
+
 ## Chapter summary
 
 This chapter built a real, minimal C++ host program using MLIR's own `mlir::ExecutionEngine` class directly, JIT-compiling and invoking a real Mountain Goat function entirely in-process -- a third, genuinely distinct execution mechanism from both `mlir-cpu-runner-18`'s CLI and Chapter 8's own ahead-of-time compiled executable. Getting there needed three real, non-obvious fixes, each one found by actually crashing the program and inspecting it directly rather than guessing from the API's own documented scalar-argument example: memref arguments and memref/struct results both need an extra real level of pointer indirection beyond what a plain scalar needs, and when a function has both memref arguments and a memref result, the `result()` wrapper has to be placed first in the `invoke<>()` call, matching the real, fixed `sret`-first parameter order Chapter 8 already established for `_mlir_ciface_` wrappers.

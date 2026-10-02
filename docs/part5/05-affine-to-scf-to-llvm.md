@@ -179,6 +179,32 @@ Unranked Memref base@ = 0x557796012ca0 rank = 2 offset = 0 sizes = [2, 2] stride
 
 This is the real, correct answer: `[[1, 2], [3, 4]] + [[5, 6], [7, 8]] = [[6, 8], [10, 12]]`, genuinely computed by a real `affine.for`-turned-`scf.for`-turned-bare-loop running as real, JIT-compiled native code -- the first time in this book that a Mountain Goat program has been run end to end and actually produced observable output, rather than IR text this book's reader had to check by hand.
 
+## The complete source files
+
+The excerpts above show the parts under discussion. These files appear in `code/` and are not shown elsewhere on this page; each is embedded exactly as it exists in the repository, collapsed so the narrative stays readable.
+
+??? note "`CMakeLists.txt`"
+
+    ```cmake
+    --8<-- "docs/part5/code/CMakeLists.txt"
+    ```
+
+??? note "`LowerToAffine.cpp`"
+
+    ```cpp
+    --8<-- "docs/part5/code/LowerToAffine.cpp"
+    ```
+
+??? note "`mg-opt.cpp`"
+
+    ```cpp
+    --8<-- "docs/part5/code/mg-opt.cpp"
+    ```
+
+## What later chapters changed
+
+Chapters 13 and 14 changed the `LowerToAffine.cpp` shown here, in the same way described for Chapter 4 (dynamic shapes, then a runtime shape check for `mg.add`); static output is unchanged. The version in this chapter's `code/` directory is Chapter 5's own.
+
 ## Chapter summary
 
 This chapter closed Part 3: Mountain Goat's own `affine`/`memref`/`arith` IR (Chapter 4) was carried, through one new real built-in pass (`--lower-affine`) and Chapter 1's own exact, unmodified five-pass `scf`-to-`llvm` pipeline, all the way to real LLVM-dialect IR -- confirming directly that the pipeline Chapter 1 proved on hand-written IR works identically on IR this book's own tooling actually produced. `mg.print` was given a real, working implementation for the first time, reusing MLIR's own pre-existing runtime support library (`printMemrefF64`, `llvm.emit_c_interface`) rather than inventing a mechanism from nothing, and a second real instance of Chapter 4's own function-boundary conversion problem (`func.call`, this time) was closed with another of MLIR's own built-in utilities. The result: a genuinely executed Mountain Goat program, its real, correct answer captured directly from `mlir-cpu-runner-18`'s own real output.

@@ -265,6 +265,56 @@ This chapter's own two rewrites both keep every operation inside the `mg` dialec
 
 A real `ConversionTarget` (which operations/dialects are "legal" to remain), a real `TypeConverter` (how do types in the source dialect map to types in the destination dialect), and real `ConversionPattern`s (an extended `RewritePattern`, aware of operands that may themselves already be mid-conversion) are the three real pieces that framework needs -- genuinely more machinery than this chapter's own two same-dialect rewrites required, and deliberately left for Part 3, where Mountain Goat's own `mg` operations are actually lowered to MLIR's real `affine` dialect for the first time.
 
+## The complete source files
+
+The excerpts above show the parts under discussion. These files appear in `code/` and are not shown elsewhere on this page; each is embedded exactly as it exists in the repository, collapsed so the narrative stays readable.
+
+??? note "`CMakeLists.txt`"
+
+    ```cmake
+    --8<-- "docs/part3/code/CMakeLists.txt"
+    ```
+
+??? note "`MgDialect.cpp`"
+
+    ```cpp
+    --8<-- "docs/part3/code/MgDialect.cpp"
+    ```
+
+??? note "`MgDialect.h`"
+
+    ```cpp
+    --8<-- "docs/part3/code/MgDialect.h"
+    ```
+
+??? note "`MgDialect.td`"
+
+    ```text
+    --8<-- "docs/part3/code/MgDialect.td"
+    ```
+
+??? note "`MgOps.h`"
+
+    ```cpp
+    --8<-- "docs/part3/code/MgOps.h"
+    ```
+
+??? note "`MgOps.td`"
+
+    ```text
+    --8<-- "docs/part3/code/MgOps.td"
+    ```
+
+??? note "`mg-opt.cpp`"
+
+    ```cpp
+    --8<-- "docs/part3/code/mg-opt.cpp"
+    ```
+
+## What later chapters changed
+
+Chapter 13 changed three things in the `MgDialect.cpp` shown here: both verifiers now accept dynamic (`?`) extents and reject unranked tensors explicitly, and `SimplifyRedundantTranspose` now fires only when its replacement has exactly the result type (without that guard it produced invalid IR on mixed dynamic types). Chapter 15 pins all of this with tests, including one that fails if the guard is removed. The version in this chapter's `code/` directory is the original.
+
 ## Chapter summary
 
 This chapter closed a real, stated gap from Chapter 2 (`AddOp` now genuinely verifies its own operands' shapes match), then built two genuinely different real rewrite mechanisms into Mountain Goat's own dialect: a constant-folding `fold()` hook (`ConstantOp`, `AddOp`), requiring the real `ConstantLike` trait and a real `materializeConstant` hook to actually take effect -- a real, non-obvious requirement this chapter discovered by running the code, not by reading ahead -- and a general `RewritePattern` (`SimplifyRedundantTranspose`), MLIR's own heavier, more capable framework for rewrites that need to see more than one operation's own operands. Both were wired into a genuinely rebuilt `mg-opt`'s own `--canonicalize` pass (needing the real `MLIRTransforms` library, discovered the same way, via a genuine link error) and run together on one real program, collapsing it, correctly, from seven operations down to two.

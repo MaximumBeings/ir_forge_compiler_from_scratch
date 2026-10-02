@@ -1,0 +1,15 @@
+NOTE: this script deliberately runs wrong trainers. 'caught' lines are EXPECTED: they show the checker can detect the mistake.
+baseline (nothing broken): checker passes (expected)
+weight decay pushes the weights AWAY from 0 (wrong sign): caught by 20 failing checks (the reference, overfitting/weight decay)
+weight decay is missing from the gradient: caught by 21 failing checks (the reference, overfitting/weight decay)
+weight decay is applied twice as strongly: caught by 21 failing checks (the reference, overfitting/weight decay, generation)
+the training gradient is not averaged over the 10 pairs: caught by 29 failing checks (the reference, other, overfitting/weight decay, generation)
+the held-out loss is averaged over 10, not 4: caught by 6 failing checks (the reference, other)
+the held-out surprise has the wrong sign: caught by 5 failing checks (the reference, other)
+the penalty in the objective is lambda, not lambda/2 (the gradient no longer matches it): caught by 4 failing checks (the reference)
+the learning rate is 4, not 8: caught by 10 failing checks (the reference, overfitting/weight decay)
+greedy generation compares the maximum with the row, the wrong way round: caught by 5 failing checks (the reference, generation)
+greedy generation picks the LEAST likely token: caught by 5 failing checks (the reference, generation)
+the training log-softmax is the naive one (no maximum subtracted): caught by 2 failing checks (the reference, overfitting/weight decay)
+(The last one is caught only because of the deliberately diverging run (strength 0.3): its weights reach 1e58, where a naive log-sum-exp overflows. At the
+ weights of the other runs, which stay below 7, the naive formula gives the same numbers, as Chapter 31 showed; I expected it to go uncaught here and was wrong.)

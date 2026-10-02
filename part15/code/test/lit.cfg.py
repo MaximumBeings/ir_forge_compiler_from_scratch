@@ -38,6 +38,13 @@ config.substitutions += [
 ]
 # The language tour (docs/tour): its examples are run in place, like the chapters' examples.
 config.substitutions += [("%tour", os.path.join(config.test_source_root, "..", "..", "..", "tour", "code"))]
+# Chapter 32: held-out data, weight decay and greedy generation ('%mgc32' etc. must come before the shorter '%mgc').
+ch32 = os.path.join(config.test_source_root, "..", "..", "..", "part32", "code")
+config.substitutions += [
+    ("%mgc32", "env MG_OPT=" + mg_opt + " " + os.path.join(ch32, "mgc")),
+    ("%ex32", os.path.join(ch32, "examples")),
+    ("%ch32", ch32),
+]
 # Chapter 31: training a bigram model ('%mgc31' etc. must come before the shorter '%mgc').
 ch31 = os.path.join(config.test_source_root, "..", "..", "..", "part31", "code")
 config.substitutions += [

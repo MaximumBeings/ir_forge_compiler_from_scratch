@@ -1,0 +1,29 @@
+# Does the bigram model generalise? The 14 (current, next) pairs of Chapter 31 are split: the first 10 TRAIN the model, the last 4 are HELD OUT and used
+# only to measure it. x and y are one-hot rows for the training pairs (10x5); xv and yv are the same for the held-out pairs (4x5).
+
+# the stable log-softmax of Chapter 31, once for each row count (a function's shapes are fixed)
+def log_softmax10(s: tensor[10x5]) = s - row_max(s) - log(row_sum(exp(s - row_max(s))))
+def log_softmax4(s: tensor[4x5]) = s - row_max(s) - log(row_sum(exp(s - row_max(s))))
+
+# the average surprise (cross-entropy) on the training pairs and on the held-out pairs; 0.1 is 1/10 and 0.25 is 1/4
+def train_loss(w: tensor[5x5], x: tensor[10x5], y: tensor[10x5]) = col_sum(row_sum(y * log_softmax10(x @ w))) * -0.1
+def held_out_loss(w: tensor[5x5], xv: tensor[4x5], yv: tensor[4x5]) = col_sum(row_sum(yv * log_softmax4(xv @ w))) * -0.25
+
+# the surprise of each held-out pair separately (a 4x1 column), to see which ones the model fails on
+def held_out_surprise(w: tensor[5x5], xv: tensor[4x5], yv: tensor[4x5]) = row_sum(yv * log_softmax4(xv @ w)) * -1
+
+# the gradient of the training loss, plus the gradient of the penalty (@LAMBDA@/2) * (the sum of the squares of all the weights), which is @LAMBDA@ * w
+def gradient(w: tensor[5x5], x: tensor[10x5], y: tensor[10x5]) = transpose(x) @ (exp(log_softmax10(x @ w)) - y) * 0.1 + w * @LAMBDA@
+
+# one step of gradient descent with learning rate 8 on the training loss plus the penalty (a "weight decay" step: every weight is pulled toward 0)
+def step(w: tensor[5x5], x: tensor[10x5], y: tensor[10x5]) = w - gradient(w, x, y) * 8
+
+# the penalised objective itself, used to check the gradient: the training loss plus (@LAMBDA@/2) times the sum of squared weights
+def objective(w: tensor[5x5], x: tensor[10x5], y: tensor[10x5]) = train_loss(w, x, y) + col_sum(row_sum(w * w)) * @HALF_LAMBDA@
+
+# the model's probabilities: row i is the chance of each token following token i
+def probabilities(w: tensor[5x5]) = exp(w - row_max(w)) / row_sum(exp(w - row_max(w)))
+
+# GREEDY GENERATION: x is a one-hot 1x5 row for the current token. x @ p picks that token's row of probabilities, and ge(row, its own maximum)
+# is 1 exactly where the row reaches its maximum: the one-hot row of the most likely next token (a tie would give several 1s)
+def next_token(x: tensor[1x5], p: tensor[5x5]) = ge(x @ p, row_max(x @ p))

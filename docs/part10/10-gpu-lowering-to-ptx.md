@@ -1,25 +1,44 @@
 # 10. GPU Lowering: Mountain Goat to the `gpu` Dialect, NVVM, and Real PTX
 
-**What you will understand:** how a real Mountain Goat program (`mg.add`) is carried from Chapter 4's own `affine` loops, through MLIR's own real `gpu` dialect and its real `nvvm` dialect, down to real PTX text emitted by LLVM's own NVPTX backend -- and how that real, machine-generated PTX compares, instruction for instruction, against a real hand-written CUDA-style kernel compiled by `clang-18`. This chapter also says plainly what it could **not** do: launch the kernel. This book's own sandbox has no GPU.
+**What you will understand:** how a real Mountain Goat program (`mg.add`) is carried from Chapter 4's own `affine` loops, through MLIR's own `gpu` dialect and its `nvvm` dialect, down to real PTX text emitted by LLVM's own NVPTX backend, and how that machine-generated PTX compares, instruction for instruction, against a hand-written CUDA-style kernel compiled by `clang-18`. This chapter also says plainly what it could **not** do: launch the kernel. This book's sandbox has no GPU. Every file and output on this page is embedded from the repository, so nothing is elided and nothing is paraphrased.
 
-**What you need to know first:** Chapter 4's own `--convert-mg-to-affine` output, Chapter 7's own `affine` loop passes, and Chapter 5's own memref-descriptor calling convention (each `memref` argument becomes several scalar parameters). New ground here: the `gpu` dialect's host/device split (`gpu.module`, `gpu.launch_func`) and PTX as an assembly language.
+**What you need to know first:** Chapter 4's `--convert-mg-to-affine` output, Chapter 7's `affine` loop passes, and Chapter 5's memref-descriptor calling convention (each `memref` argument becomes several scalar parameters). New ground here: the `gpu` dialect's host/device split (`gpu.module`, `gpu.launch_func`) and PTX as an assembly language. A short primer on both comes first.
+
+## Primer 1: how a GPU runs a function
+
+A CPU function runs once per call. A **GPU kernel** is launched once but executes on *many threads at the same time*, and every thread runs the same code. Threads are organized in two levels:
+
+- A **block** (also called a thread block or CTA) is a group of threads.
+- A **grid** is the group of blocks one launch creates.
+
+Each thread can ask "which block am I in, and which thread am I within it?" (`blockIdx`/`threadIdx` in CUDA; `gpu.block_id`/`gpu.thread_id` in MLIR; the PTX special registers `%ctaid` and `%tid`), and uses the answer to pick which piece of data to work on. For this book's 2x2 matrix addition the natural mapping is one thread per output element: **2 blocks of 2 threads**, the block index selecting the row and the thread index the column. That is what the compiler is about to be asked to build from Chapter 4's loop nest, whose outer loop becomes the blocks and whose inner loop becomes the threads.
+
+## Primer 2: the stack of representations
+
+Four layers appear in this chapter, from most to least portable:
+
+| Layer | What it is | Where it appears |
+|---|---|---|
+| `gpu` dialect | MLIR's vendor-neutral model of "host code plus device kernels": `gpu.module` holds kernels, `gpu.launch_func` starts one | Step 2 |
+| `nvvm` dialect | MLIR's model of NVIDIA-specific operations (special-register reads, the `nvvm.kernel` marker) | Step 3 |
+| LLVM IR with the NVPTX target | ordinary LLVM IR that LLVM's `nvptx64` backend knows how to compile | inside Step 4 |
+| **PTX** | NVIDIA's *virtual* assembly language, which a vendor tool (`ptxas`) later turns into the actual machine code for a specific chip | Step 4 |
+
+PTX is assembly in the sense that each line is one instruction (`ld.global.f64` loads a 64-bit float from global memory, `add.rn.f64` adds two with round-to-nearest) and values live in numbered virtual registers (`%rd7`, `%fd3`, ...). It is *virtual* in that the register count is unlimited and the target chip decides the rest later. This chapter produces PTX but, as the next section shows, cannot assemble or run it.
 
 ## What this sandbox can and cannot do (checked, not assumed)
 
-Before writing a single pass, this chapter's own environment was probed directly:
+Before writing a single pass, the environment was probed. `probe.sh` records exactly what exists; its unedited output (`probe_out.txt`):
 
-```text
-$ which nvcc nvidia-smi          # (no output: neither exists)
-$ ls /dev | grep -i nvidia       # (no output)
-$ nvptx-arch
-Failed to 'dlopen' libcuda.so.1
-$ llc-18 --version | grep -iE "nvptx|amdgcn"
-    amdgcn      - AMD GCN GPUs
-    nvptx       - NVIDIA PTX 32-bit
-    nvptx64     - NVIDIA PTX 64-bit
+```sh
+--8<-- "docs/part10/code/probe.sh"
 ```
 
-So: **no GPU, no CUDA driver (`libcuda.so.1`), no `nvcc`, no CUDA SDK.** But the real `nvptx64` code generator *is* compiled into this LLVM, and `mlir-opt-18` really does carry the `gpu`, `nvvm` and `rocdl` dialects and the passes between them (`--convert-gpu-to-nvvm`, `--nvvm-attach-target`, `--gpu-module-to-binary`, all confirmed present in `mlir-opt-18 --help`). That decides this chapter's honest scope:
+```text
+--8<-- "docs/part10/code/probe_out.txt"
+```
+
+So: **no GPU, no CUDA driver (`libcuda.so.1`), no `nvcc`, no CUDA SDK.** But the `nvptx64` code generator *is* compiled into this LLVM, and `mlir-opt-18` carries the `gpu`, `nvvm` and `rocdl` dialects and the passes between them. That decides this chapter's honest scope:
 
 | Step | Done here? |
 |---|---|
@@ -27,7 +46,7 @@ So: **no GPU, no CUDA driver (`libcuda.so.1`), no `nvcc`, no CUDA SDK.** But the
 | Lower the kernel to the real `nvvm` dialect | **Yes** |
 | Emit real PTX with LLVM's NVPTX backend | **Yes** |
 | Compile an equivalent CUDA-style kernel with `clang-18` and compare | **Yes** (without the CUDA SDK; see below) |
-| Assemble PTX to a cubin (`ptxas`), launch it, read results back | **No** -- no GPU, no `ptxas`, no driver |
+| Assemble PTX to a cubin (`ptxas`), launch it, read results back | **No** (no GPU, no `ptxas`, no driver) |
 
 Because nothing here was executed on a GPU, **this chapter does not claim the PTX computes the right answer on hardware.** What it establishes is that real MLIR and real LLVM accept every stage and produce the PTX shown. The numeric `[[6, 8], [10, 12]]` check Chapters 5 through 9 ended with has no equivalent in this chapter, and that absence is the chapter's most important caveat. The `-nocudainc -nocudalib` CUDA kernel below is likewise compiled, not run.
 
@@ -36,50 +55,28 @@ Because nothing here was executed on a GPU, **this chapter does not claim the PT
 The input is Chapter 8's own unmodified `add_tensors.mlir`:
 
 ```mlir
-func.func @add_tensors(%a: tensor<2x2xf64>, %b: tensor<2x2xf64>) -> tensor<2x2xf64> {
-  %0 = mg.add %a, %b : tensor<2x2xf64>, tensor<2x2xf64> -> tensor<2x2xf64>
-  func.return %0 : tensor<2x2xf64>
-}
+--8<-- "docs/part10/code/add_tensors.mlir"
 ```
 
-`mg-opt` was rebuilt from this book's own published sources (Chapter 3's dialect files, Chapter 5's `LowerToAffine.cpp`, Chapter 6's bufferization model, Chapter 7's `mg-opt.cpp` and `CMakeLists.txt`) and run:
-
-```bash
-./mg-opt add_tensors.mlir --convert-mg-to-affine -o add_affine.mlir
-```
+`mg-opt` was rebuilt from this book's published sources (Chapter 3's dialect files, Chapter 5's `LowerToAffine.cpp`, Chapter 6's bufferization model, Chapter 7's `mg-opt.cpp` and `CMakeLists.txt`) and run as `./mg-opt add_tensors.mlir --convert-mg-to-affine -o add_affine.mlir`. The result: the tensors became memrefs, and the add became a pair of nested loops.
 
 ```mlir
-func.func @add_tensors(%arg0: memref<2x2xf64>, %arg1: memref<2x2xf64>) -> memref<2x2xf64> {
-  %alloc = memref.alloc() : memref<2x2xf64>
-  affine.for %arg2 = 0 to 2 {
-    affine.for %arg3 = 0 to 2 {
-      %0 = affine.load %arg0[%arg2, %arg3] : memref<2x2xf64>
-      %1 = affine.load %arg1[%arg2, %arg3] : memref<2x2xf64>
-      %2 = arith.addf %0, %1 : f64
-      affine.store %2, %alloc[%arg2, %arg3] : memref<2x2xf64>
-    }
-  }
-  return %alloc : memref<2x2xf64>
-}
+--8<-- "docs/part10/code/add_affine.mlir"
 ```
 
 ## Step 2: a real false start, then the route that works
 
-The obvious pass for this job is `--convert-affine-for-to-gpu`. The first attempt failed twice, in two different ways:
+The obvious pass for this job is `--convert-affine-for-to-gpu`, which converts top-level `affine.for` loops into GPU kernels. The first attempt failed twice, in two different ways. `false_starts.sh` records both verbatim (`false_starts_out.txt`):
 
-```text
-$ mlir-opt-18 add_affine.mlir --convert-affine-for-to-gpu="gpu-block-dims=1 gpu-thread-dims=1"
-<unknown>:0: error: unable to schedule pass 'ConvertAffineForToGPU' on a PassManager
-intended to run on 'builtin.module'!
+```sh
+--8<-- "docs/part10/code/false_starts.sh"
 ```
 
-It is a `func.func` pass, so it has to be nested (`--pass-pipeline='builtin.module(func.func(...))'`). Nested, it fails differently:
-
 ```text
-add_affine.mlir:6:14: error: 'affine.load' op index must be a valid dimension or symbol identifier
+--8<-- "docs/part10/code/false_starts_out.txt"
 ```
 
-That pass leaves `affine.load` inside the new kernel body indexed by values (the GPU block/thread ids) that are not valid affine dimensions or symbols, so the result does not verify. This chapter did not dig into why further than that, and does not claim this is a bug in the pass as opposed to a use this chapter got wrong; it simply abandoned that route.
+The pass works on a `func.func`, not a whole module, so it has to be nested (`--pass-pipeline='builtin.module(func.func(...))'`). Nested, it fails differently: it leaves `affine.load` inside the new kernel body indexed by values (the GPU block and thread ids) that are not valid affine dimensions or symbols, so the result does not verify. This chapter did not dig into why further than that, and does not claim this is a bug in the pass as opposed to a use this chapter got wrong; it simply abandoned that route.
 
 The route that worked goes through loop *parallelism* rather than loop *conversion*:
 
@@ -90,37 +87,19 @@ mlir-opt-18 add_affine.mlir --pass-pipeline='builtin.module(
   gpu-kernel-outlining)' -o add_gpu.mlir
 ```
 
-`affine-parallelize` proves the two `affine.for` loops have no loop-carried dependence and rewrites them as `affine.parallel`; `lower-affine` (Chapter 5's own pass) turns that into `scf.parallel`; `gpu-map-parallel-loops` assigns the outer loop to GPU *blocks* and the inner loop to GPU *threads*; `convert-parallel-loops-to-gpu` builds a `gpu.launch`; and `gpu-kernel-outlining` moves its body into a real `gpu.module`/`gpu.func`. Real output:
+- `affine-parallelize` proves the two `affine.for` loops have no loop-carried dependence and rewrites them as `affine.parallel`.
+- `lower-affine` (Chapter 5's own pass) turns that into `scf.parallel`.
+- `gpu-map-parallel-loops` assigns the outer loop to GPU *blocks* and the inner loop to GPU *threads*.
+- `convert-parallel-loops-to-gpu` builds a `gpu.launch`.
+- `gpu-kernel-outlining` moves its body into a real `gpu.module`/`gpu.func`.
+
+The complete real output, nothing elided (`add_gpu.mlir`):
 
 ```mlir
-module attributes {gpu.container_module} {
-  func.func @add_tensors(%arg0: memref<2x2xf64>, %arg1: memref<2x2xf64>) -> memref<2x2xf64> {
-    %alloc = memref.alloc() : memref<2x2xf64>
-    ...
-    gpu.launch_func  @add_tensors_kernel::@add_tensors_kernel
-        blocks in (%0, %c1_0, %c1_0) threads in (%1, %c1_0, %c1_0)
-        args(%c1 : index, %c0 : index, %arg0 : memref<2x2xf64>,
-             %arg1 : memref<2x2xf64>, %alloc : memref<2x2xf64>)
-    return %alloc : memref<2x2xf64>
-  }
-  gpu.module @add_tensors_kernel {
-    gpu.func @add_tensors_kernel(%arg0: index, %arg1: index, %arg2: memref<2x2xf64>,
-        %arg3: memref<2x2xf64>, %arg4: memref<2x2xf64>) kernel {
-      %0 = gpu.block_id  x
-      ...
-      %3 = gpu.thread_id  x
-      ...
-      %14 = memref.load %arg2[%12, %13] : memref<2x2xf64>
-      %15 = memref.load %arg3[%12, %13] : memref<2x2xf64>
-      %16 = arith.addf %14, %15 : f64
-      memref.store %16, %arg4[%12, %13] : memref<2x2xf64>
-      gpu.return
-    }
-  }
-}
+--8<-- "docs/part10/code/add_gpu.mlir"
 ```
 
-(`...` marks lines elided for length; the full file is `code/add_gpu.mlir`.) The real shape of the launch: **2 blocks of 2 threads, one thread per matrix element**, block id as the row and thread id as the column. The kernel's first two arguments (`%c1`, `%c0`) are the original loop's step and lower bound, which the generated index math reuses as `block_id * step + lb`.
+Reading it. **Host side** (lines 4 to 17): the `gpu.launch_func` names the kernel, a grid (`blocks in`) and a block (`threads in`), each three-dimensional with the unused y and z dimensions set to 1, and passes the arguments. The real shape of the launch is **2 blocks of 2 threads, one thread per matrix element**. **Device side** (lines 18 to 47): the `gpu.module` holds one `gpu.func ... kernel` whose first two arguments (`%arg0`, `%arg1`) are the original loop's step and lower bound, which the generated index arithmetic uses as `block_id * step + lb`. It reads `block_id`, `thread_id`, `grid_dim` and `block_dim` in all three dimensions (most are never used and disappear later), computes the row and column, and does the load/add/store.
 
 ## Step 3: lowering the kernel to the `nvvm` dialect
 
@@ -132,27 +111,31 @@ mlir-opt-18 add_gpu.mlir --pass-pipeline='builtin.module(
   -o add_nvvm.mlir
 ```
 
-`nvvm-attach-target` stamps the `gpu.module` with `#nvvm.target<chip = "sm_70">` (a Volta-generation target, chosen arbitrarily since nothing here runs); `convert-gpu-to-nvvm` rewrites `gpu.block_id x` into `nvvm.read.ptx.sreg.ctaid.x` and `gpu.thread_id x` into `nvvm.read.ptx.sreg.tid.x`, and converts the body into the `llvm` dialect. Real excerpt:
+`nvvm-attach-target` stamps the `gpu.module` with `#nvvm.target<chip = "sm_70">` (a Volta-generation target, chosen arbitrarily since nothing here runs). `convert-gpu-to-nvvm` rewrites `gpu.block_id x` into `nvvm.read.ptx.sreg.ctaid.x` and `gpu.thread_id x` into `nvvm.read.ptx.sreg.tid.x`, and converts the body into the `llvm` dialect. The three parts of the result that matter, from the real `add_nvvm.mlir`: the module header and the kernel signature,
 
 ```mlir
-gpu.module @add_tensors_kernel [#nvvm.target<chip = "sm_70">]  {
-  llvm.func @add_tensors_kernel(%arg0: i64, %arg1: i64, %arg2: !llvm.ptr, %arg3: !llvm.ptr,
-      %arg4: i64, %arg5: i64, %arg6: i64, %arg7: i64, %arg8: i64, %arg9: !llvm.ptr, ...
-      %arg22: i64) attributes {gpu.kernel, nvvm.kernel} {
-    ...
-    %24 = nvvm.read.ptx.sreg.ctaid.x : i32
-    %25 = llvm.sext %24 : i32 to i64
-    %26 = nvvm.read.ptx.sreg.tid.x : i32
-    %27 = llvm.sext %26 : i32 to i64
-    ...
-    %40 = llvm.fadd %34, %39  : f64
-    llvm.store %40, %44 : f64, !llvm.ptr
-    llvm.return
-  }
-}
+--8<-- "docs/part10/code/add_nvvm.mlir:16:17"
 ```
 
-Notice the kernel's signature: **23 parameters.** Each of the three `memref<2x2xf64>` arguments was expanded by Chapter 1's own descriptor rule into 7 scalars (allocated pointer, aligned pointer, offset, two sizes, two strides), plus the 2 index arguments: 2 + 3 x 7 = 23. The kernel then spends 21 `llvm.insertvalue` operations rebuilding descriptor structs it barely uses.
+the special-register reads,
+
+```mlir
+--8<-- "docs/part10/code/add_nvvm.mlir:42:46"
+```
+
+and the computation (note the three `getelementptr` and `load`/`store` pairs, the `fadd`, and where the pointers come from):
+
+```mlir
+--8<-- "docs/part10/code/add_nvvm.mlir:47:66"
+```
+
+The signature in the first excerpt is worth counting: **23 parameters.** A `memref<2x2xf64>` is not a bare pointer. By Chapter 1's descriptor rule it is an allocated pointer, an aligned pointer, an offset, two sizes and two strides, which is **seven** scalars; three memrefs plus the two index arguments give 2 + 3 x 7 = 23. The kernel then spends 21 `llvm.insertvalue` operations rebuilding descriptor structs it barely uses. The complete file, for anyone who wants every line:
+
+??? note "Full `add_nvvm.mlir` (70 lines)"
+
+    ```mlir
+    --8<-- "docs/part10/code/add_nvvm.mlir"
+    ```
 
 ## Step 4: real PTX
 
@@ -161,49 +144,41 @@ mlir-opt-18 add_nvvm.mlir --gpu-module-to-binary="format=isa" -o add_bin.mlir
 python3 decode_ptx.py add_bin.mlir > add_tensors_mlir.ptx
 ```
 
-`--gpu-module-to-binary` with `format=isa` runs LLVM's NVPTX backend and stores the PTX as a string attribute on a `gpu.binary` op, escaped as hex (`\0A` for a newline), which is why `decode_ptx.py` exists; the first attempt at decoding it with a naive `unicode_escape` produced garbled text, caught only by looking at the output. After removing the 23 `.param` declarations for length, the real body is:
+`--gpu-module-to-binary` with `format=isa` runs LLVM's NVPTX backend and stores the PTX as a string attribute on a `gpu.binary` op, escaped as hex (`\0A` for a newline). That is why `decode_ptx.py` exists; the first attempt at decoding it with a naive `unicode_escape` produced garbled text, caught only by looking at the output:
 
-```text
-ld.param.u64 	%rd1, [add_tensors_kernel_param_0];
-ld.param.u64 	%rd2, [add_tensors_kernel_param_17];
-cvta.to.global.u64 	%rd3, %rd2;
-ld.param.u64 	%rd4, [add_tensors_kernel_param_1];
-ld.param.u64 	%rd5, [add_tensors_kernel_param_10];
-cvta.to.global.u64 	%rd6, %rd5;
-ld.param.u64 	%rd7, [add_tensors_kernel_param_3];
-cvta.to.global.u64 	%rd8, %rd7;
-mov.u32 	%r1, %ctaid.x;
-cvt.s64.s32 	%rd9, %r1;
-mov.u32 	%r2, %tid.x;
-cvt.s64.s32 	%rd10, %r2;
-mul.lo.s64 	%rd11, %rd9, %rd1;
-add.s64 	%rd12, %rd11, %rd4;
-shl.b64 	%rd13, %rd12, 1;
-add.s64 	%rd14, %rd13, %rd10;
-shl.b64 	%rd15, %rd14, 3;
-add.s64 	%rd16, %rd8, %rd15;
-ld.global.f64 	%fd1, [%rd16];
-add.s64 	%rd17, %rd6, %rd15;
-ld.global.f64 	%fd2, [%rd17];
-add.rn.f64 	%fd3, %fd1, %fd2;
-add.s64 	%rd18, %rd3, %rd15;
-st.global.f64 	[%rd18], %fd3;
-ret;
+```python
+--8<-- "docs/part10/code/decode_ptx.py"
 ```
 
-You can read the program in it: two special-register reads (`%ctaid.x`, `%tid.x`), index arithmetic, two `ld.global.f64`, one `add.rn.f64`, one `st.global.f64`. The backend also deleted everything the kernel never used without being asked: the `block_id y`/`z`, `grid_dim` and `block_dim` reads and all the rebuilt descriptor structs are gone, and of the 23 declared parameters the body loads only 5 (`param_0`, `_1`, `_3`, `_10`, `_17`: the loop step, the lower bound, and the three aligned data pointers).
+The real PTX, header and parameter list (the 23 declared parameters):
+
+```text
+--8<-- "docs/part10/code/add_tensors_mlir.ptx:1:36"
+```
+
+and the body, where the computation happens:
+
+```text
+--8<-- "docs/part10/code/add_tensors_mlir.ptx:37:67"
+```
+
+### Reading the body
+
+The instruction meanings below are PTX's, stated from the instruction names and this program's behavior; this chapter did not consult NVIDIA's PTX manual.
+
+- **Lines 41 to 48, loading parameters.** The body loads only what it needs: `param_0` (the loop step), `param_1` (the lower bound), and the three **aligned data pointers** (`param_3`, `param_10`, `param_17`: the second slot of each seven-field descriptor group). `cvta.to.global` converts each generic address to a global-memory address.
+- **Lines 49 to 52, who am I.** `mov.u32 %r1, %ctaid.x` reads the block index and `mov.u32 %r2, %tid.x` the thread index; each is widened to 64 bits with `cvt.s64.s32`.
+- **Lines 53 to 58, which element.** `mul.lo.s64`/`add.s64` compute `block * step + lb`, the row. `shl.b64 ..., 1` multiplies by 2 (the row stride of a 2-column matrix). Adding the thread index gives the element number; `shl.b64 ..., 3` multiplies by 8 (bytes per `f64`); adding the base pointer gives the address.
+- **Lines 59 to 64, the computation.** Two `ld.global.f64` loads, one `add.rn.f64`, one `st.global.f64`. This is the whole mathematical content of the kernel.
+
+The backend also deleted, without being asked, everything the kernel never used: the `block_id y`/`z`, `grid_dim` and `block_dim` reads and all the rebuilt descriptor structs are gone, and of the 23 declared parameters the body loads only **5** (`param_0`, `_1`, `_3`, `_10`, `_17`).
 
 ## Step 5: the same kernel as CUDA, compiled by `clang-18`
 
 `nvcc` is unavailable, but `clang-18` can compile CUDA's device side itself. The CUDA headers that define `threadIdx`/`blockIdx` are also absent, so the kernel calls the NVVM builtins those names expand to (the first attempt spelled them `__builtin_nvvm_...` and clang's own error suggested the real name, `__nvvm_...`):
 
 ```cuda
-extern "C" __attribute__((global)) void add_cuda(const double *a, const double *b, double *c) {
-  int row = __nvvm_read_ptx_sreg_ctaid_x();
-  int col = __nvvm_read_ptx_sreg_tid_x();
-  int i = row * 2 + col;
-  c[i] = a[i] + b[i];
-}
+--8<-- "docs/part10/code/cuda_add.cu"
 ```
 
 ```bash
@@ -211,33 +186,25 @@ clang-18 -x cuda --cuda-device-only --cuda-gpu-arch=sm_70 -nocudainc -nocudalib 
   cuda_add.cu -o cuda_add.ptx
 ```
 
-Real PTX body:
+The real PTX it produced:
 
 ```text
-ld.param.u64 	%rd1, [add_cuda_param_0];
-ld.param.u64 	%rd2, [add_cuda_param_2];
-cvta.to.global.u64 	%rd3, %rd2;
-ld.param.u64 	%rd4, [add_cuda_param_1];
-cvta.to.global.u64 	%rd5, %rd4;
-cvta.to.global.u64 	%rd6, %rd1;
-mov.u32 	%r1, %ctaid.x;
-mov.u32 	%r2, %tid.x;
-shl.b32 	%r3, %r1, 1;
-add.s32 	%r4, %r3, %r2;
-mul.wide.s32 	%rd7, %r4, 8;
-add.s64 	%rd8, %rd6, %rd7;
-ld.global.f64 	%fd1, [%rd8];
-add.s64 	%rd9, %rd5, %rd7;
-ld.global.f64 	%fd2, [%rd9];
-add.f64 	%fd3, %fd1, %fd2;
-add.s64 	%rd10, %rd3, %rd7;
-st.global.f64 	[%rd10], %fd3;
-ret;
+--8<-- "docs/part10/code/cuda_add.ptx:11:42"
 ```
+
+The same shape as the MLIR kernel, with the loop bounds and row stride written into the source (`row * 2 + col`) instead of passed in: three parameters, 32-bit index arithmetic (`shl.b32`, `add.s32`), and the same two loads, add and store.
 
 ## The real comparison
 
-Counts taken by `grep` over the three `.ptx` files in `code/`: `.param` lines are declarations (the 64-bit run's `add_tensors_mlir.ptx`, the `index-bitwidth=32` run's `add_tensors_mlir_idx32.ptx`, and `cuda_add.ptx`); instructions counts the `ld`/`st`/`mul`/`add`/`shl`/`cvt`/`mad`/`cvta`/`mov`/`ret` lines.
+The numbers below are computed by `compare.sh` from the three `.ptx` files, not counted by hand. `.param` lines are declarations; "instructions" counts the `ld`/`st`/`mul`/`add`/`shl`/`cvt`/`mad`/`cvta`/`mov`/`ret` lines:
+
+```sh
+--8<-- "docs/part10/code/compare.sh"
+```
+
+```text
+--8<-- "docs/part10/code/compare_out.txt"
+```
 
 | | MLIR, `index-bitwidth=64` | MLIR, `index-bitwidth=32` | CUDA via `clang-18` |
 |---|---|---|---|
@@ -246,10 +213,16 @@ Counts taken by `grep` over the three `.ptx` files in `code/`: `.param` lines ar
 | index arithmetic | 64-bit (`mul.lo.s64`, `add.s64`, `shl.b64`) | 32-bit (`mad.lo.s32`, `shl.b32`, `add.s32`) | 32-bit (`shl.b32`, `add.s32`) |
 | memory ops | 2 `ld.global.f64`, 1 `st.global.f64` | same | same |
 
-The `index-bitwidth=32` column came from a second real run (`add_gpu.mlir` through `canonicalize`, then `convert-gpu-to-nvvm{index-bitwidth=32}`); it is also in `pipeline.sh`. What the table honestly shows:
+The `index-bitwidth=32` column came from a second real run (`add_gpu.mlir` through `canonicalize`, then `convert-gpu-to-nvvm{index-bitwidth=32}`). The complete script that produces every artifact in this chapter:
 
-- **The memory traffic is identical.** Both artifacts do exactly two 8-byte global loads, one `add` and one 8-byte global store. The mathematical work Mountain Goat's `mg.add` expresses survived the whole pipeline intact.
-- **The gap is the calling convention and index width, not the arithmetic.** MLIR's kernel takes 23 parameters against CUDA's 3 because Chapter 1's memref-descriptor ABI carries sizes, strides and offsets the CUDA kernel simply hard-codes (`row * 2 + col`). Narrowing the index to 32 bits closes most of the instruction-count gap (25 to 22 against CUDA's 19) but does nothing about the parameter count: that is a property of the `memref` type, not a pass option this chapter found to turn off. *(Correction, added after Chapter 12: this was wrong. `--gpu-lower-to-nvvm-pipeline` has a `kernel-bare-ptr-calling-convention` option that cuts the kernel to 5 parameters when all shapes are static; see Chapter 12.)*
+```sh
+--8<-- "docs/part10/code/pipeline.sh"
+```
+
+What the table honestly shows:
+
+- **The memory traffic is identical.** Both artifacts do exactly two 8-byte global loads, one add and one 8-byte global store. The mathematical work Mountain Goat's `mg.add` expresses survived the whole pipeline intact.
+- **The gap is the calling convention and index width, not the arithmetic.** MLIR's kernel takes 23 parameters against CUDA's 3 because Chapter 1's memref-descriptor ABI carries sizes, strides and offsets the CUDA kernel simply hard-codes. Narrowing the index to 32 bits closes most of the instruction-count gap (25 to 22 against CUDA's 19) but does nothing about the parameter count: that is a property of the `memref` type, not a pass option this chapter found to turn off. *(Correction, added after Chapter 12: this was wrong. `--gpu-lower-to-nvvm-pipeline` has a `kernel-bare-ptr-calling-convention` option that cuts the kernel to 5 parameters when all shapes are static; see Chapter 12.)*
 - **What this comparison cannot tell you:** which kernel is faster. Neither was run, and a 4-element add is dominated by launch overhead anyway. Instruction counts are a static proxy, not a measurement.
 - **The CUDA kernel is not a fair "idiomatic CUDA" sample.** It was written to match the MLIR kernel's launch shape (2 blocks x 2 threads) and uses raw builtins because the CUDA headers are missing.
 
@@ -259,7 +232,15 @@ The `index-bitwidth=32` column came from a second real run (`add_gpu.mlir` throu
 
 ## Reproducing this chapter
 
-Everything above is regenerated by `code/pipeline.sh` (verified here by running it in an empty directory and byte-comparing every output against the files in `code/`). It needs a built `mg-opt` (`MG=/path/to/mg-opt ./pipeline.sh`) plus `mlir-opt-18` and `clang-18`. Packages beyond Chapter 1's own: `mlir-18-tools libmlir-18-dev` as before, and in this chapter's sandbox `llvm-18-dev` also had to be installed (after an `apt-get update`) before CMake could find LLVM for rebuilding `mg-opt`.
+```bash
+cd docs/part10/code
+./probe.sh        > probe_out.txt          # what GPU tooling exists here
+./false_starts.sh > false_starts_out.txt   # the abandoned --convert-affine-for-to-gpu attempt
+MG=/path/to/mg-opt ./pipeline.sh           # every artifact in the chapter (needs a built mg-opt)
+./compare.sh      > compare_out.txt        # the comparison table's numbers
+```
+
+`pipeline.sh` was verified by running it in an empty directory and byte-comparing every output against the files in `code/`. It needs a built `mg-opt` plus `mlir-opt-18` and `clang-18`. Packages beyond Chapter 1's own: `mlir-18-tools libmlir-18-dev` as before, and in this chapter's sandbox `llvm-18-dev` also had to be installed (after an `apt-get update`) before CMake could find LLVM for rebuilding `mg-opt`. One real trap recorded in `probe.sh`: `mlir-opt-18 --show-dialects` keeps waiting for input after printing, so scripts must give it `< /dev/null`.
 
 ## What this chapter does not cite
 

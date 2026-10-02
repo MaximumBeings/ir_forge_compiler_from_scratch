@@ -1,0 +1,21 @@
+$ which nvcc nvidia-smi
+(exit status 1)
+$ ls /dev | grep -i nvidia
+(exit status 1)
+$ nvptx-arch
+Failed to 'dlopen' libcuda.so.1
+(exit status 1)
+$ llc-18 --version | grep -iE "nvptx|amdgcn"
+    amdgcn      - AMD GCN GPUs
+    nvptx       - NVIDIA PTX 32-bit
+    nvptx64     - NVIDIA PTX 64-bit
+$ mlir-opt-18 --help | grep -E "convert-gpu-to-nvvm|nvvm-attach-target|gpu-module-to-binary|gpu-lower-to-nvvm-pipeline"
+      --convert-gpu-to-nvvm                                  -   Generate NVVM operations for gpu operations
+      --gpu-module-to-binary                                 -   Transforms a GPU module into a GPU binary.
+      --nvvm-attach-target                                   -   Attaches an NVVM target attribute to a GPU Mo
+      --gpu-lower-to-nvvm-pipeline                           -   The default pipeline lowers main dialects (ar
+$ mlir-opt-18 --show-dialects < /dev/null | tr "," "\n" | grep -E "gpu|nvvm|rocdl"
+gpu
+nvgpu
+nvvm
+rocdl

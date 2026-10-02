@@ -1,0 +1,7 @@
+$ mlir-opt-18 add_affine.mlir --convert-affine-for-to-gpu="gpu-block-dims=1 gpu-thread-dims=1"
+<unknown>:0: error: unable to schedule pass 'ConvertAffineForToGPU' on a PassManager intended to run on 'builtin.module'!
+
+$ mlir-opt-18 add_affine.mlir --pass-pipeline='builtin.module(func.func(convert-affine-for-to-gpu{gpu-block-dims=1 gpu-thread-dims=1}))'
+add_affine.mlir:6:14: error: 'affine.load' op index must be a valid dimension or symbol identifier
+        %0 = affine.load %arg0[%arg2, %arg3] : memref<2x2xf64>
+             ^

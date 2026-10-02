@@ -68,6 +68,7 @@ exclude_docs: |
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
+  - Background (LLVM and MLIR in Twenty Minutes): background.md
   - "The Mountain Goat Language: A Short Tour": tour/language-tour.md
   - "Part 0 -- Why a Multi-Level IR at All":
       - "1. Why a Multi-Level IR at All": part1/01-why-a-multi-level-ir-at-all.md
@@ -104,6 +105,8 @@ nav:
       - "25. Keeping It Working: Continuous Integration and the Tests the Early Chapters Never Had": part25/25-keeping-it-working.md
       - "26. Learning From Data: Gradient Descent in Mountain Goat": part26/26-learning-from-data.md
       - "27. Tensor Contractions as Matrix Products": part27/27-tensor-contractions.md
+      - "28. Tensor Contractions in Mountain Goat Itself": part28/28-contraction-in-mountain-goat.md
+      - "29. Softmax and Attention": part29/29-softmax-and-attention.md
 
 extra:
   social: []

@@ -119,7 +119,7 @@ The full suite:
 
 ## Limits and what is not established
 
-- **Rank-2 arithmetic only.** Mountain Goat has no tensors of rank 3 or more, so the permuting and reshaping are C++. Only the matrix product is the language's. A language-level reshape and permute are not built.
+- **Rank-2 arithmetic only.** Mountain Goat has no tensors of rank 3 or more, so the permuting and reshaping are C++. Only the matrix product is the language's. A language-level reshape and permute are not built here; [Chapter 28](../part28/28-contraction-in-mountain-goat.md) builds them, and writes the same contractions with no C++.
 - **The permutation copies.** When the axes are not already in the needed order (case 3, "axis at the front of A"), `permute` copies the whole tensor before the product. That cost was **not measured**, and a production library would avoid or fuse it. When the axes already line up (the appendix's double contraction), no data moves.
 - **No batch axes.** A contraction pairs axes and sums them away; operations like batched matrix multiply (an axis present in both inputs *and* the output) are `einsum`, not a contraction in this sense, and are not supported.
 - **Small shapes only were tested,** all `double`, all tiny (the largest has a few hundred elements). Nothing here says how it behaves on large tensors, and nothing was timed.

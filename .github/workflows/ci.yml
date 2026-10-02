@@ -41,8 +41,8 @@ jobs:
         id: cache
         uses: actions/cache@v4
         with:
-          path: docs/part24/code/build
-          key: mg-opt-${{ runner.os }}-${{ hashFiles('docs/part24/code/*.cpp', 'docs/part24/code/CMakeLists.txt', 'docs/part22/code/MgOps.td', 'docs/part22/code/MgDialect.cpp', 'docs/part3/code/*', 'docs/part14/code/*', 'docs/part19/code/AssertToStderr.cpp') }}
+          path: docs/part29/code/build
+          key: mg-opt-${{ runner.os }}-${{ hashFiles('docs/part29/code/*.cpp', 'docs/part29/code/CMakeLists.txt', 'docs/part29/code/MgOps.td', 'docs/part3/code/*', 'docs/part14/code/*', 'docs/part19/code/AssertToStderr.cpp') }}
 
       # An exact cache hit means no source that goes into the compiler changed, so the restored build is current and ci.sh skips building.
       # (Restoring the cache alone is not enough: build.sh recopies the sources, which makes `make` think everything changed and rebuild it.)

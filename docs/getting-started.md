@@ -2,6 +2,8 @@
 
 This book builds a real MLIR dialect and lowers it, through real MLIR passes, down to real LLVM IR and genuine native machine code -- every pipeline stage in this book is run against a real, installed MLIR/LLVM toolchain, confirmed directly rather than assumed.
 
+New to LLVM or MLIR? Read [Background: LLVM and MLIR in Twenty Minutes](background.md) first (or after this page): it explains, with real commands and output, what LLVM IR and MLIR are and how a program is lowered step by step to a running executable.
+
 ## Installing a toolchain
 
 ```bash
@@ -53,7 +55,9 @@ Each chapter's page starts with a "Compile and run" box (Chapters 1 to 9, 20 and
 | 24 | `part24/code/build.sh` | adds the `ikj` matmul loop order; the newest `mg-opt` runs everything |
 | 27 | `part24/code/build.sh` | the contraction demo in `part27/code/cpp/` uses the newest compiler (`cpp/run.sh`) |
 | 26 | `part24/code/build.sh` | the trainer in `part26/code/cpp/` uses the newest compiler (`cpp/run.sh`) |
-| 25 | `./ci.sh` at the repository root | builds the newest compiler, runs all 102 tests and the docs build; also what the CI workflow runs |
+| 25 | `./ci.sh` at the repository root | builds the newest compiler, runs the whole test suite and the docs build; also what the CI workflow runs |
+| 28 | `part28/code/build.sh` | adds `mg.reshape` and `mg.permute`; `part28/code/mgc` runs the examples |
+| 29 | `part29/code/build.sh` | adds `mg.exp`; the newest compiler, which `run_lit.sh` and CI use |
 | the test suite (`part15/code/run_lit.sh`) | any build; it picks the newest that exists | the newest build runs every test |
 
 Every build needs `cmake`, `make`, `llvm-18-dev`, `libmlir-18-dev` and `mlir-18-tools` (see above), and takes a few minutes the first time. Every `run.sh` and `demo.sh` writes its intermediate files under `./work/` or `./show/`, which are git-ignored.

@@ -2,7 +2,7 @@
 # ci.sh: everything continuous integration does, in one script you can run on your own machine.
 #   1. check the tools are installed          4. run the whole test suite (docs/part15/code/run_lit.sh)
 #   2. check the workflow file                5. build the documentation site (mkdocs build --strict)
-#   3. build the newest compiler (docs/part24/code/build.sh)
+#   3. build the newest compiler (docs/part29/code/build.sh)
 # Exit status 0 means every step passed; 1 means at least one failed (the summary at the end says which).
 # Knobs: CI_SKIP_BUILD=1 reuses an existing build; CI_SKIP_DOCS=1 skips the site build; MG_OPT=/path/to/mg-opt tests a different build.
 ROOT=$(cd "$(dirname "$0")" && pwd); cd "$ROOT"
@@ -29,8 +29,8 @@ check_tools() {
   echo "all tools found: $(clang-18 --version | head -1)"
 }
 build_compiler() {
-  if [ -n "$CI_SKIP_BUILD" ] && [ -x docs/part24/code/build/mg-opt ]; then echo "CI_SKIP_BUILD set: reusing docs/part24/code/build/mg-opt"; return 0; fi
-  docs/part24/code/build.sh && [ -x docs/part24/code/build/mg-opt ]
+  if [ -n "$CI_SKIP_BUILD" ] && [ -x docs/part29/code/build/mg-opt ]; then echo "CI_SKIP_BUILD set: reusing docs/part29/code/build/mg-opt"; return 0; fi
+  docs/part29/code/build.sh && [ -x docs/part29/code/build/mg-opt ]
 }
 run_suite() { docs/part15/code/run_lit.sh; }
 build_docs() { mkdocs build --strict; }

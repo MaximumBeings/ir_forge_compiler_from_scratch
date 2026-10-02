@@ -14,6 +14,7 @@ cd ../../tour/code
 ../../part22/code/mgc ptx  05_dynamic_types.mg   # compile to GPU code (PTX); nothing is launched
 ./run_tour.sh > tour_out.txt                      # run examples 1-6 and the first nine errors
 ./run_gallery.sh > gallery_out.txt                # run the gallery (examples 7-16) and three more errors
+./run_more.sh > more_out.txt                      # run the extra examples (17-22)
 ```
 
 `mgc run` needs LLVM 18's MLIR tools (`mlir-opt-18`, `mlir-translate-18`, `clang-18`) installed; see Getting Started. Chapter 20 explains each stage `mgc` runs.
@@ -242,6 +243,68 @@ What happens if you skip the ones-column and write `batch @ w + b` with a `1x2` 
 ```
 
 The first call printed `[[11, 22]]`; the second stopped with `mg.add: operand shapes differ at runtime in dimension 0` and exit status 134 (the shell's code for an abort). This is the run-time check from Chapter 14 working as intended. The "FAIL"-looking ending is the expected result of this example, and the fix is example 15.
+
+## More examples of each construct
+
+The first six examples introduced one idea each. These six go back over the same ideas (literals, `let`, `def`, `?` types, operators) with more cases, including the ones that surprise people. Run them with `./run_more.sh > more_out.txt`; again, predict first.
+
+### 17. More about literals
+
+A literal is always a matrix. A single number in brackets is a `1x1` matrix, which is not the same thing as the bare scalar `5`. A row is `1xN` and a column is `Nx1`, and `transpose` turns one into the other.
+
+```text
+--8<-- "docs/tour/code/more_out.txt:1:33"
+```
+
+### 18. Building a calculation in named steps
+
+`let` is how a longer calculation is written readably: the mean of a row, then each number's distance from it, then the average squared distance (the variance). The `1x1` mean is stretched across all eight numbers. At the end, `let variance` is written a second time, which **shadows** the first: the old value is untouched, and every earlier line already used it.
+
+```text
+--8<-- "docs/tour/code/more_out.txt:35:56"
+```
+
+The mean is 5, the distances are `-3 -1 -1 -1 0 0 2 4` and their mean square is `(9+1+1+1+0+0+4+16)/8 = 4`. Squaring the variance (a new `let`) gives 16.
+
+### 19. Functions built from functions
+
+A function may call any function defined above it. The shapes flow through every call, and each call is checked.
+
+```text
+--8<-- "docs/tour/code/more_out.txt:58:78"
+```
+
+The first result is `2m + I`. The second squares it with `@` (a matrix product, not an elementwise square). The third is a small identity check done by computing both sides: `2m² − (2m)² = −2m²`, and the output is minus twice `m @ m` (`m @ m` is `[[7, 10], [15, 22]]`).
+
+### 20. One function, many shapes
+
+The `?` type means one compiled function serves any size. Each result's shape follows from the arguments' shapes.
+
+```text
+--8<-- "docs/tour/code/more_out.txt:80:99"
+```
+
+`gram` multiplies a matrix by its own transpose, so the result is rows-by-rows: `1x1` for one row, `3x3` for three. `total_per_column` has a different result width for each call.
+
+### 21. A scalar on either side
+
+For `+` and `*` the order does not matter, but for `-` and `/` it does: `10 - a` is not `a - 10`.
+
+```text
+--8<-- "docs/tour/code/more_out.txt:101:129"
+```
+
+`a - 1` takes one off every element; `10 - a` takes every element off ten; `a / 2` halves; `16 / a` divides sixteen by each element. The last result shows `-0`: negating a `0` gives negative zero (see example 10), which compares equal to `0`.
+
+### 22. Which operator goes first
+
+`@`, `*` and `/` bind more tightly than `+` and `-`, unary minus binds tightest, parentheses override, and operators of the same level go from left to right.
+
+```text
+--8<-- "docs/tour/code/more_out.txt:131:164"
+```
+
+The comments in the file work each one out. Two are worth a second look. `a - a - a` is `(a - a) - a = -a`, not `a - (a - a) = a`. `-a * b` is `(-a) * b`, not `-(a * b)`; here the two happen to print the same numbers, which is why the file also gives a case, `a @ b + a` against `a @ (b + a)`, where the grouping visibly matters.
 
 ## Mistakes the compiler reports
 

@@ -1,0 +1,42 @@
+-- softmax against the reference, rows sum to 1, shift invariance
+  ok   softmax 1x1, scores in [-3, 3]: equals the reference
+  ok   softmax 1x1, scores in [-3, 3]: rows are positive and sum to 1
+  ok   softmax 1x1, scores in [-3, 3]: adding 37 to every score changes nothing
+  ok   softmax 1x5, scores in [-3, 3]: equals the reference
+  ok   softmax 1x5, scores in [-3, 3]: rows are positive and sum to 1
+  ok   softmax 1x5, scores in [-3, 3]: adding 37 to every score changes nothing
+  ok   softmax 4x4, scores in [-10, 10]: equals the reference
+  ok   softmax 4x4, scores in [-10, 10]: rows are positive and sum to 1
+  ok   softmax 4x4, scores in [-10, 10]: adding 37 to every score changes nothing
+  ok   softmax 3x7, scores in [-20, 20]: equals the reference
+  ok   softmax 3x7, scores in [-20, 20]: rows are positive and sum to 1
+  ok   softmax 3x7, scores in [-20, 20]: adding 37 to every score changes nothing
+  ok   softmax 2x6, scores in [480, 500]: equals the reference
+  ok   softmax 2x6, scores in [480, 500]: rows are positive and sum to 1
+  ok   softmax 2x6, scores in [480, 500]: adding 37 to every score changes nothing
+  ok   softmax 2x6, scores in [-500, -480]: equals the reference
+  ok   softmax 2x6, scores in [-500, -480]: rows are positive and sum to 1
+  ok   softmax 2x6, scores in [-500, -480]: adding 37 to every score changes nothing
+  ok   softmax 2x6, scores in [-1500, -1000]: equals the reference
+  ok   softmax 2x6, scores in [-1500, -1000]: rows are positive and sum to 1
+  ok   softmax 2x6, scores in [-1500, -1000]: adding 37 to every score changes nothing
+  ok   softmax 5x3, scores in [-500, 500]: equals the reference
+  ok   softmax 5x3, scores in [-500, 500]: rows are positive and sum to 1
+  ok   softmax 5x3, scores in [-500, 500]: adding 37 to every score changes nothing
+-- attention (n tokens of width d) against the reference, with and without a causal mask
+  ok   attention n=1 d=1: output equals the reference
+  ok   causal attention n=1 d=1: weights and output equal the reference
+  ok   causal attention n=1 d=1: weights above the diagonal are exactly 0, rows sum to 1
+  ok   attention n=2 d=3: output equals the reference
+  ok   causal attention n=2 d=3: weights and output equal the reference
+  ok   causal attention n=2 d=3: weights above the diagonal are exactly 0, rows sum to 1
+  ok   attention n=3 d=2: output equals the reference
+  ok   causal attention n=3 d=2: weights and output equal the reference
+  ok   causal attention n=3 d=2: weights above the diagonal are exactly 0, rows sum to 1
+  ok   attention n=4 d=4: output equals the reference
+  ok   causal attention n=4 d=4: weights and output equal the reference
+  ok   causal attention n=4 d=4: weights above the diagonal are exactly 0, rows sum to 1
+  ok   attention n=5 d=3: output equals the reference
+  ok   causal attention n=5 d=3: weights and output equal the reference
+  ok   causal attention n=5 d=3: weights above the diagonal are exactly 0, rows sum to 1
+all checks pass

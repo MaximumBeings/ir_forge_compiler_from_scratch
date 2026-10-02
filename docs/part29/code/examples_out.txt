@@ -1,0 +1,183 @@
+################ mgc run 01_exp.mg
+  | # exp(x) applies e^x to every element. Its results are not whole numbers, so the output shows six significant digits.
+  | let a = [[0, 1], [2, -1]]
+  | print exp(a)                              # e^0 = 1, e^1 = 2.71828, e^2 = 7.38906, e^-1 = 0.367879
+  | # exp turns sums into products: e^(x+y) = e^x * e^y. Both lines print the same numbers (to the printed digits).
+  | let x = [[0.5, 1.5]]
+  | let y = [[1, -2]]
+  | print exp(x + y)
+  | print exp(x) * exp(y)
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[1,   2.71828], 
+ [7.38906,   0.367879]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 2] strides = [2, 1] data = 
+[[4.48169,   0.606531]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 2] strides = [2, 1] data = 
+[[4.48169,   0.606531]]
+  ----- exit status 0
+
+################ mgc run 02_softmax_naive.mg
+  | # softmax turns each row of scores into probabilities: positive numbers that add up to 1, bigger score = bigger share.
+  | #   softmax(row)_j = e^(row_j) / (e^(row_0) + e^(row_1) + ...)
+  | # exp(x) is 2x3, row_sum(...) is 2x1: the size-1 column is stretched across the three columns (Chapter 22's broadcasting).
+  | def softmax_naive(x: tensor[2x3]) = exp(x) / row_sum(exp(x))
+  | let scores = [[1, 2, 3], [0, 0, 0]]
+  | print softmax_naive(scores)                        # row 0: [0.0900306, 0.244728, 0.665241]; row 1: three equal scores -> a third each
+  | print row_sum(softmax_naive(scores))               # every row of probabilities sums to 1
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 3] strides = [3, 1] data = 
+[[0.0900306,   0.244728,   0.665241], 
+ [0.333333,   0.333333,   0.333333]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 1] strides = [1, 1] data = 
+[[1], 
+ [1]]
+  ----- exit status 0
+
+################ mgc run 03_softmax_overflow.mg
+  | # THE GOTCHA the "naive" name was warning about. e^1000 is larger than any double can hold, so exp gives infinity,
+  | # and infinity / infinity is "not a number" (nan). The formula is right on paper and wrong on a computer.
+  | def softmax_naive(x: tensor[1x3]) = exp(x) / row_sum(exp(x))
+  | print exp([[1000, 1001, 1002]])
+  | print softmax_naive([[1000, 1001, 1002]])
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 3] strides = [3, 1] data = 
+[[inf,   inf,   inf]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 3] strides = [3, 1] data = 
+[[-nan,   -nan,   -nan]]
+  ----- exit status 0
+
+################ mgc run 04_softmax_stable.mg
+  | # The fix: subtract each row's largest score first. That changes nothing mathematically (the factor e^(-max) cancels between the top
+  | # and the bottom of the fraction) but it makes every exponent <= 0, so every exp is <= 1 and nothing can overflow.
+  | def softmax(x: tensor[2x3]) = exp(x - row_max(x)) / row_sum(exp(x - row_max(x)))
+  | print softmax([[1000, 1001, 1002], [1, 2, 3]])     # both rows have the same gaps between scores, so the same probabilities
+  | print softmax([[1, 2, 3], [1, 2, 3]] + 100)        # adding 100 to every score changes nothing (shift invariance)
+  | print softmax([[-1000, -1001, -1002], [0, 0, 0]])  # very negative scores: exp underflows to 0 harmlessly, the largest one still wins
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 3] strides = [3, 1] data = 
+[[0.0900306,   0.244728,   0.665241], 
+ [0.0900306,   0.244728,   0.665241]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 3] strides = [3, 1] data = 
+[[0.0900306,   0.244728,   0.665241], 
+ [0.0900306,   0.244728,   0.665241]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 3] strides = [3, 1] data = 
+[[0.665241,   0.244728,   0.0900306], 
+ [0.333333,   0.333333,   0.333333]]
+  ----- exit status 0
+
+################ mgc run 05_temperature.mg
+  | # Dividing the scores by a "temperature" T before the softmax sharpens it (T < 1) or flattens it (T > 1). T is a compile-time number.
+  | def softmax(x: tensor[1x3]) = exp(x - row_max(x)) / row_sum(exp(x - row_max(x)))
+  | let scores = [[1, 2, 3]]
+  | print softmax(scores)               # T = 1
+  | print softmax(scores / 0.5)         # T = 0.5: sharper, the top score takes about 87% (exp(4) against exp(2) and 1)
+  | print softmax(scores / 4)           # T = 4: flatter, close to a third each
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 3] strides = [3, 1] data = 
+[[0.0900306,   0.244728,   0.665241]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 3] strides = [3, 1] data = 
+[[0.0158762,   0.11731,   0.866813]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 3] strides = [3, 1] data = 
+[[0.254275,   0.326496,   0.419229]]
+  ----- exit status 0
+
+################ mgc run 06_attention.mg
+  | # Scaled dot-product attention for one head. Row i of q asks a question, row j of k advertises what position j holds, row j of v is what it
+  | # hands over. scores[i][j] = how well question i matches key j; softmax turns each row of scores into weights; the output row i is the
+  | # weighted average of the rows of v.   attention(q, k, v) = softmax(q @ transpose(k) / sqrt(d)) @ v      (here d = 2)
+  | def softmax(s: tensor[3x3]) = exp(s - row_max(s)) / row_sum(exp(s - row_max(s)))
+  | def weights(q: tensor[3x2], k: tensor[3x2]) = softmax(q @ transpose(k) * 0.7071067811865476)
+  | def attention(q: tensor[3x2], k: tensor[3x2], v: tensor[3x2]) = weights(q, k) @ v
+  | let q = [[1, 0], [0, 1], [1, 1]]
+  | let k = [[1, 0], [0, 1], [1, 1]]
+  | let v = [[10, 0], [0, 10], [5, 5]]
+  | print weights(q, k)                      # 3x3, each row sums to 1
+  | print attention(q, k, v)                 # 3x2: row i is the weights of row i times the three rows of v
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [3, 3] strides = [3, 1] data = 
+[[0.401112,   0.197776,   0.401112], 
+ [0.197776,   0.401112,   0.401112], 
+ [0.248255,   0.248255,   0.50349]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [3, 2] strides = [2, 1] data = 
+[[6.01668,   3.98332], 
+ [3.98332,   6.01668], 
+ [5,   5]]
+  ----- exit status 0
+
+################ mgc run 07_causal_attention.mg
+  | # Causal (masked) attention: position i may only look at positions 0..i. Add a huge negative number to the scores above the diagonal;
+  | # e^(-1000000000) is exactly 0, so those positions get weight 0 and the rows still sum to 1.
+  | def softmax(s: tensor[3x3]) = exp(s - row_max(s)) / row_sum(exp(s - row_max(s)))
+  | def causal_weights(q: tensor[3x2], k: tensor[3x2], mask: tensor[3x3]) = softmax(q @ transpose(k) * 0.7071067811865476 + mask)
+  | let mask = [[0, -1000000000, -1000000000], [0, 0, -1000000000], [0, 0, 0]]
+  | let q = [[1, 0], [0, 1], [1, 1]]
+  | let k = [[1, 0], [0, 1], [1, 1]]
+  | let v = [[10, 0], [0, 10], [5, 5]]
+  | print causal_weights(q, k, mask)                   # upper triangle exactly 0; row 0 is [1, 0, 0]: position 0 can only see itself
+  | print causal_weights(q, k, mask) @ v               # row 0 of the output is row 0 of v unchanged
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [3, 3] strides = [3, 1] data = 
+[[1,   0,   0], 
+ [0.330238,   0.669762,   0], 
+ [0.248255,   0.248255,   0.50349]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [3, 2] strides = [2, 1] data = 
+[[10,   0], 
+ [3.30238,   6.69762], 
+ [5,   5]]
+  ----- exit status 0
+
+################ mgc run 08_self_attention_block.mg
+  | # Self-attention from token vectors: one matrix of 3 tokens (rows) of 4 numbers each is projected into queries, keys and values by three
+  | # learned 4x2 matrices, attended over, and projected back to 4 numbers per token by a 2x4 matrix. The block's output is added to its input
+  | # (a "residual connection"), so every token keeps what it had and gains what it attended to. (A def is one line, so it is long.)
+  | def softmax(s: tensor[3x3]) = exp(s - row_max(s)) / row_sum(exp(s - row_max(s)))
+  | def self_attention(x: tensor[3x4], wq: tensor[4x2], wk: tensor[4x2], wv: tensor[4x2], wo: tensor[2x4]) = x + softmax((x @ wq) @ transpose(x @ wk) * 0.7071067811865476) @ (x @ wv) @ wo
+  | let x  = [[1, 0, 1, 0], [0, 1, 0, 0], [1, 1, 0, 1]]
+  | let wq = [[1, 0], [0, 1], [1, 0], [0, 1]]
+  | let wk = [[1, 0], [0, 1], [0, 1], [1, 0]]
+  | let wv = [[1, 0], [0, 1], [1, 1], [0, 0]]
+  | let wo = [[1, 0, 0, 1], [0, 1, 1, 0]]
+  | print self_attention(x, wq, wk, wv, wo)
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [3, 4] strides = [4, 1] data = 
+[[2.14131,   1,   2,   1.14131], 
+ [1,   2,   1,   1], 
+ [2.14397,   2,   1,   2.14397]]
+  ----- exit status 0
+
+################ mgc run errors/e1_wrong_sequence_length.mg
+  | # attention was defined for 3 tokens of width 2. Passing 4 tokens does not fit the parameter shapes, and the compiler says so.
+  | def softmax(s: tensor[3x3]) = exp(s - row_max(s)) / row_sum(exp(s - row_max(s)))
+  | def weights(q: tensor[3x2], k: tensor[3x2]) = softmax(q @ transpose(k))
+  | let four = [[1, 0], [0, 1], [1, 1], [2, 2]]
+  | print weights(four, four)
+  ----- output
+errors/e1_wrong_sequence_length.mg:5: error: argument shape 4x2 does not fit parameter 3x2
+  ----- exit status 1
+
+################ mgc run errors/e2_exp_of_a_scalar.mg
+  | # exp is applied to a matrix. A bare number in the source is a compile-time scalar with no shape to print.
+  | print exp(2)
+  ----- output
+errors/e2_exp_of_a_scalar.mg:2: error: exp needs a matrix, not a scalar
+  ----- exit status 1
+
+################ mgc run errors/e3_q_and_k_widths_differ.mg
+  | # q @ transpose(k) needs q and k to have the same width (the inner sizes of the product). Here q is 3x2 and k is 3x3.
+  | let q = [[1, 0], [0, 1], [1, 1]]
+  | let k = [[1, 0, 0], [0, 1, 0], [1, 1, 1]]
+  | print q @ transpose(k)
+  ----- output
+errors/e3_q_and_k_widths_differ.mg:4: error: cannot multiply (matmul) shapes 3x2 and 3x3: inner dimensions differ
+  ----- exit status 1
+
+################ mgc run errors/e4_softmax_over_a_variable_length.mg
+  | # A softmax over a sequence of any length would need x - row_max(x) with a '?' row count, and a '?' size is never stretched (Chapter 22):
+  | # the compiler refuses it. Attention in this chapter is for a fixed sequence length.
+  | def softmax(x: tensor[?x3]) = exp(x - row_max(x)) / row_sum(exp(x - row_max(x)))
+  | print softmax([[1, 2, 3]])
+  ----- output
+errors/e4_softmax_over_a_variable_length.mg:3: error: broadcasting needs static shapes; this operand has a '?' dimension
+  ----- exit status 1
+

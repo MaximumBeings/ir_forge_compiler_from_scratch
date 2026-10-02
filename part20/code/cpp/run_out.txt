@@ -1,0 +1,37 @@
+wrote /home/user/ir_forge_compiler_from_scratch/docs/part20/code/cpp/../work/cpp/kernels.o and /home/user/ir_forge_compiler_from_scratch/docs/part20/code/cpp/../work/cpp/kernels.h
+--- ./app
+add(a, b) (2x3):
+ 11 22 33
+ 44 55 66
+add_t(a, b) (3x2):
+ 11 44
+ 22 55
+ 33 66
+scale2(a) (2x3):
+ 4 8 12
+ 16 20 24
+rot(a) (3x2):
+ 1 4
+ 2 5
+ 3 6
+caught: rot: argument 'a' has the wrong shape
+--- ./app mismatch   (exit status follows)
+add(a, b) (2x3):
+ 11 22 33
+ 44 55 66
+add_t(a, b) (3x2):
+ 11 44
+ 22 55
+ 33 66
+scale2(a) (2x3):
+ 4 8 12
+ 16 20 24
+rot(a) (3x2):
+ 1 4
+ 2 5
+ 3 6
+caught: rot: argument 'a' has the wrong shape
+about to add 2x3 and 3x2...
+mg.add: operand shapes differ at runtime in dimension 0
+Aborted
+exit=134

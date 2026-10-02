@@ -1,0 +1,32 @@
+### baseline: Chapter 20 build
+  Passed  :  8 (13.33%)
+### Chapter 19 build (no tensor.cast lowering)
+FAIL: frontend/dynamic-runs.mlir (1 of 8)
+FAIL: frontend/runtime-mismatch-aborts.mlir (2 of 8)
+  Passed  :  6 (10.00%)
+  Failed  :  2 (3.33%)
+### mutation: front end stops checking static add shapes
+FAIL: frontend/front-end-errors.mlir (5 of 8)
+  Passed  :  7 (11.67%)
+  Failed  :  1 (1.67%)
+### mutation: front end drops tensor.cast for dynamic calls
+FAIL: frontend/runtime-mismatch-aborts.mlir (1 of 8)
+FAIL: frontend/dynamic-runs.mlir (3 of 8)
+FAIL: frontend/emit-mlir.mlir (5 of 8)
+  Passed  :  5 (8.33%)
+  Failed  :  3 (5.00%)
+### mutation: driver forgets Chapter 19's stderr pass
+FAIL: frontend/runtime-mismatch-aborts.mlir (2 of 8)
+FAIL: frontend/cpp-interop.mlir (7 of 8)
+  Passed  :  6 (10.00%)
+  Failed  :  2 (3.33%)
+### mutation: driver links without the runtime printer
+FAIL: frontend/more-examples.mlir (1 of 8)
+FAIL: frontend/dynamic-runs.mlir (2 of 8)
+FAIL: frontend/runtime-mismatch-aborts.mlir (3 of 8)
+FAIL: frontend/hello-and-static.mlir (7 of 8)
+  Passed  :  4 (6.67%)
+  Failed  :  4 (6.67%)
+### restored
+### baseline again
+  Passed  :  8 (13.33%)

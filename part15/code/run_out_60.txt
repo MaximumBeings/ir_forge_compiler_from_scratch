@@ -1,0 +1,8 @@
+PASS: IR Forge / Mountain Goat :: lowering/dynamic-transpose-no-check.mlir (58 of 60)
+PASS: IR Forge / Mountain Goat :: lowering/bufferize-dynamic-add.mlir (59 of 60)
+PASS: IR Forge / Mountain Goat :: verifier/dynamic-accepted.mlir (60 of 60)
+
+Testing Time: 1.48s
+
+Total Discovered Tests: 60
+  Passed: 60 (100.00%)

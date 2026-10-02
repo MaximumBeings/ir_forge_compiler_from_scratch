@@ -12,10 +12,50 @@ cd ../../tour/code
 ../../part22/code/mgc run 01_first_program.mg    # compile to a native executable and run it
 ../../part22/code/mgc mlir 01_first_program.mg   # show the MLIR the front end produces
 ../../part22/code/mgc ptx  05_dynamic_types.mg   # compile to GPU code (PTX); nothing is launched
-./run_tour.sh > tour_out.txt                      # run every example on this page
+./run_tour.sh > tour_out.txt                      # run examples 1-6 and the first nine errors
+./run_gallery.sh > gallery_out.txt                # run the gallery (examples 7-16) and three more errors
 ```
 
 `mgc run` needs LLVM 18's MLIR tools (`mlir-opt-18`, `mlir-translate-18`, `clang-18`) installed; see Getting Started. Chapter 20 explains each stage `mgc` runs.
+
+## The mental model: think in shapes
+
+Before any syntax, one idea carries the whole language: **every value is a rectangle of numbers, and every operation is a rule about rectangles.** An `RxC` matrix has R rows and C columns. If you can say the shape of each line of your program, you can say whether it is legal, and the compiler does exactly that check, before it generates any code.
+
+Four rules cover almost everything you will write:
+
+| Rule | Shapes in | Shape out | Example |
+|---|---|---|---|
+| **Same shape** (`+ - * /`) | `RxC` and `RxC` | `RxC` | `a + b` adds matching elements |
+| **Size 1 stretches** | `RxC` and `1xC` (or `Rx1`, `1x1`) | `RxC` | `data - col_mean(data)` |
+| **Inner sizes meet** (`@`) | `RxK` and `KxC` | `RxC` | the K's must match, then vanish |
+| **Reductions squash one axis** | `RxC` | `1xC` (`col_`) or `Rx1` (`row_`) | `col_sum(a)` |
+
+Example 7 follows one pair of matrices through all four rules, with the shape written beside every line. It is the same exercise you should do in your head for your own programs:
+
+```text
+--8<-- "docs/tour/code/gallery_out.txt:1:23"
+```
+
+Read the comments beside each `print`: `(2x3) @ (3x4)` gives `2x4` (the two 3s meet and vanish); `transpose` swaps the two sizes; `col_sum` leaves one total per column (`1x4`); `row_sum` leaves one per row (`2x1`). The printed `sizes = [...]` line is the shape you predicted. When the prediction and the output disagree, you have found a misunderstanding, which is the cheapest time to find it.
+
+### Maths on paper, Mountain Goat on the screen
+
+| You would write | Mountain Goat | Shape rule |
+|---|---|---|
+| A + B | `a + b` | same shape (or a size-1 stretch) |
+| A ∘ B (Hadamard, elementwise) | `a * b` | same shape |
+| A B (matrix product) | `a @ b` | inner sizes meet |
+| Aᵀ | `transpose(a)` | `RxC` becomes `CxR` |
+| −A | `-a` | same shape |
+| 2A + 1 | `a * 2 + 1` | scalars are numbers known when compiling |
+| Σ over rows, per column | `col_sum(a)` | `RxC` becomes `1xC` |
+| Σ over columns, per row | `row_sum(a)` | `RxC` becomes `Rx1` |
+| mean of each column | `col_mean(a)` | `1xC`; needs a known row count |
+| max(0, x) | `relu(a)` | same shape |
+| f(x) = W x + b | `def f(x: tensor[2x1], w: tensor[2x2], b: tensor[2x1]) = w @ x + b` | checked at every call |
+
+The two most common slips are in the first rows: `*` is **not** the matrix product (that is `@`), and a `?` dimension never stretches. Both have worked examples below.
 
 ## What a program looks like
 
@@ -113,6 +153,96 @@ From tightest to loosest binding: unary `-`; then `*`, `/` and `@` (left to righ
 
 With `a = [[1, 2], [3, 4]]` and `b = [[10, 20], [30, 40]]` the eight outputs are, in order: `a + b`, `b - a`, `a * b` (elementwise: `10, 40, 90, 160`), `b / a`, `a @ b` (matrix product: `70, 100, 150, 220`), `transpose(a)`, `-a`, and `a * 2 + 1`. Compare the third and fifth: same inputs, different operators, different answers.
 
+## A gallery of small programs
+
+The examples above show one construct at a time. These show constructs **working together** on problems you might recognise. Each is a complete file in `docs/tour/code/`; the output is what `mgc run` printed (`base@ = 0x…` replaces a memory address that changes from run to run). Run them all with `./run_gallery.sh > gallery_out.txt`. For each one, try to predict the output **before** reading it.
+
+### 8. Statistics of a table without loops
+
+Rows are samples and columns are measurements. `col_mean` gives a `1x2`; subtracting it from the `4x2` data stretches it down every row; squaring (`*` with itself) and averaging gives the variance of each column.
+
+```text
+--8<-- "docs/tour/code/gallery_out.txt:25:43"
+```
+
+The means are 2.5 and 25; the centered data has columns that sum to zero; the variances are 1.25 and 125 (the second column is ten times larger, so its variance is a hundred times larger).
+
+### 9. A polynomial at many points, with one product
+
+Row *i* of the Vandermonde matrix is `[1, x, x²]` for the *i*-th point, so multiplying by the coefficient column evaluates 1 + 2x + 3x² at all three points at once.
+
+```text
+--8<-- "docs/tour/code/gallery_out.txt:45:56"
+```
+
+Check one by hand: at x = 3, 1 + 6 + 27 = 34.
+
+### 10. Rotating points
+
+Each column of `p` is a point. The matrix `[[0, -1], [1, 0]]` turns every point a quarter turn; applying it twice negates everything.
+
+```text
+--8<-- "docs/tour/code/gallery_out.txt:58:75"
+```
+
+Look at the third result: `-0`. That is **negative zero**. It compares equal to `0`; floating-point arithmetic keeps the sign of a zero, and negating `0` produces `-0`. Nothing is wrong: it is how IEEE floating point works, and `-0 == 0` is true. (Whether a given zero prints as `0` or `-0` depends on the sign of the operands that produced it, so do not rely on it.)
+
+### 11. A Markov chain
+
+`today` is a `1x2` row of probabilities and `t` is the transition matrix. `today @ t` is tomorrow; squaring `t` three times gives eight steps with three products instead of seven.
+
+```text
+--8<-- "docs/tour/code/gallery_out.txt:77:94"
+```
+
+The long-run answer is 5/6 sunny, 1/6 rainy (0.8333…, 0.1667…). After eight steps we are at `0.833443`: the distance from 5/6 shrinks by a factor of 0.4 each day, and 0.4⁸ ≈ 0.00066.
+
+### 12. Counting walks in a graph
+
+Entry `[i][j]` of the adjacency matrix `a` is 1 when there is an edge from *i* to *j*. Matrix powers count walks: `a @ a` counts the two-step ones.
+
+```text
+--8<-- "docs/tour/code/gallery_out.txt:96:113"
+```
+
+In the first result, `[0][3]` is 2: node 0 reaches node 3 in two steps by two different routes (0→1→3 and 0→2→3).
+
+### 13. Blurring an image
+
+Each row of the image is a row of pixels; the blur matrix replaces every pixel with a weighted average of itself and its two neighbours.
+
+```text
+--8<-- "docs/tour/code/gallery_out.txt:115:125"
+```
+
+The sharp `9` in the middle of the first row spreads into `2.25, 4.5, 2.25`; the total brightness of a row is preserved (9 before, 9 after).
+
+### 14. A function applied twice
+
+`affine` takes a point, a matrix and a shift. The parameter types fix the shapes, so a call with a wrong-shaped argument is rejected at compile time (example 7 in the error list above).
+
+```text
+--8<-- "docs/tour/code/gallery_out.txt:127:142"
+```
+
+### 15. Any number of samples (and how to add a bias)
+
+`?` in the row count means "any batch size", so `scale` compiles once and serves a batch of one and a batch of three. Adding a bias to every row needs the bias repeated once per sample, and since a `?` size is never stretched, the program does the repeating with a matrix product: a column of ones (`?x1`) times the `1x2` bias is a `?x2` matrix of copies.
+
+```text
+--8<-- "docs/tour/code/gallery_out.txt:144:165"
+```
+
+### 16. The `?` gotcha: a program that stops by design
+
+What happens if you skip the ones-column and write `batch @ w + b` with a `1x2` bias `b`? It compiles, because a `?` might turn out to be 1. With one sample the shapes happen to match and the answer is right; with three, the program **aborts with a message**, not a wrong answer:
+
+```text
+--8<-- "docs/tour/code/gallery_out.txt:167:178"
+```
+
+The first call printed `[[11, 22]]`; the second stopped with `mg.add: operand shapes differ at runtime in dimension 0` and exit status 134 (the shell's code for an abort). This is the run-time check from Chapter 14 working as intended. The "FAIL"-looking ending is the expected result of this example, and the fix is example 15.
+
 ## Mistakes the compiler reports
 
 The compiler checks what it can **before** producing any code, and reports the file and line. Each of these is one real example from `docs/tour/code/errors/`:
@@ -124,6 +254,62 @@ The compiler checks what it can **before** producing any code, and reports the f
 In order: a line that starts with something other than `let`, `print` or `def`; a name that was never declared; adding a 2x3 to a 3x2 (neither differing dimension is 1, so not even broadcasting can fix it); calling a function before it is defined; giving a function the wrong number of arguments; trying to print a scalar; passing a matrix whose shape does not fit the parameter; a zero-size dimension; and a `def` with no expression after the `=`. Every one of these exits with status 1 and produces no program.
 
 What the compiler **cannot** check is a mismatch between two `?` dimensions, since the sizes do not exist until the program runs. That check happens at run time (Chapter 14); see Chapter 20's example 4 and Chapter 21's example 12.
+
+Three more mistakes, all about `*` and `@`, the pair beginners mix up most:
+
+```text
+--8<-- "docs/tour/code/gallery_out.txt:180:187"
+```
+
+```text
+--8<-- "docs/tour/code/gallery_out.txt:189:195"
+```
+
+```text
+--8<-- "docs/tour/code/gallery_out.txt:197:205"
+```
+
+The first is `a * b` on a 2x3 and a 3x2: `*` pairs up matching elements, and these do not match. You probably meant `@`. The second is `a @ a` on a 2x3: the inner sizes are 3 and 2. The third is the usual cure, transposing one side so the inner sizes meet; it is **not** an error (the output is `a` times its own transpose, a 2x2).
+
+## Exercises: predict the shape
+
+Before running anything, say the shape of each expression. Then check with `mgc run`. Let `a` be `2x3`, `b` be `3x4`, `c` be `2x4`.
+
+1. `a @ b`
+2. `a @ b + c`
+3. `b @ a`
+4. `transpose(b) @ transpose(a)`
+5. `col_sum(a @ b)`
+6. `a * a`
+7. `a @ a`
+8. `row_mean(a) + a`
+
+??? note "Answers"
+    1. `2x4`: the inner 3s meet and vanish.
+    2. `2x4`: `a @ b` is `2x4`, the same shape as `c`.
+    3. **Error.** `3x4` @ `2x3` has inner sizes 4 and 2. The order of `@` matters.
+    4. `4x2`: `(3x4)ᵀ` is `4x3`, `(2x3)ᵀ` is `3x2`, and `4x3 @ 3x2` is `4x2`. It is exactly `transpose(a @ b)`, a fact you can confirm with example 7.
+    5. `1x4`: one total per column.
+    6. `2x3`: elementwise, so the shape is unchanged (it is not a matrix product).
+    7. **Error.** Inner sizes 3 and 2, shown in the third error example above.
+    8. `2x3`: `row_mean(a)` is `2x1`, and a size-1 column stretches across the three columns.
+
+Next, three small design questions.
+
+**Q1. Why does the compiler reject `a * b` for a 2x3 and a 3x2 instead of quietly doing something sensible?**
+
+??? note "Answer"
+    Because there is no single sensible meaning. `*` is defined as "same shape, element by element"; the only stretching allowed is a size of exactly 1. Guessing (say, a matrix product) would hide a bug rather than report it. The error names the shapes so you can see which side to fix.
+
+**Q2. Why does example 16 compile but abort, when example 7's mismatch is rejected before it ever runs?**
+
+??? note "Answer"
+    Example 7's dimensions are numbers in the source, so the compiler can compare them. In example 16 the row count of `batch @ w` is `?`, which could be 1 at run time (and would then match the bias). The compiler cannot know, so it lets the program through and the generated code checks the sizes when it runs. Everything the compiler can check statically it does; the rest becomes a run-time check with a message.
+
+**Q3. Why does `ones @ b` work as a stand-in for "repeat `b` once per row"?**
+
+??? note "Answer"
+    A `?x1` column of ones times a `1x2` row is `?x2`; entry `[i][j]` is `1 · b[j]`, so every row is a copy of `b`. The matrix product does the repeating, and its shape rule (inner sizes 1 and 1 meet) is satisfied for any number of rows.
 
 ## The full grammar
 

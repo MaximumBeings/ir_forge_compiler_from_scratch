@@ -1,0 +1,23 @@
+true parameters (w1 w2 w3 bias):     2.00000  -3.00000   0.50000   1.00000
+
+A. noise-free data, learning rate 0.20, 300 steps
+  mean squared error at steps:  [0] 5.431e+00  [1] 3.607e+00  [2] 2.556e+00  [5] 1.061e+00  [10] 2.708e-01  [20] 1.843e-02  [50] 6.827e-06  [100] 1.616e-11  [200] 1.040e-22  [300] 9.548e-31
+  learned (Mountain Goat)              2.00000  -3.00000   0.50000   1.00000
+  loss fell at every step: yes
+  parameters recovered to within 1e-6 of the truth: yes
+  matches the plain C++ gradient descent to within 1e-9: yes
+  the first 5 steps match plain C++ step for step to within 1e-12: yes
+  the compiled loss equals a plain C++ loss (at the start and the end): yes
+
+B. noisy data (noise up to +-0.2), learning rate 0.20, 300 steps
+  learned (Mountain Goat)              1.99714  -2.98902   0.49820   0.99592
+  exact least squares (closed form)    1.99714  -2.98902   0.49820   0.99592
+  true parameters                      2.00000  -3.00000   0.50000   1.00000
+  final mean squared error: 0.01343 (the noise alone would give about 0.01333 = 0.2^2/3)
+  gradient descent matches the exact least-squares answer to within 1e-6: yes
+  the compiled loss equals a plain C++ loss on the noisy data: yes
+  closer to the exact answer than to the truth: yes
+
+C. noise-free data, learning rate 1.20 (too large), 12 steps
+  mean squared error at steps:  [0] 5.431e+00  [1] 2.815e+00  [2] 5.208e+00  [4] 2.098e+01  [8] 3.424e+02  [12] 5.587e+03
+  the loss grew instead of shrinking: yes

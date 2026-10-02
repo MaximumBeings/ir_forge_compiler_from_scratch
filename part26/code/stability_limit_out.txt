@@ -1,0 +1,4 @@
+largest curvature of the loss on this data: 2.0148
+gradient descent is stable only for learning rates below 2 / 2.0148 = 0.9927
+  learning rate 0.2: stable
+  learning rate 1.2: diverges

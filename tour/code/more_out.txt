@@ -1,0 +1,165 @@
+################ mgc run 17_more_literals.mg
+  | # More about literals. Every literal is a matrix with at least one row and column; the shape is the count of rows by the count in each row.
+  | print [[5]]                                    # one number is a 1x1 matrix, not a scalar (a bare 5 is the scalar)
+  | print [[0.25, -0.5, 1e-3]]                     # decimals, negatives and scientific notation can mix in one row
+  | print [[1, 2, 3, 4, 5, 6]]                     # a row: 1x6
+  | print [[1], [2], [3], [4], [5], [6]]           # a column: 6x1
+  | print transpose([[1, 2, 3, 4, 5, 6]])          # transposing the row gives the same column
+  | print [[2, 4], [6, 8]] / 2                     # a scalar divides every element: [[1, 2], [3, 4]]
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[5]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 3] strides = [3, 1] data = 
+[[0.25,   -0.5,   0.001]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 6] strides = [6, 1] data = 
+[[1,   2,   3,   4,   5,   6]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [6, 1] strides = [1, 1] data = 
+[[1], 
+ [2], 
+ [3], 
+ [4], 
+ [5], 
+ [6]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [6, 1] strides = [1, 1] data = 
+[[1], 
+ [2], 
+ [3], 
+ [4], 
+ [5], 
+ [6]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[1,   2], 
+ [3,   4]]
+  ----- exit status 0
+
+################ mgc run 18_let_chains.mg
+  | # Names let a calculation be built in steps, and each step can be printed. Here: the mean and the spread of one row of numbers.
+  | let x = [[2, 4, 4, 4, 5, 5, 7, 9]]           # 1x8
+  | let mean = row_mean(x)                         # 1x1: 40/8 = 5
+  | let centered = x - mean                        # the 1x1 mean is stretched across all eight
+  | let variance = row_mean(centered * centered)   # 1x1: the mean of the squared distances from the mean = 4
+  | print mean
+  | print centered
+  | print variance
+  | # Shadowing: a new let of an old name does not change the old value; any earlier line already used it.
+  | let variance = variance * variance
+  | print variance                                 # 16: this is the new binding
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[5]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 8] strides = [8, 1] data = 
+[[-3,   -1,   -1,   -1,   0,   0,   2,   4]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[4]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[16]]
+  ----- exit status 0
+
+################ mgc run 19_function_composition.mg
+  | # Functions are built from other functions defined ABOVE them. The shapes flow through every call and are checked at each one.
+  | def double(a: tensor[2x2]) = a * 2
+  | def add_identity(a: tensor[2x2]) = a + [[1, 0], [0, 1]]
+  | def double_then_add_identity(a: tensor[2x2]) = add_identity(double(a))
+  | def square(a: tensor[2x2]) = a @ a
+  | let m = [[1, 2], [3, 4]]
+  | print double_then_add_identity(m)               # 2m + I = [[3, 4], [6, 9]]
+  | print square(double_then_add_identity(m))       # [[3,4],[6,9]] squared as a matrix product: [[33, 48], [72, 105]]
+  | print double(square(m)) - square(double(m))     # (2*m^2) - (2m)^2 = 2m^2 - 4m^2 = -2m^2 = [[-14, -20], [-30, -44]]
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[3,   4], 
+ [6,   9]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[33,   48], 
+ [72,   105]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[-14,   -20], 
+ [-30,   -44]]
+  ----- exit status 0
+
+################ mgc run 20_one_function_many_shapes.mg
+  | # '?' in a type: ONE compiled function serves any size. The shape of each result follows from the shapes of the arguments.
+  | def gram(a: tensor[?x?]) = a @ transpose(a)                 # a times its own transpose: rows x rows
+  | def total_per_column(a: tensor[?x?]) = col_sum(a)           # one total per column: 1 x columns
+  | print gram([[1, 2]])                                         # 1x2 times 2x1 = 1x1: [[5]]
+  | print gram([[1, 0], [0, 1], [1, 1]])                         # 3x2 times 2x3 = 3x3
+  | print total_per_column([[1, 2, 3], [4, 5, 6]])               # [[5, 7, 9]]
+  | print total_per_column([[1], [2], [3], [4]])                 # [[10]]
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[5]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [3, 3] strides = [3, 1] data = 
+[[1,   0,   1], 
+ [0,   1,   1], 
+ [1,   1,   2]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 3] strides = [3, 1] data = 
+[[5,   7,   9]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[10]]
+  ----- exit status 0
+
+################ mgc run 21_scalars_on_either_side.mg
+  | # A scalar can stand on either side of an operator, and the order matters for - and /.
+  | let a = [[1, 2], [4, 8]]
+  | print a - 1                  # each element minus 1
+  | print 10 - a                 # 10 minus each element (the scalar is on the LEFT)
+  | print a / 2                  # each element over 2
+  | print 16 / a                 # 16 over each element
+  | print 2 * a + 1              # scalars on the left work for * and + too
+  | print -(a - 4)               # unary minus applies to a whole expression
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[0,   1], 
+ [3,   7]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[9,   8], 
+ [6,   2]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[0.5,   1], 
+ [2,   4]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[16,   8], 
+ [4,   2]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[3,   5], 
+ [9,   17]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[3,   2], 
+ [-0,   -4]]
+  ----- exit status 0
+
+################ mgc run 22_precedence.mg
+  | # Which operator goes first? '@', '*' and '/' bind tighter than '+' and '-'; unary minus binds tightest; parentheses override. Same level goes left to right.
+  | let a = [[1, 2], [3, 4]]
+  | let b = [[1, 0], [0, 2]]
+  | print a + a * b              # a * b first (elementwise), then add: [[1,2],[3,4]] + [[1,0],[0,8]] = [[2, 2], [3, 12]]
+  | print (a + a) * b            # parentheses first: [[2,4],[6,8]] * [[1,0],[0,2]] = [[2, 0], [0, 16]]
+  | print a @ b + a              # the product first: [[1,4],[3,8]] + [[1,2],[3,4]] = [[2, 6], [6, 12]]
+  | print a @ (b + a)            # [[1,2],[3,4]] @ [[2,2],[3,6]] = [[8, 14], [18, 30]]
+  | print a - a - a              # left to right: (a - a) - a = -a
+  | print -a * b                 # unary minus first: (-a) * b = [[-1, 0], [0, -8]]
+  | print a @ b @ a              # left to right: (a @ b) @ a = [[1,4],[3,8]] @ [[1,2],[3,4]] = [[13, 18], [27, 38]]
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[2,   2], 
+ [3,   12]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[2,   0], 
+ [0,   16]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[2,   6], 
+ [6,   12]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[8,   14], 
+ [18,   30]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[-1,   -2], 
+ [-3,   -4]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[-1,   -0], 
+ [-0,   -8]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[13,   18], 
+ [27,   38]]
+  ----- exit status 0
+

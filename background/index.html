@@ -1,0 +1,2644 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A Toy Language Compiled Through a Real MLIR Dialect, Down to Real Native Machine Code">
+      
+      
+        <meta name="author" content="Oluwaseyi Awoga">
+      
+      
+      
+        <link rel="prev" href="../getting-started/">
+      
+      
+        <link rel="next" href="../tour/language-tour/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Background (LLVM and MLIR in Twenty Minutes) - IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#background-llvm-and-mlir-in-twenty-minutes" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-header__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Background (LLVM and MLIR in Twenty Minutes)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-nav__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background (LLVM and MLIR in Twenty Minutes)
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background (LLVM and MLIR in Twenty Minutes)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-picture-a-compiler-is-a-staircase-of-languages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The picture: a compiler is a staircase of languages
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#llvm-ir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LLVM IR
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="LLVM IR">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#one-function-two-ways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One function, two ways
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#basic-blocks-branches-and-phi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Basic blocks, branches, and phi
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#you-can-write-it-by-hand" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        You can write it by hand
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mlir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MLIR
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="MLIR">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-mlir-is-for" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What MLIR is for
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-vocabulary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The vocabulary
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-same-function-in-mlir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The same function in MLIR
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-pass-constant-folding-and-common-subexpressions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A pass: constant folding and common subexpressions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-loop-and-then-lowering-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A loop, and then lowering it
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-this-book-uses-all-of-this" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How this book uses all of this
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#glossary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Glossary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limits-and-what-is-not-established" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits and what is not established
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-next" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where next
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tour/language-tour/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Mountain Goat Language: A Short Tour
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part1/01-why-a-multi-level-ir-at-all/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1. Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part2/02-a-minimal-dialect-from-scratch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2. A Minimal Dialect From Scratch: Mountain Goat's Own mg Dialect
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part3/03-the-pass-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3. The Real Pass Infrastructure: Canonicalizing Mountain Goat
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 3 -- Progressive Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 3 -- Progressive Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part4/04-progressive-lowering-to-affine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4. Progressive Lowering: Mountain Goat to affine, Two Real Ways
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part5/05-affine-to-scf-to-llvm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5. Finishing Progressive Lowering: affine to scf to llvm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 4 -- Optimization Across Levels
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 4 -- Optimization Across Levels
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part6/06-real-bufferization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6. Real Bufferization: Closing Chapter 4's Own Honest Gap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part7/07-real-loop-transforms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    7. Real Loop Transforms: Fusion, Tiling, and Unrolling at the affine Level
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 5 -- Code Generation via LLVM
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 5 -- Code Generation via LLVM
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part8/08-a-standalone-native-executable/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    8. A Standalone Native Executable: Mountain Goat Without MLIR At Runtime
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part9/09-the-execution-engine-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    9. MLIR's Own Real C++ ExecutionEngine API, Called In-Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 6 -- GPU Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 6 -- GPU Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part10/10-gpu-lowering-to-ptx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10. GPU Lowering: Mountain Goat to the gpu Dialect, NVVM, and Real PTX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part11/11-the-gpu-host-side/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    11. The GPU Host Side: Device Memory, Real Runtime Calls, and a Stub Device
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 7 -- Case Studies
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 7 -- Case Studies
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part12/12-reading-the-production-pipelines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    12. Reading MLIR's Own Production Pipelines: What This Book's Compiler Is Missing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part13/13-dynamic-shapes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    13. Dynamic Shapes: Closing Chapter 12's Biggest Unknown
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part14/14-runtime-shape-checks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    14. A Runtime Shape Check: Closing Chapter 13's Memory-Safety Hole
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part15/15-a-real-test-suite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    15. A Real Test Suite: lit, FileCheck, and Proof That the Tests Can Fail
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part16/16-testing-the-gpu-path-and-loop-transforms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    16. Testing the GPU Path and the Loop Transforms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part17/17-loop-transforms-on-dynamic-bounds/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    17. Loop Transforms on Dynamic Bounds
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part18/18-why-fusion-declines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    18. Why Fusion Declines: Reading the Pass, and a Second Bug Found Along the Way
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part19/19-a-better-abort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    19. A Better Abort: Reporting Assertion Failures on stderr
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part20/20-the-mountain-goat-demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    20. The Mountain Goat Demo: A Surface Syntax, a Driver, and C++ Calling Compiled Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part21/21-more-operations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    21. More Operations: Subtract, Hadamard, Divide, Matrix Product, and Scalars
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part22/22-broadcasting-reductions-and-relu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    22. Broadcasting, Reductions and relu: Enough Operations for a Neural-Network Layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part23/23-measuring-performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    23. Measuring Performance: Does Any of It Make the Code Fast?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part24/24-closing-the-matmul-gap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    24. Closing the Gap: A Matrix Product That Walks Memory in a Better Order
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part25/25-keeping-it-working/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    25. Keeping It Working: Continuous Integration and the Tests the Early Chapters Never Had
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part26/26-learning-from-data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    26. Learning From Data: Gradient Descent in Mountain Goat
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part27/27-tensor-contractions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    27. Tensor Contractions as Matrix Products
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part28/28-contraction-in-mountain-goat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    28. Tensor Contractions in Mountain Goat Itself
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part29/29-softmax-and-attention/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    29. Softmax and Attention
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-picture-a-compiler-is-a-staircase-of-languages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The picture: a compiler is a staircase of languages
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#llvm-ir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LLVM IR
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="LLVM IR">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#one-function-two-ways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One function, two ways
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#basic-blocks-branches-and-phi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Basic blocks, branches, and phi
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#you-can-write-it-by-hand" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        You can write it by hand
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mlir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MLIR
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="MLIR">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-mlir-is-for" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What MLIR is for
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-vocabulary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The vocabulary
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-same-function-in-mlir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The same function in MLIR
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-pass-constant-folding-and-common-subexpressions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A pass: constant folding and common subexpressions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-loop-and-then-lowering-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A loop, and then lowering it
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-this-book-uses-all-of-this" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How this book uses all of this
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#glossary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Glossary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limits-and-what-is-not-established" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits and what is not established
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-next" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where next
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="background-llvm-and-mlir-in-twenty-minutes">Background: LLVM and MLIR in Twenty Minutes<a class="headerlink" href="#background-llvm-and-mlir-in-twenty-minutes" title="Permanent link">&para;</a></h1>
+<p><strong>What you will understand:</strong> just enough about LLVM and MLIR to read the rest of this book. What LLVM IR looks like and why it is written the way it is; what MLIR adds on top (dialects, operations, regions, passes); what "lowering" means; and how a program travels from a high-level description down to a running executable. Every command below was run, and every output is the real output of the Ubuntu LLVM 18.1.3 tools this book uses. This page is a map, not a manual: the book builds the details one chapter at a time, and the "Limits" section says what is left out.</p>
+<p><strong>What you need to know first:</strong> nothing about compilers. You should be able to read a few lines of C.</p>
+<div class="admonition tip">
+<p class="admonition-title">Compile and run</p>
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">cd</span><span class="w"> </span>docs/background/code
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>./run_background.sh<span class="w"> </span>&gt;<span class="w"> </span>background_out.txt<span class="w">     </span><span class="c1"># runs every command on this page (needs clang-18, mlir-opt-18, mlir-translate-18)</span>
+</code></pre></div>
+The tools are listed on <a href="../getting-started/">Getting Started</a>. Nothing else needs building.</p>
+</div>
+<h2 id="the-picture-a-compiler-is-a-staircase-of-languages">The picture: a compiler is a staircase of languages<a class="headerlink" href="#the-picture-a-compiler-is-a-staircase-of-languages" title="Permanent link">&para;</a></h2>
+<p>A compiler does not translate source code to machine code in one jump. It translates through a series of <strong>intermediate representations</strong> (IRs), each a little closer to the machine and a little further from the programmer, and it improves the program at each step. LLVM is a widely used compiler toolkit built around one such IR. MLIR (Multi-Level Intermediate Representation, part of the LLVM project) is a framework for designing <em>many</em> IRs and moving between them.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a> your language        high-level IR(s)            LLVM IR              machine code
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a> (Mountain Goat) ---&gt; (the mg dialect, then   ---&gt;  (one low-level  ---&gt; (x86-64 here)
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>                       affine/memref/scf)           language)
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>        \________________ MLIR ________________/  \__ LLVM __/   \_ clang&#39;s backend _/
+</code></pre></div>
+<p>This book builds the left half of that staircase for a tiny matrix language, Mountain Goat, and uses LLVM for everything to the right. Read the rest of this page as a tour of the two halves.</p>
+<h2 id="llvm-ir">LLVM IR<a class="headerlink" href="#llvm-ir" title="Permanent link">&para;</a></h2>
+<h3 id="one-function-two-ways">One function, two ways<a class="headerlink" href="#one-function-two-ways" title="Permanent link">&para;</a></h3>
+<p>Here is the smallest useful C function:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">// The smallest useful C function: add two integers. clang translates it to LLVM IR.</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kt">int</span><span class="w"> </span><span class="nf">add</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">b</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div>
+<p><code>clang-18 -S -emit-llvm -O0 sum.c</code> asks clang to stop after translating to LLVM IR (<code>-S -emit-llvm</code>) and to do no optimization (<code>-O0</code>). The lines that matter, with clang's bookkeeping lines removed:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>define dso_local i32 @add(i32 noundef %0, i32 noundef %1) #0 {
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  %3 = alloca i32, align 4
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  %4 = alloca i32, align 4
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>  store i32 %0, ptr %3, align 4
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>  store i32 %1, ptr %4, align 4
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>  %5 = load i32, ptr %3, align 4
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>  %6 = load i32, ptr %4, align 4
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>  %7 = add nsw i32 %5, %6
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>  ret i32 %7
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>}
+</code></pre></div>
+<p>How to read it:</p>
+<ul>
+<li><code>define i32 @add(i32 %0, i32 %1)</code>: a <strong>function</strong> returning a 32-bit integer (<code>i32</code>) and taking two. <code>@</code> marks a global name. <code>%</code> marks a local one. Unnamed values are numbered (<code>%0</code>, <code>%1</code>, <code>%2</code>, ...).</li>
+<li>Every line that makes a value has the form <code>%name = instruction type operands</code>. A <strong>value is assigned once and never changed</strong>: this is <strong>SSA</strong> (static single assignment), and it is the single most important property of LLVM IR, because it makes it easy for the compiler to reason about where each value comes from.</li>
+<li>At <code>-O0</code> clang is naive: it gives every C variable a slot in memory (<code>alloca</code>), stores the arguments there, loads them back, adds, and returns (<code>add nsw i32</code> is a signed addition that the compiler may assume does not overflow). That is slow but simple, and it is exactly what the optimizer expects to clean up.</li>
+<li>Types are explicit everywhere (<code>i32</code>, <code>ptr</code>). There is no implicit conversion.</li>
+</ul>
+<h3 id="basic-blocks-branches-and-phi">Basic blocks, branches, and phi<a class="headerlink" href="#basic-blocks-branches-and-phi" title="Permanent link">&para;</a></h3>
+<p>A function with a loop has several <strong>basic blocks</strong>: straight-line sequences that end in a <strong>branch</strong> (<code>br</code>). Here is a loop that adds the numbers 1 to n:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1">// A loop. The LLVM IR for it has several basic blocks and, once optimized, a phi instruction.</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="kt">int</span><span class="w"> </span><span class="nf">sum_to</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">total</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="n">n</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="n">total</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">i</span><span class="p">;</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">total</span><span class="p">;</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="p">}</span>
+</code></pre></div>
+<p>At <code>-O0</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>define dso_local i32 @sum_to(i32 noundef %0) #0 {
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>  %2 = alloca i32, align 4
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>  %3 = alloca i32, align 4
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>  %4 = alloca i32, align 4
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>  store i32 %0, ptr %2, align 4
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>  store i32 0, ptr %3, align 4
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>  store i32 1, ptr %4, align 4
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>  br label %5
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>5:                                                ; preds = %13, %1
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>  %6 = load i32, ptr %4, align 4
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>  %7 = load i32, ptr %2, align 4
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>  %8 = icmp sle i32 %6, %7
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>  br i1 %8, label %9, label %16
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>9:                                                ; preds = %5
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>  %10 = load i32, ptr %4, align 4
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>  %11 = load i32, ptr %3, align 4
+<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>  %12 = add nsw i32 %11, %10
+<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>  store i32 %12, ptr %3, align 4
+<a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a>  br label %13
+<a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a>13:                                               ; preds = %9
+<a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a>  %14 = load i32, ptr %4, align 4
+<a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a>  %15 = add nsw i32 %14, 1
+<a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a>  store i32 %15, ptr %4, align 4
+<a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a>  br label %5, !llvm.loop !6
+<a id="__codelineno-5-25" name="__codelineno-5-25" href="#__codelineno-5-25"></a>16:                                               ; preds = %5
+<a id="__codelineno-5-26" name="__codelineno-5-26" href="#__codelineno-5-26"></a>  %17 = load i32, ptr %3, align 4
+<a id="__codelineno-5-27" name="__codelineno-5-27" href="#__codelineno-5-27"></a>  ret i32 %17
+<a id="__codelineno-5-28" name="__codelineno-5-28" href="#__codelineno-5-28"></a>}
+</code></pre></div>
+<p>The labels <code>5:</code>, <code>9:</code>, <code>13:</code>, <code>16:</code> start blocks. The block at <code>5:</code> is the loop test (<code>icmp sle</code> compares, <code>br i1 %8, label %9, label %16</code> jumps to the body or to the exit); the body adds to the memory slot; <code>13:</code> increments <code>i</code> and jumps back. Every variable lives in memory (<code>%3</code> is <code>total</code>, <code>%4</code> is <code>i</code>), because SSA values cannot be reassigned and a loop needs values that change.</p>
+<p>LLVM's optimizer turns those memory slots back into values. At <code>-O1</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>define dso_local i32 @sum_to(i32 noundef %0) local_unnamed_addr #0 {
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>  %2 = icmp slt i32 %0, 1
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>  br i1 %2, label %14, label %3
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>3:                                                ; preds = %1
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>  %4 = shl nuw i32 %0, 1
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>  %5 = add nsw i32 %0, -1
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>  %6 = zext i32 %5 to i33
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>  %7 = add nsw i32 %0, -2
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>  %8 = zext i32 %7 to i33
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>  %9 = mul i33 %6, %8
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>  %10 = lshr i33 %9, 1
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>  %11 = trunc i33 %10 to i32
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>  %12 = add i32 %4, %11
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>  %13 = add i32 %12, -1
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>  br label %14
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>14:                                               ; preds = %3, %1
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>  %15 = phi i32 [ 0, %1 ], [ %13, %3 ]
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a>  ret i32 %15
+<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a>}
+</code></pre></div>
+<p>No memory is left. Even more striking, <strong>the loop is gone</strong>: LLVM recognized that adding 1 through n has a closed form (n(n+1)/2) and computed it with a handful of arithmetic instructions (the odd <code>i33</code> is a 33-bit integer used so the multiplication cannot overflow). What remains of the control flow is the early exit for <code>n &lt; 1</code> and one <code>phi</code>.</p>
+<p><strong><code>phi</code></strong> is how SSA handles "this value depends on which way we got here": <code>%15 = phi i32 [ 0, %1 ], [ %13, %3 ]</code> means "0 if we arrived from block <code>%1</code>, <code>%13</code> if from block <code>%3</code>". You do not write <code>phi</code> by hand often; you read it as "a variable that gets a different value on different paths".</p>
+<h3 id="you-can-write-it-by-hand">You can write it by hand<a class="headerlink" href="#you-can-write-it-by-hand" title="Permanent link">&para;</a></h3>
+<p>LLVM IR is a language like any other. This function returns the larger of two integers, and it is compiled and called from C:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>  | ; LLVM IR written by hand: a function that returns the larger of two 32-bit integers.
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  | define i32 @max(i32 %a, i32 %b) {
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  | entry:
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>  |   %bigger = icmp sgt i32 %a, %b          ; %bigger is an i1 (a boolean): is a &gt; b?
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>  |   %r = select i1 %bigger, i32 %a, i32 %b ; pick one of the two
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>  |   ret i32 %r
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>  | }
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>max(3, 9) = 9, max(7, -2) = 7
+</code></pre></div>
+<p>(The first block is <code>handwritten.ll</code>; the last line is the output of the C program in <code>main_max.c</code> linked with it.) <code>clang-18</code> accepts <code>.ll</code> files just as it accepts <code>.c</code> files. This is exactly how every chapter of this book gets its generated code to run: the compiler produces LLVM IR, and <code>clang-18</code> finishes the job.</p>
+<h2 id="mlir">MLIR<a class="headerlink" href="#mlir" title="Permanent link">&para;</a></h2>
+<h3 id="what-mlir-is-for">What MLIR is for<a class="headerlink" href="#what-mlir-is-for" title="Permanent link">&para;</a></h3>
+<p>LLVM IR is one fixed language at one level: roughly the level of a processor's instructions. A matrix multiplication, a loop nest, or a GPU kernel have structure that is awkward to see once everything is flattened to blocks and branches, and an optimization such as "tile this loop nest for the cache" is far easier to do <em>before</em> flattening. MLIR's idea is to let a project define its own <strong>dialects</strong> (families of operations and types at whatever level it needs) and then <strong>lower</strong> step by step from one dialect to the next, optimizing at the level where each optimization is easiest. LLVM IR itself is one of MLIR's dialects (called <code>llvm</code>), the last stop before real LLVM.</p>
+<h3 id="the-vocabulary">The vocabulary<a class="headerlink" href="#the-vocabulary" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Word</th>
+<th>What it is</th>
+<th>Seen in the example below</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Operation</strong></td>
+<td>the basic unit: everything is an operation, from <code>+</code> to a whole function</td>
+<td><code>arith.addi</code>, <code>func.func</code>, <code>scf.for</code></td>
+</tr>
+<tr>
+<td><strong>Dialect</strong></td>
+<td>a named family of operations, types and attributes; the name before the dot</td>
+<td><code>arith</code>, <code>func</code>, <code>scf</code>, <code>cf</code>, <code>llvm</code> (and this book's own <code>mg</code>)</td>
+</tr>
+<tr>
+<td><strong>Value</strong></td>
+<td>the result of an operation, assigned once (SSA, as in LLVM)</td>
+<td><code>%0</code>, <code>%arg1</code></td>
+</tr>
+<tr>
+<td><strong>Type</strong></td>
+<td>every value has one, written after a colon</td>
+<td><code>i32</code>, <code>index</code>, <code>memref&lt;2x3xf64&gt;</code>, <code>tensor&lt;2x3xf64&gt;</code></td>
+</tr>
+<tr>
+<td><strong>Attribute</strong></td>
+<td>constant information attached to an operation</td>
+<td><code>overflowFlags = #arith.overflow&lt;none&gt;</code>, <code>sym_name = "add"</code></td>
+</tr>
+<tr>
+<td><strong>Region / block</strong></td>
+<td>an operation can contain other operations, grouped in blocks inside regions: this is how a function holds its body and how <code>scf.for</code> holds a loop body</td>
+<td>the braces after <code>func.func</code> and <code>scf.for</code></td>
+</tr>
+<tr>
+<td><strong>Pass</strong></td>
+<td>a transformation of the IR, selected by a flag on <code>mlir-opt-18</code></td>
+<td><code>--canonicalize</code>, <code>--convert-scf-to-cf</code></td>
+</tr>
+<tr>
+<td><strong>Lowering</strong> (conversion)</td>
+<td>a pass that rewrites operations of a higher dialect into a lower one</td>
+<td><code>--convert-arith-to-llvm</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-same-function-in-mlir">The same function in MLIR<a class="headerlink" href="#the-same-function-in-mlir" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>// MLIR: the same function as sum.c, written with two MLIR dialects.
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>// &#39;func&#39; provides functions; &#39;arith&#39; provides arithmetic. Each operation is named &lt;dialect&gt;.&lt;operation&gt;.
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>func.func @add(%a: i32, %b: i32) -&gt; i32 {
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>  %r = arith.addi %a, %b : i32
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>  func.return %r : i32
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>}
+</code></pre></div>
+<p><code>mlir-opt-18 add.mlir</code> parses the file, <strong>verifies</strong> it (each operation checks its own rules, and the tool prints nothing and fails if one is broken) and prints it back:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>module {
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>  func.func @add(%arg0: i32, %arg1: i32) -&gt; i32 {
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>    %0 = arith.addi %arg0, %arg1 : i32
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>    return %0 : i32
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>  }
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>}
+</code></pre></div>
+<p>The output wraps the function in a <code>module</code> (the top-level container) and gives the argument names <code>%arg0</code> and <code>%arg1</code>. Everything has the shape <code>%result = dialect.operation operands : type</code>. <code>--mlir-print-op-generic</code> shows the structure under the friendly syntax: every operation is <code>"dialect.name"(operands) &lt;{attributes}&gt; : (operand types) -&gt; result types</code>, and operations nest inside regions:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>&quot;builtin.module&quot;() ({
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>  &quot;func.func&quot;() &lt;{function_type = (i32, i32) -&gt; i32, sym_name = &quot;add&quot;}&gt; ({
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>  ^bb0(%arg0: i32, %arg1: i32):
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>    %0 = &quot;arith.addi&quot;(%arg0, %arg1) &lt;{overflowFlags = #arith.overflow&lt;none&gt;}&gt; : (i32, i32) -&gt; i32
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>    &quot;func.return&quot;(%0) : (i32) -&gt; ()
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>  }) : () -&gt; ()
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>}) : () -&gt; ()
+</code></pre></div>
+<p>That generic form is the same for every dialect, which is why one tool (<code>mlir-opt-18</code>) can read and transform all of them. The nicer syntax each dialect provides is only a convenience for people.</p>
+<h3 id="a-pass-constant-folding-and-common-subexpressions">A pass: constant folding and common subexpressions<a class="headerlink" href="#a-pass-constant-folding-and-common-subexpressions" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>// An optimization pass at work: nothing here needs the program to run, so the compiler can compute it.
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>func.func @five() -&gt; i32 {
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>  %two = arith.constant 2 : i32
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>  %three = arith.constant 3 : i32
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>  %sum = arith.addi %two, %three : i32       // 2 + 3 is known now
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>  %again = arith.addi %two, %three : i32     // the very same computation, written twice
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>  %ten = arith.addi %sum, %again : i32       // 5 + 5
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>  func.return %ten : i32
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>}
+</code></pre></div>
+<p><code>--canonicalize</code> applies each operation's own simplification rules (including computing constants); <code>--cse</code> removes a computation that is written twice. Together:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>module {
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>  func.func @five() -&gt; i32 {
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>    %c10_i32 = arith.constant 10 : i32
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>    return %c10_i32 : i32
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>  }
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>}
+</code></pre></div>
+<p>The whole function became <code>return 10</code>, with the sum written once, then twice, then added, all computed by the compiler. This is the kind of improvement a <strong>pass</strong> makes, and this book writes passes of its own.</p>
+<h3 id="a-loop-and-then-lowering-it">A loop, and then lowering it<a class="headerlink" href="#a-loop-and-then-lowering-it" title="Permanent link">&para;</a></h3>
+<p>The loop from the C example, written with MLIR's <code>scf</code> (structured control flow) dialect. Notice that the loop is <em>one operation</em> with the body inside it, and that the running total travels through <code>iter_args</code> and <code>scf.yield</code> instead of through memory:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>// A loop in MLIR, written with the &#39;scf&#39; (structured control flow) dialect: sum_to(n) = 1 + 2 + ... + n.
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>// The loop carries &#39;total&#39; from one iteration to the next (&quot;iter_args&quot;), and &#39;scf.yield&#39; passes it on.
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>func.func @sum_to(%n: index) -&gt; index {
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>  %zero = arith.constant 0 : index
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>  %one = arith.constant 1 : index
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>  %end = arith.addi %n, %one : index
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>  %total = scf.for %i = %one to %end step %one iter_args(%acc = %zero) -&gt; (index) {
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>    %next = arith.addi %acc, %i : index
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>    scf.yield %next : index
+<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a>  }
+<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a>  func.return %total : index
+<a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a>}
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>module {
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>  func.func @sum_to(%arg0: index) -&gt; index {
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>    %c0 = arith.constant 0 : index
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>    %c1 = arith.constant 1 : index
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>    %0 = arith.addi %arg0, %c1 : index
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>    %1 = scf.for %arg1 = %c1 to %0 step %c1 iter_args(%arg2 = %c0) -&gt; (index) {
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>      %2 = arith.addi %arg2, %arg1 : index
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a>      scf.yield %2 : index
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a>    }
+<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a>    return %1 : index
+<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a>  }
+<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a>}
+</code></pre></div>
+<p>(<code>mlir-opt-18</code> parses it and prints it back, with names tidied.) Now <strong>lower</strong> it, one step at a time. First <code>--convert-scf-to-cf</code>: the structured loop becomes basic blocks and branches, with the values that change (<code>%1</code>, <code>%2</code>) passed as block arguments, which is MLIR's version of <code>phi</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>module {
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>  func.func @sum_to(%arg0: index) -&gt; index {
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>    %c0 = arith.constant 0 : index
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>    %c1 = arith.constant 1 : index
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>    %0 = arith.addi %arg0, %c1 : index
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>    cf.br ^bb1(%c1, %c0 : index, index)
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a>  ^bb1(%1: index, %2: index):  // 2 preds: ^bb0, ^bb2
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a>    %3 = arith.cmpi slt, %1, %0 : index
+<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a>    cf.cond_br %3, ^bb2, ^bb3
+<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a>  ^bb2:  // pred: ^bb1
+<a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a>    %4 = arith.addi %2, %1 : index
+<a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a>    %5 = arith.addi %1, %c1 : index
+<a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a>    cf.br ^bb1(%5, %4 : index, index)
+<a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a>  ^bb3:  // pred: ^bb1
+<a id="__codelineno-15-15" name="__codelineno-15-15" href="#__codelineno-15-15"></a>    return %2 : index
+<a id="__codelineno-15-16" name="__codelineno-15-16" href="#__codelineno-15-16"></a>  }
+<a id="__codelineno-15-17" name="__codelineno-15-17" href="#__codelineno-15-17"></a>}
+</code></pre></div>
+<p>Then the arithmetic and the function itself are converted to the <code>llvm</code> dialect (the three flags in the heading; <code>--reconcile-unrealized-casts</code> cleans up the glue left between conversions). Notice that <code>index</code>, MLIR's pointer-sized integer, became <code>i64</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>module {
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>  llvm.func @sum_to(%arg0: i64) -&gt; i64 {
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>    %0 = llvm.mlir.constant(0 : index) : i64
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>    %1 = llvm.mlir.constant(1 : index) : i64
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>    %2 = llvm.add %arg0, %1  : i64
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>    llvm.br ^bb1(%1, %0 : i64, i64)
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a>  ^bb1(%3: i64, %4: i64):  // 2 preds: ^bb0, ^bb2
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>    %5 = llvm.icmp &quot;slt&quot; %3, %2 : i64
+<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a>    llvm.cond_br %5, ^bb2, ^bb3
+<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a>  ^bb2:  // pred: ^bb1
+<a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a>    %6 = llvm.add %4, %3  : i64
+<a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a>    %7 = llvm.add %3, %1  : i64
+<a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a>    llvm.br ^bb1(%7, %6 : i64, i64)
+<a id="__codelineno-16-14" name="__codelineno-16-14" href="#__codelineno-16-14"></a>  ^bb3:  // pred: ^bb1
+<a id="__codelineno-16-15" name="__codelineno-16-15" href="#__codelineno-16-15"></a>    llvm.return %4 : i64
+<a id="__codelineno-16-16" name="__codelineno-16-16" href="#__codelineno-16-16"></a>  }
+<a id="__codelineno-16-17" name="__codelineno-16-17" href="#__codelineno-16-17"></a>}
+</code></pre></div>
+<p>That is now text in MLIR's <code>llvm</code> dialect, which is a one-to-one image of real LLVM IR. The last MLIR tool, <code>mlir-translate-18 --mlir-to-llvmir</code>, writes it as real LLVM IR text:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>define i64 @sum_to(i64 %0) {
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>  %2 = add i64 %0, 1
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>  br label %3
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>3:                                                ; preds = %7, %1
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>  %4 = phi i64 [ %9, %7 ], [ 1, %1 ]
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>  %5 = phi i64 [ %8, %7 ], [ 0, %1 ]
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>  %6 = icmp slt i64 %4, %2
+<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>  br i1 %6, label %7, label %10
+<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>7:                                                ; preds = %3
+<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>  %8 = add i64 %5, %4
+<a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a>  %9 = add i64 %4, 1
+<a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a>  br label %3
+<a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a>10:                                               ; preds = %3
+<a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a>  ret i64 %5
+<a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a>}
+</code></pre></div>
+<p>Compare it with the <code>-O1</code> loop above: here the loop is a literal loop with two <code>phi</code>s (the counter <code>%4</code> and the total <code>%5</code>), because nothing optimized it. Finally <code>clang-18</code> compiles that LLVM IR and links it with a C <code>main</code> (<code>main_sum.c</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>sum_to(10) = 55, sum_to(100) = 5050
+</code></pre></div>
+<p>(<code>sum_to(10) = 55</code> and <code>sum_to(100) = 5050</code>, the sums one would compute by hand.) That is a complete journey: <strong>a high-level loop, lowered dialect by dialect, to LLVM IR, to a running program.</strong></p>
+<h2 id="how-this-book-uses-all-of-this">How this book uses all of this<a class="headerlink" href="#how-this-book-uses-all-of-this" title="Permanent link">&para;</a></h2>
+<p>Every Mountain Goat program travels the same staircase. The driver <code>mgc</code> (Chapter 20) runs the stages you have just seen, plus the first one, which is the book's own:</p>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Tool</th>
+<th>What happens</th>
+<th>Where the book builds it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>mgfront.py</code></td>
+<td>Mountain Goat source is translated to the <strong><code>mg</code> dialect</strong>, a dialect this book defines: operations such as <code>mg.matmul</code>, <code>mg.add</code>, <code>mg.reduce</code> on tensor values</td>
+<td>the dialect: Chapter 2; passes on it: Chapter 3; the front end: Chapters 20 to 22</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>mg-opt</code> (<code>--convert-mg-to-affine</code>)</td>
+<td>the <code>mg</code> operations are <strong>lowered</strong> to loops over memory (<code>affine</code>, <code>memref</code>, <code>arith</code>), and a size check is added where shapes are not known in advance</td>
+<td>Chapters 4 to 6 (lowering and bufferization), 14 (the size check), 21 and 22 (more operations), 24 (the matrix product)</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>mg-opt</code> (<code>--lower-affine --convert-scf-to-cf ... --convert-func-to-llvm</code>)</td>
+<td>loops and arithmetic are lowered to the <strong><code>llvm</code> dialect</strong>, the same step as the last two you saw above</td>
+<td>Chapter 5 (and 19, which reports a failed size check on stderr)</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>mlir-translate-18 --mlir-to-llvmir</code></td>
+<td>the <code>llvm</code> dialect becomes real <strong>LLVM IR</strong></td>
+<td>Chapter 1 (the first complete pipeline)</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>clang-18</code></td>
+<td>LLVM IR becomes a native <strong>executable</strong></td>
+<td>Chapter 1, and Chapter 8 (a standalone executable)</td>
+</tr>
+</tbody>
+</table>
+<p><code>mgc mlir prog.mg</code> shows the output of stage 1; setting <code>MGC_KEEP=dir</code> keeps every intermediate file, so you can look at each stage of your own program the way this page looked at <code>sum_to</code>. The book's own passes (stage 2) are ordinary MLIR passes in C++, and its own dialect is defined in a declarative file (TableGen, see below) from which MLIR generates the C++.</p>
+<h2 id="glossary">Glossary<a class="headerlink" href="#glossary" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>SSA</strong> static single assignment: every value is defined once. LLVM IR and MLIR both require it.</li>
+<li><strong>Basic block</strong> a straight-line run of instructions ending in a branch or a return.</li>
+<li><strong><code>phi</code> / block argument</strong> the way SSA expresses "this value depends on where control came from".</li>
+<li><strong>Dialect</strong> a named family of operations, types and attributes (<code>arith</code>, <code>scf</code>, <code>llvm</code>, <code>mg</code>).</li>
+<li><strong>Pass</strong> a transformation of the IR (an optimization or a lowering).</li>
+<li><strong>Lowering</strong> rewriting a higher-level dialect's operations into a lower-level one's.</li>
+<li><strong>Module</strong> the top-level container of a file of IR (in both LLVM and MLIR).</li>
+<li><strong>Verifier</strong> the checks that run on IR so a malformed program is rejected rather than miscompiled.</li>
+<li><strong>Tensor / memref</strong> MLIR's two ways of describing an array: a tensor is an immutable <em>value</em> (like a number), a memref is a <em>reference to memory</em> (like a pointer with a shape). This book's <code>mg</code> dialect works on tensors, and lowering turns them into memrefs.</li>
+<li><strong>TableGen / ODS</strong> LLVM's declarative description language. Dialect operations in this book are defined in <code>.td</code> files in it, and the C++ classes are generated.</li>
+</ul>
+<h2 id="self-check-questions">Self-check questions<a class="headerlink" href="#self-check-questions" title="Permanent link">&para;</a></h2>
+<p>Each answer is collapsed; try the question first.</p>
+<ol>
+<li>
+<p>What does SSA require, and why does a loop in LLVM IR need <code>phi</code>?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>SSA requires that every value is assigned exactly once. A loop counter has a different value in each iteration, so it cannot be one value; <code>phi</code> says "take this value if we came from before the loop and that one if we came from the end of the body". At <code>-O0</code> clang avoids the issue by keeping the variable in memory (<code>alloca</code>, <code>store</code>, <code>load</code>), which is not SSA-restricted; the optimizer then converts memory back into SSA values and <code>phi</code>s (example 3).</p>
+</details>
+</li>
+<li>
+<p>In example 3 the optimizer removed the loop altogether. What does that tell you about when optimizations are done at the LLVM level?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>LLVM can recognize patterns in the IR (here an induction variable summed in a loop) and replace them by a closed form, but it has to <em>recognize</em> the pattern in the flat blocks-and-branches form. That is the argument for MLIR's higher levels: an optimization that wants to know "this is a matrix product" or "this is a loop nest over a 2-D array" is far easier while that structure still exists, before everything is lowered to branches.</p>
+</details>
+</li>
+<li>
+<p>What is the difference between a dialect and a pass?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>A dialect is a <em>vocabulary</em>: a set of operations, types and attributes (<code>arith.addi</code>, <code>scf.for</code>). A pass is a <em>transformation</em>: it rewrites IR, for example constant folding (<code>--canonicalize</code>) or lowering one dialect's operations to another's (<code>--convert-scf-to-cf</code>). Dialects say what you can write; passes change what you have written.</p>
+</details>
+</li>
+<li>
+<p>Why do MLIR operations written as <code>%0 = arith.addi %a, %b : i32</code> and as <code>"arith.addi"(%a, %b) : (i32, i32) -&gt; i32</code> mean the same thing?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>The second is MLIR's <em>generic</em> form, the same for every operation of every dialect: quoted name, operands, attributes, then a function-style type. The first is the <em>custom</em> syntax that the <code>arith</code> dialect provides for readability. The tools parse both and treat them as the same operation, which is why <code>mlir-opt-18</code> can transform dialects it has no special knowledge of.</p>
+</details>
+</li>
+<li>
+<p>In the lowering example, which step turned <code>scf.for</code> into basic blocks, and what replaced the loop-carried value <code>iter_args</code>?</p>
+<details class="note">
+<summary>Answer</summary>
+<p><code>--convert-scf-to-cf</code> did. The loop-carried values (the counter and the running total) became <strong>block arguments</strong> of the loop-header block (<code>^bb1(%1: index, %2: index)</code>), and each branch back to the header passes the new values (<code>cf.br ^bb1(%5, %4 : index, index)</code>). Block arguments are MLIR's counterpart to LLVM's <code>phi</code>; when <code>mlir-translate-18</code> writes LLVM IR they become real <code>phi</code> instructions.</p>
+</details>
+</li>
+<li>
+<p>Which tool translates the <code>llvm</code> dialect to LLVM IR, and why is that step so simple compared with the earlier ones?</p>
+<details class="note">
+<summary>Answer</summary>
+<p><code>mlir-translate-18 --mlir-to-llvmir</code>. The <code>llvm</code> dialect is a one-to-one image of LLVM IR (<code>llvm.add</code> is <code>add</code>, <code>llvm.cond_br</code> is <code>br i1</code>), so there is nothing to decide, only text to write in the other format. All the real work, deciding how higher-level operations become instructions, happened in the lowering passes before it.</p>
+</details>
+</li>
+<li>
+<p>If you wanted to see what <code>mgc</code> does to one of your own programs at each stage, how would you?</p>
+<details class="note">
+<summary>Answer</summary>
+<p><code>mgc mlir prog.mg</code> prints stage 1's output (the <code>mg</code> dialect), and <code>MGC_KEEP=somedir mgc run prog.mg</code> keeps every intermediate file: the <code>mg</code> dialect, the <code>affine</code> form after <code>--convert-mg-to-affine</code>, the <code>llvm</code> dialect, the <code>.ll</code> file, and the executable. Each can be read with the vocabulary from this page.</p>
+</details>
+</li>
+</ol>
+<h2 id="limits-and-what-is-not-established">Limits and what is not established<a class="headerlink" href="#limits-and-what-is-not-established" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>This is a map, not a manual.</strong> It covers what the rest of the book needs. It does not teach MLIR's pass infrastructure, pattern rewriting, interfaces, or the LLVM backend (instruction selection, register allocation), beyond what chapters use.</li>
+<li><strong>Examples are tiny.</strong> Each shows a concept; none says anything about how the tools behave on large programs.</li>
+<li><strong>The optimizer's behavior is shown for one program.</strong> That LLVM replaced a summing loop by its closed form is what <code>clang-18 -O1</code> does <em>here, for this loop</em>; other versions and other loops may behave differently. Nothing on this page measures speed.</li>
+<li><strong>The two halves are described, not compared.</strong> The claim that high-level optimizations are easier before lowering is argued from the examples and is the project's stated motivation for MLIR; the book's own performance chapters (23 and 24) are where it measures anything.</li>
+<li><strong>Documentation:</strong> facts about MLIR's and LLVM's design are as the project documents them (<code>mlir/docs/</code> and <code>llvm/docs/</code> in the <code>llvm/llvm-project</code> repository). The pages themselves were not reachable from this book's authoring environment, so this page rests on what the 18.1.3 tools print rather than on quotations.</li>
+<li><strong>Platform:</strong> x86-64 Linux, Ubuntu's LLVM 18.1.3. The IR in the outputs includes details (alignment, attributes, <code>noundef</code>, <code>nsw</code>) that vary between versions.</li>
+</ul>
+<h2 id="where-next">Where next<a class="headerlink" href="#where-next" title="Permanent link">&para;</a></h2>
+<p>Chapter 1 runs a small structured loop through exactly the pipeline you have just seen and shows the moment its loop structure disappears. Chapter 2 defines the <code>mg</code> dialect. If you would rather see the language first, read <a href="../tour/language-tour/">the language tour</a>, which needs none of this page.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../getting-started/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Getting Started">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Getting Started
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../tour/language-tour/" class="md-footer__link md-footer__link--next" aria-label="Next: The Mountain Goat Language: A Short Tour">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                The Mountain Goat Language: A Short Tour
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 Oluwaseyi Awoga
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

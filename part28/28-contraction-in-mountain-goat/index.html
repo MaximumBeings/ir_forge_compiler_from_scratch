@@ -1,0 +1,2846 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A Toy Language Compiled Through a Real MLIR Dialect, Down to Real Native Machine Code">
+      
+      
+        <meta name="author" content="Oluwaseyi Awoga">
+      
+      
+      
+        <link rel="prev" href="../../part27/27-tensor-contractions/">
+      
+      
+        <link rel="next" href="../../part29/29-softmax-and-attention/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>28. Tensor Contractions in Mountain Goat Itself - IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#28-tensor-contractions-in-mountain-goat-itself" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-header__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              28. Tensor Contractions in Mountain Goat Itself
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-nav__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../background/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background (LLVM and MLIR in Twenty Minutes)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tour/language-tour/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Mountain Goat Language: A Short Tour
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part1/01-why-a-multi-level-ir-at-all/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1. Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part2/02-a-minimal-dialect-from-scratch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2. A Minimal Dialect From Scratch: Mountain Goat's Own mg Dialect
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part3/03-the-pass-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3. The Real Pass Infrastructure: Canonicalizing Mountain Goat
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 3 -- Progressive Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 3 -- Progressive Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part4/04-progressive-lowering-to-affine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4. Progressive Lowering: Mountain Goat to affine, Two Real Ways
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part5/05-affine-to-scf-to-llvm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5. Finishing Progressive Lowering: affine to scf to llvm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 4 -- Optimization Across Levels
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 4 -- Optimization Across Levels
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/06-real-bufferization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6. Real Bufferization: Closing Chapter 4's Own Honest Gap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part7/07-real-loop-transforms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    7. Real Loop Transforms: Fusion, Tiling, and Unrolling at the affine Level
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 5 -- Code Generation via LLVM
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 5 -- Code Generation via LLVM
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part8/08-a-standalone-native-executable/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    8. A Standalone Native Executable: Mountain Goat Without MLIR At Runtime
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part9/09-the-execution-engine-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    9. MLIR's Own Real C++ ExecutionEngine API, Called In-Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 6 -- GPU Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 6 -- GPU Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part10/10-gpu-lowering-to-ptx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10. GPU Lowering: Mountain Goat to the gpu Dialect, NVVM, and Real PTX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part11/11-the-gpu-host-side/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    11. The GPU Host Side: Device Memory, Real Runtime Calls, and a Stub Device
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 7 -- Case Studies
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 7 -- Case Studies
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part12/12-reading-the-production-pipelines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    12. Reading MLIR's Own Production Pipelines: What This Book's Compiler Is Missing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part13/13-dynamic-shapes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    13. Dynamic Shapes: Closing Chapter 12's Biggest Unknown
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part14/14-runtime-shape-checks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    14. A Runtime Shape Check: Closing Chapter 13's Memory-Safety Hole
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part15/15-a-real-test-suite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    15. A Real Test Suite: lit, FileCheck, and Proof That the Tests Can Fail
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part16/16-testing-the-gpu-path-and-loop-transforms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    16. Testing the GPU Path and the Loop Transforms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part17/17-loop-transforms-on-dynamic-bounds/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    17. Loop Transforms on Dynamic Bounds
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part18/18-why-fusion-declines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    18. Why Fusion Declines: Reading the Pass, and a Second Bug Found Along the Way
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part19/19-a-better-abort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    19. A Better Abort: Reporting Assertion Failures on stderr
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part20/20-the-mountain-goat-demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    20. The Mountain Goat Demo: A Surface Syntax, a Driver, and C++ Calling Compiled Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part21/21-more-operations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    21. More Operations: Subtract, Hadamard, Divide, Matrix Product, and Scalars
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part22/22-broadcasting-reductions-and-relu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    22. Broadcasting, Reductions and relu: Enough Operations for a Neural-Network Layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part23/23-measuring-performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    23. Measuring Performance: Does Any of It Make the Code Fast?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part24/24-closing-the-matmul-gap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    24. Closing the Gap: A Matrix Product That Walks Memory in a Better Order
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part25/25-keeping-it-working/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    25. Keeping It Working: Continuous Integration and the Tests the Early Chapters Never Had
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part26/26-learning-from-data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    26. Learning From Data: Gradient Descent in Mountain Goat
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part27/27-tensor-contractions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    27. Tensor Contractions as Matrix Products
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    28. Tensor Contractions in Mountain Goat Itself
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    28. Tensor Contractions in Mountain Goat Itself
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-was-missing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What was missing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-three-new-built-ins" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The three new built-ins
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#one-by-one" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One by one
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="One by one">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-reshape-and-permute" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Reshape and permute
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-a-matrix-product-is-a-contraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. A matrix product is a contraction
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-the-appendixs-double-contraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. The appendix's double contraction
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-a-contracted-axis-at-the-front" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. A contracted axis at the front
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-axes-in-reverse-order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Axes in reverse order
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-vectors-dot-product-outer-product-vector-times-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Vectors: dot product, outer product, vector times matrix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-a-rank-4-result" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. A rank 4 result
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-inside-a-function" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Inside a function
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mistakes-the-compiler-reports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mistakes the compiler reports
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-it-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How it works
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#are-the-tests-good-enough-break-the-compiler-21-ways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Are the tests good enough? Break the compiler 21 ways.
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limits-and-what-is-not-established" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits and what is not established
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part29/29-softmax-and-attention/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    29. Softmax and Attention
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-was-missing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What was missing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-three-new-built-ins" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The three new built-ins
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#one-by-one" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One by one
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="One by one">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-reshape-and-permute" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Reshape and permute
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-a-matrix-product-is-a-contraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. A matrix product is a contraction
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-the-appendixs-double-contraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. The appendix's double contraction
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-a-contracted-axis-at-the-front" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. A contracted axis at the front
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-axes-in-reverse-order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Axes in reverse order
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-vectors-dot-product-outer-product-vector-times-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Vectors: dot product, outer product, vector times matrix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-a-rank-4-result" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. A rank 4 result
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-inside-a-function" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Inside a function
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mistakes-the-compiler-reports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mistakes the compiler reports
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-it-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How it works
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#are-the-tests-good-enough-break-the-compiler-21-ways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Are the tests good enough? Break the compiler 21 ways.
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limits-and-what-is-not-established" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits and what is not established
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="28-tensor-contractions-in-mountain-goat-itself">28. Tensor Contractions in Mountain Goat Itself<a class="headerlink" href="#28-tensor-contractions-in-mountain-goat-itself" title="Permanent link">&para;</a></h1>
+<p><strong>What you will understand:</strong> how Mountain Goat gets tensors of rank 3 and more, and how a general tensor contraction becomes a short Mountain Goat program with <strong>no C++ in it</strong>. Chapter 27 did the axis bookkeeping (permuting and reshaping) in C++ and left only the matrix product to the language; its "Limits" section said a language-level reshape and permute were not built. This chapter builds them: two new compiler operations, <code>mg.reshape</code> and <code>mg.permute</code>, and three new built-ins, <code>reshape</code>, <code>permute</code> and <code>contract</code>. Everything is checked against the <em>definition</em> of a contraction (plain nested loops, no matrix product) on thirteen shape combinations, and against the worked examples of the <em>Tensor Contractions (CPU)</em> appendix of the companion book <em>CUDA From First Principles</em>.</p>
+<p><strong>What you need to know first:</strong> Chapter 27 (what a contraction is and why it is a matrix product in disguise: read its primer first), Chapter 22 (how an operation is added to the dialect, the lowering and the front end) and the language tour.</p>
+<div class="admonition tip">
+<p class="admonition-title">Compile and run</p>
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">cd</span><span class="w"> </span>docs/part28/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./build.sh<span class="w">                 </span><span class="c1"># once: the newest compiler (adds mg.reshape and mg.permute)</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>./mgc<span class="w"> </span>run<span class="w"> </span>examples/03_double_contraction.mg<span class="w">       </span><span class="c1"># compile and run one example</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>./mgc<span class="w"> </span>mlir<span class="w"> </span>examples/04_axis_at_the_front.mg<span class="w">       </span><span class="c1"># show the MLIR the front end produces</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>./run_examples.sh<span class="w"> </span>&gt;<span class="w"> </span>examples_out.txt<span class="w">              </span><span class="c1"># every example and every error example on this page</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>./check_contractions.py<span class="w">                           </span><span class="c1"># 13 shape combinations against the definition, exact</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>./mutation.sh<span class="w"> </span>&gt;<span class="w"> </span>mutation_out.txt<span class="w">                  </span><span class="c1"># breaks the compiler on purpose, 21 ways (about ten minutes)</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="nb">cd</span><span class="w"> </span>../../part15/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_lit.sh<span class="w">              </span><span class="c1"># the whole test suite</span>
+</code></pre></div>
+Every listing and output on this page comes from these commands.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Why this page shows FAIL lines, and why that is good</p>
+<p>Two places show failures on purpose. The <strong>error examples</strong> are programs the compiler must reject: each ends with <code>exit status 1</code> and produces no program. The <strong>mutation output</strong> comes from a negative control: the compiler deliberately broken and run against the tests, where a "caught" line (a test failed) is the wanted result and "NOT CAUGHT" would be a test gap.</p>
+</div>
+<h2 id="what-was-missing">What was missing<a class="headerlink" href="#what-was-missing" title="Permanent link">&para;</a></h2>
+<p>Until now every Mountain Goat value was a two-dimensional matrix. Chapter 27's recipe, <em>permute, reshape, multiply, reshape</em>, needs tensors of any rank and the two rearranging steps. Chapter 27 kept those in C++ and noted that the language itself could do them with three additions: tensors of rank greater than two, a reshape, and a permute. Here they are.</p>
+<h2 id="the-three-new-built-ins">The three new built-ins<a class="headerlink" href="#the-three-new-built-ins" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Written</th>
+<th>Meaning</th>
+<th>Checked at compile time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>reshape(x, d0, d1, ...)</code></td>
+<td>the same numbers, viewed with shape <code>d0 x d1 x ...</code> (row-major order; no data moves)</td>
+<td><code>x</code> has a static shape; the element counts are equal</td>
+</tr>
+<tr>
+<td><code>permute(x, p0, p1, ...)</code></td>
+<td>reorder the axes: result axis <code>i</code> is input axis <code>pi</code></td>
+<td><code>p</code> lists each axis exactly once</td>
+</tr>
+<tr>
+<td><code>contract(a, (i, j, ...), b, (k, l, ...))</code></td>
+<td>sum the products over the paired axes: <code>a</code>'s axis <code>i</code> with <code>b</code>'s axis <code>k</code>, and so on</td>
+<td>both lists the same length; every axis in range and not repeated; every pair the same size</td>
+</tr>
+</tbody>
+</table>
+<p>Literals stay matrices, so a rank-3 value is made by reshaping one: <code>reshape([[1, 2, ..., 12], [13, ..., 24]], 2, 3, 4)</code> is a <code>2x3x4</code> tensor whose first block is the numbers 1 to 12. Only five things can be done with a value of rank other than 2: <code>reshape</code> it, <code>permute</code> it, <code>contract</code> it, bind it with <code>let</code>, or <code>print</code> it. Arithmetic, <code>transpose</code>, reductions and function arguments need a matrix, and say so (see error 7).</p>
+<h2 id="one-by-one">One by one<a class="headerlink" href="#one-by-one" title="Permanent link">&para;</a></h2>
+<h3 id="1-reshape-and-permute">1. Reshape and permute<a class="headerlink" href="#1-reshape-and-permute" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>################ mgc run 01_reshape_and_permute.mg
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  | # Tensors of rank 3 and more. A literal is always a matrix; reshape(x, d0, d1, ...) views its numbers with a new shape (row-major, no data moves).
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  | let a = reshape([[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], [13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]], 2, 3, 4)   # 2 blocks of 3x4
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  | print a
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>  | # permute(x, p0, p1, p2): result axis i is input axis pi. Swapping the first two axes gives a 3x2x4 tensor.
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>  | print permute(a, 1, 0, 2)
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>  | # A &quot;rotation&quot; of the axes (a 3-cycle): result axes are input axes 2, 0, 1, so the shape 2x3x4 becomes 4x2x3.
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>  | print permute(a, 2, 0, 1)
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>  | # reshape undoes nothing and copies nothing: the same 24 numbers in a 4x6 matrix.
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>  | print reshape(a, 4, 6)
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>  ----- output
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>Unranked Memref base@ = 0x… rank = 3 offset = 0 sizes = [2, 3, 4] strides = [12, 4, 1] data = 
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>[[[1,    2,    3,    4], 
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>  [5,    6,    7,    8], 
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>  [9,    10,    11,    12]], 
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a> [[13,    14,    15,    16], 
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>  [17,    18,    19,    20], 
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>  [21,    22,    23,    24]]]
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>Unranked Memref base@ = 0x… rank = 3 offset = 0 sizes = [3, 2, 4] strides = [8, 4, 1] data = 
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>[[[1,    2,    3,    4], 
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>  [13,    14,    15,    16]], 
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a> [[5,    6,    7,    8], 
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>  [17,    18,    19,    20]], 
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a> [[9,    10,    11,    12], 
+<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>  [21,    22,    23,    24]]]
+<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a>Unranked Memref base@ = 0x… rank = 3 offset = 0 sizes = [4, 2, 3] strides = [6, 3, 1] data = 
+<a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a>[[[1,    5,    9], 
+<a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a>  [13,    17,    21]], 
+<a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a> [[2,    6,    10], 
+<a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a>  [14,    18,    22]], 
+<a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a> [[3,    7,    11], 
+<a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a>  [15,    19,    23]], 
+<a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a> [[4,    8,    12], 
+<a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a>  [16,    20,    24]]]
+<a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [4, 6] strides = [6, 1] data = 
+<a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a>[[1,   2,   3,   4,   5,   6], 
+<a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a> [7,   8,   9,   10,   11,   12], 
+<a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a> [13,   14,   15,   16,   17,   18], 
+<a id="__codelineno-1-39" name="__codelineno-1-39" href="#__codelineno-1-39"></a> [19,   20,   21,   22,   23,   24]]
+<a id="__codelineno-1-40" name="__codelineno-1-40" href="#__codelineno-1-40"></a>  ----- exit status 0
+</code></pre></div>
+<p>The first <code>print</code> shows the <code>2x3x4</code> tensor: two blocks of three rows of four. <code>permute(a, 1, 0, 2)</code> swaps the first two axes: result axis 0 is input axis 1, so the shape becomes <code>3x2x4</code>, and the first result block holds row 0 of each original block (<code>1 2 3 4</code> and <code>13 14 15 16</code>). <code>permute(a, 2, 0, 1)</code> is a rotation of the axes (a <em>3-cycle</em>): the shape <code>2x3x4</code> becomes <code>4x2x3</code>. This example is worth keeping in mind because a swap undone is the same swap, but a 3-cycle is not: reading the permutation backwards gives a different tensor, and the tests below depend on that. The last line reshapes the same 24 numbers into a <code>4x6</code> matrix; it copies nothing.</p>
+<h3 id="2-a-matrix-product-is-a-contraction">2. A matrix product is a contraction<a class="headerlink" href="#2-a-matrix-product-is-a-contraction" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>################ mgc run 02_matmul_is_a_contraction.mg
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  | # A matrix product is the simplest contraction: sum over axis 1 of A (the columns) against axis 0 of B (the rows). The appendix&#39;s first example.
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  | let a = [[1, 2], [3, 4], [5, 6]]
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>  | let b = [[1, 0, 2, 1], [0, 1, 1, 2]]
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>  | print contract(a, (1), b, (0))     # 3x4, equal to a @ b
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>  | print a @ b                         # the same numbers, written with the operator
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>  ----- output
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [3, 4] strides = [4, 1] data = 
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>[[1,   2,   4,   5], 
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a> [3,   4,   10,   11], 
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a> [5,   6,   16,   17]]
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [3, 4] strides = [4, 1] data = 
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>[[1,   2,   4,   5], 
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a> [3,   4,   10,   11], 
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a> [5,   6,   16,   17]]
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>  ----- exit status 0
+</code></pre></div>
+<p><code>contract(a, (1), b, (0))</code> sums over <code>a</code>'s axis 1 against <code>b</code>'s axis 0, and gives exactly <code>a @ b</code>. These are the appendix's numbers (its first worked example). The compiler produces <strong>no reshape and no permute</strong> for it: one <code>mg.matmul</code> (a test asserts that).</p>
+<h3 id="3-the-appendixs-double-contraction">3. The appendix's double contraction<a class="headerlink" href="#3-the-appendixs-double-contraction" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>################ mgc run 03_double_contraction.mg
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  | # A double contraction: [2,3,4] x [3,4,5], summing over A&#39;s axes 1 and 2 against B&#39;s axes 0 and 1.
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  | # The data is the appendix&#39;s: A[i] = (i % 7) - 3 and B[i] = (i % 5) - 2, numbered in row-major order. Each literal is a matrix whose rows are
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>  | # the first axis of the tensor; reshape then views it with its real shape.
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>  | let a = reshape([[-3, -2, -1, 0, 1, 2, 3, -3, -2, -1, 0, 1], [2, 3, -3, -2, -1, 0, 1, 2, 3, -3, -2, -1]], 2, 3, 4)
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>  | let b = reshape([[-2, -1, 0, 1, 2, -2, -1, 0, 1, 2, -2, -1, 0, 1, 2, -2, -1, 0, 1, 2], [-2, -1, 0, 1, 2, -2, -1, 0, 1, 2, -2, -1, 0, 1, 2, -2, -1, 0, 1, 2], [-2, -1, 0, 1, 2, -2, -1, 0, 1, 2, -2, -1, 0, 1, 2, -2, -1, 0, 1, 2]]
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>  | print contract(a, (1, 2), b, (0, 1))      # (2) free axis of A, (5) free axis of B: a 2x5 result; expected [[10, 5, 0, -5, -10], [2, 1, 0, -1, -2]]
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>  ----- output
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 5] strides = [5, 1] data = 
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>[[10,   5,   0,   -5,   -10], 
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a> [2,   1,   0,   -1,   -2]]
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>  ----- exit status 0
+</code></pre></div>
+<p><code>A</code> is <code>2x3x4</code> with <code>A[i] = (i % 7) - 3</code>, <code>B</code> is <code>3x4x5</code> with <code>B[i] = (i % 5) - 2</code>, both numbered in row-major order. Pairing A's axes <code>{1, 2}</code> with B's <code>{0, 1}</code> leaves A's axis 0 and B's axis 2: a <code>2x5</code> result, and it is the appendix's <code>numpy.tensordot</code> answer, <code>[[10, 5, 0, -5, -10], [2, 1, 0, -1, -2]]</code>. (The literals in this file were generated by <code>examples/gen_big_literals.py</code>, which is checked in.)</p>
+<h3 id="4-a-contracted-axis-at-the-front">4. A contracted axis at the front<a class="headerlink" href="#4-a-contracted-axis-at-the-front" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>################ mgc run 04_axis_at_the_front.mg
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>  | # The contracted axis is the FIRST axis of A, so A must be permuted before it can be flattened: this is the case that makes the language
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>  | # move data. A is 2x3x4, B is 2x5; summing over A&#39;s axis 0 against B&#39;s axis 0 leaves A&#39;s axes 1, 2 and B&#39;s axis 1: a 3x4x5 result.
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>  | let a = reshape([[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], [-1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12]], 2, 3, 4)
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>  | let b = [[1, 0, 2, 0, 3], [0, 1, 0, 2, 0]]
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>  | print contract(a, (0), b, (0))
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>  ----- output
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>Unranked Memref base@ = 0x… rank = 3 offset = 0 sizes = [3, 4, 5] strides = [20, 5, 1] data = 
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>[[[1,    -1,    2,    -2,    3], 
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>  [2,    -2,    4,    -4,    6], 
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>  [3,    -3,    6,    -6,    9], 
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>  [4,    -4,    8,    -8,    12]], 
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a> [[5,    -5,    10,    -10,    15], 
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>  [6,    -6,    12,    -12,    18], 
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>  [7,    -7,    14,    -14,    21], 
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>  [8,    -8,    16,    -16,    24]], 
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a> [[9,    -9,    18,    -18,    27], 
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>  [10,    -10,    20,    -20,    30], 
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>  [11,    -11,    22,    -22,    33], 
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>  [12,    -12,    24,    -24,    36]]]
+<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a>  ----- exit status 0
+</code></pre></div>
+<p>Here A's contracted axis is its <strong>first</strong> axis, so A cannot simply be read as a matrix: it must be permuted first. This is the one case in the family where the language moves data. The MLIR the front end writes shows the four steps (this is what <code>mgc mlir</code> prints, comments removed):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>%t4 = mg.permute %t2 {permutation = array&lt;i64: 1, 2, 0&gt;} : tensor&lt;2x3x4xf64&gt; -&gt; tensor&lt;3x4x2xf64&gt;
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>%t5 = mg.reshape %t4 : tensor&lt;3x4x2xf64&gt; -&gt; tensor&lt;12x2xf64&gt;
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>%t6 = mg.matmul %t5, %t3 : tensor&lt;12x2xf64&gt;, tensor&lt;2x5xf64&gt; -&gt; tensor&lt;12x5xf64&gt;
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>%t7 = mg.reshape %t6 : tensor&lt;12x5xf64&gt; -&gt; tensor&lt;3x4x5xf64&gt;
+</code></pre></div>
+<p>Permute A so the free axes <code>(1, 2)</code> come first and the contracted axis <code>0</code> last, view the result as a <code>12x2</code> matrix, multiply by B (already a <code>2x5</code> matrix), view the <code>12x5</code> product as <code>3x4x5</code>. That is Chapter 27's recipe, written by the compiler instead of by hand.</p>
+<h3 id="5-axes-in-reverse-order">5. Axes in reverse order<a class="headerlink" href="#5-axes-in-reverse-order" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>################ mgc run 05_axes_in_reverse_order.mg
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>  | # The ORDER of the paired axes matters: the first axis listed for A meets the first listed for B. Here A&#39;s axes 2 and 1 pair with B&#39;s axes 0 and 1.
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>  | # A is 2x3x4 and B is 4x3x2, so the pairs have sizes 4=4 and 3=3. Listed the other way, (1, 2) against (0, 1), the sizes would not match.
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>  | let a = reshape([[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]], 2, 3, 4)
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>  | let b = reshape([[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]], 4, 3, 2)
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>  | print contract(a, (2, 1), b, (0, 1))      # a 2x2 result
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>  ----- output
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>[[1090,   1168], 
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a> [90,   96]]
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>  ----- exit status 0
+</code></pre></div>
+<p>The order in which the pairs are listed matters: the first axis listed for A meets the first listed for B. Here <code>(2, 1)</code> against <code>(0, 1)</code> pairs A's axis 2 (size 4) with B's axis 0 (size 4) and A's axis 1 (size 3) with B's axis 1 (size 3). Listing them as <code>(1, 2)</code> against <code>(0, 1)</code> would pair sizes 3 and 4 with 4 and 3 and be an error.</p>
+<h3 id="6-vectors-dot-product-outer-product-vector-times-matrix">6. Vectors: dot product, outer product, vector times matrix<a class="headerlink" href="#6-vectors-dot-product-outer-product-vector-times-matrix" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>################ mgc run 06_vectors_dot_and_outer.mg
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  | # Rank 1 tensors exist too (reshape a one-row matrix to a single dimension). Three contractions:
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  | let u = reshape([[1, 2, 3]], 3)
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>  | let v = reshape([[4, 5, 6, 7]], 4)
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>  | print contract(u, (0), u, (0))     # dot product: every axis summed away, 1+4+9 = 14 (returned as a 1x1 matrix)
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>  | print contract(u, (), v, ())       # outer product: nothing summed, a 3x4 table of products
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>  | print contract(reshape([[1, 2, 3, 4]], 4), (0), reshape([[1, 0, 1], [0, 1, 1], [1, 1, 0], [2, 0, 1]], 4, 3), (0))   # vector times matrix
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>  ----- output
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>[[14]]
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [3, 4] strides = [4, 1] data = 
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>[[4,   5,   6,   7], 
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a> [8,   10,   12,   14], 
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a> [12,   15,   18,   21]]
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>Unranked Memref base@ = 0x… rank = 1 offset = 0 sizes = [3] strides = [1] data = 
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>[12,  5,  7]
+<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>  ----- exit status 0
+</code></pre></div>
+<p>A rank-1 tensor is made by reshaping a one-row matrix to a single dimension. Contracting every axis (the dot product) gives the scalar <code>14</code>, <strong>returned as a <code>1x1</code> matrix</strong> (the language has no rank-0 values). Contracting nothing (the outer product) is a table of products. The third result is a rank-1 vector, which prints with <code>sizes = [3]</code>.</p>
+<h3 id="7-a-rank-4-result">7. A rank 4 result<a class="headerlink" href="#7-a-rank-4-result" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>################ mgc run 07_rank4_result.mg
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>  | # A rank 4 result: A is 2x2x3 and B is 3x2x2; contracting only the 3&#39;s (A&#39;s axis 2 with B&#39;s axis 0) leaves A&#39;s two free axes and B&#39;s two: 2x2x2x2.
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>  | let a = reshape([[1, 2, 3, 4, 5, 6], [7, 8, 9, 10, 11, 12]], 2, 2, 3)
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>  | let b = reshape([[1, 0, 2, 1], [0, 1, 1, 2], [1, 1, 0, 0]], 3, 2, 2)
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>  | print contract(a, (2), b, (0))
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>  ----- output
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>Unranked Memref base@ = 0x… rank = 4 offset = 0 sizes = [2, 2, 2, 2] strides = [8, 4, 2, 1] data = 
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>[[[[4,     5], 
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>   [4,     5]], 
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>  [[10,     11], 
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>   [13,     14]]], 
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a> [[[16,     17], 
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>   [22,     23]], 
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>  [[22,     23], 
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>   [31,     32]]]]
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a>  ----- exit status 0
+</code></pre></div>
+<p>A is <code>2x2x3</code> and B is <code>3x2x2</code>; contracting only the 3's leaves A's two free axes and B's two, <code>2x2x2x2</code>.</p>
+<h3 id="8-inside-a-function">8. Inside a function<a class="headerlink" href="#8-inside-a-function" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>################ mgc run 08_in_a_function.mg
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>  | # A contraction inside a function. Function parameters are matrices, so the function reshapes them; the shapes are checked once, when it is defined.
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>  | # It computes the double contraction of a 2x3x4 tensor (passed as a 2x12 matrix) with a 3x4x5 tensor (passed as a 3x20 matrix), for any values.
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>  | def double_contraction(a: tensor[2x12], b: tensor[3x20]) = contract(reshape(a, 2, 3, 4), (1, 2), reshape(b, 3, 4, 5), (0, 1))
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>  | let a = [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]]
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>  | let b = [[1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5], [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5], [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5]]
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>  | print double_contraction(a, b)        # every output is a sum of 12 products: 12*(i+1)*(k+1) at row i, column k, because b repeats 1..5 along its last axis
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>  ----- output
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 5] strides = [5, 1] data = 
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>[[12,   24,   36,   48,   60], 
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a> [24,   48,   72,   96,   120]]
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>  ----- exit status 0
+</code></pre></div>
+<p>Function parameters are still matrices, so the function reshapes them. The shapes are checked once, when the function is defined, and the compiled function works for any values. The output is <code>12*(i+1)*(k+1)</code> at row <code>i</code>, column <code>k</code> (here <code>b</code> repeats <code>1..5</code> along its last axis and <code>a</code> is all ones in row 0, all twos in row 1, and each output sums 12 products), which you can verify by hand.</p>
+<h2 id="mistakes-the-compiler-reports">Mistakes the compiler reports<a class="headerlink" href="#mistakes-the-compiler-reports" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>################ mgc run errors/e1_axis_size_mismatch.mg
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>  | # The appendix&#39;s trap. A is 3x2 and B is 4x5; contracting A&#39;s axis 1 (size 2) with B&#39;s axis 0 (size 4) is impossible. The compiler says so before any code exists.
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>  | let a = reshape([[1, 2, 3, 4, 5, 6]], 3, 2)
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>  | let b = reshape([[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]], 4, 5)
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>  | print contract(a, (1), b, (0))
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>  ----- output
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>errors/e1_axis_size_mismatch.mg:4: error: contract: axis 1 of the first tensor has size 2 but axis 0 of the second has size 4
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>  ----- exit status 1
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>################ mgc run errors/e2_lists_differ_in_length.mg
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>  | # One axis of A against two of B: the lists must pair up.
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>  | let a = [[1, 2], [3, 4]]
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>  | print contract(a, (1), a, (0, 1))
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>  ----- output
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>errors/e2_lists_differ_in_length.mg:3: error: contract: the two axis lists must have the same length
+<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>  ----- exit status 1
+<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a>
+<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a>################ mgc run errors/e3_axis_out_of_range.mg
+<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a>  | # A matrix has axes 0 and 1; there is no axis 5.
+<a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a>  | let a = [[1, 2], [3, 4]]
+<a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a>  | print contract(a, (5), a, (0))
+<a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a>  ----- output
+<a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a>errors/e3_axis_out_of_range.mg:3: error: contract: axis 5 is out of range for the first tensor (shape 2x2)
+<a id="__codelineno-10-24" name="__codelineno-10-24" href="#__codelineno-10-24"></a>  ----- exit status 1
+<a id="__codelineno-10-25" name="__codelineno-10-25" href="#__codelineno-10-25"></a>
+<a id="__codelineno-10-26" name="__codelineno-10-26" href="#__codelineno-10-26"></a>################ mgc run errors/e4_axis_listed_twice.mg
+<a id="__codelineno-10-27" name="__codelineno-10-27" href="#__codelineno-10-27"></a>  | # An axis can be summed once, so listing it twice is a mistake.
+<a id="__codelineno-10-28" name="__codelineno-10-28" href="#__codelineno-10-28"></a>  | let a = [[1, 2], [3, 4]]
+<a id="__codelineno-10-29" name="__codelineno-10-29" href="#__codelineno-10-29"></a>  | print contract(a, (1, 1), a, (0, 1))
+<a id="__codelineno-10-30" name="__codelineno-10-30" href="#__codelineno-10-30"></a>  ----- output
+<a id="__codelineno-10-31" name="__codelineno-10-31" href="#__codelineno-10-31"></a>errors/e4_axis_listed_twice.mg:3: error: contract: axis 1 is listed twice for the first tensor
+<a id="__codelineno-10-32" name="__codelineno-10-32" href="#__codelineno-10-32"></a>  ----- exit status 1
+<a id="__codelineno-10-33" name="__codelineno-10-33" href="#__codelineno-10-33"></a>
+<a id="__codelineno-10-34" name="__codelineno-10-34" href="#__codelineno-10-34"></a>################ mgc run errors/e5_reshape_element_count.mg
+<a id="__codelineno-10-35" name="__codelineno-10-35" href="#__codelineno-10-35"></a>  | # reshape keeps the numbers, so the counts must match: 6 numbers cannot fill a 4x2 shape.
+<a id="__codelineno-10-36" name="__codelineno-10-36" href="#__codelineno-10-36"></a>  | let a = [[1, 2, 3], [4, 5, 6]]
+<a id="__codelineno-10-37" name="__codelineno-10-37" href="#__codelineno-10-37"></a>  | print reshape(a, 4, 2)
+<a id="__codelineno-10-38" name="__codelineno-10-38" href="#__codelineno-10-38"></a>  ----- output
+<a id="__codelineno-10-39" name="__codelineno-10-39" href="#__codelineno-10-39"></a>errors/e5_reshape_element_count.mg:3: error: cannot reshape 2x3 (6 elements) to 4x2 (8 elements)
+<a id="__codelineno-10-40" name="__codelineno-10-40" href="#__codelineno-10-40"></a>  ----- exit status 1
+<a id="__codelineno-10-41" name="__codelineno-10-41" href="#__codelineno-10-41"></a>
+<a id="__codelineno-10-42" name="__codelineno-10-42" href="#__codelineno-10-42"></a>################ mgc run errors/e6_not_a_permutation.mg
+<a id="__codelineno-10-43" name="__codelineno-10-43" href="#__codelineno-10-43"></a>  | # permute needs every axis exactly once: a rank 3 tensor has axes 0, 1, 2 and this list repeats one and omits another.
+<a id="__codelineno-10-44" name="__codelineno-10-44" href="#__codelineno-10-44"></a>  | let a = reshape([[1, 2, 3, 4, 5, 6, 7, 8]], 2, 2, 2)
+<a id="__codelineno-10-45" name="__codelineno-10-45" href="#__codelineno-10-45"></a>  | print permute(a, 0, 0, 2)
+<a id="__codelineno-10-46" name="__codelineno-10-46" href="#__codelineno-10-46"></a>  ----- output
+<a id="__codelineno-10-47" name="__codelineno-10-47" href="#__codelineno-10-47"></a>errors/e6_not_a_permutation.mg:3: error: permute: a rank-3 tensor needs each of the axes 0..2 listed exactly once, got 0, 0, 2
+<a id="__codelineno-10-48" name="__codelineno-10-48" href="#__codelineno-10-48"></a>  ----- exit status 1
+<a id="__codelineno-10-49" name="__codelineno-10-49" href="#__codelineno-10-49"></a>
+<a id="__codelineno-10-50" name="__codelineno-10-50" href="#__codelineno-10-50"></a>################ mgc run errors/e7_arithmetic_on_rank3.mg
+<a id="__codelineno-10-51" name="__codelineno-10-51" href="#__codelineno-10-51"></a>  | # Arithmetic is defined on matrices. A rank 3 value must be reshaped (or contracted) first.
+<a id="__codelineno-10-52" name="__codelineno-10-52" href="#__codelineno-10-52"></a>  | let a = reshape([[1, 2, 3, 4, 5, 6, 7, 8]], 2, 2, 2)
+<a id="__codelineno-10-53" name="__codelineno-10-53" href="#__codelineno-10-53"></a>  | print a + a
+<a id="__codelineno-10-54" name="__codelineno-10-54" href="#__codelineno-10-54"></a>  ----- output
+<a id="__codelineno-10-55" name="__codelineno-10-55" href="#__codelineno-10-55"></a>errors/e7_arithmetic_on_rank3.mg:3: error: &#39;+&#39; works on matrices (rank 2), but this value has shape 2x2x2 (rank 3); use reshape, permute or contract
+<a id="__codelineno-10-56" name="__codelineno-10-56" href="#__codelineno-10-56"></a>  ----- exit status 1
+<a id="__codelineno-10-57" name="__codelineno-10-57" href="#__codelineno-10-57"></a>
+<a id="__codelineno-10-58" name="__codelineno-10-58" href="#__codelineno-10-58"></a>################ mgc run errors/e8_dynamic_shape.mg
+<a id="__codelineno-10-59" name="__codelineno-10-59" href="#__codelineno-10-59"></a>  | # reshape needs every size known now. batch has a &#39;?&#39; row count, so the compiler cannot tell whether it has the right number of elements.
+<a id="__codelineno-10-60" name="__codelineno-10-60" href="#__codelineno-10-60"></a>  | def flatten(batch: tensor[?x4]) = reshape(batch, 2, 2, 2)
+<a id="__codelineno-10-61" name="__codelineno-10-61" href="#__codelineno-10-61"></a>  | print flatten([[1, 2, 3, 4]])
+<a id="__codelineno-10-62" name="__codelineno-10-62" href="#__codelineno-10-62"></a>  ----- output
+<a id="__codelineno-10-63" name="__codelineno-10-63" href="#__codelineno-10-63"></a>errors/e8_dynamic_shape.mg:2: error: reshape needs a static shape; this value has a &#39;?&#39; dimension (?x4)
+<a id="__codelineno-10-64" name="__codelineno-10-64" href="#__codelineno-10-64"></a>  ----- exit status 1
+</code></pre></div>
+<p>In order: a contracted pair of different sizes (the appendix's trap, now caught <strong>when the program is compiled</strong>, before any code exists); axis lists of different lengths; an axis number that does not exist; an axis listed twice; a reshape whose element counts differ; a permutation that repeats one axis and omits another; arithmetic on a rank 3 value (it must be reshaped or contracted first); and <code>reshape</code> of a value with a <code>?</code> size (the compiler cannot know whether the counts match, so it refuses; a <code>?</code> dimension is only ever checked at run time, Chapter 14). Each exits with status 1 and gives the file and line.</p>
+<p>Compare with Chapter 27's treatment of the same trap. There, with the check on, C++ threw an exception; with the check skipped, Mountain Goat's run-time inner-dimension check aborted the program. Here, because every size in a contraction is a number in the source, the mismatch is found <em>before</em> the program exists. The "unchecked loop that quietly reads half of one input" the appendix warns about cannot be written in this language at all.</p>
+<h2 id="how-it-works">How it works<a class="headerlink" href="#how-it-works" title="Permanent link">&para;</a></h2>
+<p>Three layers, the same three as every earlier operation.</p>
+<p><strong>The dialect (<code>MgOps.td</code>, <code>MgDialect.cpp</code>).</strong> <code>mg.reshape</code> takes a static tensor and returns a static tensor with the same number of elements. <code>mg.permute</code> carries a <code>permutation</code> attribute. Each has a verifier: reshape rejects unequal element counts and dynamic shapes; permute rejects a permutation that does not list each axis once, a wrong length, and a result shape that is not the input's axes in the new order. <code>tests/verifiers.mlir</code> feeds each one bad MLIR directly, so a different front end could not build an invalid operation.</p>
+<p><strong>The lowering (<code>LowerToAffine.cpp</code>).</strong> The two operations are lowered very differently, and the difference is the whole performance story:</p>
+<ul>
+<li><code>mg.reshape</code> becomes a <code>memref.reinterpret_cast</code>: the same buffer with a new list of sizes and the row-major strides. <strong>No element moves.</strong> This is safe because a Mountain Goat value never changes after it is made.</li>
+<li><code>mg.permute</code> becomes a loop nest with one <code>affine.for</code> per axis, running over the <em>result</em> and storing into each result element the input element whose axis <code>perm[k]</code> has the loop's <code>k</code>-th index. This is a real copy of the whole tensor.</li>
+</ul>
+<p><strong>The front end (<code>mgfront.py</code>).</strong> <code>contract</code> is not a new operation: it is <strong>desugared</strong> into the operations above, in this order. Work out A's free axes <code>fa</code> and contracted axes <code>ia</code> (as listed), and B's <code>ib</code> and <code>fb</code>. Permute A to <code>fa + ia</code>, reshape it to <code>M x K</code> (where <code>M</code> is the product of A's free sizes and <code>K</code> the product of the contracted sizes). Permute B to <code>ib + fb</code> and reshape it to <code>K x N</code>. One <code>mg.matmul</code>. Reshape the <code>M x N</code> product to A's free sizes followed by B's. When a permutation is the identity, or a reshape does not change the shape, the front end emits nothing, so a plain matrix product is just an <code>mg.matmul</code> and example 3 contains no <code>mg.permute</code>. If every axis is contracted the result is the <code>1x1</code> matrix noted above.</p>
+<h2 id="tests">Tests<a class="headerlink" href="#tests" title="Permanent link">&para;</a></h2>
+<p>Six new <code>lit</code> files in <code>test/contraction28/</code> (the suite is now 111 tests):</p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>What it checks</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>examples</code></td>
+<td>the eight examples print the values on this page</td>
+</tr>
+<tr>
+<td><code>errors</code></td>
+<td>the eight mistakes give the exact messages shown, with file and line</td>
+</tr>
+<tr>
+<td><code>verifiers</code></td>
+<td>five bad uses of <code>mg.reshape</code>/<code>mg.permute</code> as raw MLIR are rejected with the exact diagnostic</td>
+</tr>
+<tr>
+<td><code>ir</code></td>
+<td>example 4 turns into the four-step MLIR above; example 3 has <strong>no</strong> <code>mg.permute</code>; example 2 has no <code>mg.permute</code> and no <code>mg.reshape</code></td>
+</tr>
+<tr>
+<td><code>against-definition</code></td>
+<td><code>check_contractions.py</code>: thirteen shape combinations, whole numbers and quarters, <strong>exactly</strong> equal to a loop-by-loop definition written separately in Python</td>
+</tr>
+</tbody>
+</table>
+<p>The thirteen combinations are the nine Chapter 27 used (matrix product, double contraction, axis in the front of A, axes in reverse order, axes in the middle of both, vector times matrix, dot product, outer product, rank 3 by rank 3 with one shared axis) plus four new ones: a 3-cycle of axes on both sides, scattered contracted axes with their order swapped, a rank-5 operand, and size-1 axes. The numbers are small whole numbers, then multiples of a quarter, which are exact in binary, so "equal" means every digit and no tolerance is involved.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>-- whole numbers
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>  ok   matrix product                             A[3, 2] B[2, 4] -&gt; [3, 4]
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>  ok   double contraction                         A[2, 3, 4] B[3, 4, 5] -&gt; [2, 5]
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>  ok   contracted axis in the FRONT of A          A[2, 3, 4] B[2, 5] -&gt; [3, 4, 5]
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>  ok   contracted axes in reverse order           A[2, 3, 4] B[4, 3, 5] -&gt; [2, 5]
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>  ok   contracted axes in the middle of both      A[5, 2, 3] B[4, 3, 2, 6] -&gt; [5, 4, 6]
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>  ok   vector times matrix                        A[4] B[4, 6] -&gt; [6]
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>  ok   dot product (every axis contracted)        A[2, 3, 4] B[2, 3, 4] -&gt; [1, 1]
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>  ok   outer product (nothing contracted)         A[3] B[4] -&gt; [3, 4]
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>  ok   rank 3 x rank 3, one shared axis           A[3, 4, 5] B[5, 2, 3] -&gt; [3, 4, 2, 3]
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>  ok   a 3-cycle of axes on both sides            A[2, 3, 4] B[3, 2, 5] -&gt; [4, 5]
+<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>  ok   contracted axes scattered, order swapped   A[3, 2, 4, 2] B[4, 5, 3] -&gt; [2, 2, 5]
+<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>  ok   rank 5 operand                             A[2, 2, 2, 2, 3] B[3, 2, 2] -&gt; [2, 2, 2, 2]
+<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a>  ok   size-1 axes                                A[1, 3, 1] B[3, 1] -&gt; [1, 1, 1]
+<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a>-- quarters
+<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a>  ok   matrix product                             A[3, 2] B[2, 4] -&gt; [3, 4]
+<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a>  ok   double contraction                         A[2, 3, 4] B[3, 4, 5] -&gt; [2, 5]
+<a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a>  ok   contracted axis in the FRONT of A          A[2, 3, 4] B[2, 5] -&gt; [3, 4, 5]
+<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a>  ok   contracted axes in reverse order           A[2, 3, 4] B[4, 3, 5] -&gt; [2, 5]
+<a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a>  ok   contracted axes in the middle of both      A[5, 2, 3] B[4, 3, 2, 6] -&gt; [5, 4, 6]
+<a id="__codelineno-11-21" name="__codelineno-11-21" href="#__codelineno-11-21"></a>  ok   vector times matrix                        A[4] B[4, 6] -&gt; [6]
+<a id="__codelineno-11-22" name="__codelineno-11-22" href="#__codelineno-11-22"></a>  ok   dot product (every axis contracted)        A[2, 3, 4] B[2, 3, 4] -&gt; [1, 1]
+<a id="__codelineno-11-23" name="__codelineno-11-23" href="#__codelineno-11-23"></a>  ok   outer product (nothing contracted)         A[3] B[4] -&gt; [3, 4]
+<a id="__codelineno-11-24" name="__codelineno-11-24" href="#__codelineno-11-24"></a>  ok   rank 3 x rank 3, one shared axis           A[3, 4, 5] B[5, 2, 3] -&gt; [3, 4, 2, 3]
+<a id="__codelineno-11-25" name="__codelineno-11-25" href="#__codelineno-11-25"></a>  ok   a 3-cycle of axes on both sides            A[2, 3, 4] B[3, 2, 5] -&gt; [4, 5]
+<a id="__codelineno-11-26" name="__codelineno-11-26" href="#__codelineno-11-26"></a>  ok   contracted axes scattered, order swapped   A[3, 2, 4, 2] B[4, 5, 3] -&gt; [2, 2, 5]
+<a id="__codelineno-11-27" name="__codelineno-11-27" href="#__codelineno-11-27"></a>  ok   rank 5 operand                             A[2, 2, 2, 2, 3] B[3, 2, 2] -&gt; [2, 2, 2, 2]
+<a id="__codelineno-11-28" name="__codelineno-11-28" href="#__codelineno-11-28"></a>  ok   size-1 axes                                A[1, 3, 1] B[3, 1] -&gt; [1, 1, 1]
+<a id="__codelineno-11-29" name="__codelineno-11-29" href="#__codelineno-11-29"></a>all cases agree with the definition
+</code></pre></div>
+<h3 id="are-the-tests-good-enough-break-the-compiler-21-ways">Are the tests good enough? Break the compiler 21 ways.<a class="headerlink" href="#are-the-tests-good-enough-break-the-compiler-21-ways" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="ch">#!/bin/sh</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="c1"># READ THIS FIRST: this script breaks the Chapter 28 code on purpose, one way at a time, and re-runs the Chapter 28 tests (test/contraction28).</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="c1">#   &quot;caught by ...&quot; (a test failed) is the EXPECTED, wanted result: it shows the tests can notice that mistake.</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="c1">#   &quot;NOT CAUGHT&quot; would be a test gap. Part 1 edits the front end (mgfront.py) in place; part 2 rebuilds mg-opt with one bug injected into the</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="c1">#   dialect or the lowering (a full rebuild each, in work/mut/N). Every edited file is restored afterwards. Output: mutation_out.txt</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="nv">HERE</span><span class="o">=</span><span class="k">$(</span><span class="nb">cd</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>dirname<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$0</span><span class="s2">&quot;</span><span class="k">)</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">pwd</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="nv">LIT</span><span class="o">=</span><span class="nv">$HERE</span>/../../part15/code/run_lit.sh<span class="p">;</span><span class="w"> </span><span class="nv">W</span><span class="o">=</span><span class="nv">$HERE</span>/work/mut<span class="p">;</span><span class="w"> </span>rm<span class="w"> </span>-rf<span class="w"> </span><span class="nv">$W</span><span class="p">;</span><span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span><span class="nv">$W</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="nv">FILTER</span><span class="o">=</span><span class="s1">&#39;:: contraction28/&#39;</span>
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;NOTE: this script deliberately breaks the compiler code. &#39;caught&#39; lines are EXPECTED: they show the tests can detect the mistake.&quot;</span>
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="nv">F</span><span class="o">=</span><span class="nv">$HERE</span>/mgfront.py<span class="p">;</span><span class="w"> </span>cp<span class="w"> </span><span class="nv">$F</span><span class="w"> </span><span class="nv">$W</span>/mgfront.orig
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>restore<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w"> </span>cp<span class="w"> </span><span class="nv">$W</span>/mgfront.orig<span class="w"> </span><span class="nv">$F</span><span class="p">;</span><span class="w"> </span><span class="o">}</span>
+<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="nb">trap</span><span class="w"> </span>restore<span class="w"> </span>EXIT
+<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a>fails_of<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w"> </span>grep<span class="w"> </span><span class="s1">&#39;^FAIL&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span><span class="s1">&#39;s/.*:: //; s/ (.*//&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span><span class="s1">&#39;\n&#39;</span><span class="w"> </span><span class="s1">&#39; &#39;</span><span class="p">;</span><span class="w"> </span><span class="o">}</span>
+<a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a><span class="nv">out</span><span class="o">=</span><span class="k">$(</span><span class="nv">MG_TEST_TMP</span><span class="o">=</span><span class="nv">$W</span>/out<span class="w"> </span>sh<span class="w"> </span><span class="nv">$LIT</span><span class="w"> </span>--filter<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$FILTER</span><span class="s2">&quot;</span><span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;baseline (nothing broken): </span><span class="k">$(</span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$out</span><span class="s2">&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-q<span class="w"> </span><span class="s1">&#39;^FAIL&#39;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;UNEXPECTED FAILURE&#39;</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;tests pass (expected)&#39;</span><span class="k">)</span><span class="s2">&quot;</span>
+<a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a>echo<span class="p">;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;== Part 1: the front end (contract desugaring and its checks)&quot;</span>
+<a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a>fe<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w">  </span><span class="c1"># label sed-expr</span>
+<a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a><span class="w">  </span>restore<span class="p">;</span><span class="w"> </span>sed<span class="w"> </span>-i<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$2</span><span class="s2">&quot;</span><span class="w"> </span><span class="nv">$F</span>
+<a id="__codelineno-12-17" name="__codelineno-12-17" href="#__codelineno-12-17"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span>cmp<span class="w"> </span>-s<span class="w"> </span><span class="nv">$F</span><span class="w"> </span><span class="nv">$W</span>/mgfront.orig<span class="p">;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$1</span><span class="s2">: MUTATION DID NOT APPLY&quot;</span><span class="p">;</span><span class="w"> </span><span class="k">return</span><span class="p">;</span><span class="w"> </span><span class="k">fi</span>
+<a id="__codelineno-12-18" name="__codelineno-12-18" href="#__codelineno-12-18"></a><span class="w">  </span><span class="nv">f</span><span class="o">=</span><span class="k">$(</span><span class="nv">MG_TEST_TMP</span><span class="o">=</span><span class="nv">$W</span>/out<span class="w"> </span>sh<span class="w"> </span><span class="nv">$LIT</span><span class="w"> </span>--filter<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$FILTER</span><span class="s2">&quot;</span><span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>fails_of<span class="k">)</span>
+<a id="__codelineno-12-19" name="__codelineno-12-19" href="#__codelineno-12-19"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-n<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$f</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$1</span><span class="s2">: caught by </span><span class="nv">$f</span><span class="s2">&quot;</span><span class="p">;</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$1</span><span class="s2">: NOT CAUGHT (a test gap)&quot;</span><span class="p">;</span><span class="w"> </span><span class="k">fi</span>
+<a id="__codelineno-12-20" name="__codelineno-12-20" href="#__codelineno-12-20"></a><span class="w">  </span>restore
+<a id="__codelineno-12-21" name="__codelineno-12-21" href="#__codelineno-12-21"></a><span class="o">}</span>
+<a id="__codelineno-12-22" name="__codelineno-12-22" href="#__codelineno-12-22"></a>fe<span class="w"> </span><span class="s2">&quot;A is permuted contracted-axes-first (free and contracted swapped)&quot;</span><span class="w">   </span><span class="s1">&#39;s/self.permute_by(a, sa, fa + ia)/self.permute_by(a, sa, ia + fa)/&#39;</span>
+<a id="__codelineno-12-23" name="__codelineno-12-23" href="#__codelineno-12-23"></a>fe<span class="w"> </span><span class="s2">&quot;B is permuted free-axes-first (free and contracted swapped)&quot;</span><span class="w">         </span><span class="s1">&#39;s/self.permute_by(b, sb, ib + fb)/self.permute_by(b, sb, fb + ib)/&#39;</span>
+<a id="__codelineno-12-24" name="__codelineno-12-24" href="#__codelineno-12-24"></a>fe<span class="w"> </span><span class="s2">&quot;B&#39;s contracted axes taken in increasing order, not as paired&quot;</span><span class="w">        </span><span class="s1">&#39;s/self.permute_by(b, sb, ib + fb)/self.permute_by(b, sb, sorted(ib) + fb)/&#39;</span>
+<a id="__codelineno-12-25" name="__codelineno-12-25" href="#__codelineno-12-25"></a>fe<span class="w"> </span><span class="s2">&quot;the output lists B&#39;s free axes before A&#39;s&quot;</span><span class="w">                           </span><span class="s1">&#39;s/out = tuple(sa\[d\] for d in fa) + tuple(sb\[d\] for d in fb)/out = tuple(sb[d] for d in fb) + tuple(sa[d] for d in fa)/&#39;</span>
+<a id="__codelineno-12-26" name="__codelineno-12-26" href="#__codelineno-12-26"></a>fe<span class="w"> </span><span class="s2">&quot;the size check of a contracted pair is removed&quot;</span><span class="w">                      </span><span class="s1">&#39;s/if sa\[x\] != sb\[y\]:/if False:/&#39;</span>
+<a id="__codelineno-12-27" name="__codelineno-12-27" href="#__codelineno-12-27"></a>fe<span class="w"> </span><span class="s2">&quot;a repeated axis is no longer rejected&quot;</span><span class="w">                               </span><span class="s1">&#39;s/if ax in axes\[:k\]:/if False:/&#39;</span>
+<a id="__codelineno-12-28" name="__codelineno-12-28" href="#__codelineno-12-28"></a>fe<span class="w"> </span><span class="s2">&quot;an out-of-range axis is no longer rejected&quot;</span><span class="w">                          </span><span class="s1">&#39;s/if ax &gt;= len(s):/if False:/&#39;</span>
+<a id="__codelineno-12-29" name="__codelineno-12-29" href="#__codelineno-12-29"></a>fe<span class="w"> </span><span class="s2">&quot;the equal-length check of the two axis lists is removed&quot;</span><span class="w">             </span><span class="s1">&#39;s/if len(ia) != len(ib):/if False:/&#39;</span>
+<a id="__codelineno-12-30" name="__codelineno-12-30" href="#__codelineno-12-30"></a>fe<span class="w"> </span><span class="s2">&quot;the reshape element-count check is removed (the dialect verifier is the last line of defence)&quot;</span><span class="w"> </span><span class="s1">&#39;s/if n_in != n_out:/if False:/&#39;</span>
+<a id="__codelineno-12-31" name="__codelineno-12-31" href="#__codelineno-12-31"></a>fe<span class="w"> </span><span class="s2">&quot;the permutation check is removed (the dialect verifier is the last line of defence)&quot;</span><span class="w"> </span><span class="s1">&#39;s/if sorted(perm) != list(range(len(s))):/if False:/&#39;</span>
+<a id="__codelineno-12-32" name="__codelineno-12-32" href="#__codelineno-12-32"></a>fe<span class="w"> </span><span class="s2">&quot;arithmetic on a rank 3 value is no longer rejected by the front end&quot;</span><span class="w"> </span><span class="s1">&#39;s/if len(s) != 2:$/if False:/&#39;</span>
+<a id="__codelineno-12-33" name="__codelineno-12-33" href="#__codelineno-12-33"></a>fe<span class="w"> </span><span class="s2">&quot;a dot product is not turned into a 1x1 matrix&quot;</span><span class="w">                       </span><span class="s1">&#39;s/if not out: return r, (1, 1) /if not out: return self.reshape_to(r, (m, n), ()) /&#39;</span>
+<a id="__codelineno-12-34" name="__codelineno-12-34" href="#__codelineno-12-34"></a>fe<span class="w"> </span><span class="s2">&quot;an unneeded permute is emitted (identity permutation not skipped)&quot;</span><span class="w">   </span><span class="s1">&#39;s/if list(perm) == list(range(len(s))): return v, s/pass/&#39;</span>
+<a id="__codelineno-12-35" name="__codelineno-12-35" href="#__codelineno-12-35"></a>fe<span class="w"> </span><span class="s2">&quot;an unneeded reshape is emitted (same shape not skipped)&quot;</span><span class="w">             </span><span class="s1">&#39;s/if tuple(dims) == tuple(s): return v, s/pass/&#39;</span>
+<a id="__codelineno-12-36" name="__codelineno-12-36" href="#__codelineno-12-36"></a>fe<span class="w"> </span><span class="s2">&quot;a &#39;?&#39; dimension is accepted by reshape and contract&quot;</span><span class="w">                 </span><span class="s1">&#39;s/if None in s: raise MgError(self.line, f&quot;{name} needs a static shape/if False: raise MgError(self.line, f&quot;{name} needs a static shape/&#39;</span>
+<a id="__codelineno-12-37" name="__codelineno-12-37" href="#__codelineno-12-37"></a>restore
+<a id="__codelineno-12-38" name="__codelineno-12-38" href="#__codelineno-12-38"></a>
+<a id="__codelineno-12-39" name="__codelineno-12-39" href="#__codelineno-12-39"></a>echo<span class="p">;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;== Part 2: the dialect verifiers and the lowering (a full rebuild per mutation)&quot;</span>
+<a id="__codelineno-12-40" name="__codelineno-12-40" href="#__codelineno-12-40"></a><span class="nv">n</span><span class="o">=</span><span class="m">0</span>
+<a id="__codelineno-12-41" name="__codelineno-12-41" href="#__codelineno-12-41"></a>try<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w">  </span><span class="c1"># label file sed-expr</span>
+<a id="__codelineno-12-42" name="__codelineno-12-42" href="#__codelineno-12-42"></a><span class="w">  </span><span class="nv">n</span><span class="o">=</span><span class="k">$((</span><span class="nv">n</span><span class="o">+</span><span class="m">1</span><span class="k">))</span><span class="p">;</span><span class="w"> </span><span class="nv">d</span><span class="o">=</span><span class="nv">$W</span>/<span class="nv">$n</span><span class="p">;</span><span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span><span class="nv">$d</span>/build<span class="p">;</span><span class="w"> </span>cp<span class="w"> </span>-r<span class="w"> </span><span class="nv">$HERE</span>/tree<span class="w"> </span><span class="nv">$d</span>/tree<span class="p">;</span><span class="w"> </span>rm<span class="w"> </span>-rf<span class="w"> </span><span class="nv">$d</span>/tree/build
+<a id="__codelineno-12-43" name="__codelineno-12-43" href="#__codelineno-12-43"></a><span class="w">  </span><span class="nv">tgt</span><span class="o">=</span><span class="nv">$d</span>/tree/lib/<span class="nv">$2</span><span class="p">;</span><span class="w"> </span>cp<span class="w"> </span><span class="nv">$tgt</span><span class="w"> </span><span class="nv">$d</span>/before<span class="p">;</span><span class="w"> </span>sed<span class="w"> </span>-i<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$3</span><span class="s2">&quot;</span><span class="w"> </span><span class="nv">$tgt</span>
+<a id="__codelineno-12-44" name="__codelineno-12-44" href="#__codelineno-12-44"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span>cmp<span class="w"> </span>-s<span class="w"> </span><span class="nv">$d</span>/before<span class="w"> </span><span class="nv">$tgt</span><span class="p">;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$1</span><span class="s2">: MUTATION DID NOT APPLY&quot;</span><span class="p">;</span><span class="w"> </span><span class="k">return</span><span class="p">;</span><span class="w"> </span><span class="k">fi</span>
+<a id="__codelineno-12-45" name="__codelineno-12-45" href="#__codelineno-12-45"></a><span class="w">  </span><span class="o">(</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span><span class="nv">$d</span>/build<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>cmake<span class="w"> </span><span class="nv">$d</span>/tree<span class="w"> </span>-DMLIR_DIR<span class="o">=</span>/usr/lib/llvm-18/lib/cmake/mlir<span class="w"> </span>-DLLVM_DIR<span class="o">=</span>/usr/lib/llvm-18/lib/cmake/llvm<span class="w"> </span>-DCMAKE_BUILD_TYPE<span class="o">=</span>Release<span class="w"> </span>-DLLVM_ENABLE_ASSERTIONS<span class="o">=</span>OFF<span class="w"> </span>&gt;/dev/null<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span>include/mg<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>make<span class="w"> </span>-j8<span class="w"> </span>&gt;/dev/null<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="o">)</span>
+<a id="__codelineno-12-46" name="__codelineno-12-46" href="#__codelineno-12-46"></a><span class="w">  </span><span class="o">[</span><span class="w"> </span>-x<span class="w"> </span><span class="nv">$d</span>/build/mg-opt<span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$1</span><span class="s2">: BUILD FAILED&quot;</span><span class="p">;</span><span class="w"> </span><span class="k">return</span><span class="p">;</span><span class="w"> </span><span class="o">}</span>
+<a id="__codelineno-12-47" name="__codelineno-12-47" href="#__codelineno-12-47"></a><span class="w">  </span><span class="nv">f</span><span class="o">=</span><span class="k">$(</span><span class="nv">MG_OPT</span><span class="o">=</span><span class="nv">$d</span>/build/mg-opt<span class="w"> </span><span class="nv">MG_TEST_TMP</span><span class="o">=</span><span class="nv">$d</span>/out<span class="w"> </span>sh<span class="w"> </span><span class="nv">$LIT</span><span class="w"> </span>--filter<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$FILTER</span><span class="s2">&quot;</span><span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>fails_of<span class="k">)</span>
+<a id="__codelineno-12-48" name="__codelineno-12-48" href="#__codelineno-12-48"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-n<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$f</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$1</span><span class="s2">: caught by </span><span class="nv">$f</span><span class="s2">&quot;</span><span class="p">;</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$1</span><span class="s2">: NOT CAUGHT (a test gap)&quot;</span><span class="p">;</span><span class="w"> </span><span class="k">fi</span>
+<a id="__codelineno-12-49" name="__codelineno-12-49" href="#__codelineno-12-49"></a><span class="o">}</span>
+<a id="__codelineno-12-50" name="__codelineno-12-50" href="#__codelineno-12-50"></a>try<span class="w"> </span><span class="s2">&quot;permute reads through the INVERSE permutation&quot;</span><span class="w">              </span>LowerToAffine.cpp<span class="w"> </span><span class="s1">&#39;s/for (size_t k = 0; k &lt; perm.size(); ++k) inIdx\[perm\[k\]\] = ivs\[k\];/for (size_t k = 0; k &lt; perm.size(); ++k) inIdx[k] = ivs[perm[k]];/&#39;</span>
+<a id="__codelineno-12-51" name="__codelineno-12-51" href="#__codelineno-12-51"></a>try<span class="w"> </span><span class="s2">&quot;permute does not reorder at all (copies as is)&quot;</span><span class="w">             </span>LowerToAffine.cpp<span class="w"> </span><span class="s1">&#39;s/inIdx\[perm\[k\]\] = ivs\[k\];/inIdx[k] = ivs[k];/&#39;</span>
+<a id="__codelineno-12-52" name="__codelineno-12-52" href="#__codelineno-12-52"></a>try<span class="w"> </span><span class="s2">&quot;reshape view uses the wrong strides (scaled by the wrong dimension)&quot;</span><span class="w"> </span>LowerToAffine.cpp<span class="w"> </span><span class="s1">&#39;s/strides\[i\] = strides\[i + 1\] \* shape\[i + 1\];/strides[i] = strides[i + 1] * shape[i];/&#39;</span>
+<a id="__codelineno-12-53" name="__codelineno-12-53" href="#__codelineno-12-53"></a>try<span class="w"> </span><span class="s2">&quot;the reshape element-count check is removed from the verifier&quot;</span><span class="w"> </span>MgDialect.cpp<span class="w"> </span><span class="s1">&#39;s/if (in.getNumElements() != out.getNumElements())/if (false)/&#39;</span>
+<a id="__codelineno-12-54" name="__codelineno-12-54" href="#__codelineno-12-54"></a>try<span class="w"> </span><span class="s2">&quot;the permute duplicate-axis check is removed from the verifier&quot;</span><span class="w"> </span>MgDialect.cpp<span class="w"> </span><span class="s1">&#39;s/if (p &lt; 0 || p &gt;= in.getRank() || seen\[p\])/if (p &lt; 0 || p &gt;= in.getRank())/&#39;</span>
+<a id="__codelineno-12-55" name="__codelineno-12-55" href="#__codelineno-12-55"></a>try<span class="w"> </span><span class="s2">&quot;the permute result-shape check is removed from the verifier&quot;</span><span class="w">   </span>MgDialect.cpp<span class="w"> </span><span class="s1">&#39;s/if (out.getDimSize(i) != in.getDimSize(perm\[i\]))/if (false)/&#39;</span>
+<a id="__codelineno-12-56" name="__codelineno-12-56" href="#__codelineno-12-56"></a>restore
+<a id="__codelineno-12-57" name="__codelineno-12-57" href="#__codelineno-12-57"></a>echo<span class="p">;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;restored: </span><span class="k">$(</span>cmp<span class="w"> </span>-s<span class="w"> </span><span class="nv">$F</span><span class="w"> </span><span class="nv">$W</span>/mgfront.orig<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;mgfront.py is back to its original&#39;</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;RESTORE FAILED&#39;</span><span class="k">)</span><span class="s2">&quot;</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>NOTE: this script deliberately breaks the compiler code. &#39;caught&#39; lines are EXPECTED: they show the tests can detect the mistake.
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>baseline (nothing broken): tests pass (expected)
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>== Part 1: the front end (contract desugaring and its checks)
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>A is permuted contracted-axes-first (free and contracted swapped): caught by contraction28/ir.mlir contraction28/examples.mlir contraction28/against-definition.mlir 
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>B is permuted free-axes-first (free and contracted swapped): caught by contraction28/ir.mlir contraction28/examples.mlir contraction28/against-definition.mlir 
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>B&#39;s contracted axes taken in increasing order, not as paired: caught by contraction28/against-definition.mlir 
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>the output lists B&#39;s free axes before A&#39;s: caught by contraction28/ir.mlir contraction28/examples.mlir contraction28/against-definition.mlir 
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>the size check of a contracted pair is removed: caught by contraction28/errors.mlir 
+<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a>a repeated axis is no longer rejected: caught by contraction28/errors.mlir 
+<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a>an out-of-range axis is no longer rejected: caught by contraction28/errors.mlir 
+<a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a>the equal-length check of the two axis lists is removed: caught by contraction28/errors.mlir 
+<a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a>the reshape element-count check is removed (the dialect verifier is the last line of defence): caught by contraction28/errors.mlir 
+<a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a>the permutation check is removed (the dialect verifier is the last line of defence): caught by contraction28/errors.mlir 
+<a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a>arithmetic on a rank 3 value is no longer rejected by the front end: caught by contraction28/errors.mlir 
+<a id="__codelineno-13-16" name="__codelineno-13-16" href="#__codelineno-13-16"></a>a dot product is not turned into a 1x1 matrix: caught by contraction28/examples.mlir contraction28/against-definition.mlir 
+<a id="__codelineno-13-17" name="__codelineno-13-17" href="#__codelineno-13-17"></a>an unneeded permute is emitted (identity permutation not skipped): caught by contraction28/ir.mlir 
+<a id="__codelineno-13-18" name="__codelineno-13-18" href="#__codelineno-13-18"></a>an unneeded reshape is emitted (same shape not skipped): caught by contraction28/ir.mlir 
+<a id="__codelineno-13-19" name="__codelineno-13-19" href="#__codelineno-13-19"></a>a &#39;?&#39; dimension is accepted by reshape and contract: caught by contraction28/errors.mlir 
+<a id="__codelineno-13-20" name="__codelineno-13-20" href="#__codelineno-13-20"></a>
+<a id="__codelineno-13-21" name="__codelineno-13-21" href="#__codelineno-13-21"></a>== Part 2: the dialect verifiers and the lowering (a full rebuild per mutation)
+<a id="__codelineno-13-22" name="__codelineno-13-22" href="#__codelineno-13-22"></a>permute reads through the INVERSE permutation: caught by contraction28/examples.mlir contraction28/against-definition.mlir 
+<a id="__codelineno-13-23" name="__codelineno-13-23" href="#__codelineno-13-23"></a>permute does not reorder at all (copies as is): caught by contraction28/examples.mlir contraction28/against-definition.mlir 
+<a id="__codelineno-13-24" name="__codelineno-13-24" href="#__codelineno-13-24"></a>reshape view uses the wrong strides (scaled by the wrong dimension): caught by contraction28/examples.mlir contraction28/against-definition.mlir 
+<a id="__codelineno-13-25" name="__codelineno-13-25" href="#__codelineno-13-25"></a>the reshape element-count check is removed from the verifier: caught by contraction28/verifiers.mlir 
+<a id="__codelineno-13-26" name="__codelineno-13-26" href="#__codelineno-13-26"></a>the permute duplicate-axis check is removed from the verifier: caught by contraction28/verifiers.mlir 
+<a id="__codelineno-13-27" name="__codelineno-13-27" href="#__codelineno-13-27"></a>the permute result-shape check is removed from the verifier: caught by contraction28/verifiers.mlir 
+<a id="__codelineno-13-28" name="__codelineno-13-28" href="#__codelineno-13-28"></a>
+<a id="__codelineno-13-29" name="__codelineno-13-29" href="#__codelineno-13-29"></a>restored: mgfront.py is back to its original
+</code></pre></div>
+<p>All 21 are caught. Four things are worth noticing.</p>
+<ul>
+<li><strong>The 3-cycle matters.</strong> "permute reads through the INVERSE permutation" is caught only because examples and cases use permutations that are not their own inverse (the 3-cycle in example 1, and the rotated axes in the reference cases). A swap-only test would have let it through.</li>
+<li><strong>One mutation is caught by only one test.</strong> "B's contracted axes taken in increasing order, not as paired" changes nothing in any of the eight examples (their axes are already in increasing order for B) and is caught only by <code>against-definition</code>, whose cases include axes listed in reverse. That is the same lesson as Chapter 27's, and the reason the comparison with the definition exists.</li>
+<li><strong>Two mutations change no output, and are still caught.</strong> Emitting an identity <code>permute</code> or a same-shape <code>reshape</code> copies or views data for nothing, so no <em>value</em> test could notice. The <code>ir</code> test asserts that example 3 contains no <code>mg.permute</code> and that example 2 contains neither operation, which turns "no data moves when none needs to" into something that can fail.</li>
+<li><strong>The front end and the verifiers guard the same mistakes.</strong> With the front end's reshape or permutation check deleted, the <em>errors</em> test still fails (it expects the front end's message), while <code>verifiers</code> shows the dialect rejects the bad operation by itself. One of the first runs of this script contained a mutation that did not compile ("BUILD FAILED"), which the script reports rather than hides; it was rewritten and the whole script re-run, and the output above is from that complete run.</li>
+</ul>
+<h2 id="limits-and-what-is-not-established">Limits and what is not established<a class="headerlink" href="#limits-and-what-is-not-established" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Static shapes only.</strong> <code>reshape</code>, <code>permute</code> and <code>contract</code> need every size known when compiling; a <code>?</code> size is rejected. The tensors of rank other than 2 cannot be function parameters or results, only intermediate values (a function reshapes its matrix arguments, and a result is a matrix).</li>
+<li><strong>No arithmetic on rank 3 and up.</strong> Elementwise <code>+</code>, <code>*</code>, <code>relu</code>, reductions and <code>@</code> still need matrices. A rank 3 value must be reshaped, or contracted, first. Adding rank-N elementwise operations is straightforward and not done.</li>
+<li><strong>No scalars of rank 0.</strong> A full contraction (a dot product) returns a <code>1x1</code> matrix. A <code>1x1</code> matrix is the language's scalar-shaped value; it is not the compile-time number a literal like <code>2</code> is.</li>
+<li><strong>No batch axes.</strong> As in Chapter 27, a contraction pairs axes and sums them away. An axis present in both inputs <em>and</em> the output (batched matrix multiply, <code>einsum</code>) is not supported. Chapter 29's attention needs batches of one head and avoids the question.</li>
+<li><strong>The permutation copies.</strong> <code>permute</code> is a real copy of the whole tensor, and a contraction like example 4 pays for it. <strong>No timing was done</strong> here, the copy was not fused into the product, and no claim is made about the cost on large tensors. The reshape is free.</li>
+<li><strong>Only small shapes were run,</strong> all <code>f64</code>, the largest a few hundred elements (the rank-5 case has 48 elements in its first operand).</li>
+<li><strong>Exactness depends on the order of additions,</strong> which the desugaring keeps the same as the definition's (the flattened contracted index runs through the pairs in the order listed). That is why the equality is exact for these cases. It is an argument plus 26 passing runs, not a proof for every shape, and a compiler setting that reorders floating-point additions would break it. The test data are exact in binary, so it would not show that.</li>
+<li><strong>The language's <code>contract</code> is not <code>einsum</code>.</strong> No repeated-subscript notation, no diagonals (an axis listed twice is rejected), no trace.</li>
+<li><strong>The appendix's own program was not run</strong> (see Chapter 27). The agreement shown is with the appendix's printed values and with the definition written for these chapters.</li>
+<li><strong>GPU:</strong> not covered; the GPU path is compile-only (Chapters 10 to 12) and <code>mg.reshape</code>/<code>mg.permute</code> have no GPU lowering.</li>
+<li><strong>Platform:</strong> x86-64 Linux, LLVM 18.1.3.</li>
+</ul>
+<h2 id="reproducing">Reproducing<a class="headerlink" href="#reproducing" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="nb">cd</span><span class="w"> </span>docs/part28/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./build.sh
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>./run_examples.sh<span class="w"> </span>&gt;<span class="w"> </span>examples_out.txt
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>./check_contractions.py<span class="w"> </span>&gt;<span class="w"> </span>check_contractions_out.txt
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>./mutation.sh<span class="w"> </span>&gt;<span class="w"> </span>mutation_out.txt
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="nb">cd</span><span class="w"> </span>../../part15/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_lit.sh<span class="w">          </span><span class="c1"># 111 tests</span>
+</code></pre></div>
+<h2 id="chapter-summary">Chapter summary<a class="headerlink" href="#chapter-summary" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Mountain Goat now has tensors of any rank, with <code>reshape</code>, <code>permute</code> and <code>contract</code> built in. A contraction is written in the language, with no C++ around it.</li>
+<li><code>reshape</code> is free (a new view of the same buffer); <code>permute</code> copies; <code>contract</code> is a compile-time rewrite into permute, reshape, <strong>one</strong> matrix product, reshape.</li>
+<li>It agrees exactly with the definition of a contraction on thirteen shape combinations and with the appendix's worked values.</li>
+<li>Mistakes the appendix had to check at run time (a mismatched contracted pair, a repeated axis, an out-of-range axis) are compile errors here.</li>
+<li>The tests are shown able to fail: 21 injected bugs in the front end, the verifiers and the lowering.</li>
+</ul>
+<h2 id="self-check-questions">Self-check questions<a class="headerlink" href="#self-check-questions" title="Permanent link">&para;</a></h2>
+<p>Each answer is collapsed; try the question first.</p>
+<ol>
+<li>
+<p>What is the shape of <code>contract(a, (0, 2), b, (1, 0))</code> for <code>a</code> of shape <code>[3, 5, 4]</code> and <code>b</code> of shape <code>[4, 3, 6]</code>, and which matrices are multiplied?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>A's axis 0 (size 3) pairs with B's axis 1 (size 3), and A's axis 2 (size 4) with B's axis 0 (size 4). A's free axis is axis 1 (size 5); B's is axis 2 (size 6). The output is <code>[5, 6]</code>. A is permuted to <code>[5, 3, 4]</code> (free axis first, then the contracted axes in the order listed: 0 then 2, i.e. sizes 3 and 4) and read as <code>5x12</code>; B is permuted to <code>[3, 4, 6]</code> (axis 1, then axis 0, then the free axis 2) and read as <code>12x6</code>. The product is <code>5x6</code>.</p>
+</details>
+</li>
+<li>
+<p>Why does example 2's contraction compile to a single <code>mg.matmul</code>, while example 4's needs an <code>mg.permute</code>?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>In example 2, A's free axis is already first and its contracted axis last, and B's contracted axis is already first, so the row-major data of each is already a matrix and nothing needs to move. In example 4, A's contracted axis is first, so its numbers are not in the order a matrix product needs (free axes bundled as rows, contracted as columns), and the data must be copied into that order.</p>
+</details>
+</li>
+<li>
+<p>Which of <code>reshape</code> and <code>permute</code> copies data, and why can the other not?</p>
+<details class="note">
+<summary>Answer</summary>
+<p><code>permute</code> copies. After permuting, the same logical tensor must be laid out in memory with a different axis order, and this chapter's matrix product reads its operands row-major, so the numbers have to be moved. <code>reshape</code> only changes how a flat, row-major buffer is cut into axes, which does not change where any number is stored, so it is a new view of the same memory.</p>
+</details>
+</li>
+<li>
+<p>Why must a 3-cycle (not a swap) be among the permutation tests?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>A swap is its own inverse: applying it forwards or backwards gives the same tensor. A lowering that reads the permutation the wrong way round would therefore pass every swap-only test. A 3-cycle is not its own inverse, so only it exposes that mistake. The mutation "permute reads through the inverse permutation" is caught only because of this.</p>
+</details>
+</li>
+<li>
+<p>Why is the mismatch of the appendix's trap a compile error here but a run-time abort in Chapter 27?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>Chapter 27's C++ built the matrices from sizes known only when the C++ ran, so the sizes reached the compiled matrix product as run-time numbers and only its run-time check could stop them. Here the sizes are literal numbers in the source, so <code>contract</code> can compare them while compiling. A <code>?</code> size could not be checked at compile time; that is why <code>reshape</code> and <code>contract</code> refuse values with a <code>?</code> dimension.</p>
+</details>
+</li>
+<li>
+<p>Why does the dot product return <code>[[14]]</code> (a <code>1x1</code> matrix) rather than <code>14</code>?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>The language has no rank-0 tensors: a number such as <code>14</code> in the source is a compile-time scalar, folded away before code is generated, while a computed value must be a tensor with a shape. The dot product is computed at run time, so it is a <code>1x1</code> matrix.</p>
+</details>
+</li>
+<li>
+<p>What does <code>reshape(x, 2, 3, 4)</code> do when <code>x</code> is <code>4x6</code>, and what is printed?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>It views the 24 numbers of <code>x</code> in row-major order as two blocks of three rows of four. Nothing is copied. For <code>x</code> holding 1 to 24 row by row, the first block is rows <code>1 2 3 4</code>, <code>5 6 7 8</code>, <code>9 10 11 12</code>. (<code>4x6</code> and <code>2x3x4</code> both have 24 elements; <code>reshape(x, 4, 2)</code> would be an error: 6 and 8 elements differ.)</p>
+</details>
+</li>
+<li>
+<p>The mutation "an unneeded permute is emitted (identity permutation not skipped)" does not change any program's output. Why is it still worth catching?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>An identity permute is a full copy of a tensor for nothing: it would slow every contraction down without changing its answer, and no test of <em>values</em> could ever notice. The <code>ir</code> test asserts that example 3 has no <code>mg.permute</code> at all, which is how a performance property (no data moves when none needs to) is turned into something a test can fail on.</p>
+</details>
+</li>
+<li>
+<p>Why can tensors of rank other than 2 not be function parameters yet, and what is the workaround?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>The type syntax <code>tensor[RxC]</code>, the C++ header generator (<code>mgc lib</code>, which wraps a function's arguments as <code>mg::Matrix</code>) and the dynamic-shape machinery were all built for rank 2, and extending them was not part of this chapter's scope. The workaround is the one example 8 uses: pass a matrix (a <code>2x12</code> for a <code>2x3x4</code> tensor) and <code>reshape</code> it inside the function. The reshape is free, and the compiled function works for any values of that shape.</p>
+</details>
+</li>
+<li>
+<p>What would be needed to add a rank-N <code>+</code>?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>An elementwise operation already exists in the dialect for any equal ranks (<code>mg.add</code>'s verifier compares rank and each dimension), but its lowering is a two-loop nest and the front end rejects non-matrices. Needed: a lowering that builds a loop nest of the operand's rank (as <code>mg.permute</code>'s already does), front-end shape rules for ranks above 2 (equal shapes; whether size-1 axes stretch), and tests with a definition-style reference as for <code>contract</code>.</p>
+</details>
+</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../../part27/27-tensor-contractions/" class="md-footer__link md-footer__link--prev" aria-label="Previous: 27. Tensor Contractions as Matrix Products">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                27. Tensor Contractions as Matrix Products
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../../part29/29-softmax-and-attention/" class="md-footer__link md-footer__link--next" aria-label="Next: 29. Softmax and Attention">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                29. Softmax and Attention
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 Oluwaseyi Awoga
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

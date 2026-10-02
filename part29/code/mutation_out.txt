@@ -1,0 +1,16 @@
+NOTE: this script deliberately breaks the compiler code. 'caught' lines are EXPECTED: they show the tests can detect the mistake.
+baseline (nothing broken): tests pass (expected)
+
+== Part 1: the front end and the driver
+exp is compiled as relu by the front end: caught by attention29/ir.mlir attention29/examples.mlir attention29/against-reference.mlir 
+the driver forgets to lower the math dialect: caught by attention29/examples.mlir attention29/against-reference.mlir 
+the driver does not link the math library (-lm): caught by attention29/examples.mlir attention29/against-reference.mlir 
+
+== Part 2: the dialect verifier and the lowering (a full rebuild per mutation)
+exp computes e^(-x): caught by attention29/examples.mlir attention29/against-reference.mlir 
+exp copies its input (computes nothing): caught by attention29/examples.mlir attention29/against-reference.mlir 
+mg.exp's verifier accepts anything: caught by attention29/verifiers.mlir 
+a row maximum is computed as a minimum (Chapter 22's reduce): caught by attention29/examples.mlir attention29/against-reference.mlir 
+a maximum starts from 0, not -infinity (wrong for all-negative rows): caught by attention29/examples.mlir attention29/against-reference.mlir 
+
+restored: mgfront.py and mgc are back to their originals

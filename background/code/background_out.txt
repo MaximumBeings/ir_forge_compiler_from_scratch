@@ -1,0 +1,180 @@
+
+################ versions
+Ubuntu clang version 18.1.3 (1ubuntu1)
+Ubuntu LLVM version 18.1.3
+
+################ 1. clang -S -emit-llvm -O0 sum.c      (C to LLVM IR, no optimization)
+define dso_local i32 @add(i32 noundef %0, i32 noundef %1) #0 {
+  %3 = alloca i32, align 4
+  %4 = alloca i32, align 4
+  store i32 %0, ptr %3, align 4
+  store i32 %1, ptr %4, align 4
+  %5 = load i32, ptr %3, align 4
+  %6 = load i32, ptr %4, align 4
+  %7 = add nsw i32 %5, %6
+  ret i32 %7
+}
+
+################ 2. clang -S -emit-llvm -O0 loop.c     (a loop: several basic blocks, memory for every variable)
+define dso_local i32 @sum_to(i32 noundef %0) #0 {
+  %2 = alloca i32, align 4
+  %3 = alloca i32, align 4
+  %4 = alloca i32, align 4
+  store i32 %0, ptr %2, align 4
+  store i32 0, ptr %3, align 4
+  store i32 1, ptr %4, align 4
+  br label %5
+5:                                                ; preds = %13, %1
+  %6 = load i32, ptr %4, align 4
+  %7 = load i32, ptr %2, align 4
+  %8 = icmp sle i32 %6, %7
+  br i1 %8, label %9, label %16
+9:                                                ; preds = %5
+  %10 = load i32, ptr %4, align 4
+  %11 = load i32, ptr %3, align 4
+  %12 = add nsw i32 %11, %10
+  store i32 %12, ptr %3, align 4
+  br label %13
+13:                                               ; preds = %9
+  %14 = load i32, ptr %4, align 4
+  %15 = add nsw i32 %14, 1
+  store i32 %15, ptr %4, align 4
+  br label %5, !llvm.loop !6
+16:                                               ; preds = %5
+  %17 = load i32, ptr %3, align 4
+  ret i32 %17
+}
+
+################ 3. the same loop after LLVM's optimizer (clang -O1): registers and a phi, no memory
+define dso_local i32 @sum_to(i32 noundef %0) local_unnamed_addr #0 {
+  %2 = icmp slt i32 %0, 1
+  br i1 %2, label %14, label %3
+3:                                                ; preds = %1
+  %4 = shl nuw i32 %0, 1
+  %5 = add nsw i32 %0, -1
+  %6 = zext i32 %5 to i33
+  %7 = add nsw i32 %0, -2
+  %8 = zext i32 %7 to i33
+  %9 = mul i33 %6, %8
+  %10 = lshr i33 %9, 1
+  %11 = trunc i33 %10 to i32
+  %12 = add i32 %4, %11
+  %13 = add i32 %12, -1
+  br label %14
+14:                                               ; preds = %3, %1
+  %15 = phi i32 [ 0, %1 ], [ %13, %3 ]
+  ret i32 %15
+}
+
+################ 4. LLVM IR written by hand, compiled with clang and run
+  | ; LLVM IR written by hand: a function that returns the larger of two 32-bit integers.
+  | define i32 @max(i32 %a, i32 %b) {
+  | entry:
+  |   %bigger = icmp sgt i32 %a, %b          ; %bigger is an i1 (a boolean): is a > b?
+  |   %r = select i1 %bigger, i32 %a, i32 %b ; pick one of the two
+  |   ret i32 %r
+  | }
+max(3, 9) = 9, max(7, -2) = 7
+
+################ 5. mlir-opt-18 add.mlir               (parse, verify, print back)
+module {
+  func.func @add(%arg0: i32, %arg1: i32) -> i32 {
+    %0 = arith.addi %arg0, %arg1 : i32
+    return %0 : i32
+  }
+}
+
+
+################ 6. the same, in MLIR's generic form: every operation is  name(operands) attributes : type
+"builtin.module"() ({
+  "func.func"() <{function_type = (i32, i32) -> i32, sym_name = "add"}> ({
+  ^bb0(%arg0: i32, %arg1: i32):
+    %0 = "arith.addi"(%arg0, %arg1) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    "func.return"(%0) : (i32) -> ()
+  }) : () -> ()
+}) : () -> ()
+
+
+################ 7. mlir-opt-18 fold.mlir --canonicalize --cse     (constant folding and common-subexpression elimination)
+module {
+  func.func @five() -> i32 {
+    %c10_i32 = arith.constant 10 : i32
+    return %c10_i32 : i32
+  }
+}
+
+
+################ 8. sum_loop.mlir as written
+module {
+  func.func @sum_to(%arg0: index) -> index {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %0 = arith.addi %arg0, %c1 : index
+    %1 = scf.for %arg1 = %c1 to %0 step %c1 iter_args(%arg2 = %c0) -> (index) {
+      %2 = arith.addi %arg2, %arg1 : index
+      scf.yield %2 : index
+    }
+    return %1 : index
+  }
+}
+
+
+################ 9. one lowering step:  --convert-scf-to-cf     (the structured loop becomes blocks and branches)
+module {
+  func.func @sum_to(%arg0: index) -> index {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %0 = arith.addi %arg0, %c1 : index
+    cf.br ^bb1(%c1, %c0 : index, index)
+  ^bb1(%1: index, %2: index):  // 2 preds: ^bb0, ^bb2
+    %3 = arith.cmpi slt, %1, %0 : index
+    cf.cond_br %3, ^bb2, ^bb3
+  ^bb2:  // pred: ^bb1
+    %4 = arith.addi %2, %1 : index
+    %5 = arith.addi %1, %c1 : index
+    cf.br ^bb1(%5, %4 : index, index)
+  ^bb3:  // pred: ^bb1
+    return %2 : index
+  }
+}
+
+
+################ 10. all the way down:  --convert-scf-to-cf --convert-arith-to-llvm --convert-func-to-llvm --reconcile-unrealized-casts
+module {
+  llvm.func @sum_to(%arg0: i64) -> i64 {
+    %0 = llvm.mlir.constant(0 : index) : i64
+    %1 = llvm.mlir.constant(1 : index) : i64
+    %2 = llvm.add %arg0, %1  : i64
+    llvm.br ^bb1(%1, %0 : i64, i64)
+  ^bb1(%3: i64, %4: i64):  // 2 preds: ^bb0, ^bb2
+    %5 = llvm.icmp "slt" %3, %2 : i64
+    llvm.cond_br %5, ^bb2, ^bb3
+  ^bb2:  // pred: ^bb1
+    %6 = llvm.add %4, %3  : i64
+    %7 = llvm.add %3, %1  : i64
+    llvm.br ^bb1(%7, %6 : i64, i64)
+  ^bb3:  // pred: ^bb1
+    llvm.return %4 : i64
+  }
+}
+
+
+################ 11. mlir-translate-18 --mlir-to-llvmir   (the 'llvm' dialect text becomes real LLVM IR)
+define i64 @sum_to(i64 %0) {
+  %2 = add i64 %0, 1
+  br label %3
+3:                                                ; preds = %7, %1
+  %4 = phi i64 [ %9, %7 ], [ 1, %1 ]
+  %5 = phi i64 [ %8, %7 ], [ 0, %1 ]
+  %6 = icmp slt i64 %4, %2
+  br i1 %6, label %7, label %10
+7:                                                ; preds = %3
+  %8 = add i64 %5, %4
+  %9 = add i64 %4, 1
+  br label %3
+10:                                               ; preds = %3
+  ret i64 %5
+}
+
+################ 12. clang-18 on that LLVM IR, linked with a C main, run
+sum_to(10) = 55, sum_to(100) = 5050

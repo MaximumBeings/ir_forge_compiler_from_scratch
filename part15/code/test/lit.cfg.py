@@ -38,6 +38,20 @@ config.substitutions += [
 ]
 # The language tour (docs/tour): its examples are run in place, like the chapters' examples.
 config.substitutions += [("%tour", os.path.join(config.test_source_root, "..", "..", "..", "tour", "code"))]
+# Chapter 29: exp, softmax and attention ('%mgc29' etc. must come before the shorter '%mgc').
+ch29 = os.path.join(config.test_source_root, "..", "..", "..", "part29", "code")
+config.substitutions += [
+    ("%mgc29", "env MG_OPT=" + mg_opt + " " + os.path.join(ch29, "mgc")),
+    ("%ex29", os.path.join(ch29, "examples")),
+    ("%ch29", ch29),
+]
+# Chapter 28: tensors of any rank and contract(...) in Mountain Goat itself ('%mgc28' etc. must come before the shorter '%mgc').
+ch28 = os.path.join(config.test_source_root, "..", "..", "..", "part28", "code")
+config.substitutions += [
+    ("%mgc28", "env MG_OPT=" + mg_opt + " " + os.path.join(ch28, "mgc")),
+    ("%ex28", os.path.join(ch28, "examples")),
+    ("%ch28", ch28),
+]
 # Chapter 27: tensor contractions through Mountain Goat's matrix product (files used in place).
 config.substitutions += [("%cpp27", os.path.join(config.test_source_root, "..", "..", "..", "part27", "code", "cpp"))]
 # Chapter 26: the gradient-descent trainer (its Mountain Goat file and C++ driver are used in place).

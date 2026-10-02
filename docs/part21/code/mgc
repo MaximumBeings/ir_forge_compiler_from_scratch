@@ -35,7 +35,7 @@ case $cmd in
     fi
     exe=${out:-$W/$base.exe}
     clang-18 "$W/$base.ll" -o "$exe" -L"$LIBDIR" -lmlir_runner_utils -Wl,-rpath,"$LIBDIR" 2>/dev/null   # 5. -> native executable
-    [ "$cmd" = run ] && exec "$exe"
+    if [ "$cmd" = run ]; then exec "$exe"; fi   # (Chapter 23: this used to be `[ ... ] && exec`, which made `mgc build` exit with status 1 on success)
     ;;
   ptx)
     $MG_OPT "$W/$base.mlir" --convert-mg-to-affine -o "$W/$base.affine.mlir"

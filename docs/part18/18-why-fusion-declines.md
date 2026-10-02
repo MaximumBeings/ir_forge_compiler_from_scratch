@@ -8,6 +8,9 @@
     Every command, listing and output on this page is reproduced by the commands in [Reproducing this chapter](#reproducing-this-chapter) at the bottom of the page, which also lists what must be built first. The chain of builds is in [Getting Started](../getting-started.md#which-build-does-each-chapter-need).
 
 
+!!! note "Why this page shows FAIL lines, and why that is good"
+    Parts of this page come from **negative controls**: the same tests run against an *older* build, or against *deliberately broken* code (a "mutation"). In those runs a **FAIL is the expected, wanted result**: it means a test noticed the problem, which is how we know the tests are worth anything. What would be wrong is the opposite, a deliberately broken build that passes everything. The **baseline** (the unmodified current build) must always show every test passing, and it does. Each script that does this says so in its own header and prints a reminder at the top of its output.
+
 ## Background: what a fusion pass decides
 
 Two adjacent loop nests, where the first writes a buffer and the second reads it, can often be merged into one nest, so each element is consumed right after it is produced and the intermediate buffer can shrink. Chapter 7 showed this on static loops: an add nest and a transpose nest became one nest and a 4x6 buffer became a single scalar slot. But fusion is not always a win (it can duplicate work), so the pass does not fuse blindly. It runs a **profitability analysis**: a cost model that counts operation instances (roughly, ops in the body times trip counts) for the nests before and after fusion and compares them. A cost model made of products of trip counts needs the trip counts as *numbers*. That is the thread this chapter pulls.

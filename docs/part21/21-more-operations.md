@@ -18,6 +18,9 @@ cpp/run.sh                         # build and run the C++ program       -> cpp/
 cd ../../part15/code && ./run_lit.sh   # the whole test suite (78 tests)
 ```
 
+!!! note "Why this page shows FAIL lines, and why that is good"
+    Parts of this page come from **negative controls**: the same tests run against an *older* build, or against *deliberately broken* code (a "mutation"). In those runs a **FAIL is the expected, wanted result**: it means a test noticed the problem, which is how we know the tests are worth anything. What would be wrong is the opposite, a deliberately broken build that passes everything. The **baseline** (the unmodified current build) must always show every test passing, and it does. Each script that does this says so in its own header and prints a reminder at the top of its output.
+
 ## Primer: three meanings of "multiply"
 
 Given two matrices **A** and **B**, three different operations are all called multiplication.

@@ -17,6 +17,9 @@
     Every listing and output on this page comes from these commands.
 
 
+!!! note "Why this page shows FAIL lines, and why that is good"
+    Parts of this page come from **negative controls**: the same tests run against an *older* build, or against *deliberately broken* code (a "mutation"). In those runs a **FAIL is the expected, wanted result**: it means a test noticed the problem, which is how we know the tests are worth anything. What would be wrong is the opposite, a deliberately broken build that passes everything. The **baseline** (the unmodified current build) must always show every test passing, and it does. Each script that does this says so in its own header and prints a reminder at the top of its output.
+
 ## Primer: what "a compiler driver" is
 
 Compilers are rarely one program. `gcc hello.c` looks like one command, but it runs a preprocessor, a compiler proper, an assembler and a linker, passing files between them. The command you type is the **driver**: it knows the stages, their order and their flags, so you do not have to.

@@ -1,6 +1,10 @@
 #!/bin/sh
 # Rebuild mg-opt with one bug injected into LowerToAffine.cpp and run the ops tests against it.
 # Each build is a full rebuild in work/mutN (about two minutes). Output: lowering_mutation_out.txt
+# READ THIS FIRST: this script rebuilds mg-opt with one deliberate bug injected into the lowering at a time (a full rebuild each) and runs the tests.
+#   FAIL lines (and non-zero exit statuses) in this script's output are the EXPECTED result: each bug SHOULD make at least one test fail (a FAIL line means a test caught it). A section with NO FAIL line would be a test gap.
+#   The unmodified, current build is the baseline and must show no failures. A mutation or old build that makes NO test fail would be the problem.
+echo "NOTE: this script deliberately runs broken or older code. FAIL lines below are EXPECTED: they show the tests can detect the problem. The baseline (unmodified current build) must show none."
 HERE=$(cd "$(dirname "$0")" && pwd); LIT=$HERE/../../part15/code; M=$HERE/work/mut; rm -rf $M; mkdir -p $M
 n=0
 try() {  # label sed-expr

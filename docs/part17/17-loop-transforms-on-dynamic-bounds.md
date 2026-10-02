@@ -8,6 +8,9 @@
     Every command, listing and output on this page is reproduced by the commands in [Reproducing this chapter](#reproducing-this-chapter) at the bottom of the page, which also lists what must be built first. The chain of builds is in [Getting Started](../getting-started.md#which-build-does-each-chapter-need).
 
 
+!!! note "Why this page shows FAIL lines, and why that is good"
+    Parts of this page come from **negative controls**: the same tests run against an *older* build, or against *deliberately broken* code (a "mutation"). In those runs a **FAIL is the expected, wanted result**: it means a test noticed the problem, which is how we know the tests are worth anything. What would be wrong is the opposite, a deliberately broken build that passes everything. The **baseline** (the unmodified current build) must always show every test passing, and it does. Each script that does this says so in its own header and prints a reminder at the top of its output.
+
 ## Background: why a dynamic bound makes loop transforms harder
 
 Chapter 7 transformed loops like `affine.for %i = 0 to 2`: the compiler knew the loop ran exactly twice. With dynamic shapes the bound is a value read at runtime: `affine.for %i = 0 to %dim`. Each transform leans on knowing the trip count in a different way, so each reacts differently:

@@ -8,6 +8,9 @@
     Every command, listing and output on this page is reproduced by the commands in [Reproducing this chapter](#reproducing-this-chapter) at the bottom of the page, which also lists what must be built first. The chain of builds is in [Getting Started](../getting-started.md#which-build-does-each-chapter-need).
 
 
+!!! note "Why this page shows FAIL lines, and why that is good"
+    Parts of this page come from **negative controls**: the same tests run against an *older* build, or against *deliberately broken* code (a "mutation"). In those runs a **FAIL is the expected, wanted result**: it means a test noticed the problem, which is how we know the tests are worth anything. What would be wrong is the opposite, a deliberately broken build that passes everything. The **baseline** (the unmodified current build) must always show every test passing, and it does. Each script that does this says so in its own header and prints a reminder at the top of its output.
+
 ## Primer: why a message can vanish
 
 A running Unix program has three standard **file descriptors**: 0 (input), 1 (standard output, "stdout") and 2 (standard error, "stderr"). A program that prints with C's `puts` writes to the stdio library's *buffered* stdout stream: the text is held in memory and only sent to descriptor 1 when the buffer fills, is flushed, or the program exits normally. When stdout is a terminal the library flushes at each newline, so you see the text immediately. When stdout is a **pipe or a file** it flushes only when the buffer fills or at exit.

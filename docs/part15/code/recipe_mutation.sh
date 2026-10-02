@@ -1,6 +1,10 @@
 #!/bin/sh
 # Chapter 16: do the loop and GPU tests fail when the recipe or runtime they pin is changed?
 # Each mutation edits ONE file in a COPY of the suite, then runs only the affected test(s) there.
+# READ THIS FIRST: this script injects deliberate bugs into the GPU recipe and stub runtime and re-runs the tests.
+#   FAIL lines (and non-zero exit statuses) in this script's output are the EXPECTED result: each injected bug SHOULD make at least one test fail.
+#   The unmodified, current build is the baseline and must show no failures. A mutation or old build that makes NO test fail would be the problem.
+echo "NOTE: this script deliberately runs broken or older code. FAIL lines below are EXPECTED: they show the tests can detect the problem. The baseline (unmodified current build) must show none."
 HERE=$(cd "$(dirname "$0")" && pwd)
 export MG_OPT=${MG_OPT:-$HERE/../../part14/code/build/mg-opt}
 export DECODE_PTX=$(cd "$HERE/../../part10/code" && pwd)/decode_ptx.py

@@ -1,6 +1,10 @@
 #!/bin/sh
 # Four deliberate bugs in the new pass, each applied to a COPY of this chapter's source tree, rebuilt, and tested against the assert-stderr tests.
 # Needs ./build.sh to have been run (it creates tree/). Each mutation rebuilds mg-opt, so this takes a few minutes. Output: stderr_mutation_out.txt
+# READ THIS FIRST: this script rebuilds the compiler with one deliberate bug at a time and re-runs the tests.
+#   FAIL lines (and non-zero exit statuses) in this script's output are the EXPECTED result: each bug SHOULD make at least one test fail.
+#   The unmodified, current build is the baseline and must show no failures. A mutation or old build that makes NO test fail would be the problem.
+echo "NOTE: this script deliberately runs broken or older code. FAIL lines below are EXPECTED: they show the tests can detect the problem. The baseline (unmodified current build) must show none."
 HERE=$(cd "$(dirname "$0")" && pwd); SRC=$HERE/tree; SUITE=$HERE/../../part15/code/test/assert-stderr
 mutate() {  # name, description, python edit (receives the path to AssertToStderr.cpp). ONLY=n runs just mutation n.
   [ -z "$ONLY" ] || [ "$ONLY" = "$1" ] || return

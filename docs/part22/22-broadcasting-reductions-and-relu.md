@@ -17,6 +17,9 @@
     ```
     Every listing and output on this page comes from these commands.
 
+!!! note "Why this page shows FAIL lines, and why that is good"
+    Parts of this page come from **negative controls**: the same tests run against an *older* build, or against *deliberately broken* code (a "mutation"). In those runs a **FAIL is the expected, wanted result**: it means a test noticed the problem, which is how we know the tests are worth anything. What would be wrong is the opposite, a deliberately broken build that passes everything. The **baseline** (the unmodified current build) must always show every test passing, and it does. Each script that does this says so in its own header and prints a reminder at the top of its output.
+
 ## Primer: three ideas
 
 **Broadcasting.** `[[1, 2, 3], [4, 5, 6]] + [[10, 20, 30]]` adds a 1x3 row to a 2x3 matrix. The shapes differ, so by Chapter 21's rule the program would be an error. But the intent is clear and extremely common (adding a *bias* to every row). **Broadcasting** is the rule that makes it legal: a dimension of size 1 is conceptually *repeated* to match the other operand, so the 1x3 row behaves as if it were two copies of itself stacked into a 2x3 matrix. Broadcasting is not a new arithmetic operation; it only changes shapes before the operation runs. The rule, per dimension: the sizes must be equal, or one of them must be 1 (in which case it grows to the other).

@@ -8,6 +8,9 @@
     Every command, listing and output on this page is reproduced by the commands in [Reproducing this chapter](#reproducing-this-chapter) at the bottom of the page, which also lists what must be built first. The chain of builds is in [Getting Started](../getting-started.md#which-build-does-each-chapter-need).
 
 
+!!! note "A wrong or missing answer here is the point"
+    This chapter's controls and reproductions are **supposed** to look broken: a wrong answer, a crash, or a non-zero exit status. They show what happens without the fix or without the real behavior. The correct build's output is shown beside them. Each script says so in its own header.
+
 ## Background: what a pass pipeline is
 
 A compiler built on MLIR does its work as a sequence of **passes**, each rewriting the IR one step closer to machine code. A *pass pipeline* is nothing more than a list of those passes in a fixed order, optionally with options. Everything in Chapters 4 through 11 was an `mlir-opt-18` command line naming passes in order. MLIR also ships a few *packaged* pipelines, written in C++, that bundle a recommended order behind one name. Reading them answers a useful question: where does a pipeline that someone who knows MLIR well wrote differ from the one this book assembled by trial and error?

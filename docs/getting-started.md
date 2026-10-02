@@ -48,7 +48,8 @@ Each chapter's page starts with a "Compile and run" box (Chapters 1 to 9, 20 and
 | 13 to 19 | the chapter's own `build.sh` (13, 14, 19), or `part14/code/build.sh` for 15 to 18 | the test-suite chapters can also use a newer build |
 | 20 | `part20/code/build.sh` | adds the front end and the `mgc` driver |
 | 21 | `part21/code/build.sh` | adds the arithmetic operations |
-| 22 and the [language tour](tour/language-tour.md) | `part22/code/build.sh` | adds relu, reductions and broadcasting; the newest build runs everything |
+| 22 and the [language tour](tour/language-tour.md) | `part22/code/build.sh` | adds relu, reductions and broadcasting |
+| 23 | `part22/code/build.sh` | Chapter 23 changes only the driver (`mgc -O`, `--passes`); the newest `mg-opt` runs everything |
 | the test suite (`part15/code/run_lit.sh`) | any build; it picks the newest that exists | the newest build runs every test |
 
 Every build needs `cmake`, `make`, `llvm-18-dev`, `libmlir-18-dev` and `mlir-18-tools` (see above), and takes a few minutes the first time. Every `run.sh` and `demo.sh` writes its intermediate files under `./work/` or `./show/`, which are git-ignored.

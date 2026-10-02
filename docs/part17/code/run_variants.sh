@@ -3,6 +3,7 @@
 #   (1) run the self-checking harness on eleven runtime shapes,
 #   (2) run the mismatch harness, which must ABORT (Chapter 14's runtime check must survive the transform).
 # Needs ../../part14/code/build.sh to have been run. Output: run_variants_out.txt
+# NOTE: the mismatch run is SUPPOSED to abort (non-zero exit status); that is the check passing, not failing.
 HERE=$(cd "$(dirname "$0")" && pwd); M=${MG_OPT:-$HERE/../../part14/code/build/mg-opt}; W=$HERE/work; mkdir -p $W
 LOW='--lower-affine --convert-scf-to-cf --convert-arith-to-llvm --finalize-memref-to-llvm --convert-func-to-llvm --reconcile-unrealized-casts'
 $M $HERE/chain.mlir --convert-mg-to-affine -o $W/chain_affine.mlir || exit 2

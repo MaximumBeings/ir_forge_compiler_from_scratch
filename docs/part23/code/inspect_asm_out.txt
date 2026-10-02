@@ -1,0 +1,4 @@
+untiled, -O3 -march=native, mm_dyn: 0 vector/FMA instructions
+untiled, -O3 -march=native, mm_256: 0 vector/FMA instructions
+tiled (32), -O3 -march=native, mm_dyn: 0 vector/FMA instructions
+tiled (32), -O3 -march=native, mm_256: 64 vector/FMA instructions

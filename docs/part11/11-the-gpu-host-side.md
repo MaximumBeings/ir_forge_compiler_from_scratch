@@ -8,6 +8,9 @@
     Every command, listing and output on this page is reproduced by the commands in [Reproducing this chapter](#reproducing-this-chapter) at the bottom of the page, which also lists what must be built first. The chain of builds is in [Getting Started](../getting-started.md#which-build-does-each-chapter-need).
 
 
+!!! note "A wrong or missing answer here is the point"
+    This chapter's controls and reproductions are **supposed** to look broken: a wrong answer, a crash, or a non-zero exit status. They show what happens without the fix or without the real behavior. The correct build's output is shown beside them. Each script says so in its own header.
+
 ## Primer: what the host does around a kernel
 
 A GPU has its own memory. A kernel can only read and write memory on the device, so a host program that wants to use one must, in order:

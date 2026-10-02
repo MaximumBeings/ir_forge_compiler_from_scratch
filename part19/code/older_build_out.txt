@@ -1,0 +1,10 @@
+  Failed:  8 (15.38%)
+  Passed: 44 (84.62%)
+FAIL: assert-stderr/guard-nested-assert.mlir
+FAIL: assert-stderr/message-bytes-exact.mlir
+FAIL: assert-stderr/message-on-stderr.mlir
+FAIL: assert-stderr/nested-assert-runs.mlir
+FAIL: assert-stderr/rewrite-structure.mlir
+FAIL: assert-stderr/run-twice-no-collision.mlir
+FAIL: assert-stderr/static-unchanged.mlir
+FAIL: assert-stderr/valid-shapes-still-pass.mlir

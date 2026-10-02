@@ -1,0 +1,6 @@
+# Hashes of file build rules.
+288a262eda050ee47ca35e6ef3ada8cd CMakeFiles/MgOpsIncGen
+8c82f7ecb4de0725c366097e310fc4e4 include/mg/MgOps.cpp.inc
+b62f5d0158386bcbd740b854db998407 include/mg/MgOps.h.inc
+688c6b1f1af247ad800a1b66ae590572 include/mg/MgOpsDialect.cpp.inc
+2fd9344847bcc61a5f720a018a66d9d4 include/mg/MgOpsDialect.h.inc

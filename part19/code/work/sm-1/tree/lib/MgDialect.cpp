@@ -1,0 +1,121 @@
+#include "mg/MgDialect.h"
+#include "mg/MgOps.h"
+#include "mg/DynamicShapes.h"
+
+#include "mlir/IR/Builders.h"
+#include "mlir/IR/Matchers.h"
+#include "mlir/IR/OpImplementation.h"
+#include "mlir/IR/PatternMatch.h"
+
+using namespace mg;
+
+#include "mg/MgOpsDialect.cpp.inc"
+
+void MgDialect::initialize() {
+  addOperations<
+#define GET_OP_LIST
+#include "mg/MgOps.cpp.inc"
+      >();
+}
+
+mlir::Operation *MgDialect::materializeConstant(mlir::OpBuilder &builder,
+                                                mlir::Attribute value,
+                                                mlir::Type type,
+                                                mlir::Location loc) {
+  auto elements = llvm::dyn_cast<mlir::DenseElementsAttr>(value);
+  if (!elements)
+    return nullptr;
+  return builder.create<ConstantOp>(loc, type, elements);
+}
+
+#define GET_OP_CLASSES
+#include "mg/MgOps.cpp.inc"
+
+mlir::LogicalResult ConstantOp::inferReturnTypes(
+    mlir::MLIRContext *context, std::optional<mlir::Location> location,
+    mlir::ValueRange operands, mlir::DictionaryAttr attributes,
+    mlir::OpaqueProperties properties, mlir::RegionRange regions,
+    llvm::SmallVectorImpl<mlir::Type> &inferredReturnTypes) {
+  Adaptor adaptor(operands, attributes, properties, regions);
+  inferredReturnTypes.push_back(adaptor.getValue().getType());
+  return mlir::success();
+}
+
+mlir::OpFoldResult ConstantOp::fold(FoldAdaptor adaptor) { return getValueAttr(); }
+
+mlir::LogicalResult TransposeOp::verify() {
+  auto inputType = llvm::dyn_cast<mlir::RankedTensorType>(getInput().getType());
+  auto resultType = llvm::dyn_cast<mlir::RankedTensorType>(getResult().getType());
+  if (!inputType || !resultType)
+    return emitOpError("mg.transpose only supports ranked tensors");
+  if (inputType.getRank() != 2 || resultType.getRank() != 2)
+    return emitOpError("mg.transpose only supports rank-2 tensors");
+  auto inShape = inputType.getShape();
+  auto outShape = resultType.getShape();
+  if (!mg::dyn::compatibleDim(inShape[0], outShape[1]) ||
+      !mg::dyn::compatibleDim(inShape[1], outShape[0]))
+    return emitOpError("mg.transpose result shape must be the input shape reversed");
+  return mlir::success();
+}
+
+mlir::LogicalResult AddOp::verify() {
+  auto lhsType = llvm::dyn_cast<mlir::RankedTensorType>(getLhs().getType());
+  auto rhsType = llvm::dyn_cast<mlir::RankedTensorType>(getRhs().getType());
+  auto resType = llvm::dyn_cast<mlir::RankedTensorType>(getResult().getType());
+  if (!lhsType || !rhsType || !resType)
+    return emitOpError("mg.add only supports ranked tensors");
+  if (lhsType.getRank() != rhsType.getRank() || lhsType.getRank() != resType.getRank())
+    return emitOpError("mg.add operands and result must have the same rank");
+  for (int64_t d = 0; d < lhsType.getRank(); ++d)
+    if (!mg::dyn::compatibleDim(lhsType.getDimSize(d), rhsType.getDimSize(d)) ||
+        !mg::dyn::compatibleDim(lhsType.getDimSize(d), resType.getDimSize(d)) ||
+        !mg::dyn::compatibleDim(rhsType.getDimSize(d), resType.getDimSize(d)))
+      return emitOpError("mg.add operands must have compatible shapes, got ")
+             << lhsType << " and " << rhsType << " -> " << resType;
+  return mlir::success();
+}
+
+mlir::OpFoldResult AddOp::fold(FoldAdaptor adaptor) {
+  auto lhsAttr = llvm::dyn_cast_if_present<mlir::DenseElementsAttr>(adaptor.getLhs());
+  auto rhsAttr = llvm::dyn_cast_if_present<mlir::DenseElementsAttr>(adaptor.getRhs());
+  if (!lhsAttr || !rhsAttr)
+    return nullptr;
+
+  auto lhsValues = lhsAttr.getValues<llvm::APFloat>();
+  auto rhsValues = rhsAttr.getValues<llvm::APFloat>();
+  llvm::SmallVector<llvm::APFloat> summed;
+  summed.reserve(lhsAttr.getNumElements());
+  for (auto [l, r] : llvm::zip(lhsValues, rhsValues))
+    summed.push_back(l + r);
+  return mlir::DenseElementsAttr::get(lhsAttr.getType(), summed);
+}
+
+namespace {
+/// Real pattern-rewrite canonicalization: mg.transpose(mg.transpose(%x))
+/// folds straight to %x, since transposing a 2-D tensor twice is the
+/// identity. Modeled on the same real idea MLIR's own official Toy
+/// tutorial uses for its own transpose-of-transpose rewrite, written here
+/// fresh rather than copied from it.
+struct SimplifyRedundantTranspose : public mlir::OpRewritePattern<TransposeOp> {
+  using OpRewritePattern<TransposeOp>::OpRewritePattern;
+
+  mlir::LogicalResult
+  matchAndRewrite(TransposeOp op, mlir::PatternRewriter &rewriter) const override {
+    auto innerTranspose = op.getInput().getDefiningOp<TransposeOp>();
+    if (!innerTranspose)
+      return mlir::failure();
+    // With dynamic shapes the inner input's type can differ from this op's
+    // result type (`tensor<?x2xf64>` vs `tensor<?x?xf64>`); replacing one
+    // with the other would produce invalid IR, so only fire on an exact match.
+    if (innerTranspose.getInput().getType() != op.getType())
+      return mlir::failure();
+    rewriter.replaceOp(op, innerTranspose.getInput());
+    return mlir::success();
+  }
+};
+} // namespace
+
+void TransposeOp::getCanonicalizationPatterns(mlir::RewritePatternSet &results,
+                                              mlir::MLIRContext *context) {
+  results.add<SimplifyRedundantTranspose>(context);
+}

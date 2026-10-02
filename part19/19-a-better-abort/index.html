@@ -1,0 +1,2453 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A Toy Language Compiled Through a Real MLIR Dialect, Down to Real Native Machine Code">
+      
+      
+        <meta name="author" content="Oluwaseyi Awoga">
+      
+      
+      
+        <link rel="prev" href="../../part18/18-why-fusion-declines/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>19. A Better Abort: Reporting Assertion Failures on stderr - IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#19-a-better-abort-reporting-assertion-failures-on-stderr" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-header__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              19. A Better Abort: Reporting Assertion Failures on stderr
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-nav__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part1/01-why-a-multi-level-ir-at-all/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1. Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part2/02-a-minimal-dialect-from-scratch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2. A Minimal Dialect From Scratch: Mountain Goat's Own mg Dialect
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part3/03-the-pass-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3. The Real Pass Infrastructure: Canonicalizing Mountain Goat
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 3 -- Progressive Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 3 -- Progressive Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part4/04-progressive-lowering-to-affine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4. Progressive Lowering: Mountain Goat to affine, Two Real Ways
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part5/05-affine-to-scf-to-llvm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5. Finishing Progressive Lowering: affine to scf to llvm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 4 -- Optimization Across Levels
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 4 -- Optimization Across Levels
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/06-real-bufferization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6. Real Bufferization: Closing Chapter 4's Own Honest Gap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part7/07-real-loop-transforms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    7. Real Loop Transforms: Fusion, Tiling, and Unrolling at the affine Level
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 5 -- Code Generation via LLVM
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 5 -- Code Generation via LLVM
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part8/08-a-standalone-native-executable/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    8. A Standalone Native Executable: Mountain Goat Without MLIR At Runtime
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part9/09-the-execution-engine-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    9. MLIR's Own Real C++ ExecutionEngine API, Called In-Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 6 -- GPU Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 6 -- GPU Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part10/10-gpu-lowering-to-ptx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10. GPU Lowering: Mountain Goat to the gpu Dialect, NVVM, and Real PTX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part11/11-the-gpu-host-side/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    11. The GPU Host Side: Device Memory, Real Runtime Calls, and a Stub Device
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 7 -- Case Studies
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 7 -- Case Studies
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part12/12-reading-the-production-pipelines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    12. Reading MLIR's Own Production Pipelines: What This Book's Compiler Is Missing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part13/13-dynamic-shapes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    13. Dynamic Shapes: Closing Chapter 12's Biggest Unknown
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part14/14-runtime-shape-checks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    14. A Runtime Shape Check: Closing Chapter 13's Memory-Safety Hole
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part15/15-a-real-test-suite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    15. A Real Test Suite: lit, FileCheck, and Proof That the Tests Can Fail
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part16/16-testing-the-gpu-path-and-loop-transforms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    16. Testing the GPU Path and the Loop Transforms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part17/17-loop-transforms-on-dynamic-bounds/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    17. Loop Transforms on Dynamic Bounds
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part18/18-why-fusion-declines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    18. Why Fusion Declines: Reading the Pass, and a Second Bug Found Along the Way
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    19. A Better Abort: Reporting Assertion Failures on stderr
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    19. A Better Abort: Reporting Assertion Failures on stderr
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#primer-why-a-message-can-vanish" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Primer: why a message can vanish
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-problem-shown-side-by-side" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The problem, shown side by side
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The implementation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-pass-produces" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the pass produces
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-pass-must-sit-in-the-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where the pass must sit in the pipeline
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#two-bugs-found-while-hardening-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two bugs found while hardening it
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Two bugs found while hardening it">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-an-assert-inside-a-loop-made-invalid-ir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. An assert inside a loop made invalid IR
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-running-the-pass-twice-collided-on-global-names" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Running the pass twice collided on global names
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#can-the-tests-fail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Can the tests fail?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limits-and-what-this-does-not-establish" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits, and what this does not establish
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducing-this-chapter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducing this chapter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#primer-why-a-message-can-vanish" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Primer: why a message can vanish
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-problem-shown-side-by-side" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The problem, shown side by side
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The implementation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-pass-produces" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the pass produces
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-pass-must-sit-in-the-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where the pass must sit in the pipeline
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#two-bugs-found-while-hardening-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two bugs found while hardening it
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Two bugs found while hardening it">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-an-assert-inside-a-loop-made-invalid-ir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. An assert inside a loop made invalid IR
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-running-the-pass-twice-collided-on-global-names" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Running the pass twice collided on global names
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#can-the-tests-fail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Can the tests fail?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limits-and-what-this-does-not-establish" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits, and what this does not establish
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducing-this-chapter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducing this chapter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="19-a-better-abort-reporting-assertion-failures-on-stderr">19. A Better Abort: Reporting Assertion Failures on stderr<a class="headerlink" href="#19-a-better-abort-reporting-assertion-failures-on-stderr" title="Permanent link">&para;</a></h1>
+<p><strong>What you will understand:</strong> how to replace the lowering of MLIR's <code>cf.assert</code> with a small custom pass, so a failed runtime check reports its message on <strong>standard error</strong> and never loses it. Chapter 14 closed an out-of-bounds read with a runtime shape check, but found that its explanation vanished whenever stdout was a pipe or a file. This chapter fixes that, shows the fix working in three ways of capturing output, and then does what the earlier chapters' lessons demand: attacks it. Two real bugs surfaced while hardening the pass (an invalid-IR case and a symbol collision), each reproduced with its actual error text. All code, tests and outputs are embedded from the repository.</p>
+<p><strong>What you need to know first:</strong> Chapter 14's runtime check (<code>cf.assert</code>, abort on shape mismatch) and the stdout-buffering problem it found. New ground: file descriptors, the <code>write</code> system call, and writing an MLIR rewrite pattern that splits blocks.</p>
+<h2 id="primer-why-a-message-can-vanish">Primer: why a message can vanish<a class="headerlink" href="#primer-why-a-message-can-vanish" title="Permanent link">&para;</a></h2>
+<p>A running Unix program has three standard <strong>file descriptors</strong>: 0 (input), 1 (standard output, "stdout") and 2 (standard error, "stderr"). A program that prints with C's <code>puts</code> writes to the stdio library's <em>buffered</em> stdout stream: the text is held in memory and only sent to descriptor 1 when the buffer fills, is flushed, or the program exits normally. When stdout is a terminal the library flushes at each newline, so you see the text immediately. When stdout is a <strong>pipe or a file</strong> it flushes only when the buffer fills or at exit.</p>
+<p><code>abort()</code> ends the process at once, by raising <code>SIGABRT</code>. It does <strong>not</strong> flush stdio buffers. So the sequence "print a message with <code>puts</code>, then <code>abort()</code>" loses the message whenever stdout is not a terminal, which is exactly what MLIR's own lowering of <code>cf.assert</code> does (Chapter 14 read the lowered code: <code>call @puts</code>, then <code>call @abort</code>). There are two separate flaws: the buffering, and the stream (error messages belong on stderr, not stdout).</p>
+<p>The <code>write(fd, buffer, length)</code> function is different in kind. It is a thin wrapper over the operating system's write call: <strong>there is no buffer to flush</strong>. Once <code>write</code> returns, the bytes have been handed to the kernel, so a following <code>abort()</code> cannot lose them. Writing to descriptor 2 with <code>write</code> fixes both flaws at once.</p>
+<h2 id="the-problem-shown-side-by-side">The problem, shown side by side<a class="headerlink" href="#the-problem-shown-side-by-side" title="Permanent link">&para;</a></h2>
+<p><code>demo.sh</code> builds the same mismatched call (a 2x3 plus a 1x2 <code>mg.add</code>, Chapter 13's <code>harness_mismatch.c</code>) two ways, Chapter 14's default lowering and this chapter's pass, and observes each under three ways of capturing output. The complete, unedited output (<code>demo_out.txt</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="ch">#!/bin/sh</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="c1"># The same runtime shape mismatch, built two ways, observed under three ways of capturing output. Output: demo_out.txt</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># Needs ../../part14/code/build.sh (default lowering) and ./build.sh (this chapter&#39;s pass).</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="nv">HERE</span><span class="o">=</span><span class="k">$(</span><span class="nb">cd</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>dirname<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$0</span><span class="s2">&quot;</span><span class="k">)</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">pwd</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="nv">D</span><span class="o">=</span><span class="nv">$HERE</span>/../..<span class="p">;</span><span class="w"> </span><span class="nv">W</span><span class="o">=</span><span class="nv">$HERE</span>/work/demo<span class="p">;</span><span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span><span class="nv">$W</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="nv">OLD</span><span class="o">=</span><span class="nv">$D</span>/part14/code/build/mg-opt<span class="p">;</span><span class="w"> </span><span class="nv">NEW</span><span class="o">=</span><span class="nv">$HERE</span>/build/mg-opt
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="nv">LOW</span><span class="o">=</span><span class="s1">&#39;--lower-affine --convert-scf-to-cf --convert-arith-to-llvm --finalize-memref-to-llvm --convert-func-to-llvm --reconcile-unrealized-casts&#39;</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="nv">LOWNEW</span><span class="o">=</span><span class="s1">&#39;--lower-affine --convert-scf-to-cf --mg-lower-assert-to-stderr --convert-arith-to-llvm --finalize-memref-to-llvm --convert-func-to-llvm --reconcile-unrealized-casts&#39;</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="nv">SRC</span><span class="o">=</span><span class="nv">$D</span>/part13/code/both.mlir<span class="p">;</span><span class="w"> </span><span class="nv">H</span><span class="o">=</span><span class="nv">$D</span>/part13/code/harness_mismatch.c
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>build<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w">  </span><span class="c1"># name mg-opt lowering</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">  </span><span class="nv">$2</span><span class="w"> </span><span class="nv">$SRC</span><span class="w"> </span>--convert-mg-to-affine<span class="w"> </span><span class="nv">$3</span><span class="w"> </span>-o<span class="w"> </span><span class="nv">$W</span>/<span class="nv">$1</span>.mlir<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>mlir-translate-18<span class="w"> </span>--mlir-to-llvmir<span class="w"> </span><span class="nv">$W</span>/<span class="nv">$1</span>.mlir<span class="w"> </span>-o<span class="w"> </span><span class="nv">$W</span>/<span class="nv">$1</span>.ll<span class="w"> </span><span class="o">&amp;&amp;</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">  </span>clang-18<span class="w"> </span>-c<span class="w"> </span><span class="nv">$W</span>/<span class="nv">$1</span>.ll<span class="w"> </span>-o<span class="w"> </span><span class="nv">$W</span>/<span class="nv">$1</span>.o<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>clang-18<span class="w"> </span><span class="nv">$H</span><span class="w"> </span><span class="nv">$W</span>/<span class="nv">$1</span>.o<span class="w"> </span>-o<span class="w"> </span><span class="nv">$W</span>/<span class="nv">$1</span>.exe
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="o">}</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>build<span class="w"> </span>old<span class="w"> </span><span class="nv">$OLD</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$LOW</span><span class="s2">&quot;</span><span class="p">;</span><span class="w"> </span>build<span class="w"> </span>new<span class="w"> </span><span class="nv">$NEW</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$LOWNEW</span><span class="s2">&quot;</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="k">for</span><span class="w"> </span>v<span class="w"> </span><span class="k">in</span><span class="w"> </span>old<span class="w"> </span>new<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">  </span><span class="k">case</span><span class="w"> </span><span class="nv">$v</span><span class="w"> </span><span class="k">in</span><span class="w"> </span>old<span class="o">)</span><span class="w"> </span><span class="nv">label</span><span class="o">=</span><span class="s2">&quot;Chapter 14 lowering (cf.assert -&gt; puts + abort)&quot;</span><span class="p">;;</span><span class="w"> </span>new<span class="o">)</span><span class="w"> </span><span class="nv">label</span><span class="o">=</span><span class="s2">&quot;Chapter 19 pass (cf.assert -&gt; write(2, ...) + abort)&quot;</span><span class="p">;;</span><span class="w"> </span><span class="k">esac</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">  </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;################ </span><span class="nv">$label</span><span class="s2">&quot;</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">  </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;--- stdout is a PIPE, stderr shown:    (command: ./</span><span class="nv">$v</span><span class="s2">.exe 2&gt;&amp;1 | cat)&quot;</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">  </span><span class="nv">$W</span>/<span class="nv">$v</span>.exe<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>cat
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">  </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;--- stdout is a FILE, stderr discarded (command: ./</span><span class="nv">$v</span><span class="s2">.exe &gt; out.txt 2&gt;/dev/null; cat out.txt)&quot;</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">  </span><span class="nv">$W</span>/<span class="nv">$v</span>.exe<span class="w"> </span>&gt;<span class="w"> </span><span class="nv">$W</span>/<span class="nv">$v</span>.out.txt<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="p">;</span><span class="w"> </span>cat<span class="w"> </span><span class="nv">$W</span>/<span class="nv">$v</span>.out.txt<span class="p">;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;(stdout file holds </span><span class="k">$(</span>wc<span class="w"> </span>-c<span class="w"> </span>&lt;<span class="w"> </span><span class="nv">$W</span>/<span class="nv">$v</span>.out.txt<span class="k">)</span><span class="s2"> bytes)&quot;</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">  </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;--- stdout discarded, stderr only:      (command: ./</span><span class="nv">$v</span><span class="s2">.exe 2&gt;&amp;1 &gt;/dev/null)&quot;</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">  </span><span class="nv">$W</span>/<span class="nv">$v</span>.exe<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span>&gt;/dev/null
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">  </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;--- exit status of the program itself: </span><span class="k">$(</span><span class="nv">$W</span>/<span class="nv">$v</span>.exe<span class="w"> </span>&gt;/dev/null<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="p">;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="nv">$?</span><span class="k">)</span><span class="s2">&quot;</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="w">  </span><span class="nb">echo</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="k">done</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>################ Chapter 14 lowering (cf.assert -&gt; puts + abort)
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>--- stdout is a PIPE, stderr shown:    (command: ./old.exe 2&gt;&amp;1 | cat)
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>--- stdout is a FILE, stderr discarded (command: ./old.exe &gt; out.txt 2&gt;/dev/null; cat out.txt)
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>(stdout file holds 0 bytes)
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>--- stdout discarded, stderr only:      (command: ./old.exe 2&gt;&amp;1 &gt;/dev/null)
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>--- exit status of the program itself: 134
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>################ Chapter 19 pass (cf.assert -&gt; write(2, ...) + abort)
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>--- stdout is a PIPE, stderr shown:    (command: ./new.exe 2&gt;&amp;1 | cat)
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>mg.add: operand shapes differ at runtime in dimension 0
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>--- stdout is a FILE, stderr discarded (command: ./new.exe &gt; out.txt 2&gt;/dev/null; cat out.txt)
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>(stdout file holds 0 bytes)
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>--- stdout discarded, stderr only:      (command: ./new.exe 2&gt;&amp;1 &gt;/dev/null)
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>mg.add: operand shapes differ at runtime in dimension 0
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>--- exit status of the program itself: 134
+</code></pre></div>
+<p>The old lowering prints <strong>nothing</strong> under any of the three captures shown (stdout is a pipe in the first, a file in the second, and the stderr-only view in the third finds nothing because the message was on stdout and never flushed). The new pass puts the message on stderr in two of the three; in the middle case stderr was deliberately discarded, so an empty stdout file is the correct result. Both builds still die with exit status 134 (<code>SIGABRT</code>): the safety property never changed, only whether the explanation survives.</p>
+<h2 id="design">Design<a class="headerlink" href="#design" title="Permanent link">&para;</a></h2>
+<p>What the pass must do for each <code>cf.assert %cond, "message"</code>: if <code>%cond</code> is true, continue; if false, write the message to descriptor 2, then abort. In MLIR terms that is a conditional branch and a new block:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>    cf.cond_br %cond, ^continue, ^fail
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  ^fail:
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    llvm.call @write(2, &lt;message&gt;, &lt;length&gt;)
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    llvm.call @abort()
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    llvm.unreachable
+</code></pre></div>
+<p>The message becomes a private constant string global in the module, and <code>llvm.mlir.addressof</code> takes its address. The pass uses the <code>llvm</code> dialect's operations directly inside the <code>func.func</code> body; the book's usual lowering passes later convert everything else around them, and <code>llvm.call</code> operations are left alone.</p>
+<p>Two alternatives were considered and <strong>not built</strong>: calling <code>fflush(NULL)</code> between the <code>puts</code> and the <code>abort</code>, which would fix the buffering but leave the message on stdout; and calling <code>fputs</code> on the C library's <code>stderr</code> object, which needs a platform-specific global symbol (the name differs between systems). The <code>write(2, ...)</code> route needs no <code>FILE*</code> and no platform-specific symbol beyond <code>write</code> and <code>abort</code> themselves.</p>
+<h2 id="the-implementation">The implementation<a class="headerlink" href="#the-implementation" title="Permanent link">&para;</a></h2>
+<p>The whole pass, <code>AssertToStderr.cpp</code>, in sections. The header comment and includes:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1">// A replacement lowering for cf.assert that reports the message on STDERR before aborting.</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="c1">//</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="c1">// MLIR&#39;s own cf.assert lowering calls puts() (stdout) then abort(); abort() does not flush stdio buffers, so when stdout is</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1">// a pipe or a file the message is lost (Chapter 14). This pass rewrites each cf.assert, BEFORE the normal lowering would see it, into</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="c1">//     cf.cond_br %cond, ^continue, ^fail</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="c1">//   ^fail:  llvm.call @write(2, &quot;message\n&quot;, len) ; llvm.call @abort() ; llvm.unreachable</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="c1">// write(2, ...) is a direct system call wrapper: unbuffered, no FILE*, so nothing is left unflushed when abort() runs.</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/ControlFlow/IR/ControlFlowOps.h&quot;</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/Func/IR/FuncOps.h&quot;</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/LLVMIR/LLVMDialect.h&quot;</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/IR/PatternMatch.h&quot;</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Pass/Pass.h&quot;</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Transforms/GreedyPatternRewriteDriver.h&quot;</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;llvm/ADT/StringExtras.h&quot;</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="k">using</span><span class="w"> </span><span class="k">namespace</span><span class="w"> </span><span class="nn">mlir</span><span class="p">;</span>
+</code></pre></div>
+<p>A helper that declares <code>write</code> and <code>abort</code> once, at module level, as external <code>llvm.func</code>s:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1">/// Finds or creates a module-level llvm.func declaration.</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="k">static</span><span class="w"> </span><span class="n">LLVM</span><span class="o">::</span><span class="n">LLVMFuncOp</span><span class="w"> </span><span class="nf">getOrDeclare</span><span class="p">(</span><span class="n">ModuleOp</span><span class="w"> </span><span class="k">module</span><span class="p">,</span><span class="w"> </span><span class="n">StringRef</span><span class="w"> </span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="n">Type</span><span class="w"> </span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="n">ArrayRef</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span><span class="w"> </span><span class="n">args</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="n">f</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">module</span><span class="p">.</span><span class="n">lookupSymbol</span><span class="o">&lt;</span><span class="n">LLVM</span><span class="o">::</span><span class="n">LLVMFuncOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">f</span><span class="p">;</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span><span class="n">OpBuilder</span><span class="w"> </span><span class="n">b</span><span class="p">(</span><span class="k">module</span><span class="p">.</span><span class="n">getBodyRegion</span><span class="p">());</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">b</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">LLVM</span><span class="o">::</span><span class="n">LLVMFuncOp</span><span class="o">&gt;</span><span class="p">(</span><span class="k">module</span><span class="p">.</span><span class="n">getLoc</span><span class="p">(),</span><span class="w"> </span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="n">LLVM</span><span class="o">::</span><span class="n">LLVMFunctionType</span><span class="o">::</span><span class="n">get</span><span class="p">(</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="n">args</span><span class="p">));</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="p">}</span>
+</code></pre></div>
+<p>The rewrite pattern. It begins with a guard (explained below), then makes the message global, then rewrites the control flow:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">struct</span><span class="w"> </span><span class="nc">AssertToStderrPattern</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">OpRewritePattern</span><span class="o">&lt;</span><span class="n">cf</span><span class="o">::</span><span class="n">AssertOp</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="k">using</span><span class="w"> </span><span class="n">OpRewritePattern</span><span class="o">::</span><span class="n">OpRewritePattern</span><span class="p">;</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="n">LogicalResult</span><span class="w"> </span><span class="nf">matchAndRewrite</span><span class="p">(</span><span class="n">cf</span><span class="o">::</span><span class="n">AssertOp</span><span class="w"> </span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">PatternRewriter</span><span class="w"> </span><span class="o">&amp;</span><span class="n">rewriter</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">    </span><span class="c1">// Only rewrite asserts that sit directly in a function body, where several blocks are legal. An assert nested inside a</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">    </span><span class="c1">// region that requires a single block (an affine.for or scf.for body, for example) cannot be split into blocks without</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">    </span><span class="c1">// producing invalid IR, so it is left for MLIR&#39;s default lowering. Running this pass AFTER --convert-scf-to-cf, when no</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">    </span><span class="c1">// structured control flow is left, makes every assert eligible.</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">isa</span><span class="o">&lt;</span><span class="n">func</span><span class="o">::</span><span class="n">FuncOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">op</span><span class="o">-&gt;</span><span class="n">getParentOp</span><span class="p">()))</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="n">rewriter</span><span class="p">.</span><span class="n">notifyMatchFailure</span><span class="p">(</span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;assert is not directly inside a func.func&quot;</span><span class="p">);</span>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="k">module</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">op</span><span class="o">-&gt;</span><span class="n">getParentOfType</span><span class="o">&lt;</span><span class="n">ModuleOp</span><span class="o">&gt;</span><span class="p">();</span>
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="w">    </span><span class="n">Location</span><span class="w"> </span><span class="n">loc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">op</span><span class="p">.</span><span class="n">getLoc</span><span class="p">();</span>
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="w">    </span><span class="n">MLIRContext</span><span class="w"> </span><span class="o">*</span><span class="n">ctx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rewriter</span><span class="p">.</span><span class="n">getContext</span><span class="p">();</span>
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="w">    </span><span class="n">Type</span><span class="w"> </span><span class="n">i8</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rewriter</span><span class="p">.</span><span class="n">getI8Type</span><span class="p">(),</span><span class="w"> </span><span class="n">i32</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rewriter</span><span class="p">.</span><span class="n">getI32Type</span><span class="p">(),</span><span class="w"> </span><span class="n">i64</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rewriter</span><span class="p">.</span><span class="n">getI64Type</span><span class="p">();</span>
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a><span class="w">    </span><span class="n">Type</span><span class="w"> </span><span class="n">ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">LLVM</span><span class="o">::</span><span class="n">LLVMPointerType</span><span class="o">::</span><span class="n">get</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>
+<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a><span class="w">    </span><span class="c1">// One private constant string global per assert: the message plus a newline.</span>
+<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">text</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">op</span><span class="p">.</span><span class="n">getMsg</span><span class="p">().</span><span class="n">str</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
+<a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a><span class="w">    </span><span class="c1">// Pick a global name no existing symbol uses, so the pass can run more than once on a module (a first run leaves a nested assert,</span>
+<a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a><span class="w">    </span><span class="c1">// a second run after --convert-scf-to-cf rewrites it) without &quot;redefinition of symbol&quot; errors.</span>
+<a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">name</span><span class="p">;</span>
+<a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">unsigned</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;;</span><span class="w"> </span><span class="o">++</span><span class="n">k</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a><span class="w">      </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;mg_assert_stderr_msg_&quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">to_string</span><span class="p">(</span><span class="n">k</span><span class="p">);</span>
+<a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a><span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="k">module</span><span class="p">.</span><span class="n">lookupSymbol</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+<a id="__codelineno-5-25" name="__codelineno-5-25" href="#__codelineno-5-25"></a><span class="w">        </span><span class="k">break</span><span class="p">;</span>
+<a id="__codelineno-5-26" name="__codelineno-5-26" href="#__codelineno-5-26"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-5-27" name="__codelineno-5-27" href="#__codelineno-5-27"></a><span class="w">    </span><span class="p">{</span>
+<a id="__codelineno-5-28" name="__codelineno-5-28" href="#__codelineno-5-28"></a><span class="w">      </span><span class="n">OpBuilder</span><span class="o">::</span><span class="n">InsertionGuard</span><span class="w"> </span><span class="n">g</span><span class="p">(</span><span class="n">rewriter</span><span class="p">);</span>
+<a id="__codelineno-5-29" name="__codelineno-5-29" href="#__codelineno-5-29"></a><span class="w">      </span><span class="n">rewriter</span><span class="p">.</span><span class="n">setInsertionPointToStart</span><span class="p">(</span><span class="k">module</span><span class="p">.</span><span class="n">getBody</span><span class="p">());</span>
+<a id="__codelineno-5-30" name="__codelineno-5-30" href="#__codelineno-5-30"></a><span class="w">      </span><span class="n">rewriter</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">LLVM</span><span class="o">::</span><span class="n">GlobalOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span><span class="w"> </span><span class="n">LLVM</span><span class="o">::</span><span class="n">LLVMArrayType</span><span class="o">::</span><span class="n">get</span><span class="p">(</span><span class="n">i8</span><span class="p">,</span><span class="w"> </span><span class="n">text</span><span class="p">.</span><span class="n">size</span><span class="p">()),</span><span class="w"> </span><span class="cm">/*isConstant=*/</span><span class="nb">true</span><span class="p">,</span>
+<a id="__codelineno-5-31" name="__codelineno-5-31" href="#__codelineno-5-31"></a><span class="w">                                      </span><span class="n">LLVM</span><span class="o">::</span><span class="n">Linkage</span><span class="o">::</span><span class="n">Private</span><span class="p">,</span><span class="w"> </span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="n">rewriter</span><span class="p">.</span><span class="n">getStringAttr</span><span class="p">(</span><span class="n">text</span><span class="p">));</span>
+<a id="__codelineno-5-32" name="__codelineno-5-32" href="#__codelineno-5-32"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-5-33" name="__codelineno-5-33" href="#__codelineno-5-33"></a><span class="w">    </span><span class="n">LLVM</span><span class="o">::</span><span class="n">LLVMFuncOp</span><span class="w"> </span><span class="n">writeFn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getOrDeclare</span><span class="p">(</span><span class="k">module</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;write&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">i64</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="n">i32</span><span class="p">,</span><span class="w"> </span><span class="n">ptr</span><span class="p">,</span><span class="w"> </span><span class="n">i64</span><span class="p">});</span>
+<a id="__codelineno-5-34" name="__codelineno-5-34" href="#__codelineno-5-34"></a><span class="w">    </span><span class="n">LLVM</span><span class="o">::</span><span class="n">LLVMFuncOp</span><span class="w"> </span><span class="n">abortFn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getOrDeclare</span><span class="p">(</span><span class="k">module</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;abort&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">LLVM</span><span class="o">::</span><span class="n">LLVMVoidType</span><span class="o">::</span><span class="n">get</span><span class="p">(</span><span class="n">ctx</span><span class="p">),</span><span class="w"> </span><span class="p">{});</span>
+<a id="__codelineno-5-35" name="__codelineno-5-35" href="#__codelineno-5-35"></a>
+<a id="__codelineno-5-36" name="__codelineno-5-36" href="#__codelineno-5-36"></a><span class="w">    </span><span class="c1">// Split the block at the assert: everything after it moves to ^continue.</span>
+<a id="__codelineno-5-37" name="__codelineno-5-37" href="#__codelineno-5-37"></a><span class="w">    </span><span class="n">Block</span><span class="w"> </span><span class="o">*</span><span class="n">here</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">op</span><span class="o">-&gt;</span><span class="n">getBlock</span><span class="p">();</span>
+<a id="__codelineno-5-38" name="__codelineno-5-38" href="#__codelineno-5-38"></a><span class="w">    </span><span class="n">Block</span><span class="w"> </span><span class="o">*</span><span class="n">cont</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rewriter</span><span class="p">.</span><span class="n">splitBlock</span><span class="p">(</span><span class="n">here</span><span class="p">,</span><span class="w"> </span><span class="n">Block</span><span class="o">::</span><span class="n">iterator</span><span class="p">(</span><span class="n">op</span><span class="p">));</span>
+<a id="__codelineno-5-39" name="__codelineno-5-39" href="#__codelineno-5-39"></a><span class="w">    </span><span class="n">Block</span><span class="w"> </span><span class="o">*</span><span class="n">fail</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rewriter</span><span class="p">.</span><span class="n">createBlock</span><span class="p">(</span><span class="n">cont</span><span class="p">);</span><span class="w">   </span><span class="c1">// placed between `here` and `cont`</span>
+<a id="__codelineno-5-40" name="__codelineno-5-40" href="#__codelineno-5-40"></a>
+<a id="__codelineno-5-41" name="__codelineno-5-41" href="#__codelineno-5-41"></a><span class="w">    </span><span class="n">rewriter</span><span class="p">.</span><span class="n">setInsertionPointToEnd</span><span class="p">(</span><span class="n">fail</span><span class="p">);</span>
+<a id="__codelineno-5-42" name="__codelineno-5-42" href="#__codelineno-5-42"></a><span class="w">    </span><span class="n">Value</span><span class="w"> </span><span class="n">fd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rewriter</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">LLVM</span><span class="o">::</span><span class="n">ConstantOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span><span class="w"> </span><span class="n">i32</span><span class="p">,</span><span class="w"> </span><span class="n">rewriter</span><span class="p">.</span><span class="n">getI32IntegerAttr</span><span class="p">(</span><span class="mi">2</span><span class="p">));</span>
+<a id="__codelineno-5-43" name="__codelineno-5-43" href="#__codelineno-5-43"></a><span class="w">    </span><span class="n">Value</span><span class="w"> </span><span class="n">len</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rewriter</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">LLVM</span><span class="o">::</span><span class="n">ConstantOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span><span class="w"> </span><span class="n">i64</span><span class="p">,</span><span class="w"> </span><span class="n">rewriter</span><span class="p">.</span><span class="n">getI64IntegerAttr</span><span class="p">(</span><span class="n">text</span><span class="p">.</span><span class="n">size</span><span class="p">()));</span>
+<a id="__codelineno-5-44" name="__codelineno-5-44" href="#__codelineno-5-44"></a><span class="w">    </span><span class="n">Value</span><span class="w"> </span><span class="n">msg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rewriter</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">LLVM</span><span class="o">::</span><span class="n">AddressOfOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span><span class="w"> </span><span class="n">ptr</span><span class="p">,</span><span class="w"> </span><span class="n">name</span><span class="p">);</span>
+<a id="__codelineno-5-45" name="__codelineno-5-45" href="#__codelineno-5-45"></a><span class="w">    </span><span class="n">rewriter</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">LLVM</span><span class="o">::</span><span class="n">CallOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span><span class="w"> </span><span class="n">writeFn</span><span class="p">,</span><span class="w"> </span><span class="n">ValueRange</span><span class="p">{</span><span class="n">fd</span><span class="p">,</span><span class="w"> </span><span class="n">msg</span><span class="p">,</span><span class="w"> </span><span class="n">len</span><span class="p">});</span>
+<a id="__codelineno-5-46" name="__codelineno-5-46" href="#__codelineno-5-46"></a><span class="w">    </span><span class="n">rewriter</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">LLVM</span><span class="o">::</span><span class="n">CallOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span><span class="w"> </span><span class="n">abortFn</span><span class="p">,</span><span class="w"> </span><span class="n">ValueRange</span><span class="p">{});</span>
+<a id="__codelineno-5-47" name="__codelineno-5-47" href="#__codelineno-5-47"></a><span class="w">    </span><span class="n">rewriter</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">LLVM</span><span class="o">::</span><span class="n">UnreachableOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">loc</span><span class="p">);</span>
+<a id="__codelineno-5-48" name="__codelineno-5-48" href="#__codelineno-5-48"></a>
+<a id="__codelineno-5-49" name="__codelineno-5-49" href="#__codelineno-5-49"></a><span class="w">    </span><span class="n">rewriter</span><span class="p">.</span><span class="n">setInsertionPointToEnd</span><span class="p">(</span><span class="n">here</span><span class="p">);</span>
+<a id="__codelineno-5-50" name="__codelineno-5-50" href="#__codelineno-5-50"></a><span class="w">    </span><span class="n">rewriter</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">cf</span><span class="o">::</span><span class="n">CondBranchOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span><span class="w"> </span><span class="n">op</span><span class="p">.</span><span class="n">getArg</span><span class="p">(),</span><span class="w"> </span><span class="n">cont</span><span class="p">,</span><span class="w"> </span><span class="n">ValueRange</span><span class="p">{},</span><span class="w"> </span><span class="n">fail</span><span class="p">,</span><span class="w"> </span><span class="n">ValueRange</span><span class="p">{});</span>
+<a id="__codelineno-5-51" name="__codelineno-5-51" href="#__codelineno-5-51"></a><span class="w">    </span><span class="n">rewriter</span><span class="p">.</span><span class="n">eraseOp</span><span class="p">(</span><span class="n">op</span><span class="p">);</span>
+<a id="__codelineno-5-52" name="__codelineno-5-52" href="#__codelineno-5-52"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">success</span><span class="p">();</span>
+<a id="__codelineno-5-53" name="__codelineno-5-53" href="#__codelineno-5-53"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-5-54" name="__codelineno-5-54" href="#__codelineno-5-54"></a><span class="p">};</span>
+</code></pre></div>
+<p>Reading the middle of it: <code>rewriter.splitBlock(here, Block::iterator(op))</code> cuts the block at the assert, leaving everything <em>after</em> the assert in a new block <code>cont</code>; <code>rewriter.createBlock(cont)</code> creates the failing block <code>fail</code> just before it; the failing block gets the constants, the <code>addressof</code>, the two calls and <code>llvm.unreachable</code>; and the original block now ends with a <code>cf.cond_br</code> on the assert's condition. Finally the assert itself is erased. The global's name is chosen by searching for the first <code>mg_assert_stderr_msg_&lt;k&gt;</code> not already defined in the module (a fix described below), and the message gets a trailing newline appended before it is stored.</p>
+<p>The pass wrapper and its registration, which follow the exact pattern Chapter 4's pass used:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">struct</span><span class="w"> </span><span class="nc">MgAssertToStderrPass</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">PassWrapper</span><span class="o">&lt;</span><span class="n">MgAssertToStderrPass</span><span class="p">,</span><span class="w"> </span><span class="n">OperationPass</span><span class="o">&lt;</span><span class="n">ModuleOp</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="n">MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID</span><span class="p">(</span><span class="n">MgAssertToStderrPass</span><span class="p">)</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="n">StringRef</span><span class="w"> </span><span class="n">getArgument</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">final</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;mg-lower-assert-to-stderr&quot;</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="n">StringRef</span><span class="w"> </span><span class="n">getDescription</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">final</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;Rewrite cf.assert into a branch that write()s its message to fd 2 and aborts (MLIR&#39;s own lowering uses buffered stdout)&quot;</span><span class="p">;</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">  </span><span class="kt">void</span><span class="w"> </span><span class="n">getDependentDialects</span><span class="p">(</span><span class="n">DialectRegistry</span><span class="w"> </span><span class="o">&amp;</span><span class="n">registry</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">    </span><span class="n">registry</span><span class="p">.</span><span class="n">insert</span><span class="o">&lt;</span><span class="n">cf</span><span class="o">::</span><span class="n">ControlFlowDialect</span><span class="p">,</span><span class="w"> </span><span class="n">LLVM</span><span class="o">::</span><span class="n">LLVMDialect</span><span class="o">&gt;</span><span class="p">();</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">  </span><span class="kt">void</span><span class="w"> </span><span class="n">runOnOperation</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">    </span><span class="n">RewritePatternSet</span><span class="w"> </span><span class="nf">patterns</span><span class="p">(</span><span class="o">&amp;</span><span class="n">getContext</span><span class="p">());</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="w">    </span><span class="n">patterns</span><span class="p">.</span><span class="n">add</span><span class="o">&lt;</span><span class="n">AssertToStderrPattern</span><span class="o">&gt;</span><span class="p">(</span><span class="o">&amp;</span><span class="n">getContext</span><span class="p">());</span>
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">failed</span><span class="p">(</span><span class="n">applyPatternsAndFoldGreedily</span><span class="p">(</span><span class="n">getOperation</span><span class="p">(),</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">patterns</span><span class="p">))))</span>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="w">      </span><span class="n">signalPassFailure</span><span class="p">();</span>
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="p">};</span>
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a><span class="p">}</span><span class="w"> </span><span class="c1">// namespace</span>
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a>
+<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a><span class="k">namespace</span><span class="w"> </span><span class="nn">mg</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a><span class="kt">void</span><span class="w"> </span><span class="nf">registerAssertToStderrPass</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">PassRegistration</span><span class="o">&lt;</span><span class="n">MgAssertToStderrPass</span><span class="o">&gt;</span><span class="p">();</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a><span class="p">}</span><span class="w"> </span><span class="c1">// namespace mg</span>
+</code></pre></div>
+<p>Wiring it into <code>mg-opt</code> and the build is a small change, shown here in full (<code>chapter19.diff</code>: 38 lines against Chapter 14's <code>mg-opt.cpp</code> and <code>CMakeLists.txt</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="gd">--- ../../part14/code/mg-opt.cpp    2026-10-01 23:01:57.030167769 +0000</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="gi">+++ mg-opt.cpp  2026-10-02 01:50:44.084955341 +0000</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="gu">@@ -18,6 +18,7 @@</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w"> </span>namespace mg {
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w"> </span>void registerConvertMgToAffinePass();
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="gi">+void registerAssertToStderrPass();</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="w"> </span>void registerBufferizableOpInterfaceExternalModels(mlir::DialectRegistry &amp;registry);
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="w"> </span>}
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="gu">@@ -26,6 +27,7 @@</span>
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="w"> </span>  mlir::registerCSEPass();
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="w"> </span>  mlir::registerReconcileUnrealizedCastsPass();
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="w"> </span>  mg::registerConvertMgToAffinePass();
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="gi">+  mg::registerAssertToStderrPass();</span>
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="w"> </span>  mlir::bufferization::registerBufferizationPasses();
+<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a><span class="w"> </span>  mlir::registerConversionPasses();
+<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a><span class="w"> </span>  mlir::affine::registerAffinePasses();
+<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a><span class="gd">--- ../../part14/code/CMakeLists.txt    2026-10-01 23:01:57.032008443 +0000</span>
+<a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a><span class="gi">+++ CMakeLists.txt  2026-10-02 01:50:44.084972667 +0000</span>
+<a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a><span class="gu">@@ -42,6 +42,9 @@</span>
+<a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a><span class="w"> </span>  MLIRFuncTransforms
+<a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a><span class="w"> </span>)
+<a id="__codelineno-7-24" name="__codelineno-7-24" href="#__codelineno-7-24"></a>
+<a id="__codelineno-7-25" name="__codelineno-7-25" href="#__codelineno-7-25"></a><span class="gi">+add_library(MgAssertToStderr lib/AssertToStderr.cpp)</span>
+<a id="__codelineno-7-26" name="__codelineno-7-26" href="#__codelineno-7-26"></a><span class="gi">+target_link_libraries(MgAssertToStderr PUBLIC MLIRIR MLIRPass MLIRControlFlowDialect MLIRLLVMDialect MLIRTransformUtils)</span>
+<a id="__codelineno-7-27" name="__codelineno-7-27" href="#__codelineno-7-27"></a><span class="gi">+</span>
+<a id="__codelineno-7-28" name="__codelineno-7-28" href="#__codelineno-7-28"></a><span class="w"> </span>add_library(MgBufferizableOpInterfaceImpl lib/MgBufferizableOpInterfaceImpl.cpp)
+<a id="__codelineno-7-29" name="__codelineno-7-29" href="#__codelineno-7-29"></a><span class="w"> </span>add_dependencies(MgBufferizableOpInterfaceImpl MgOpsIncGen)
+<a id="__codelineno-7-30" name="__codelineno-7-30" href="#__codelineno-7-30"></a><span class="w"> </span>target_link_libraries(MgBufferizableOpInterfaceImpl PUBLIC
+<a id="__codelineno-7-31" name="__codelineno-7-31" href="#__codelineno-7-31"></a><span class="gu">@@ -59,6 +62,7 @@</span>
+<a id="__codelineno-7-32" name="__codelineno-7-32" href="#__codelineno-7-32"></a><span class="w"> </span>add_executable(mg-opt tools/mg-opt.cpp)
+<a id="__codelineno-7-33" name="__codelineno-7-33" href="#__codelineno-7-33"></a><span class="w"> </span>target_link_libraries(mg-opt PRIVATE
+<a id="__codelineno-7-34" name="__codelineno-7-34" href="#__codelineno-7-34"></a><span class="w"> </span>  MgDialect
+<a id="__codelineno-7-35" name="__codelineno-7-35" href="#__codelineno-7-35"></a><span class="gi">+  MgAssertToStderr</span>
+<a id="__codelineno-7-36" name="__codelineno-7-36" href="#__codelineno-7-36"></a><span class="w"> </span>  MLIRControlFlowDialect
+<a id="__codelineno-7-37" name="__codelineno-7-37" href="#__codelineno-7-37"></a><span class="w"> </span>  MgLowerToAffine
+<a id="__codelineno-7-38" name="__codelineno-7-38" href="#__codelineno-7-38"></a><span class="w"> </span>  MgBufferizableOpInterfaceImpl
+</code></pre></div>
+<p><code>build.sh</code> assembles the compiler from the earlier chapters' files plus this chapter's three:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="ch">#!/bin/sh</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="c1"># Rebuild mg-opt with this chapter&#39;s pass: the earlier chapters&#39; latest files plus this chapter&#39;s three. Produces ./build/mg-opt.</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="c1"># Needs mlir-18-tools, libmlir-18-dev, llvm-18-dev, cmake, make.</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="nb">set</span><span class="w"> </span>-e
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="nv">HERE</span><span class="o">=</span><span class="k">$(</span><span class="nb">cd</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>dirname<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$0</span><span class="s2">&quot;</span><span class="k">)</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">pwd</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="nv">D</span><span class="o">=</span><span class="nv">$HERE</span>/../..<span class="p">;</span><span class="w"> </span><span class="nv">T</span><span class="o">=</span><span class="nv">$HERE</span>/tree
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>mkdir<span class="w"> </span>-p<span class="w"> </span><span class="nv">$T</span>/include/mg<span class="w"> </span><span class="nv">$T</span>/lib<span class="w"> </span><span class="nv">$T</span>/tools
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>cp<span class="w"> </span><span class="nv">$HERE</span>/CMakeLists.txt<span class="w"> </span><span class="nv">$T</span>/
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>cp<span class="w"> </span><span class="nv">$D</span>/part3/code/MgDialect.td<span class="w"> </span><span class="nv">$D</span>/part3/code/MgOps.td<span class="w"> </span><span class="nv">$D</span>/part3/code/MgDialect.h<span class="w"> </span><span class="nv">$D</span>/part3/code/MgOps.h<span class="w"> </span><span class="nv">$T</span>/include/mg/
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>cp<span class="w"> </span><span class="nv">$D</span>/part14/code/DynamicShapes.h<span class="w"> </span><span class="nv">$T</span>/include/mg/
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>cp<span class="w"> </span><span class="nv">$D</span>/part13/code/MgDialect.cpp<span class="w"> </span><span class="nv">$T</span>/lib/
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>cp<span class="w"> </span><span class="nv">$D</span>/part14/code/LowerToAffine.cpp<span class="w"> </span><span class="nv">$D</span>/part14/code/MgBufferizableOpInterfaceImpl.cpp<span class="w"> </span><span class="nv">$T</span>/lib/
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>cp<span class="w"> </span><span class="nv">$HERE</span>/AssertToStderr.cpp<span class="w"> </span><span class="nv">$T</span>/lib/
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>cp<span class="w"> </span><span class="nv">$HERE</span>/mg-opt.cpp<span class="w"> </span><span class="nv">$T</span>/tools/
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>mkdir<span class="w"> </span>-p<span class="w"> </span><span class="nv">$HERE</span>/build/include/mg<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span><span class="nv">$HERE</span>/build
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>cmake<span class="w"> </span><span class="nv">$T</span><span class="w"> </span>-DMLIR_DIR<span class="o">=</span>/usr/lib/llvm-18/lib/cmake/mlir<span class="w"> </span>-DLLVM_DIR<span class="o">=</span>/usr/lib/llvm-18/lib/cmake/llvm<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="w">  </span>-DCMAKE_BUILD_TYPE<span class="o">=</span>Release<span class="w"> </span>-DLLVM_ENABLE_ASSERTIONS<span class="o">=</span>OFF<span class="w"> </span>&gt;<span class="w"> </span>cmake_out.txt<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a>make<span class="w"> </span>-j8<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-2
+</code></pre></div>
+<h2 id="what-the-pass-produces">What the pass produces<a class="headerlink" href="#what-the-pass-produces" title="Permanent link">&para;</a></h2>
+<p>On the dynamic add, after <code>--convert-mg-to-affine --mg-lower-assert-to-stderr</code> (<code>show/dyn_after_pass.mlir</code>, first 30 lines). The two message globals and the two declarations come first, then the function: each assert is now a <code>cf.cond_br</code> whose failing block writes and aborts, and the original computation continues in the last block:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>module {
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>  llvm.mlir.global private constant @mg_assert_stderr_msg_1(&quot;mg.add: operand shapes differ at runtime in dimension 0\0A&quot;) {addr_space = 0 : i32}
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>  llvm.func @abort()
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>  llvm.func @write(i32, !llvm.ptr, i64) -&gt; i64
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>  llvm.mlir.global private constant @mg_assert_stderr_msg_0(&quot;mg.add: operand shapes differ at runtime in dimension 1\0A&quot;) {addr_space = 0 : i32}
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>  func.func @add_dyn(%arg0: memref&lt;?x?xf64&gt;, %arg1: memref&lt;?x?xf64&gt;) -&gt; memref&lt;?x?xf64&gt; {
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>    %0 = llvm.mlir.constant(56 : i64) : i64
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>    %1 = llvm.mlir.constant(2 : i32) : i32
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>    %c1 = arith.constant 1 : index
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>    %c0 = arith.constant 0 : index
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>    %dim = memref.dim %arg0, %c0 : memref&lt;?x?xf64&gt;
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>    %dim_0 = memref.dim %arg1, %c0 : memref&lt;?x?xf64&gt;
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a>    %2 = arith.cmpi eq, %dim, %dim_0 : index
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a>    cf.cond_br %2, ^bb2, ^bb1
+<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a>  ^bb1:  // pred: ^bb0
+<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a>    %3 = llvm.mlir.addressof @mg_assert_stderr_msg_1 : !llvm.ptr
+<a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a>    %4 = llvm.call @write(%1, %3, %0) : (i32, !llvm.ptr, i64) -&gt; i64
+<a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a>    llvm.call @abort() : () -&gt; ()
+<a id="__codelineno-9-19" name="__codelineno-9-19" href="#__codelineno-9-19"></a>    llvm.unreachable
+<a id="__codelineno-9-20" name="__codelineno-9-20" href="#__codelineno-9-20"></a>  ^bb2:  // pred: ^bb0
+<a id="__codelineno-9-21" name="__codelineno-9-21" href="#__codelineno-9-21"></a>    %dim_1 = memref.dim %arg0, %c1 : memref&lt;?x?xf64&gt;
+<a id="__codelineno-9-22" name="__codelineno-9-22" href="#__codelineno-9-22"></a>    %dim_2 = memref.dim %arg1, %c1 : memref&lt;?x?xf64&gt;
+<a id="__codelineno-9-23" name="__codelineno-9-23" href="#__codelineno-9-23"></a>    %5 = arith.cmpi eq, %dim_1, %dim_2 : index
+<a id="__codelineno-9-24" name="__codelineno-9-24" href="#__codelineno-9-24"></a>    cf.cond_br %5, ^bb4, ^bb3
+<a id="__codelineno-9-25" name="__codelineno-9-25" href="#__codelineno-9-25"></a>  ^bb3:  // pred: ^bb2
+<a id="__codelineno-9-26" name="__codelineno-9-26" href="#__codelineno-9-26"></a>    %6 = llvm.mlir.addressof @mg_assert_stderr_msg_0 : !llvm.ptr
+<a id="__codelineno-9-27" name="__codelineno-9-27" href="#__codelineno-9-27"></a>    %7 = llvm.call @write(%1, %6, %0) : (i32, !llvm.ptr, i64) -&gt; i64
+<a id="__codelineno-9-28" name="__codelineno-9-28" href="#__codelineno-9-28"></a>    llvm.call @abort() : () -&gt; ()
+<a id="__codelineno-9-29" name="__codelineno-9-29" href="#__codelineno-9-29"></a>    llvm.unreachable
+<a id="__codelineno-9-30" name="__codelineno-9-30" href="#__codelineno-9-30"></a>  ^bb4:  // pred: ^bb2
+</code></pre></div>
+<p>(The <code>_1</code>/<code>_0</code> numbering is the order the rewrite driver visited the asserts, which is the reverse of source order; it is cosmetic.) No <code>cf.assert</code> remains. The message is exactly what was asked for, byte for byte: a test message containing a double quote, a percent sign and non-ASCII text (<code>bad "quote" 100% done, naïve café</code>) arrives as these bytes on descriptor 2, with the UTF-8 sequences intact (<code>303 257</code> is <code>ï</code>, <code>303 251</code> is <code>é</code>) and exactly one trailing newline:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>0000000   b   a   d       &quot;   q   u   o   t   e   &quot;       1   0   0   %
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>0000020       d   o   n   e   ,       n   a 303 257   v   e       c   a
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>0000040   f 303 251  \n
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>0000044
+</code></pre></div>
+<h2 id="where-the-pass-must-sit-in-the-pipeline">Where the pass must sit in the pipeline<a class="headerlink" href="#where-the-pass-must-sit-in-the-pipeline" title="Permanent link">&para;</a></h2>
+<p><strong>The pass has to run before MLIR's own lowering sees the asserts</strong>, because <code>--convert-func-to-llvm</code> consumes <code>cf.assert</code> itself (Chapter 14 found that lowering already handles it). Checked directly by putting the standard lowering first (<code>show/ordering_wrong.txt</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>cf.assert left after the standard lowering: 0
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>calls to puts (the stdout lowering): 2
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>calls to write (this pass): 0
+</code></pre></div>
+<p>The standard lowering took both asserts (two <code>puts</code> calls) and the pass then found nothing to rewrite (zero <code>write</code> calls), with no warning. A user who adds the pass at the wrong point gets the old behavior silently. The tests below always put it before the conversion passes; the test suite's <code>%lower-with-stderr</code> substitution is the one correct ordering used in this book.</p>
+<h2 id="two-bugs-found-while-hardening-it">Two bugs found while hardening it<a class="headerlink" href="#two-bugs-found-while-hardening-it" title="Permanent link">&para;</a></h2>
+<p>The first version worked on the demo and passed its first tests. Attacking it with unusual inputs found two real problems, each fixed and each now pinned by a test. The sources of the broken versions are the mutation builds in the failure-injection section below, so the error text here is reproduced from those builds, not remembered.</p>
+<h3 id="1-an-assert-inside-a-loop-made-invalid-ir">1. An assert inside a loop made invalid IR<a class="headerlink" href="#1-an-assert-inside-a-loop-made-invalid-ir" title="Permanent link">&para;</a></h3>
+<p>An <code>affine.for</code> body is a region that must have exactly one block. The first version of the pattern split blocks wherever it found a <code>cf.assert</code>, so an assert inside a loop body produced IR with several blocks in a single-block region. The input (<code>nested.mlir</code>, a loop that asserts every element is not NaN):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>func.func @nanloop(%a: memref&lt;?xf64&gt;, %n: index) {
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>  affine.for %i = 0 to %n {
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>    %v = affine.load %a[%i] : memref&lt;?xf64&gt;
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>    %ok = arith.cmpf oeq, %v, %v : f64
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>    cf.assert %ok, &quot;value is NaN&quot;
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>  }
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>  return
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>}
+</code></pre></div>
+<p>and the error the unguarded pass produced on it (<code>bugs/nested_without_guard.txt</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>nested.mlir:2:3: error: &#39;affine.for&#39; op expects region #0 to have 0 or 1 blocks
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>  affine.for %i = 0 to %n {
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>  ^
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>nested.mlir:2:3: note: see current operation: 
+</code></pre></div>
+<p>The fix is the guard at the top of the pattern: <strong>only rewrite an assert whose parent is a <code>func.func</code></strong>, where multiple blocks are legal. Others are left for MLIR's default lowering. Placing the pass <em>after</em> <code>--lower-affine --convert-scf-to-cf</code>, when no structured loops remain, makes every assert eligible; both placements are tested, and the nested program was run for real (clean data survives, a NaN at index 3 aborts with <code>value is NaN</code> on stderr).</p>
+<h3 id="2-running-the-pass-twice-collided-on-global-names">2. Running the pass twice collided on global names<a class="headerlink" href="#2-running-the-pass-twice-collided-on-global-names" title="Permanent link">&para;</a></h3>
+<p>The first version numbered its message globals from a counter that restarted at zero on each run. A module with a top-level assert and a nested one, run through the pass, then flattened, then through the pass again, rewrote the top-level assert on the first run (global <code>_0</code>) and the nested one on the second, reusing the name <code>_0</code> (<code>bugs/twice_without_unique_names.txt</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>twice.mlir:2:3: error: redefinition of symbol named &#39;mg_assert_stderr_msg_0&#39;
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>  cf.assert %ok, &quot;top-level check&quot;
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>  ^
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>twice.mlir:2:3: note: see current operation: 
+</code></pre></div>
+<p>The fix is in the code shown above: search the module for the first unused name instead of counting. The input and the final names (<code>twice_out.mlir</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>func.func @f(%a: memref&lt;?xf64&gt;, %n: index, %ok: i1) {
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>  cf.assert %ok, &quot;top-level check&quot;
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>  affine.for %i = 0 to %n {
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>    %v = affine.load %a[%i] : memref&lt;?xf64&gt;
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>    %fine = arith.cmpf oeq, %v, %v : f64
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>    cf.assert %fine, &quot;value is NaN&quot;
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a>  }
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a>  return
+<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a>}
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>  llvm.mlir.global private constant @mg_assert_stderr_msg_0(&quot;top-level check\0A&quot;)
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>  llvm.mlir.global private constant @mg_assert_stderr_msg_1(&quot;value is NaN\0A&quot;)
+</code></pre></div>
+<h2 id="the-tests">The tests<a class="headerlink" href="#the-tests" title="Permanent link">&para;</a></h2>
+<p>Eight new tests, in <code>test/assert-stderr/</code>, bring the suite to 52 (<code>run_out_52.txt</code> below). They are shown in full; each header says what it pins down. The shape of the rewrite:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>// Chapter 19: --mg-lower-assert-to-stderr turns every cf.assert in a function body into a branch whose failing side write()s the
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>// message to file descriptor 2 and aborts. No cf.assert is left; the two messages become two private constant strings.
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>// RUN: %mg-opt %inputs/dyn.mlir --convert-mg-to-affine --mg-lower-assert-to-stderr | %FileCheck %s
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>// CHECK-DAG: llvm.mlir.global private constant @mg_assert_stderr_msg_{{[0-9]+}}(&quot;mg.add: operand shapes differ at runtime in dimension 0\0A&quot;)
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>// CHECK-DAG: llvm.mlir.global private constant @mg_assert_stderr_msg_{{[0-9]+}}(&quot;mg.add: operand shapes differ at runtime in dimension 1\0A&quot;)
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>// CHECK-DAG: llvm.func @write(i32, !llvm.ptr, i64) -&gt; i64
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>// CHECK-DAG: llvm.func @abort()
+<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>// CHECK-NOT: cf.assert
+<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>// CHECK: cf.cond_br
+<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>// CHECK: llvm.call @write(%{{.*}}, %{{.*}}, %{{.*}}) : (i32, !llvm.ptr, i64) -&gt; i64
+<a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a>// CHECK-NEXT: llvm.call @abort() : () -&gt; ()
+<a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a>// CHECK-NEXT: llvm.unreachable
+</code></pre></div>
+<p>That a program with no assertions passes through unchanged:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>// Chapter 19: a program with no cf.assert (any static program) passes through the pass byte for byte.
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>// RUN: %mg-opt %inputs/static_add.mlir --convert-mg-to-affine -o %t.before.mlir
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>// RUN: %mg-opt %t.before.mlir --mg-lower-assert-to-stderr -o %t.after.mlir
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>// RUN: cmp %t.before.mlir %t.after.mlir
+</code></pre></div>
+<p>The reason the pass exists: the message reaches stderr, on both lowering paths, with stdout discarded:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>// Chapter 19: the reason this pass exists. A runtime shape mismatch aborts, AND its message reaches STDERR even though stdout is
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>// discarded (Chapter 14 found the default lowering loses the message whenever stdout is not a terminal). Both lowering paths.
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>// RUN: %mg-opt %inputs/dyn.mlir --convert-mg-to-affine %lower-with-stderr -o %t.a.mlir
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>// RUN: %mlir-translate --mlir-to-llvmir %t.a.mlir -o %t.a.ll
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>// RUN: %clang -c %t.a.ll -o %t.a.o
+<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>// RUN: %clang %inputs/mismatch_harness.c %t.a.o -o %t.a.exe
+<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a>// RUN: %not --crash %t.a.exe
+<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a>// RUN: %not --crash %t.a.exe 2&gt;&amp;1 &gt;/dev/null | %FileCheck %s
+<a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a>// RUN: %mg-opt %inputs/dyn.mlir --one-shot-bufferize=&quot;bufferize-function-boundaries&quot; -o %t.b0.mlir
+<a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a>// RUN: %mg-opt %t.b0.mlir %lower-with-stderr -o %t.b.mlir
+<a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a>// RUN: %mlir-translate --mlir-to-llvmir %t.b.mlir -o %t.b.ll
+<a id="__codelineno-19-12" name="__codelineno-19-12" href="#__codelineno-19-12"></a>// RUN: %clang -c %t.b.ll -o %t.b.o
+<a id="__codelineno-19-13" name="__codelineno-19-13" href="#__codelineno-19-13"></a>// RUN: %clang %inputs/mismatch_harness.c %t.b.o -o %t.b.exe
+<a id="__codelineno-19-14" name="__codelineno-19-14" href="#__codelineno-19-14"></a>// RUN: %not --crash %t.b.exe
+<a id="__codelineno-19-15" name="__codelineno-19-15" href="#__codelineno-19-15"></a>// RUN: %not --crash %t.b.exe 2&gt;&amp;1 &gt;/dev/null | %FileCheck %s
+<a id="__codelineno-19-16" name="__codelineno-19-16" href="#__codelineno-19-16"></a>// CHECK: mg.add: operand shapes differ at runtime in dimension 0
+</code></pre></div>
+<p>That valid programs are unaffected (eleven runtime shapes):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>// Chapter 19: with the pass in the pipeline, programs that satisfy their assertions are unaffected (eleven runtime shapes).
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>// RUN: %mg-opt %inputs/chain.mlir --convert-mg-to-affine %lower-with-stderr -o %t.llvm.mlir
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>// RUN: %mlir-translate --mlir-to-llvmir %t.llvm.mlir -o %t.ll
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>// RUN: %clang -c %t.ll -o %t.o
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>// RUN: %clang %inputs/chain_harness.c %t.o -o %t.exe
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a>// RUN: %t.exe | %FileCheck %s
+<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a>// CHECK-NOT: FAIL
+<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a>// CHECK: ALL SHAPES PASS
+</code></pre></div>
+<p>The guard, in both placements:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>// Chapter 19: an assert nested in a single-block region (an affine.for body) cannot be split into blocks, so the pass LEAVES IT
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>// (valid IR, still a cf.assert). Run after --lower-affine --convert-scf-to-cf, where no structured control flow remains, the same
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>// assert IS rewritten. Without the guard the first run produced `&#39;affine.for&#39; op expects region #0 to have 0 or 1 blocks`.
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>// RUN: %mg-opt %inputs/nested.mlir --mg-lower-assert-to-stderr | %FileCheck %s --check-prefix=LEFT
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>// RUN: %mg-opt %inputs/nested.mlir --lower-affine --convert-scf-to-cf --mg-lower-assert-to-stderr | %FileCheck %s --check-prefix=REWRITTEN
+<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a>// LEFT: cf.assert {{.*}}, &quot;value is NaN&quot;
+<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a>// REWRITTEN-NOT: cf.assert
+<a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a>// REWRITTEN: llvm.call @write
+</code></pre></div>
+<p>The nested assert run for real, with the message on stderr:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>// Chapter 19: an assert inside a loop, run for real. Clean data finishes; a NaN at index 3 aborts with the message on stderr.
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>// RUN: %mg-opt %inputs/nested.mlir %lower-with-stderr -o %t.llvm.mlir
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>// RUN: %mlir-translate --mlir-to-llvmir %t.llvm.mlir -o %t.ll
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>// RUN: %clang -c %t.ll -o %t.o
+<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a>// RUN: %clang %inputs/nested_harness.c %t.o -lm -o %t.exe
+<a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a>// RUN: %t.exe | %FileCheck %s --check-prefix=CLEAN
+<a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a>// RUN: %not --crash %t.exe nan
+<a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a>// RUN: %not --crash %t.exe nan 2&gt;&amp;1 &gt;/dev/null | %FileCheck %s --check-prefix=NAN
+<a id="__codelineno-22-9" name="__codelineno-22-9" href="#__codelineno-22-9"></a>// CLEAN: survived: no NaN found
+<a id="__codelineno-22-10" name="__codelineno-22-10" href="#__codelineno-22-10"></a>// NAN: value is NaN
+</code></pre></div>
+<p>The exact bytes, with <code>--match-full-lines</code> so nothing else may share the line:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>// Chapter 19: the message is written byte for byte: an embedded quote, a percent sign, and non-ASCII (UTF-8) text, with exactly one
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>// trailing newline and nothing else on stderr.
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>// RUN: %mg-opt %inputs/boom.mlir %lower-with-stderr -o %t.llvm.mlir
+<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a>// RUN: %mlir-translate --mlir-to-llvmir %t.llvm.mlir -o %t.ll
+<a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a>// RUN: %clang -c %t.ll -o %t.o
+<a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a>// RUN: %clang %inputs/boom_harness.c %t.o -o %t.exe
+<a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a>// RUN: %not --crash %t.exe 2&gt;&amp;1 &gt;/dev/null | %FileCheck %s --match-full-lines --strict-whitespace
+<a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a>// CHECK:bad &quot;quote&quot; 100% done, naïve café
+</code></pre></div>
+<p>And the collision fix:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>// Chapter 19: the pass may run more than once on a module. First run: the top-level assert is rewritten and the one inside the loop is
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>// left (guard). After flattening, the second run rewrites it. Both messages get DISTINCT global names. Before the fix the counter
+<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>// restarted at zero and the second run failed with `redefinition of symbol named &#39;mg_assert_stderr_msg_0&#39;`.
+<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>// RUN: %mg-opt %inputs/twice.mlir --mg-lower-assert-to-stderr --lower-affine --convert-scf-to-cf --mg-lower-assert-to-stderr | %FileCheck %s
+<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>// CHECK-DAG: llvm.mlir.global private constant @mg_assert_stderr_msg_0(&quot;top-level check\0A&quot;)
+<a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a>// CHECK-DAG: llvm.mlir.global private constant @mg_assert_stderr_msg_1(&quot;value is NaN\0A&quot;)
+<a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a>// CHECK-NOT: cf.assert
+</code></pre></div>
+<p>The suite, all 52 passing on this chapter's build (<code>run_out_52.txt</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>-- Testing: 52 tests, 4 workers --
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>PASS: IR Forge / Mountain Goat :: execution/mismatch-aborts.mlir (1 of 52)
+<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>PASS: IR Forge / Mountain Goat :: execution/dynamic-shapes-run.mlir (2 of 52)
+<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>PASS: IR Forge / Mountain Goat :: execution/mismatch-columns-aborts.mlir (3 of 52)
+<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>PASS: IR Forge / Mountain Goat :: execution/gpu-host-with-stub-runtime.mlir (4 of 52)
+<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/message-bytes-exact.mlir (5 of 52)
+<a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/unroll-runs.mlir (6 of 52)
+<a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a>PASS: IR Forge / Mountain Goat :: execution/static-add-runs.mlir (7 of 52)
+<a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/valid-shapes-still-pass.mlir (8 of 52)
+<a id="__codelineno-25-10" name="__codelineno-25-10" href="#__codelineno-25-10"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/message-on-stderr.mlir (9 of 52)
+<a id="__codelineno-25-11" name="__codelineno-25-11" href="#__codelineno-25-11"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/tiling-runs.mlir (10 of 52)
+<a id="__codelineno-25-12" name="__codelineno-25-12" href="#__codelineno-25-12"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/nested-assert-runs.mlir (11 of 52)
+<a id="__codelineno-25-13" name="__codelineno-25-13" href="#__codelineno-25-13"></a>PASS: IR Forge / Mountain Goat :: execution/strided-view.mlir (12 of 52)
+<a id="__codelineno-25-14" name="__codelineno-25-14" href="#__codelineno-25-14"></a>PASS: IR Forge / Mountain Goat :: gpu/pass-order-crash.mlir (13 of 52)
+<a id="__codelineno-25-15" name="__codelineno-25-15" href="#__codelineno-25-15"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/fusion-needs-constant-trip-counts.mlir (14 of 52)
+<a id="__codelineno-25-16" name="__codelineno-25-16" href="#__codelineno-25-16"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/fusion-after-tiling.mlir (15 of 52)
+<a id="__codelineno-25-17" name="__codelineno-25-17" href="#__codelineno-25-17"></a>PASS: IR Forge / Mountain Goat :: execution/mixed-static-dynamic.mlir (16 of 52)
+<a id="__codelineno-25-18" name="__codelineno-25-18" href="#__codelineno-25-18"></a>PASS: IR Forge / Mountain Goat :: gpu/ptx-index32.mlir (17 of 52)
+<a id="__codelineno-25-19" name="__codelineno-25-19" href="#__codelineno-25-19"></a>PASS: IR Forge / Mountain Goat :: gpu/ptx-default.mlir (18 of 52)
+<a id="__codelineno-25-20" name="__codelineno-25-20" href="#__codelineno-25-20"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/runtime-check-survives-transforms.mlir (19 of 52)
+<a id="__codelineno-25-21" name="__codelineno-25-21" href="#__codelineno-25-21"></a>PASS: IR Forge / Mountain Goat :: gpu/ptx-bare-pointers.mlir (20 of 52)
+<a id="__codelineno-25-22" name="__codelineno-25-22" href="#__codelineno-25-22"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/unroll-full-needs-constant-trip-count.mlir (21 of 52)
+<a id="__codelineno-25-23" name="__codelineno-25-23" href="#__codelineno-25-23"></a>PASS: IR Forge / Mountain Goat :: gpu/host-runtime-calls.mlir (22 of 52)
+<a id="__codelineno-25-24" name="__codelineno-25-24" href="#__codelineno-25-24"></a>PASS: IR Forge / Mountain Goat :: gpu/host-runtime-calls-bare.mlir (23 of 52)
+<a id="__codelineno-25-25" name="__codelineno-25-25" href="#__codelineno-25-25"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/guard-nested-assert.mlir (24 of 52)
+<a id="__codelineno-25-26" name="__codelineno-25-26" href="#__codelineno-25-26"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/fusion-fires-when-static.mlir (25 of 52)
+<a id="__codelineno-25-27" name="__codelineno-25-27" href="#__codelineno-25-27"></a>PASS: IR Forge / Mountain Goat :: gpu/nvvm-lowering.mlir (26 of 52)
+<a id="__codelineno-25-28" name="__codelineno-25-28" href="#__codelineno-25-28"></a>PASS: IR Forge / Mountain Goat :: gpu/cuda-comparison.mlir (27 of 52)
+<a id="__codelineno-25-29" name="__codelineno-25-29" href="#__codelineno-25-29"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/unroll-epilogue.mlir (28 of 52)
+<a id="__codelineno-25-30" name="__codelineno-25-30" href="#__codelineno-25-30"></a>PASS: IR Forge / Mountain Goat :: gpu/kernel-outlining.mlir (29 of 52)
+<a id="__codelineno-25-31" name="__codelineno-25-31" href="#__codelineno-25-31"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/fusion-declines.mlir (30 of 52)
+<a id="__codelineno-25-32" name="__codelineno-25-32" href="#__codelineno-25-32"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/tiling-structure.mlir (31 of 52)
+<a id="__codelineno-25-33" name="__codelineno-25-33" href="#__codelineno-25-33"></a>PASS: IR Forge / Mountain Goat :: verifier/transpose-bad-shape.mlir (32 of 52)
+<a id="__codelineno-25-34" name="__codelineno-25-34" href="#__codelineno-25-34"></a>PASS: IR Forge / Mountain Goat :: loops/fusion.mlir (33 of 52)
+<a id="__codelineno-25-35" name="__codelineno-25-35" href="#__codelineno-25-35"></a>PASS: IR Forge / Mountain Goat :: canonicalize/transpose-twice-dynamic-mixed.mlir (34 of 52)
+<a id="__codelineno-25-36" name="__codelineno-25-36" href="#__codelineno-25-36"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/static-unchanged.mlir (35 of 52)
+<a id="__codelineno-25-37" name="__codelineno-25-37" href="#__codelineno-25-37"></a>PASS: IR Forge / Mountain Goat :: verifier/transpose-rank3.mlir (36 of 52)
+<a id="__codelineno-25-38" name="__codelineno-25-38" href="#__codelineno-25-38"></a>PASS: IR Forge / Mountain Goat :: lowering/static-add-affine.mlir (37 of 52)
+<a id="__codelineno-25-39" name="__codelineno-25-39" href="#__codelineno-25-39"></a>PASS: IR Forge / Mountain Goat :: loops/tiling.mlir (38 of 52)
+<a id="__codelineno-25-40" name="__codelineno-25-40" href="#__codelineno-25-40"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/run-twice-no-collision.mlir (39 of 52)
+<a id="__codelineno-25-41" name="__codelineno-25-41" href="#__codelineno-25-41"></a>PASS: IR Forge / Mountain Goat :: lowering/dynamic-transpose-no-check.mlir (40 of 52)
+<a id="__codelineno-25-42" name="__codelineno-25-42" href="#__codelineno-25-42"></a>PASS: IR Forge / Mountain Goat :: canonicalize/fold-constant-add.mlir (41 of 52)
+<a id="__codelineno-25-43" name="__codelineno-25-43" href="#__codelineno-25-43"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/rewrite-structure.mlir (42 of 52)
+<a id="__codelineno-25-44" name="__codelineno-25-44" href="#__codelineno-25-44"></a>PASS: IR Forge / Mountain Goat :: lowering/dynamic-add-affine.mlir (43 of 52)
+<a id="__codelineno-25-45" name="__codelineno-25-45" href="#__codelineno-25-45"></a>PASS: IR Forge / Mountain Goat :: verifier/unranked-rejected.mlir (44 of 52)
+<a id="__codelineno-25-46" name="__codelineno-25-46" href="#__codelineno-25-46"></a>PASS: IR Forge / Mountain Goat :: lowering/mixed-add-one-check.mlir (45 of 52)
+<a id="__codelineno-25-47" name="__codelineno-25-47" href="#__codelineno-25-47"></a>PASS: IR Forge / Mountain Goat :: verifier/add-static-mismatch.mlir (46 of 52)
+<a id="__codelineno-25-48" name="__codelineno-25-48" href="#__codelineno-25-48"></a>PASS: IR Forge / Mountain Goat :: loops/unroll-full.mlir (47 of 52)
+<a id="__codelineno-25-49" name="__codelineno-25-49" href="#__codelineno-25-49"></a>PASS: IR Forge / Mountain Goat :: canonicalize/transpose-twice-dynamic-exact.mlir (48 of 52)
+<a id="__codelineno-25-50" name="__codelineno-25-50" href="#__codelineno-25-50"></a>PASS: IR Forge / Mountain Goat :: canonicalize/transpose-twice.mlir (49 of 52)
+<a id="__codelineno-25-51" name="__codelineno-25-51" href="#__codelineno-25-51"></a>PASS: IR Forge / Mountain Goat :: lowering/bufferize-static-add.mlir (50 of 52)
+<a id="__codelineno-25-52" name="__codelineno-25-52" href="#__codelineno-25-52"></a>PASS: IR Forge / Mountain Goat :: lowering/bufferize-dynamic-add.mlir (51 of 52)
+<a id="__codelineno-25-53" name="__codelineno-25-53" href="#__codelineno-25-53"></a>PASS: IR Forge / Mountain Goat :: verifier/dynamic-accepted.mlir (52 of 52)
+<a id="__codelineno-25-54" name="__codelineno-25-54" href="#__codelineno-25-54"></a>
+<a id="__codelineno-25-55" name="__codelineno-25-55" href="#__codelineno-25-55"></a>Testing Time: 1.43s
+<a id="__codelineno-25-56" name="__codelineno-25-56" href="#__codelineno-25-56"></a>
+<a id="__codelineno-25-57" name="__codelineno-25-57" href="#__codelineno-25-57"></a>Total Discovered Tests: 52
+<a id="__codelineno-25-58" name="__codelineno-25-58" href="#__codelineno-25-58"></a>  Passed: 52 (100.00%)
+</code></pre></div>
+<h3 id="can-the-tests-fail">Can the tests fail?<a class="headerlink" href="#can-the-tests-fail" title="Permanent link">&para;</a></h3>
+<p><strong>Against Chapter 14's build</strong>, which has no such pass, the same 52 tests give (<code>older_build_out.txt</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>  Failed:  8 (15.38%)
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>  Passed: 44 (84.62%)
+<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>FAIL: assert-stderr/guard-nested-assert.mlir
+<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a>FAIL: assert-stderr/message-bytes-exact.mlir
+<a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a>FAIL: assert-stderr/message-on-stderr.mlir
+<a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a>FAIL: assert-stderr/nested-assert-runs.mlir
+<a id="__codelineno-26-7" name="__codelineno-26-7" href="#__codelineno-26-7"></a>FAIL: assert-stderr/rewrite-structure.mlir
+<a id="__codelineno-26-8" name="__codelineno-26-8" href="#__codelineno-26-8"></a>FAIL: assert-stderr/run-twice-no-collision.mlir
+<a id="__codelineno-26-9" name="__codelineno-26-9" href="#__codelineno-26-9"></a>FAIL: assert-stderr/static-unchanged.mlir
+<a id="__codelineno-26-10" name="__codelineno-26-10" href="#__codelineno-26-10"></a>FAIL: assert-stderr/valid-shapes-still-pass.mlir
+</code></pre></div>
+<p>All eight new tests fail and the 44 older ones pass. This is weaker evidence than it looks for some of them (<code>static-unchanged</code> fails there only because the option <code>--mg-lower-assert-to-stderr</code> does not exist), so a second, stronger check follows.</p>
+<p><strong>Seven deliberate bugs in the pass's own source</strong>, each applied to a copy of this chapter's source tree, rebuilt, and tested. The script:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="ch">#!/bin/sh</span>
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="c1"># Four deliberate bugs in the new pass, each applied to a COPY of this chapter&#39;s source tree, rebuilt, and tested against the assert-stderr tests.</span>
+<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="c1"># Needs ./build.sh to have been run (it creates tree/). Each mutation rebuilds mg-opt, so this takes a few minutes. Output: stderr_mutation_out.txt</span>
+<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a><span class="nv">HERE</span><span class="o">=</span><span class="k">$(</span><span class="nb">cd</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>dirname<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$0</span><span class="s2">&quot;</span><span class="k">)</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">pwd</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="nv">SRC</span><span class="o">=</span><span class="nv">$HERE</span>/tree<span class="p">;</span><span class="w"> </span><span class="nv">SUITE</span><span class="o">=</span><span class="nv">$HERE</span>/../../part15/code/test/assert-stderr
+<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a>mutate<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w">  </span><span class="c1"># name, description, python edit (receives the path to AssertToStderr.cpp). ONLY=n runs just mutation n.</span>
+<a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a><span class="w">  </span><span class="o">[</span><span class="w"> </span>-z<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$ONLY</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">[</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$ONLY</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$1</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="k">return</span>
+<a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a><span class="w">  </span><span class="nv">W</span><span class="o">=</span><span class="nv">$HERE</span>/work/sm-<span class="nv">$1</span><span class="p">;</span><span class="w"> </span>rm<span class="w"> </span>-rf<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">&quot;</span><span class="p">;</span><span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">/build/include/mg&quot;</span><span class="p">;</span><span class="w"> </span>cp<span class="w"> </span>-r<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$SRC</span><span class="s2">&quot;</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">/tree&quot;</span>
+<a id="__codelineno-27-8" name="__codelineno-27-8" href="#__codelineno-27-8"></a><span class="w">  </span>python3<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$3</span><span class="s2">&quot;</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">/tree/lib/AssertToStderr.cpp&quot;</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;MUTATION </span><span class="nv">$1</span><span class="s2"> NOT APPLIED (</span><span class="nv">$2</span><span class="s2">)&quot;</span><span class="p">;</span><span class="w"> </span><span class="k">return</span><span class="p">;</span><span class="w"> </span><span class="o">}</span>
+<a id="__codelineno-27-9" name="__codelineno-27-9" href="#__codelineno-27-9"></a><span class="w">  </span><span class="o">(</span><span class="nb">cd</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">/build&quot;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>cmake<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">/tree&quot;</span><span class="w"> </span>-DMLIR_DIR<span class="o">=</span>/usr/lib/llvm-18/lib/cmake/mlir<span class="w"> </span>-DLLVM_DIR<span class="o">=</span>/usr/lib/llvm-18/lib/cmake/llvm<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-27-10" name="__codelineno-27-10" href="#__codelineno-27-10"></a><span class="w">     </span>-DCMAKE_BUILD_TYPE<span class="o">=</span>Release<span class="w"> </span>-DLLVM_ENABLE_ASSERTIONS<span class="o">=</span>OFF<span class="w"> </span>&gt;/dev/null<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>make<span class="w"> </span>-j8<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s2">&quot; error &quot;</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">true</span><span class="o">)</span>
+<a id="__codelineno-27-11" name="__codelineno-27-11" href="#__codelineno-27-11"></a><span class="w">  </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;MUTATION </span><span class="nv">$1</span><span class="s2">: </span><span class="nv">$2</span><span class="s2">&quot;</span>
+<a id="__codelineno-27-12" name="__codelineno-27-12" href="#__codelineno-27-12"></a><span class="w">  </span><span class="nv">MG_OPT</span><span class="o">=</span><span class="nv">$W</span>/build/mg-opt<span class="w"> </span><span class="nv">MG_TEST_TMP</span><span class="o">=</span><span class="nv">$W</span>/out<span class="w"> </span>lit<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$SUITE</span><span class="s2">&quot;</span><span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s2">&quot;^(PASS|FAIL)&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span><span class="s1">&#39;s/IR Forge \/ Mountain Goat :: /   /;s/ ([0-9]* of [0-9]*)//&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sort
+<a id="__codelineno-27-13" name="__codelineno-27-13" href="#__codelineno-27-13"></a><span class="o">}</span>
+<a id="__codelineno-27-14" name="__codelineno-27-14" href="#__codelineno-27-14"></a>mutate<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="s2">&quot;message written to fd 1 (stdout) instead of fd 2 (stderr)&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-27-15" name="__codelineno-27-15" href="#__codelineno-27-15"></a><span class="w">  </span><span class="s1">&#39;import sys; p=sys.argv[1]; s=open(p).read(); a=&quot;rewriter.getI32IntegerAttr(2)&quot;; assert a in s; open(p,&quot;w&quot;).write(s.replace(a,&quot;rewriter.getI32IntegerAttr(1)&quot;))&#39;</span>
+<a id="__codelineno-27-16" name="__codelineno-27-16" href="#__codelineno-27-16"></a>mutate<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="s2">&quot;no abort: the failing side falls through to the continuation&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-27-17" name="__codelineno-27-17" href="#__codelineno-27-17"></a><span class="w">  </span><span class="s1">&#39;import sys; p=sys.argv[1]; s=open(p).read(); a=&quot;    rewriter.create&lt;LLVM::CallOp&gt;(loc, abortFn, ValueRange{});\n    rewriter.create&lt;LLVM::UnreachableOp&gt;(loc);\n&quot;; assert a in s; open(p,&quot;w&quot;).write(s.replace(a,&quot;    rewriter.create&lt;cf::BranchOp&gt;(loc, cont);\n&quot;))&#39;</span>
+<a id="__codelineno-27-18" name="__codelineno-27-18" href="#__codelineno-27-18"></a>mutate<span class="w"> </span><span class="m">3</span><span class="w"> </span><span class="s2">&quot;the func.func-parent guard removed&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-27-19" name="__codelineno-27-19" href="#__codelineno-27-19"></a><span class="w">  </span><span class="s1">&#39;import sys; p=sys.argv[1]; s=open(p).read(); a=&quot;    if (!isa&lt;func::FuncOp&gt;(op-&gt;getParentOp()))\n      return rewriter.notifyMatchFailure(op, \&quot;assert is not directly inside a func.func\&quot;);\n&quot;; assert a in s; open(p,&quot;w&quot;).write(s.replace(a,&quot;&quot;))&#39;</span>
+<a id="__codelineno-27-20" name="__codelineno-27-20" href="#__codelineno-27-20"></a>mutate<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="s2">&quot;message length off by two (the last character and the newline are cut)&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-27-21" name="__codelineno-27-21" href="#__codelineno-27-21"></a><span class="w">  </span><span class="s1">&#39;import sys; p=sys.argv[1]; s=open(p).read(); a=&quot;rewriter.getI64IntegerAttr(text.size())&quot;; assert a in s; open(p,&quot;w&quot;).write(s.replace(a,&quot;rewriter.getI64IntegerAttr(text.size() - 2)&quot;))&#39;</span>
+<a id="__codelineno-27-22" name="__codelineno-27-22" href="#__codelineno-27-22"></a>mutate<span class="w"> </span><span class="m">5</span><span class="w"> </span><span class="s2">&quot;branch targets swapped: a TRUE condition goes to the failing side, so VALID programs abort&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-27-23" name="__codelineno-27-23" href="#__codelineno-27-23"></a><span class="w">  </span><span class="s1">&#39;import sys; p=sys.argv[1]; s=open(p).read(); a=&quot;op.getArg(), cont, ValueRange{}, fail, ValueRange{}&quot;; assert a in s; open(p,&quot;w&quot;).write(s.replace(a,&quot;op.getArg(), fail, ValueRange{}, cont, ValueRange{}&quot;))&#39;</span>
+<a id="__codelineno-27-24" name="__codelineno-27-24" href="#__codelineno-27-24"></a>mutate<span class="w"> </span><span class="m">6</span><span class="w"> </span><span class="s2">&quot;the pass declares @abort even when there is no assert to rewrite (it alters programs it should leave alone)&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-27-25" name="__codelineno-27-25" href="#__codelineno-27-25"></a><span class="w">  </span><span class="s1">&#39;import sys; p=sys.argv[1]; s=open(p).read(); a=&quot;    RewritePatternSet patterns(&amp;getContext());\n&quot;; assert a in s; open(p,&quot;w&quot;).write(s.replace(a, &quot;    getOrDeclare(getOperation(), \&quot;abort\&quot;, LLVM::LLVMVoidType::get(&amp;getContext()), {});\n&quot;+a))&#39;</span>
+<a id="__codelineno-27-26" name="__codelineno-27-26" href="#__codelineno-27-26"></a>mutate<span class="w"> </span><span class="m">7</span><span class="w"> </span><span class="s2">&quot;global names always start at 0 again (the uniqueness search is removed): a second run collides&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-27-27" name="__codelineno-27-27" href="#__codelineno-27-27"></a><span class="w">  </span><span class="s1">&#39;import sys; p=sys.argv[1]; s=open(p).read(); a=&quot;      if (!module.lookupSymbol(name))\n        break;\n&quot;; assert a in s; open(p,&quot;w&quot;).write(s.replace(a,&quot;      break;\n&quot;))&#39;</span>
+</code></pre></div>
+<p>and its complete, unedited output:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>MUTATION 1: message written to fd 1 (stdout) instead of fd 2 (stderr)
+<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a>FAIL:    assert-stderr/message-bytes-exact.mlir
+<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a>FAIL:    assert-stderr/message-on-stderr.mlir
+<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a>FAIL:    assert-stderr/nested-assert-runs.mlir
+<a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a>PASS:    assert-stderr/guard-nested-assert.mlir
+<a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a>PASS:    assert-stderr/rewrite-structure.mlir
+<a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a>PASS:    assert-stderr/run-twice-no-collision.mlir
+<a id="__codelineno-28-8" name="__codelineno-28-8" href="#__codelineno-28-8"></a>PASS:    assert-stderr/static-unchanged.mlir
+<a id="__codelineno-28-9" name="__codelineno-28-9" href="#__codelineno-28-9"></a>PASS:    assert-stderr/valid-shapes-still-pass.mlir
+<a id="__codelineno-28-10" name="__codelineno-28-10" href="#__codelineno-28-10"></a>MUTATION 2: no abort: the failing side falls through to the continuation
+<a id="__codelineno-28-11" name="__codelineno-28-11" href="#__codelineno-28-11"></a>FAIL:    assert-stderr/message-bytes-exact.mlir
+<a id="__codelineno-28-12" name="__codelineno-28-12" href="#__codelineno-28-12"></a>FAIL:    assert-stderr/message-on-stderr.mlir
+<a id="__codelineno-28-13" name="__codelineno-28-13" href="#__codelineno-28-13"></a>FAIL:    assert-stderr/nested-assert-runs.mlir
+<a id="__codelineno-28-14" name="__codelineno-28-14" href="#__codelineno-28-14"></a>FAIL:    assert-stderr/rewrite-structure.mlir
+<a id="__codelineno-28-15" name="__codelineno-28-15" href="#__codelineno-28-15"></a>PASS:    assert-stderr/guard-nested-assert.mlir
+<a id="__codelineno-28-16" name="__codelineno-28-16" href="#__codelineno-28-16"></a>PASS:    assert-stderr/run-twice-no-collision.mlir
+<a id="__codelineno-28-17" name="__codelineno-28-17" href="#__codelineno-28-17"></a>PASS:    assert-stderr/static-unchanged.mlir
+<a id="__codelineno-28-18" name="__codelineno-28-18" href="#__codelineno-28-18"></a>PASS:    assert-stderr/valid-shapes-still-pass.mlir
+<a id="__codelineno-28-19" name="__codelineno-28-19" href="#__codelineno-28-19"></a>MUTATION 3: the func.func-parent guard removed
+<a id="__codelineno-28-20" name="__codelineno-28-20" href="#__codelineno-28-20"></a>FAIL:    assert-stderr/guard-nested-assert.mlir
+<a id="__codelineno-28-21" name="__codelineno-28-21" href="#__codelineno-28-21"></a>FAIL:    assert-stderr/run-twice-no-collision.mlir
+<a id="__codelineno-28-22" name="__codelineno-28-22" href="#__codelineno-28-22"></a>PASS:    assert-stderr/message-bytes-exact.mlir
+<a id="__codelineno-28-23" name="__codelineno-28-23" href="#__codelineno-28-23"></a>PASS:    assert-stderr/message-on-stderr.mlir
+<a id="__codelineno-28-24" name="__codelineno-28-24" href="#__codelineno-28-24"></a>PASS:    assert-stderr/nested-assert-runs.mlir
+<a id="__codelineno-28-25" name="__codelineno-28-25" href="#__codelineno-28-25"></a>PASS:    assert-stderr/rewrite-structure.mlir
+<a id="__codelineno-28-26" name="__codelineno-28-26" href="#__codelineno-28-26"></a>PASS:    assert-stderr/static-unchanged.mlir
+<a id="__codelineno-28-27" name="__codelineno-28-27" href="#__codelineno-28-27"></a>PASS:    assert-stderr/valid-shapes-still-pass.mlir
+<a id="__codelineno-28-28" name="__codelineno-28-28" href="#__codelineno-28-28"></a>MUTATION 4: message length off by two (the last character and the newline are cut)
+<a id="__codelineno-28-29" name="__codelineno-28-29" href="#__codelineno-28-29"></a>FAIL:    assert-stderr/message-bytes-exact.mlir
+<a id="__codelineno-28-30" name="__codelineno-28-30" href="#__codelineno-28-30"></a>FAIL:    assert-stderr/message-on-stderr.mlir
+<a id="__codelineno-28-31" name="__codelineno-28-31" href="#__codelineno-28-31"></a>FAIL:    assert-stderr/nested-assert-runs.mlir
+<a id="__codelineno-28-32" name="__codelineno-28-32" href="#__codelineno-28-32"></a>PASS:    assert-stderr/guard-nested-assert.mlir
+<a id="__codelineno-28-33" name="__codelineno-28-33" href="#__codelineno-28-33"></a>PASS:    assert-stderr/rewrite-structure.mlir
+<a id="__codelineno-28-34" name="__codelineno-28-34" href="#__codelineno-28-34"></a>PASS:    assert-stderr/run-twice-no-collision.mlir
+<a id="__codelineno-28-35" name="__codelineno-28-35" href="#__codelineno-28-35"></a>PASS:    assert-stderr/static-unchanged.mlir
+<a id="__codelineno-28-36" name="__codelineno-28-36" href="#__codelineno-28-36"></a>PASS:    assert-stderr/valid-shapes-still-pass.mlir
+<a id="__codelineno-28-37" name="__codelineno-28-37" href="#__codelineno-28-37"></a>MUTATION 5: branch targets swapped: a TRUE condition goes to the failing side, so VALID programs abort
+<a id="__codelineno-28-38" name="__codelineno-28-38" href="#__codelineno-28-38"></a>FAIL:    assert-stderr/message-bytes-exact.mlir
+<a id="__codelineno-28-39" name="__codelineno-28-39" href="#__codelineno-28-39"></a>FAIL:    assert-stderr/message-on-stderr.mlir
+<a id="__codelineno-28-40" name="__codelineno-28-40" href="#__codelineno-28-40"></a>FAIL:    assert-stderr/nested-assert-runs.mlir
+<a id="__codelineno-28-41" name="__codelineno-28-41" href="#__codelineno-28-41"></a>FAIL:    assert-stderr/valid-shapes-still-pass.mlir
+<a id="__codelineno-28-42" name="__codelineno-28-42" href="#__codelineno-28-42"></a>PASS:    assert-stderr/guard-nested-assert.mlir
+<a id="__codelineno-28-43" name="__codelineno-28-43" href="#__codelineno-28-43"></a>PASS:    assert-stderr/rewrite-structure.mlir
+<a id="__codelineno-28-44" name="__codelineno-28-44" href="#__codelineno-28-44"></a>PASS:    assert-stderr/run-twice-no-collision.mlir
+<a id="__codelineno-28-45" name="__codelineno-28-45" href="#__codelineno-28-45"></a>PASS:    assert-stderr/static-unchanged.mlir
+<a id="__codelineno-28-46" name="__codelineno-28-46" href="#__codelineno-28-46"></a>MUTATION 6: the pass declares @abort even when there is no assert to rewrite (it alters programs it should leave alone)
+<a id="__codelineno-28-47" name="__codelineno-28-47" href="#__codelineno-28-47"></a>FAIL:    assert-stderr/static-unchanged.mlir
+<a id="__codelineno-28-48" name="__codelineno-28-48" href="#__codelineno-28-48"></a>PASS:    assert-stderr/guard-nested-assert.mlir
+<a id="__codelineno-28-49" name="__codelineno-28-49" href="#__codelineno-28-49"></a>PASS:    assert-stderr/message-bytes-exact.mlir
+<a id="__codelineno-28-50" name="__codelineno-28-50" href="#__codelineno-28-50"></a>PASS:    assert-stderr/message-on-stderr.mlir
+<a id="__codelineno-28-51" name="__codelineno-28-51" href="#__codelineno-28-51"></a>PASS:    assert-stderr/nested-assert-runs.mlir
+<a id="__codelineno-28-52" name="__codelineno-28-52" href="#__codelineno-28-52"></a>PASS:    assert-stderr/rewrite-structure.mlir
+<a id="__codelineno-28-53" name="__codelineno-28-53" href="#__codelineno-28-53"></a>PASS:    assert-stderr/run-twice-no-collision.mlir
+<a id="__codelineno-28-54" name="__codelineno-28-54" href="#__codelineno-28-54"></a>PASS:    assert-stderr/valid-shapes-still-pass.mlir
+<a id="__codelineno-28-55" name="__codelineno-28-55" href="#__codelineno-28-55"></a>MUTATION 7: global names always start at 0 again (the uniqueness search is removed): a second run collides
+<a id="__codelineno-28-56" name="__codelineno-28-56" href="#__codelineno-28-56"></a>FAIL:    assert-stderr/message-on-stderr.mlir
+<a id="__codelineno-28-57" name="__codelineno-28-57" href="#__codelineno-28-57"></a>FAIL:    assert-stderr/rewrite-structure.mlir
+<a id="__codelineno-28-58" name="__codelineno-28-58" href="#__codelineno-28-58"></a>FAIL:    assert-stderr/run-twice-no-collision.mlir
+<a id="__codelineno-28-59" name="__codelineno-28-59" href="#__codelineno-28-59"></a>FAIL:    assert-stderr/valid-shapes-still-pass.mlir
+<a id="__codelineno-28-60" name="__codelineno-28-60" href="#__codelineno-28-60"></a>PASS:    assert-stderr/guard-nested-assert.mlir
+<a id="__codelineno-28-61" name="__codelineno-28-61" href="#__codelineno-28-61"></a>PASS:    assert-stderr/message-bytes-exact.mlir
+<a id="__codelineno-28-62" name="__codelineno-28-62" href="#__codelineno-28-62"></a>PASS:    assert-stderr/nested-assert-runs.mlir
+<a id="__codelineno-28-63" name="__codelineno-28-63" href="#__codelineno-28-63"></a>PASS:    assert-stderr/static-unchanged.mlir
+</code></pre></div>
+<p>Reading it: writing to descriptor 1 instead of 2 (mutation 1) fails exactly the tests that discard stdout; dropping the abort (2) fails the tests that require a crash and the structure test; removing the guard (3) fails the guard test and the run-twice test (whose first pass run also meets the nested assert); truncating the length (4) fails the exact-bytes test and the two that match the message; swapping the branch targets so <em>valid</em> programs abort (5) fails <code>valid-shapes-still-pass</code>; declaring <code>abort</code> even when there is nothing to rewrite (6) fails <code>static-unchanged</code>; and removing the unique-name search (7) fails four tests, not just the collision test: with the search gone, even a single run over a program with two asserts (the shape-mismatch programs) gives both globals the same name. Mutations 5 and 6 were added after the first four, because two tests (<code>valid-shapes-still-pass</code> and <code>static-unchanged</code>) had not failed under any mutation, which meant they had not yet been shown able to fail. Mutation 7 was added after the collision bug was found. Every one of the eight new tests has now failed under at least one mutation.</p>
+<h2 id="limits-and-what-this-does-not-establish">Limits, and what this does not establish<a class="headerlink" href="#limits-and-what-this-does-not-establish" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>POSIX only.</strong> The pass emits calls to <code>write</code> and <code>abort</code>, both standard C-library functions on Linux (tested here) and other POSIX systems. Windows was not tried.</li>
+<li><strong>Descriptor 2 is assumed open and usable.</strong> If it is closed, <code>write</code> fails; the return value is ignored and the program aborts anyway. Short writes and <code>EINTR</code> are not handled (a message of a few dozen bytes is written in one call in practice, but that is not guaranteed).</li>
+<li><strong>The message is a fixed string.</strong> <code>cf.assert</code> carries a static message, so the output cannot include the actual mismatching sizes. "operand shapes differ at runtime in dimension 0" says which dimension, not what the two sizes were.</li>
+<li><strong>Only asserts directly in a function body are rewritten.</strong> Nested ones are left to MLIR's default lowering (stdout, and lost when piped) unless the pass is placed after <code>--convert-scf-to-cf</code>.</li>
+<li><strong>Ordering matters and fails silently.</strong> Placed after the standard lowering, the pass does nothing and says nothing (shown above).</li>
+<li><strong>The earlier chapters keep the old lowering.</strong> Chapters 4 through 18's scripts and tests still use MLIR's default <code>cf.assert</code> lowering; only the eight new tests use this pass. The older tests that check the message do so with <code>stdbuf -oL</code> because of the buffering this chapter works around.</li>
+<li><strong>Still SIGABRT.</strong> The response to a mismatch is process death with exit status 134, not a recoverable error.</li>
+<li><strong>No performance claims.</strong> Nothing was timed; the pass adds no work on the success path beyond the branch the default lowering already had.</li>
+</ul>
+<h2 id="reproducing-this-chapter">Reproducing this chapter<a class="headerlink" href="#reproducing-this-chapter" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="nb">cd</span><span class="w"> </span>docs/part19/code
+<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>./build.sh<span class="w">               </span><span class="c1"># earlier chapters&#39; files + this chapter&#39;s three -&gt; ./build/mg-opt</span>
+<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>./demo.sh<span class="w">                </span><span class="c1"># the side-by-side comparison -&gt; demo_out.txt</span>
+<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a>./show.sh<span class="w">                </span><span class="c1"># the IR and byte evidence under show/</span>
+<a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a><span class="nb">cd</span><span class="w"> </span>../part15/code
+<a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a>./run_lit.sh<span class="w">             </span><span class="c1"># the 52-test suite (defaults to this chapter&#39;s build)</span>
+<a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a><span class="nb">cd</span><span class="w"> </span>../../part19/code
+<a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a>./stderr_mutation.sh<span class="w">     </span><span class="c1"># the seven mutations (rebuilds per mutation; several minutes)</span>
+</code></pre></div>
+<p>The <code>bugs/</code> files come from the mutation builds (<code>work/sm-3</code> and <code>work/sm-7</code>) after <code>stderr_mutation.sh</code> has run; <code>reproduce_bugs.sh</code> regenerates them. Every file and output above is embedded from the repository when the site is built. As in Chapters 10 through 18, no documentation was consulted: each claim comes from running the commands or reading the code.</p>
+<h2 id="chapter-summary">Chapter summary<a class="headerlink" href="#chapter-summary" title="Permanent link">&para;</a></h2>
+<p>This chapter replaced MLIR's <code>cf.assert</code> lowering with a small pass, <code>--mg-lower-assert-to-stderr</code>, that turns each assert into a conditional branch whose failing side <code>write</code>s the message to file descriptor 2 and aborts. Chapter 14's lowering printed to buffered stdout and then aborted, so the explanation was lost whenever stdout was not a terminal; the new pass delivers it under every capture mode tried, because <code>write</code> has no buffer to flush and stderr is the right stream. Hardening it found two real bugs (an assert nested in a single-block loop body produced invalid IR, and running the pass twice reused global names), both now fixed and pinned. Eight new <code>lit</code> tests (suite: 52) and seven mutations, all caught, with two mutations added specifically because two tests had not yet been shown able to fail.</p>
+<p>Deliberately out of scope, stated explicitly: POSIX only, descriptor 2 assumed open, short writes not handled, a fixed message string, nested asserts handled only when the pass runs after <code>--convert-scf-to-cf</code>, silent no-op if misordered, and the earlier chapters left on the default lowering.</p>
+<h2 id="self-check-questions">Self-check questions<a class="headerlink" href="#self-check-questions" title="Permanent link">&para;</a></h2>
+<p><strong>1. Why does <code>puts</code> followed by <code>abort()</code> lose the message when stdout is a pipe, while <code>write(2, ...)</code> followed by <code>abort()</code> does not?</strong></p>
+<p>Worked answer: <code>puts</code> writes into the C library's buffered stdout stream. When stdout is a terminal the library flushes at each newline, but when it is a pipe or a file the text stays in memory until the buffer fills or the program exits normally. <code>abort()</code> ends the process immediately without flushing stdio buffers, so the text is discarded. <code>write</code> is a thin wrapper over the operating system's write call with no library buffer: when it returns the bytes are already in the kernel, so a later <code>abort()</code> cannot lose them. Writing to descriptor 2 also puts the message on the stream conventionally used for errors.</p>
+<p><strong>2. The pass only rewrites an assert whose parent operation is a <code>func.func</code>. What goes wrong without that guard, and how can the pass still cover a nested assert?</strong></p>
+<p>Worked answer: rewriting splits the assert's block in two and adds a failing block, which needs a region that may hold several blocks. An <code>affine.for</code> body is a single-block region, so splitting it produced invalid IR (<code>'affine.for' op expects region #0 to have 0 or 1 blocks</code>). The guard leaves such asserts to MLIR's default lowering. Running the pass after <code>--lower-affine --convert-scf-to-cf</code>, when no structured loops remain and every assert sits in a function body of blocks, makes the nested assert eligible; the nested program was then run for real and a NaN aborted with its message on stderr.</p>
+<p><strong>3. Why must the pass run before <code>--convert-func-to-llvm</code>, and how would you notice if it did not?</strong></p>
+<p>Worked answer: <code>--convert-func-to-llvm</code> already lowers <code>cf.assert</code> (to <code>puts</code> plus <code>abort</code>), so by the time a later pass runs, no <code>cf.assert</code> is left to rewrite and the pass silently does nothing. You would notice by looking at the IR or the behavior: with the standard lowering first, the output contains two <code>puts</code> calls and zero <code>write</code> calls, and the message is lost again when stdout is a pipe. Nothing warns about this, which is why the chapter shows it and why every test uses the one correct ordering.</p>
+<p><strong>4. Running the pass twice on one module used to fail with a redefinition error. What caused it, and what was the fix?</strong></p>
+<p>Worked answer: the message globals were named from a counter that restarted at zero on each run. A first run rewrote a top-level assert (global <code>_0</code>) and left a nested one; after flattening, a second run rewrote the nested one and reused <code>_0</code>, so the module had two globals with the same symbol name. The fix searches the module's symbols for the first unused <code>mg_assert_stderr_msg_&lt;k&gt;</code> instead of counting, so each message gets a distinct name regardless of how many times the pass runs.</p>
+<p><strong>5. Two of the new tests did not fail under the first four mutations. Why did the chapter add more mutations, and which ones?</strong></p>
+<p>Worked answer: a test that has never failed has not been shown to test anything. <code>valid-shapes-still-pass</code> guards against the pass breaking programs whose assertions hold, and <code>static-unchanged</code> guards against the pass altering programs it should leave alone; the first four mutations (wrong descriptor, no abort, no guard, truncated length) broke neither property. Mutation 5 swaps the branch targets so a true condition goes to the failing side, which makes valid programs abort and fails <code>valid-shapes-still-pass</code>; mutation 6 declares <code>abort</code> even when nothing needs rewriting, which changes a program with no asserts and fails <code>static-unchanged</code>. Mutation 7, removing the unique-name search, was added once the collision bug was found.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../../part18/18-why-fusion-declines/" class="md-footer__link md-footer__link--prev" aria-label="Previous: 18. Why Fusion Declines: Reading the Pass, and a Second Bug Found Along the Way">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                18. Why Fusion Declines: Reading the Pass, and a Second Bug Found Along the Way
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 Oluwaseyi Awoga
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

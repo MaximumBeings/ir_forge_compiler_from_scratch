@@ -1,0 +1,2 @@
+/usr/bin/ar Dqc libMgBufferizableOpInterfaceImpl.a CMakeFiles/MgBufferizableOpInterfaceImpl.dir/lib/MgBufferizableOpInterfaceImpl.cpp.o
+/usr/bin/ranlib -D libMgBufferizableOpInterfaceImpl.a

@@ -1,0 +1,2 @@
+/usr/bin/ar Dqc libMgDialect.a CMakeFiles/MgDialect.dir/lib/MgDialect.cpp.o
+/usr/bin/ranlib -D libMgDialect.a

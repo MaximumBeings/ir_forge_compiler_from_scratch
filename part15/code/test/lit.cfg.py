@@ -32,6 +32,8 @@ config.substitutions += [
     ("%not", "not-18"),
     ("%inputs", inputs),
     ("%lower-to-llvm", lower),
+    ("%lower-with-stderr", "--lower-affine --convert-scf-to-cf --mg-lower-assert-to-stderr --convert-arith-to-llvm "
+                           "--finalize-memref-to-llvm --convert-func-to-llvm --reconcile-unrealized-casts"),
     ("%to-gpu", to_gpu),
 ]
 config.environment["PATH"] = os.environ["PATH"]

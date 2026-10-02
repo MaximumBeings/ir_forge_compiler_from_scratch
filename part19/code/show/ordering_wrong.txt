@@ -1,0 +1,3 @@
+cf.assert left after the standard lowering: 0
+calls to puts (the stdout lowering): 2
+calls to write (this pass): 0

@@ -1535,6 +1535,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part19/19-a-better-abort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    19. A Better Abort: Reporting Assertion Failures on stderr
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1847,17 +1875,19 @@
 <a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>    <span class="p">(</span><span class="s2">&quot;%not&quot;</span><span class="p">,</span> <span class="s2">&quot;not-18&quot;</span><span class="p">),</span>
 <a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>    <span class="p">(</span><span class="s2">&quot;</span><span class="si">%i</span><span class="s2">nputs&quot;</span><span class="p">,</span> <span class="n">inputs</span><span class="p">),</span>
 <a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a>    <span class="p">(</span><span class="s2">&quot;</span><span class="si">%lo</span><span class="s2">wer-to-llvm&quot;</span><span class="p">,</span> <span class="n">lower</span><span class="p">),</span>
-<a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a>    <span class="p">(</span><span class="s2">&quot;%to-gpu&quot;</span><span class="p">,</span> <span class="n">to_gpu</span><span class="p">),</span>
-<a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a><span class="p">]</span>
-<a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a><span class="n">config</span><span class="o">.</span><span class="n">environment</span><span class="p">[</span><span class="s2">&quot;PATH&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;PATH&quot;</span><span class="p">]</span>
+<a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a>    <span class="p">(</span><span class="s2">&quot;</span><span class="si">%lo</span><span class="s2">wer-with-stderr&quot;</span><span class="p">,</span> <span class="s2">&quot;--lower-affine --convert-scf-to-cf --mg-lower-assert-to-stderr --convert-arith-to-llvm &quot;</span>
+<a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a>                           <span class="s2">&quot;--finalize-memref-to-llvm --convert-func-to-llvm --reconcile-unrealized-casts&quot;</span><span class="p">),</span>
+<a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a>    <span class="p">(</span><span class="s2">&quot;%to-gpu&quot;</span><span class="p">,</span> <span class="n">to_gpu</span><span class="p">),</span>
+<a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a><span class="p">]</span>
+<a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a><span class="n">config</span><span class="o">.</span><span class="n">environment</span><span class="p">[</span><span class="s2">&quot;PATH&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;PATH&quot;</span><span class="p">]</span>
 </code></pre></div>
 <p>The one design decision worth noticing is <code>MG_OPT</code>: <strong>which <code>mg-opt</code> binary is tested is an environment variable</strong>, not a constant. That is what lets the same suite be pointed at older builds later in this chapter to show the tests can fail. Each test gets its own scratch name (<code>%t</code>), so tests cannot read each other's files.</p>
 <p>The launcher script is three lines of real logic:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="ch">#!/bin/sh</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="c1"># Run the regression suite against an mg-opt build. Default: Chapter 14&#39;s build (run ../../part14/code/build.sh first).</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="c1"># Run the regression suite against an mg-opt build. Default: the newest build that exists, Chapter 19 then Chapter 14 (run ../../part19/code/build.sh or ../../part14/code/build.sh first).</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># Override with MG_OPT=/path/to/mg-opt. Needs: pip install lit; FileCheck-18, not-18, mlir-translate-18, clang-18.</span>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="nv">HERE</span><span class="o">=</span><span class="k">$(</span><span class="nb">cd</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>dirname<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$0</span><span class="s2">&quot;</span><span class="k">)</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">pwd</span><span class="k">)</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">MG_OPT</span><span class="o">=</span><span class="si">${</span><span class="nv">MG_OPT</span><span class="k">:-</span><span class="nv">$HERE</span><span class="p">/../../part14/code/build/mg-opt</span><span class="si">}</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">MG_OPT</span><span class="o">=</span><span class="si">${</span><span class="nv">MG_OPT</span><span class="k">:-$(for</span><span class="w"> </span>b<span class="w"> </span><span class="k">in</span><span class="w"> </span>part19<span class="w"> </span>part14<span class="p">;</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-x<span class="w"> </span><span class="nv">$HERE</span>/../../<span class="nv">$b</span>/code/build/mg-opt<span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="nv">$HERE</span>/../../<span class="nv">$b</span>/code/build/mg-opt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="k">break</span><span class="p">;</span><span class="w"> </span><span class="k">done)</span><span class="si">}</span>
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="o">[</span><span class="w"> </span>-x<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$MG_OPT</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;no mg-opt at </span><span class="nv">$MG_OPT</span><span class="s2"> (build it first)&quot;</span><span class="p">;</span><span class="w"> </span><span class="nb">exit</span><span class="w"> </span><span class="m">2</span><span class="p">;</span><span class="w"> </span><span class="o">}</span>
 <a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="nb">export</span><span class="w"> </span><span class="nv">MG_TEST_TMP</span><span class="o">=</span><span class="si">${</span><span class="nv">MG_TEST_TMP</span><span class="k">:-</span><span class="nv">$HERE</span><span class="p">/work/lit-out</span><span class="si">}</span>
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>mkdir<span class="w"> </span>-p<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$MG_TEST_TMP</span><span class="s2">&quot;</span>

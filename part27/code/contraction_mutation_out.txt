@@ -1,0 +1,12 @@
+NOTE: this script deliberately breaks the contraction code. 'caught' lines are EXPECTED: they show the tests can detect the mistake.
+baseline (nothing broken): tests pass (expected)
+A: contracted axes first, free axes last (swapped): caught by contraction/tensor-contraction.mlir 
+B: free axes first, contracted axes last (swapped): caught by contraction/tensor-contraction.mlir 
+B's contracted axes taken in increasing order, not paired: caught by contraction/tensor-contraction.mlir 
+output shape lists the free axes of B first: caught by contraction/tensor-contraction.mlir 
+the size check of a contracted pair is removed: caught by contraction/mismatch-trap.mlir contraction/tensor-contraction.mlir 
+a repeated axis is no longer rejected: caught by contraction/tensor-contraction.mlir 
+an out-of-range axis is no longer rejected: caught by contraction/mismatch-trap.mlir contraction/tensor-contraction.mlir 
+the Mountain Goat gemm adds the product twice: caught by contraction/tensor-contraction.mlir 
+the Mountain Goat gemm multiplies by the transpose: caught by contraction/tensor-contraction.mlir 
+restored: all files are back to their originals

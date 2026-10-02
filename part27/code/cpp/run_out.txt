@@ -1,0 +1,43 @@
+--- ./contract_demo
+1. Matrix multiply, as contract(A, axis 1, B, axis 0)   (appendix H.3)
+   C =
+        1.00     2.00     4.00     5.00
+        3.00     4.00    10.00    11.00
+        5.00     6.00    16.00    17.00
+   equals the appendix's numpy-checked values: yes
+
+2. A double contraction: [2,3,4] x [3,4,5] over A's axes {1,2} and B's axes {0,1}   (appendix H.4)
+   as matrices: 2x12 times 12x5  ->  120 multiply-adds (the appendix's formula T x product of contracted sizes: 10 x 12 = 120)
+   output shape [2,5]
+   C =
+       10.00     5.00     0.00    -5.00   -10.00
+        2.00     1.00     0.00    -1.00    -2.00
+   equals the appendix's numpy.tensordot values: yes
+
+3. More contractions, each compared with the definition (bit for bit, on numbers that are not 'nice')
+  matrix product                             A[3,2]     B[2,4]     -> [3,4]     matches the definition bit for bit: yes
+  double contraction                         A[2,3,4]   B[3,4,5]   -> [2,5]     matches the definition bit for bit: yes
+  contracted axis in the FRONT of A          A[2,3,4]   B[2,5]     -> [3,4,5]   matches the definition bit for bit: yes
+  contracted axes listed in reverse order    A[2,3,4]   B[4,3,5]   -> [2,5]     matches the definition bit for bit: yes
+  contracted axes in the middle of both      A[5,2,3]   B[4,3,2,6] -> [5,4,6]   matches the definition bit for bit: yes
+  vector times matrix                        A[4]       B[4,6]     -> [6]       matches the definition bit for bit: yes
+  dot product (every axis contracted)        A[2,3,4]   B[2,3,4]   -> []        matches the definition bit for bit: yes
+  outer product (no contracted axis)         A[3]       B[4]       -> [3,4]     matches the definition bit for bit: yes
+  rank 3 x rank 3, one shared axis           A[3,4,5]   B[5,2,3]   -> [3,4,2,3] matches the definition bit for bit: yes
+
+4. The axis check (appendix H.5): [3,2] x [4,5] over axes of size 2 and 4
+   rejected, as it should be: "contract: mismatched dimension on contracted axis pair 0 (A.shape[1]=2 vs B.shape[0]=4)"
+   also rejected: "contract: axes_a and axes_b must have the same length"
+   also rejected: "contract: axis 5 is out of range for A"
+   also rejected: "contract: axis 1 is listed twice for A"
+
+All checks passed.
+(exit status 0)
+
+--- ./contract_demo trap          (the axis check on)
+[3,2] x [4,5] over axis 1 of A (size 2) and axis 0 of B (size 4), with the axis check on:
+  caught std::invalid_argument: "contract: mismatched dimension on contracted axis pair 0 (A.shape[1]=2 vs B.shape[0]=4)"
+
+--- ./contract_demo trap skip     (the axis check skipped: what does Mountain Goat's own run-time check say?)
+[3,2] x [4,5] over axis 1 of A (size 2) and axis 0 of B (size 4), with the axis check SKIPPED:
+(exit status 134)

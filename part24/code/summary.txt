@@ -1,0 +1,43 @@
+implementation                        N  pass 1 ms  pass 2 ms  differ  GFLOP/s vs mg -O2  results
+mg_O2 (dynamic sizes)                64      0.104      0.094     10%     5.32     1.00x  ok
+mg_O2_ikj (dynamic sizes)            64      0.064      0.061      5%     8.35     1.58x  ok
+mg_O2_ikj_tile32 (dynamic sizes)     64      0.061      0.092     41%     7.18     1.29x  ok
+mg_O3_native_tile32 (dynamic sizes)   64      0.103      0.179     54%     4.00     0.70x  ok
+mg_O3_native_ikj (dynamic sizes)     64      0.042      0.044      5%    12.15     2.30x  ok
+mg_O3_native_ikj_tile32 (dynamic sizes)   64      0.068      0.059     14%     8.34     1.56x  ok
+C++ ijk loop, clang -O2              64      0.136      0.104     27%     4.46     0.83x  ok
+C++ ikj loop, -O3 native             64      0.038      0.038      0%    13.84     2.61x  ok
+
+mg_O2 (dynamic sizes)               128      2.257      2.208      2%     1.88     1.00x  ok
+mg_O2_ikj (dynamic sizes)           128      0.646      0.580     11%     6.86     3.64x  ok
+mg_O2_ikj_tile32 (dynamic sizes)    128      0.470      0.674     36%     7.57     3.90x  ok
+mg_O3_native_tile32 (dynamic sizes)  128      1.309      0.875     40%     4.00     2.04x  ok
+mg_O3_native_ikj (dynamic sizes)    128      0.509      0.450     12%     8.78     4.66x  ok
+mg_O3_native_ikj_tile32 (dynamic sizes)  128      0.418      0.361     15%    10.83     5.73x  ok
+C++ ijk loop, clang -O2             128      2.424      2.227      8%     1.80     0.96x  ok
+C++ ikj loop, -O3 native            128      0.443      0.428      3%     9.64     5.13x  ok
+
+mg_O2 (dynamic sizes)               256     17.788     17.191      3%     1.92     1.00x  ok
+mg_O2 (static 256)                  256     16.867     16.915      0%     1.98     1.04x  ok
+mg_O2_ikj (dynamic sizes)           256      6.296      5.028     22%     6.00     3.09x  ok
+mg_O2_ikj (static 256)              256      3.645      5.394     39%     7.71     3.87x  ok
+mg_O2_ikj_tile32 (dynamic sizes)    256      7.019      4.941     35%     5.79     2.92x  ok
+mg_O2_ikj_tile32 (static 256)       256      5.065      3.334     41%     8.35     4.16x  ok
+mg_O3_native_tile32 (dynamic sizes)  256     11.903      8.036     39%     3.50     1.75x  ok
+mg_O3_native_tile32 (static 256)    256      3.478      3.706      6%     9.35     4.87x  ok
+mg_O3_native_ikj (dynamic sizes)    256      3.939      3.450     13%     9.12     4.73x  ok
+mg_O3_native_ikj (static 256)       256      3.580      3.332      7%     9.72     5.06x  ok
+mg_O3_native_ikj_tile32 (dynamic sizes)  256      4.863      3.970     20%     7.67     3.96x  ok
+mg_O3_native_ikj_tile32 (static 256)  256      2.835      2.714      4%    12.10     6.30x  ok
+C++ ijk loop, clang -O2             256     17.407     17.020      2%     1.95     1.02x  ok
+C++ ikj loop, -O3 native            256      4.534      3.348     30%     8.71     4.44x  ok
+
+mg_O2 (dynamic sizes)               512    490.884    463.103      6%     0.56     1.00x  ok
+mg_O2_ikj (dynamic sizes)           512     61.176     66.111      8%     4.22     7.49x  ok
+mg_O2_ikj_tile32 (dynamic sizes)    512     38.334     42.462     10%     6.66    11.81x  ok
+mg_O3_native_tile32 (dynamic sizes)  512     81.522    110.995     31%     2.85     4.96x  ok
+mg_O3_native_ikj (dynamic sizes)    512     36.563     38.669      6%     7.14    12.68x  ok
+mg_O3_native_ikj_tile32 (dynamic sizes)  512     42.166     35.527     17%     6.96    12.28x  ok
+C++ ijk loop, clang -O2             512    489.424    500.284      2%     0.55     0.96x  ok
+C++ ikj loop, -O3 native            512     35.939     36.967      3%     7.37    13.09x  ok
+

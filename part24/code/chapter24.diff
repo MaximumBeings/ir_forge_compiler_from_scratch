@@ -1,0 +1,104 @@
+--- ../../part22/code/LowerToAffine.cpp	2026-10-02 11:17:33.277001200 +0000
++++ LowerToAffine.cpp	2026-10-02 18:03:38.091631141 +0000
+@@ -281,7 +281,12 @@
+ /// mg.matmul: result[i,j] = sum over k of lhs[i,k] * rhs[k,j]. A zero-fill nest, then a 3-deep
+ /// accumulate nest. For `?` dimensions the inner extents must agree at run time: one cf.assert.
+ struct MatmulOpLowering : public OpConversionPattern<mg::MatmulOp> {
+-  using OpConversionPattern::OpConversionPattern;
++  /// Chapter 24: `ikj` runs the three loops in the order i, k, j instead of i, j, k. Same arithmetic, same
++  /// order of additions into each result element (k increases for every i, j), so the results are bit-for-bit
++  /// identical; only the memory access pattern differs.
++  bool ikj;
++  MatmulOpLowering(TypeConverter &converter, MLIRContext *ctx, bool ikj)
++      : OpConversionPattern(converter, ctx), ikj(ikj) {}
+   LogicalResult matchAndRewrite(mg::MatmulOp op, OpAdaptor adaptor,
+                                 ConversionPatternRewriter &rewriter) const override {
+     auto loc = op.getLoc();
+@@ -315,9 +320,11 @@
+     int64_t kStatic = !lt.isDynamicDim(1) ? lt.getDimSize(1) : rt.getDimSize(0);
+     Value k = bound(kStatic, lhs, 1, Value());
+     Value c0 = rewriter.create<arith::ConstantIndexOp>(loc, 0);
+-    affine::buildAffineLoopNest(rewriter, loc, ValueRange{c0, c0, c0}, ValueRange{m, n, k}, {1, 1, 1},
++    // Loop bounds in nest order: (m, n, k) for ijk, (m, k, n) for ikj. ivs follow the same order.
++    llvm::SmallVector<Value, 3> bounds = ikj ? llvm::SmallVector<Value, 3>{m, k, n} : llvm::SmallVector<Value, 3>{m, n, k};
++    affine::buildAffineLoopNest(rewriter, loc, ValueRange{c0, c0, c0}, bounds, {1, 1, 1},
+         [&](OpBuilder &b, Location l, ValueRange ivs) {
+-          Value i = ivs[0], j = ivs[1], kk = ivs[2];
++          Value i = ivs[0], j = ikj ? ivs[2] : ivs[1], kk = ikj ? ivs[1] : ivs[2];
+           Value acc = b.create<affine::AffineLoadOp>(l, alloc, ValueRange{i, j});
+           Value x = b.create<affine::AffineLoadOp>(l, lhs, ValueRange{i, kk});
+           Value y = b.create<affine::AffineLoadOp>(l, rhs, ValueRange{kk, j});
+@@ -440,6 +447,13 @@
+     : public PassWrapper<ConvertMgToAffinePass, OperationPass<ModuleOp>> {
+   MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(ConvertMgToAffinePass)
+ 
++  ConvertMgToAffinePass() = default;
++  ConvertMgToAffinePass(const ConvertMgToAffinePass &other) : PassWrapper(other) {}   // needed because of the Option below
++
++  Option<std::string> matmulOrder{*this, "matmul-order",
++                                  llvm::cl::desc("loop order for mg.matmul: ijk (the default, as in Chapters 21 to 23) or ikj"),
++                                  llvm::cl::init("ijk")};
++
+   llvm::StringRef getArgument() const final { return "convert-mg-to-affine"; }
+   llvm::StringRef getDescription() const final {
+     return "Lower Mountain Goat's own mg dialect to affine/memref/arith, "
+@@ -453,6 +467,10 @@
+   }
+ 
+   void runOnOperation() override {
++    if (matmulOrder != "ijk" && matmulOrder != "ikj") {
++      getOperation().emitError("convert-mg-to-affine: matmul-order must be ijk or ikj, got '") << matmulOrder << "'";
++      return signalPassFailure();
++    }
+     MgToAffineTypeConverter typeConverter;
+     ConversionTarget target(getContext());
+     target.addLegalDialect<affine::AffineDialect, memref::MemRefDialect,
+@@ -486,8 +504,9 @@
+                  ElementwiseBinaryLowering<mg::SubOp, arith::SubFOp>,
+                  ElementwiseBinaryLowering<mg::MulOp, arith::MulFOp>,
+                  ElementwiseBinaryLowering<mg::DivOp, arith::DivFOp>,
+-                 ScalarOpLowering, NegOpLowering, MatmulOpLowering,
++                 ScalarOpLowering, NegOpLowering,
+                  ReluOpLowering, ReduceOpLowering, BroadcastOpLowering>(typeConverter, &getContext());
++    patterns.add<MatmulOpLowering>(typeConverter, &getContext(), matmulOrder == "ikj");
+     populateFunctionOpInterfaceTypeConversionPattern<func::FuncOp>(patterns,
+                                                                    typeConverter);
+     populateCallOpTypeConversionPattern(patterns, typeConverter);
+--- ../../part23/code/mgc	2026-10-02 16:31:18.251194699 +0000
++++ mgc	2026-10-02 18:08:07.897995992 +0000
+@@ -7,27 +7,28 @@
+ #   mgc ptx   prog.mg            compile to PTX (no launch: this machine has no GPU) and print the PTX
+ # Options (Chapter 23): -O0|-O1|-O2|-O3        optimization level for the final clang step (default -O0, as in every earlier chapter)
+ #   --passes "--affine-loop-tile=tile-size=32"  extra mg-opt passes run on the affine IR, before lowering (quote as one argument)
+-# Env: MG_OPT (default Chapter 22 build), MGC_KEEP=dir (keep every intermediate file there), MGC_CFLAGS (extra flags for clang, e.g. -march=native),
++#   --matmul-order ikj|ijk                      (Chapter 24) the loop order mg.matmul is lowered to (default ijk)
++# Env: MG_OPT (default Chapter 24 build), MGC_KEEP=dir (keep every intermediate file there), MGC_CFLAGS (extra flags for clang, e.g. -march=native),
+ #      MGC_CLANG (the clang to call; tests set it to `echo` to see exactly which flags mgc passes).
+ set -e
+ HERE=$(cd "$(dirname "$0")" && pwd)
+-MG_OPT=${MG_OPT:-$HERE/../../part22/code/build/mg-opt}
++MG_OPT=${MG_OPT:-$HERE/../../part24/code/build/mg-opt}
+ LIBDIR=${MLIR_LIBDIR:-/usr/lib/llvm-18/lib}
+-usage() { echo "usage: mgc run|build|lib|mlir|ptx prog.mg [-o exe] [-O0..-O3] [--passes \"...\"]" >&2; exit 2; }
++usage() { echo "usage: mgc run|build|lib|mlir|ptx prog.mg [-o exe] [-O0..-O3] [--passes \"...\"] [--matmul-order ikj|ijk]" >&2; exit 2; }
+ [ $# -ge 2 ] || usage
+-cmd=$1; src=$2; shift 2; out=; OPT=; PASSES=
+-while [ $# -gt 0 ]; do case $1 in -o) out=$2; shift 2;; -O0|-O1|-O2|-O3) OPT=$1; shift;; --passes) PASSES=$2; shift 2;; *) usage;; esac; done
++cmd=$1; src=$2; shift 2; out=; OPT=; PASSES=; CONVOPT=
++while [ $# -gt 0 ]; do case $1 in -o) out=$2; shift 2;; -O0|-O1|-O2|-O3) OPT=$1; shift;; --passes) PASSES=$2; shift 2;; --matmul-order) CONVOPT="=matmul-order=$2"; shift 2;; *) usage;; esac; done
+ [ -f "$src" ] || { echo "mgc: no such file: $src" >&2; exit 2; }
+ W=${MGC_KEEP:-$(mktemp -d)}; mkdir -p "$W"
+ base=$(basename "$src" .mg)
+ LIBFLAG=; [ "$cmd" = lib ] && LIBFLAG=--lib
+ python3 "$HERE/../../part22/code/mgfront.py" $LIBFLAG "$src" > "$W/$base.mlir"          # 1. surface syntax -> mg dialect (exit 1 + message on a syntax/shape error)
+ [ "$cmd" = mlir ] && { cat "$W/$base.mlir"; exit 0; }
+-[ -x "$MG_OPT" ] || { echo "mgc: no mg-opt at $MG_OPT (run part22/code/build.sh)" >&2; exit 2; }
++[ -x "$MG_OPT" ] || { echo "mgc: no mg-opt at $MG_OPT (run part24/code/build.sh)" >&2; exit 2; }
+ case $cmd in
+   build|run|lib)
+     LOWER='--lower-affine --convert-scf-to-cf --mg-lower-assert-to-stderr --convert-arith-to-llvm --finalize-memref-to-llvm --convert-func-to-llvm --reconcile-unrealized-casts'
+-    $MG_OPT "$W/$base.mlir" --convert-mg-to-affine $PASSES -o "$W/$base.affine.mlir"   # 2. mg -> affine/memref/arith (+ runtime shape checks)
++    $MG_OPT "$W/$base.mlir" --convert-mg-to-affine$CONVOPT $PASSES -o "$W/$base.affine.mlir"   # 2. mg -> affine/memref/arith (+ runtime shape checks)
+     $MG_OPT "$W/$base.affine.mlir" $LOWER -o "$W/$base.llvm.mlir"               # 3. -> LLVM dialect, assertions -> write(2,..)+abort
+     mlir-translate-18 --mlir-to-llvmir "$W/$base.llvm.mlir" -o "$W/$base.ll"    # 4. -> LLVM IR
+     if [ "$cmd" = lib ]; then   # object + header; the object is linked by the caller

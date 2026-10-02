@@ -1,0 +1,23 @@
+NOTE: this script deliberately runs broken or older code. FAIL lines below are EXPECTED: they show the tests can detect the problem. The baseline (unmodified current build) must show none.
+### lowering mutation: the ikj order is ignored (always lowers as ijk)
+FAIL: loop-order/flag-reaches-pass.mlir (2 of 6)
+FAIL: loop-order/structure.mlir (3 of 6)
+  Passed  :  4 (4.04%)
+  Failed  :  2 (2.02%)
+### lowering mutation: ikj bounds not reordered (m, n, k used for i, k, j)
+FAIL: loop-order/flag-reaches-pass.mlir (2 of 6)
+FAIL: loop-order/results-identical.mlir (3 of 6)
+FAIL: loop-order/structure.mlir (4 of 6)
+FAIL: loop-order/cpp-ikj.mlir (5 of 6)
+FAIL: loop-order/bitwise-identical.mlir (6 of 6)
+  Passed  :  1 (1.01%)
+  Failed  :  5 (5.05%)
+### lowering mutation: the right-hand matrix is read transposed
+FAIL: loop-order/cpp-ikj.mlir (4 of 6)
+FAIL: loop-order/results-identical.mlir (6 of 6)
+  Passed  :  4 (4.04%)
+  Failed  :  2 (2.02%)
+### lowering mutation: the matmul-order option is not validated
+FAIL: loop-order/bad-option.mlir (1 of 6)
+  Passed  :  5 (5.05%)
+  Failed  :  1 (1.01%)

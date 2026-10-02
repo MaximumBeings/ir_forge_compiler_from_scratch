@@ -7,11 +7,11 @@ Everything on this page was run for real. Each example is a file in `docs/tour/c
 ## Compile and run
 
 ```sh
-cd docs/part21/code && ./build.sh      # once: builds the compiler's mg-opt tool
+cd docs/part22/code && ./build.sh      # once: builds the compiler's mg-opt tool
 cd ../../tour/code
-../../part21/code/mgc run 01_first_program.mg    # compile to a native executable and run it
-../../part21/code/mgc mlir 01_first_program.mg   # show the MLIR the front end produces
-../../part21/code/mgc ptx  05_dynamic_types.mg   # compile to GPU code (PTX); nothing is launched
+../../part22/code/mgc run 01_first_program.mg    # compile to a native executable and run it
+../../part22/code/mgc mlir 01_first_program.mg   # show the MLIR the front end produces
+../../part22/code/mgc ptx  05_dynamic_types.mg   # compile to GPU code (PTX); nothing is launched
 ./run_tour.sh > tour_out.txt                      # run every example on this page
 ```
 
@@ -99,6 +99,11 @@ An **expression** computes a value: a name, a literal, a function call, `transpo
 | `transpose(a)` | rows become columns | m by n becomes n by m |
 | `-a` | negate every element | same shape |
 | matrix `op` scalar, scalar `op` matrix | combine every element with the number (`+ - * /`) | same shape as the matrix |
+| `relu(a)` | `max(x, 0)` for every element | same shape |
+| `row_sum(a)`, `row_max(a)`, `row_mean(a)` | one value per **row** | m by n gives m by 1 |
+| `col_sum(a)`, `col_max(a)`, `col_mean(a)` | one value per **column** | m by n gives 1 by n |
+
+**Broadcasting.** For `+ - * /`, if two shapes differ but each pair of dimensions is equal or has a **static 1**, the size-1 dimension is repeated to fit: `[[1, 2, 3], [4, 5, 6]] + [[10, 20, 30]]` adds the row to both rows. A `?` dimension is never broadcast, and `row_mean`/`col_mean` need a static size along the averaged axis. Chapter 22 explains all of it.
 
 From tightest to loosest binding: unary `-`; then `*`, `/` and `@` (left to right); then `+` and `-` (left to right). Parentheses override. So `a + b * c` means `a + (b * c)`.
 
@@ -113,10 +118,10 @@ With `a = [[1, 2], [3, 4]]` and `b = [[10, 20], [30, 40]]` the eight outputs are
 The compiler checks what it can **before** producing any code, and reports the file and line. Each of these is one real example from `docs/tour/code/errors/`:
 
 ```text
---8<-- "docs/tour/code/tour_out.txt:111:174"
+--8<-- "docs/tour/code/tour_out.txt:111:175"
 ```
 
-In order: a line that starts with something other than `let`, `print` or `def`; a name that was never declared; adding a 1x2 to a 2x1; calling a function before it is defined; giving a function the wrong number of arguments; trying to print a scalar; passing a matrix whose shape does not fit the parameter; a zero-size dimension; and a `def` with no expression after the `=`. Every one of these exits with status 1 and produces no program.
+In order: a line that starts with something other than `let`, `print` or `def`; a name that was never declared; adding a 2x3 to a 3x2 (neither differing dimension is 1, so not even broadcasting can fix it); calling a function before it is defined; giving a function the wrong number of arguments; trying to print a scalar; passing a matrix whose shape does not fit the parameter; a zero-size dimension; and a `def` with no expression after the `=`. Every one of these exits with status 1 and produces no program.
 
 What the compiler **cannot** check is a mismatch between two `?` dimensions, since the sizes do not exist until the program runs. That check happens at run time (Chapter 14); see Chapter 20's example 4 and Chapter 21's example 12.
 
@@ -125,18 +130,18 @@ What the compiler **cannot** check is a mismatch between two `?` dimensions, sin
 The language's complete grammar is in the header comment of the front end's source, shown here exactly as in `mgfront.py`:
 
 ```text
---8<-- "docs/part21/code/mgfront.py:2:16"
+--8<-- "docs/part22/code/mgfront.py:2:18"
 ```
 
 (`INT`, `NUM` and `NAME` are the usual: digits, numbers, and letters-digits-underscores starting with a letter or underscore.)
 
 ## What the language does not have
 
-No integers, strings or booleans; no loops, conditionals or recursion; no indexing into a matrix or reading a single element; no matrices of other ranks (no vectors that are one-dimensional, no three-dimensional arrays); no broadcasting (you cannot add a row to every row of a matrix); no variables that change; no input from files or the keyboard; no `let` or `print` inside a function; no way to import another file. These are not oversights to apologize for: the language is the size of the compiler this book builds, and every feature has to be lowered, verified and tested.
+No integers, strings or booleans; no loops, conditionals or recursion; no indexing into a matrix or reading a single element; no matrices of other ranks (no vectors that are one-dimensional, no three-dimensional arrays); broadcasting only for static size-1 dimensions (a `?` dimension is never broadcast); no variables that change; no input from files or the keyboard; no `let` or `print` inside a function; no way to import another file. These are not oversights to apologize for: the language is the size of the compiler this book builds, and every feature has to be lowered, verified and tested.
 
 ## Where each construct goes in the compiler
 
-| You write | The front end emits (Chapter 3, 20, 21) | Lowered by |
+| You write | The front end emits (Chapters 3, 20, 21, 22) | Lowered by |
 |---|---|---|
 | `[[1, 2], [3, 4]]` | `mg.constant` | Chapter 4 |
 | `a + b`, `a - b`, `a * b`, `a / b` | `mg.add`, `mg.sub`, `mg.mul`, `mg.div` | Chapters 4, 14, 21 |
@@ -144,6 +149,9 @@ No integers, strings or booleans; no loops, conditionals or recursion; no indexi
 | `transpose(a)` | `mg.transpose` | Chapter 4 |
 | `-a` | `mg.neg` | Chapter 21 |
 | `a + 3`, `10 - a`, ... | `mg.scalar` | Chapter 21 |
+| `relu(a)` | `mg.relu` | Chapter 22 |
+| `row_sum(a)`, `col_max(a)`, ... | `mg.reduce` (mean adds a `mg.scalar` divide) | Chapter 22 |
+| `a + bias` with a size-1 dimension | `mg.broadcast` then the elementwise op | Chapter 22 |
 | `print a` | `mg.print` | Chapter 13 |
 | `def f(...) = ...` | a `func.func` | Chapters 4 and 5 |
 | a call `f(x)` | `func.call`, with a `tensor.cast` if a static shape meets a `?` | Chapter 20 |

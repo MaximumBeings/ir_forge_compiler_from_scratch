@@ -123,11 +123,12 @@ errors/e2_unknown_name.mg:2: error: unknown name 'b'
   ----- exit status 1
 
 ################ mgc run errors/e3_shape_mismatch.mg
-  | let a = [[1, 2]]
-  | let b = [[1], [2]]
+  | # 2x3 and 3x2 cannot be added: the dimensions differ and neither is 1, so broadcasting cannot help
+  | let a = [[1, 2, 3], [4, 5, 6]]
+  | let b = [[1, 2], [3, 4], [5, 6]]
   | print a + b
   ----- output
-errors/e3_shape_mismatch.mg:3: error: cannot add shapes 1x2 and 2x1
+errors/e3_shape_mismatch.mg:4: error: cannot add shapes 2x3 and 3x2: dimensions 2 and 3 differ and neither is 1
   ----- exit status 1
 
 ################ mgc run errors/e4_function_order.mg

@@ -98,6 +98,7 @@ nav:
       - "19. A Better Abort: Reporting Assertion Failures on stderr": part19/19-a-better-abort.md
       - "20. The Mountain Goat Demo: A Surface Syntax, a Driver, and C++ Calling Compiled Code": part20/20-the-mountain-goat-demo.md
       - "21. More Operations: Subtract, Hadamard, Divide, Matrix Product, and Scalars": part21/21-more-operations.md
+      - "22. Broadcasting, Reductions and relu: Enough Operations for a Neural-Network Layer": part22/22-broadcasting-reductions-and-relu.md
 
 extra:
   social: []

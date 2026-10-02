@@ -1,0 +1,2 @@
+[100%] Linking CXX executable mg-opt
+[100%] Built target mg-opt

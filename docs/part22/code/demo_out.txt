@@ -1,0 +1,229 @@
+################ ./mgc run examples/01_relu.mg
+  | # relu(x) = max(x, 0): negative numbers become 0, the rest are unchanged.
+  | print relu([[1, -2, 3], [-4, 5, -6]])
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 3] strides = [3, 1] data = 
+[[1,   0,   3], 
+ [0,   5,   0]]
+  ----- exit status 0
+
+################ ./mgc run examples/02_row_and_col_sums.mg
+  | # row_sum: one value per ROW (an Mx1 result). col_sum: one value per COLUMN (a 1xN result).
+  | let a = [[1, 2, 3], [4, 5, 6]]
+  | print row_sum(a)
+  | print col_sum(a)
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 1] strides = [1, 1] data = 
+[[6], 
+ [15]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 3] strides = [3, 1] data = 
+[[5,   7,   9]]
+  ----- exit status 0
+
+################ ./mgc run examples/03_max_and_mean.mg
+  | # The same pair for max and for mean. A mean is a sum divided by the count, so the count must be known.
+  | let a = [[1, 9, 3], [8, 5, 6]]
+  | print row_max(a)
+  | print col_max(a)
+  | print row_mean(a)
+  | print col_mean(a)
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 1] strides = [1, 1] data = 
+[[9], 
+ [8]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 3] strides = [3, 1] data = 
+[[8,   9,   6]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 1] strides = [1, 1] data = 
+[[4.33333], 
+ [6.33333]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 3] strides = [3, 1] data = 
+[[4.5,   7,   4.5]]
+  ----- exit status 0
+
+################ ./mgc run examples/04_broadcast_bias.mg
+  | # Broadcasting: a size-1 dimension is repeated to fit. Add a 1x3 row to every row of a 2x3 matrix.
+  | let a = [[1, 2, 3], [4, 5, 6]]
+  | let bias = [[100, 200, 300]]
+  | print a + bias
+  | let col = [[10], [20]]
+  | print a + col                     # a 2x1 column is repeated across the columns
+  | print a * [[2]]                   # a 1x1 matrix is repeated in both directions
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 3] strides = [3, 1] data = 
+[[101,   202,   303], 
+ [104,   205,   306]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 3] strides = [3, 1] data = 
+[[11,   12,   13], 
+ [24,   25,   26]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 3] strides = [3, 1] data = 
+[[2,   4,   6], 
+ [8,   10,   12]]
+  ----- exit status 0
+
+################ ./mgc run examples/05_center_columns.mg
+  | # Centering: subtract each column's mean, so every column of the result averages to zero.
+  | let a = [[1, 10], [2, 20], [3, 60]]
+  | let centered = a - col_mean(a)
+  | print centered
+  | print col_sum(centered)
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [3, 2] strides = [2, 1] data = 
+[[-1,   -20], 
+ [0,   -10], 
+ [1,   30]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 2] strides = [2, 1] data = 
+[[0,   0]]
+  ----- exit status 0
+
+################ ./mgc run examples/06_normalize_rows.mg
+  | # Divide each row by its own sum: every row of the result adds up to 1 (a probability-like distribution).
+  | let a = [[1, 1, 2], [5, 0, 5]]
+  | let p = a / row_sum(a)
+  | print p
+  | print row_sum(p)
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 3] strides = [3, 1] data = 
+[[0.25,   0.25,   0.5], 
+ [0.5,   0,   0.5]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 1] strides = [1, 1] data = 
+[[1], 
+ [1]]
+  ----- exit status 0
+
+################ ./mgc run examples/07_mlp_layer.mg
+  | # One neural-network layer: relu(x @ w + bias). Two samples, three inputs, two outputs.
+  | def layer(x: tensor[2x3], w: tensor[3x2], bias: tensor[1x2]) = relu(x @ w + bias)
+  | print layer([[1, 2, 3], [-1, -2, -3]], [[1, -1], [0, 1], [1, 0]], [[0.5, -10]])
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[4.5,   0], 
+ [0,   0]]
+  ----- exit status 0
+
+################ ./mgc run examples/08_two_layers.mg
+  | # Two layers, and the largest output of each row, the "prediction" of a tiny network.
+  | def net(x: tensor[2x2]) = row_max(relu(relu(x @ [[1, -1], [2, 1]] + [[0, 1]]) @ [[1], [-1]] + [[0]]) @ [[1, 2]])
+  | print net([[1, 1], [-1, 2]])
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 1] strides = [1, 1] data = 
+[[4], 
+ [0]]
+  ----- exit status 0
+
+################ ./mgc run examples/09_dynamic_reductions.mg
+  | # Reductions work on dynamic shapes: one compiled function, any number of rows or columns.
+  | def totals(a: tensor[?x?]) = row_sum(a)
+  | def peaks(a: tensor[?x?]) = col_max(a)
+  | print totals([[1, 2, 3], [4, 5, 6]])
+  | print totals([[7], [8], [9], [10]])
+  | print peaks([[1, 9], [5, 2], [3, 3]])
+  | print relu(-[[1, 2], [3, 4]] + 2)
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 1] strides = [1, 1] data = 
+[[6], 
+ [15]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [4, 1] strides = [1, 1] data = 
+[[7], 
+ [8], 
+ [9], 
+ [10]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 2] strides = [2, 1] data = 
+[[5,   9]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[1,   0], 
+ [0,   0]]
+  ----- exit status 0
+
+################ ./mgc run examples/11_dynamic_no_broadcast.mg
+  | # A '?' dimension is never broadcast: the sizes must be equal when the program runs.
+  | # The first call has one row, which matches the 1x3 bias. The second has two rows, so the run-time check aborts.
+  | def plus_bias(a: tensor[?x3]) = a + [[1, 2, 3]]
+  | print plus_bias([[10, 20, 30]])
+  | print plus_bias([[10, 20, 30], [40, 50, 60]])
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 3] strides = [3, 1] data = 
+[[11,   22,   33]]
+mg.add: operand shapes differ at runtime in dimension 0
+Aborted
+  ----- exit status 134
+
+################ ./mgc run examples/12_broadcast_left.mg
+  | # Broadcasting works whichever side the small operand is on, and for non-commutative operators the order is kept.
+  | let a = [[1, 2, 3], [4, 5, 6]]
+  | let row = [[10, 20, 30]]
+  | print row + a                     # the 1x3 row is on the LEFT
+  | print row - a                     # 10-1, 20-2, ...: left minus right, not the reverse
+  | print [[100], [200]] - a          # a 2x1 column on the left
+  | print [[2]] * a
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 3] strides = [3, 1] data = 
+[[11,   22,   33], 
+ [14,   25,   36]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 3] strides = [3, 1] data = 
+[[9,   18,   27], 
+ [6,   15,   24]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 3] strides = [3, 1] data = 
+[[99,   98,   97], 
+ [196,   195,   194]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 3] strides = [3, 1] data = 
+[[2,   4,   6], 
+ [8,   10,   12]]
+  ----- exit status 0
+
+################ ./mgc run examples/13_negative_max.mg
+  | # The largest of a set of negative numbers is a negative number, not 0. (A max that started from 0 would get this wrong.)
+  | let a = [[-3, -1], [-5, -2]]
+  | print row_max(a)
+  | print col_max(a)
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 1] strides = [1, 1] data = 
+[[-1], 
+ [-2]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 2] strides = [2, 1] data = 
+[[-3,   -1]]
+  ----- exit status 0
+
+################ ./mgc ptx examples/10_gpu_layer.mg
+  | # The GPU path (compile-only) for a layer with broadcast, reduction and relu. Use: mgc ptx 10_gpu_layer.mg
+  | def f(x: tensor[2x3], bias: tensor[1x3]) = row_sum(relu(x + bias))
+  ----- kernel entry points and the arithmetic (one kernel per loop nest)
+.visible .entry f_kernel(
+ld.global.f64 	%fd1, [%rd11];
+st.global.f64 	[%rd14], %fd1;
+.visible .entry f_kernel(
+ld.global.f64 	%fd1, [%rd16];
+ld.global.f64 	%fd2, [%rd17];
+add.rn.f64 	%fd3, %fd1, %fd2;
+st.global.f64 	[%rd18], %fd3;
+.visible .entry f_kernel(
+ld.global.f64 	%fd2, [%rd14];
+max.NaN.f64 	%fd3, %fd2, %fd1;
+st.global.f64 	[%rd15], %fd3;
+.visible .entry f_kernel(
+st.global.f64 	[%rd12], %fd1;
+.visible .entry f_kernel(
+ld.global.f64 	%fd1, [%rd11];
+ld.global.f64 	%fd2, [%rd13];
+add.rn.f64 	%fd3, %fd1, %fd2;
+st.global.f64 	[%rd11], %fd3;
+ld.global.f64 	%fd4, [%rd13+8];
+add.rn.f64 	%fd5, %fd3, %fd4;
+st.global.f64 	[%rd11], %fd5;
+ld.global.f64 	%fd6, [%rd13+16];
+add.rn.f64 	%fd7, %fd5, %fd6;
+st.global.f64 	[%rd11], %fd7;
+
+################ ./mgc run examples/errors/bad_broadcast.mg
+  | # 2x3 and 3x2: the dimensions differ and neither is 1, so they cannot be broadcast.
+  | print [[1, 2, 3], [4, 5, 6]] + [[1, 2], [3, 4], [5, 6]]
+  ----- output
+errors/bad_broadcast.mg:2: error: cannot add shapes 2x3 and 3x2: dimensions 2 and 3 differ and neither is 1
+  ----- exit status 1
+
+################ ./mgc run examples/errors/dynamic_mean.mg
+  | # A mean divides by a count, and the count of rows is not known when the size is '?'.
+  | def f(a: tensor[?x?]) = row_mean(a)
+  ----- output
+errors/dynamic_mean.mg:2: error: row_mean needs a static size along the averaged axis, not '?'
+  ----- exit status 1
+

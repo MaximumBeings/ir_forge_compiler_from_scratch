@@ -337,7 +337,7 @@ Writing the tour page (`docs/tour/language-tour.md`) with real, runnable example
 ## Limits and what is not established
 
 - **Rank 2, `f64` only.** No other ranks, no other element types, no integer arithmetic.
-- **No broadcasting.** `a + b` needs equal shapes (or `?` resolved at run time). You cannot add a row vector to every row of a matrix.
+- **No broadcasting** (added for static shapes in [Chapter 22](../part22/22-broadcasting-reductions-and-relu.md)). In this chapter `a + b` needs equal shapes (or `?` resolved at run time).
 - **No compile-time folding** for the new operations (only `mg.add` has a folder). `1 + 1`-style scalar arithmetic is folded by the front end, but `mg.sub` of two constant matrices is computed at run time.
 - **`mg.scalar` uses a string attribute** for its operation name; an enum would be stricter.
 - **Matrix product is the textbook triple loop.** No tiling, no blocking, no vectorization, no library call. **No performance claim is made at all**, and nothing here measures speed.

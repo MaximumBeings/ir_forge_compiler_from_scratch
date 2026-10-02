@@ -1,0 +1,7 @@
+wrote work/cpp/ops.o and work/cpp/ops.h
+--- ./app
+relu_m 7x5                                   matches
+row_sums 7x5                                 matches
+col_maxes 7x5                                matches
+layer: relu(x @ w + bias), 4x6 by 6x3        matches
+center: subtract each column's mean, 5x4     matches

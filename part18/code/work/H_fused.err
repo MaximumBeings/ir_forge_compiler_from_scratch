@@ -1,0 +1,27 @@
+/home/user/ir_forge_compiler_from_scratch/docs/part18/code/work/H_tiled.mlir:25:9: error: operand #0 does not dominate this use
+        affine.for %arg4 = #map(%arg2) to min #map1(%dim_6, %arg2) {
+        ^
+/home/user/ir_forge_compiler_from_scratch/docs/part18/code/work/H_tiled.mlir:25:9: note: see current operation: 
+"affine.for"(%arg4, %11, %arg4) <{lowerBoundMap = affine_map<(d0) -> (d0)>, operandSegmentSizes = array<i32: 1, 2, 0>, step = 1 : index, upperBoundMap = affine_map<(d0, d1) -> (d1 + 4, d0)>}> ({
+^bb0(%arg2: index):
+  "affine.for"(%arg5, %13, %arg5) <{lowerBoundMap = affine_map<(d0) -> (d0)>, operandSegmentSizes = array<i32: 1, 2, 0>, step = 1 : index, upperBoundMap = affine_map<(d0, d1) -> (d1 + 4, d0)>}> ({
+  ^bb0(%arg3: index):
+    "affine.for"(%15, %11) <{lowerBoundMap = affine_map<(d0) -> (d0)>, operandSegmentSizes = array<i32: 1, 1, 0>, step = 4 : index, upperBoundMap = affine_map<(d0) -> (d0)>}> ({
+    ^bb0(%arg4: index):
+      "affine.for"(%15, %13) <{lowerBoundMap = affine_map<(d0) -> (d0)>, operandSegmentSizes = array<i32: 1, 1, 0>, step = 4 : index, upperBoundMap = affine_map<(d0) -> (d0)>}> ({
+      ^bb0(%arg5: index):
+        %22 = "affine.load"(%arg0, %arg2, %arg3) <{map = affine_map<(d0, d1) -> (d0, d1)>}> : (memref<?x?xf64>, index, index) -> f64
+        %23 = "affine.load"(%arg1, %arg2, %arg3) <{map = affine_map<(d0, d1) -> (d0, d1)>}> : (memref<?x?xf64>, index, index) -> f64
+        %24 = "arith.addf"(%22, %23) <{fastmath = #arith.fastmath<none>}> : (f64, f64) -> f64
+        "affine.store"(%24, %14, %arg2, %arg3) <{map = affine_map<(d0, d1) -> (d0, d1)>}> : (f64, memref<?x?xf64>, index, index) -> ()
+        "affine.yield"() : () -> ()
+      }) : (index, index) -> ()
+      "affine.yield"() : () -> ()
+    }) : (index, index) -> ()
+    "affine.yield"() : () -> ()
+  }) : (index, index, index) -> ()
+  "affine.yield"() : () -> ()
+}) : (index, index, index) -> ()
+/home/user/ir_forge_compiler_from_scratch/docs/part18/code/work/H_tiled.mlir:23:5: note: operand defined as a block argument (block #0 in a child region)
+    affine.for %arg2 = #map(%c0_9) to #map(%dim_6) step 4 {
+    ^

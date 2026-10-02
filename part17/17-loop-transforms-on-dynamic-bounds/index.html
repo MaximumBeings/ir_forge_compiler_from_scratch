@@ -16,6 +16,8 @@
         <link rel="prev" href="../../part16/16-testing-the-gpu-path-and-loop-transforms/">
       
       
+        <link rel="next" href="../../part18/18-why-fusion-declines/">
+      
       
         
       
@@ -1460,6 +1462,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part18/18-why-fusion-declines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    18. Why Fusion Declines: Reading the Pass, and a Second Bug Found Along the Way
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2093,7 +2123,7 @@
 <a id="__codelineno-22-16" name="__codelineno-22-16" href="#__codelineno-22-16"></a>  }
 <a id="__codelineno-22-17" name="__codelineno-22-17" href="#__codelineno-22-17"></a>}
 </code></pre></div>
-<p><strong>Why</strong> fusion declines was not established. Plausible explanations include that the intermediate buffer's size is dynamic, or that the dependence analysis cannot prove the two nests' symbolic iteration spaces equal; this chapter did not read the pass's source, as Chapter 12 did for other passes, and no test here distinguishes those explanations. The honest summary is a measured limitation without a verified cause.</p>
+<p><strong>Why</strong> fusion declines was not established. Plausible explanations include that the intermediate buffer's size is dynamic, or that the dependence analysis cannot prove the two nests' symbolic iteration spaces equal; this chapter did not read the pass's source, as Chapter 12 did for other passes, and no test here distinguishes those explanations. The honest summary is a measured limitation without a verified cause. <em>(Update, added after Chapter 18: the cause is now established. The pass's profitability analysis requires a constant trip count for every loop in both nests; dynamic buffer shapes alone do not block fusion. Chapter 18 also found that tiling and then fusing dynamic loops produces invalid IR.)</em></p>
 <p>Two tests pin the pair: one asserts that fusion leaves the dynamic nests at four loops, with a header saying it is <em>designed to start failing</em> if a newer toolchain fuses them (in the same spirit as Chapter 16's crash test), and one asserts that the identical chain with static bounds does fuse, so the first test cannot pass merely because fusion is broken everywhere.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>// Chapter 17: PINS AN OBSERVED LIMITATION. --affine-loop-fusion leaves a dynamic-bound nest pair alone: 4 loops in, 4 out
 <a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>// (the same pair with static bounds fuses 4 -&gt; 2, see loops/fusion.mlir). The cause was not established. If a newer
@@ -2194,6 +2224,11 @@
 <a id="__codelineno-27-19" name="__codelineno-27-19" href="#__codelineno-27-19"></a>mut<span class="w"> </span><span class="s2">&quot;self-checking harness computes a-b instead of a+b&quot;</span><span class="w">         </span>Inputs/chain_harness.c<span class="w">                     </span><span class="s1">&#39;s/double want = a\[i \* cols + j\] + b\[i \* cols + j\];/double want = a[i * cols + j] - b[i * cols + j];/&#39;</span><span class="w">  </span>dynamic-loops/tiling-runs.mlir
 <a id="__codelineno-27-20" name="__codelineno-27-20" href="#__codelineno-27-20"></a>mut<span class="w"> </span><span class="s2">&quot;partial-static unroll test fed the fully dynamic chain&quot;</span><span class="w">    </span>dynamic-loops/unroll-full-needs-constant-trip-count.mlir<span class="w">  </span><span class="s1">&#39;/check-prefix=PART/s#%inputs/chain2.mlir#%inputs/chain.mlir#&#39;</span><span class="w">  </span>dynamic-loops/unroll-full-needs-constant-trip-count.mlir
 <a id="__codelineno-27-21" name="__codelineno-27-21" href="#__codelineno-27-21"></a>mut<span class="w"> </span><span class="s2">&quot;mismatch harness made to MATCH (no abort expected)&quot;</span><span class="w">        </span>Inputs/chain_mismatch_harness.c<span class="w">            </span><span class="s1">&#39;s/b\[2\] = {10,20}/b[6] = {10,20,30,40,50,60}/; s/b,b,0,1,2,2,1/b,b,0,2,3,3,1/&#39;</span><span class="w">  </span>dynamic-loops/runtime-check-survives-transforms.mlir
+<a id="__codelineno-27-22" name="__codelineno-27-22" href="#__codelineno-27-22"></a>mut<span class="w"> </span><span class="s2">&quot;rule test: the DECLINES run for A fed the static control C&quot;</span><span class="w">    </span>dynamic-loops/fusion-needs-constant-trip-counts.mlir<span class="w">  </span><span class="s1">&#39;/RUN:.*exp_A.mlir/s#exp_A.mlir#exp_C.mlir#&#39;</span><span class="w">  </span>dynamic-loops/fusion-needs-constant-trip-counts.mlir
+<a id="__codelineno-27-23" name="__codelineno-27-23" href="#__codelineno-27-23"></a>mut<span class="w"> </span><span class="s2">&quot;rule test: the FUSES run for B fed the dynamic-bound program A&quot;</span><span class="w">  </span>dynamic-loops/fusion-needs-constant-trip-counts.mlir<span class="w">  </span><span class="s1">&#39;/RUN:.*exp_B.mlir/s#exp_B.mlir#exp_A.mlir#&#39;</span><span class="w">  </span>dynamic-loops/fusion-needs-constant-trip-counts.mlir
+<a id="__codelineno-27-24" name="__codelineno-27-24" href="#__codelineno-27-24"></a>mut<span class="w"> </span><span class="s2">&quot;rule test: the DECLINES run for G fed the static control C&quot;</span><span class="w">    </span>dynamic-loops/fusion-needs-constant-trip-counts.mlir<span class="w">  </span><span class="s1">&#39;/RUN:.*exp_G.mlir/s#exp_G.mlir#exp_C.mlir#&#39;</span><span class="w">  </span>dynamic-loops/fusion-needs-constant-trip-counts.mlir
+<a id="__codelineno-27-25" name="__codelineno-27-25" href="#__codelineno-27-25"></a>mut<span class="w"> </span><span class="s2">&quot;bug-pin test: the dynamic run fed the STATIC chain (no error expected)&quot;</span><span class="w">  </span>dynamic-loops/fusion-after-tiling.mlir<span class="w">  </span><span class="s1">&#39;/RUN: %mg-opt %inputs\/chain.mlir/s#chain.mlir#static_chain.mlir#&#39;</span><span class="w">  </span>dynamic-loops/fusion-after-tiling.mlir
+<a id="__codelineno-27-26" name="__codelineno-27-26" href="#__codelineno-27-26"></a>mut<span class="w"> </span><span class="s2">&quot;bug-pin test: static run for tile 1 given tile size 2 instead&quot;</span><span class="w">           </span>dynamic-loops/fusion-after-tiling.mlir<span class="w">  </span><span class="s1">&#39;/RUN:.*static_chain.*tile-size=1/s#tile-size=1#tile-size=2#&#39;</span><span class="w">  </span>dynamic-loops/fusion-after-tiling.mlir
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>MUTATION 1: tile size 4 -&gt; 2 in the structure test&#39;s recipe
 <a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a>   FAIL: dynamic-loops/tiling-structure.mlir
@@ -2207,6 +2242,16 @@
 <a id="__codelineno-28-10" name="__codelineno-28-10" href="#__codelineno-28-10"></a>   FAIL: dynamic-loops/unroll-full-needs-constant-trip-count.mlir
 <a id="__codelineno-28-11" name="__codelineno-28-11" href="#__codelineno-28-11"></a>MUTATION 6: mismatch harness made to MATCH (no abort expected)
 <a id="__codelineno-28-12" name="__codelineno-28-12" href="#__codelineno-28-12"></a>   FAIL: dynamic-loops/runtime-check-survives-transforms.mlir
+<a id="__codelineno-28-13" name="__codelineno-28-13" href="#__codelineno-28-13"></a>MUTATION 7: rule test: the DECLINES run for A fed the static control C
+<a id="__codelineno-28-14" name="__codelineno-28-14" href="#__codelineno-28-14"></a>   FAIL: dynamic-loops/fusion-needs-constant-trip-counts.mlir
+<a id="__codelineno-28-15" name="__codelineno-28-15" href="#__codelineno-28-15"></a>MUTATION 8: rule test: the FUSES run for B fed the dynamic-bound program A
+<a id="__codelineno-28-16" name="__codelineno-28-16" href="#__codelineno-28-16"></a>   FAIL: dynamic-loops/fusion-needs-constant-trip-counts.mlir
+<a id="__codelineno-28-17" name="__codelineno-28-17" href="#__codelineno-28-17"></a>MUTATION 9: rule test: the DECLINES run for G fed the static control C
+<a id="__codelineno-28-18" name="__codelineno-28-18" href="#__codelineno-28-18"></a>   FAIL: dynamic-loops/fusion-needs-constant-trip-counts.mlir
+<a id="__codelineno-28-19" name="__codelineno-28-19" href="#__codelineno-28-19"></a>MUTATION 10: bug-pin test: the dynamic run fed the STATIC chain (no error expected)
+<a id="__codelineno-28-20" name="__codelineno-28-20" href="#__codelineno-28-20"></a>   FAIL: dynamic-loops/fusion-after-tiling.mlir
+<a id="__codelineno-28-21" name="__codelineno-28-21" href="#__codelineno-28-21"></a>MUTATION 11: bug-pin test: static run for tile 1 given tile size 2 instead
+<a id="__codelineno-28-22" name="__codelineno-28-22" href="#__codelineno-28-22"></a>   FAIL: dynamic-loops/fusion-after-tiling.mlir
 </code></pre></div>
 <p>All six mutations are caught: a changed tile size, a changed unroll factor, the "fusion declines" test fed the <em>static</em> chain (so fusion fires and the test fails, showing it really detects fusion firing), a harness whose expected value is wrong (so every shape fails), the partial-static unroll test fed the fully dynamic chain, and a mismatch harness changed to <em>match</em> (so nothing aborts). In the first run of this script, mutation 6 reported <code>NOT APPLIED</code>: it had been written with two <code>-e</code> expressions that the helper's single-expression interface mishandled. The script surfaced it instead of counting it as a pass; it was rewritten as one expression and rerun, and its diff is now exactly the two intended lines.</p>
 <h2 id="what-this-does-and-does-not-establish">What this does and does not establish<a class="headerlink" href="#what-this-does-and-does-not-establish" title="Permanent link">&para;</a></h2>
@@ -2214,7 +2259,7 @@
 <li><strong>One program, two nests.</strong> Everything above is the add-then-transpose chain and two sibling programs. Other op sequences were not tried.</li>
 <li><strong>Eleven shapes is a sample.</strong> The shapes were chosen to include remainders, but eleven is not exhaustive, and very large sizes were not tried.</li>
 <li><strong>Correctness only, no performance.</strong> Tiling and unrolling exist to make code faster, but nothing here was timed. A transform can be correct and slower; no claim about speed is made.</li>
-<li><strong>Fusion's cause is unexplained,</strong> as stated above, and it is a limitation of this toolchain version's pass on this IR, not a statement about fusion in general.</li>
+<li><strong>Fusion's cause is unexplained</strong> <em>(update, added after Chapter 18: explained there)</em>, as stated above, and it is a limitation of this toolchain version's pass on this IR, not a statement about fusion in general.</li>
 <li><strong>Only Chapter 7's transforms.</strong> No other affine passes (interchange, vectorization, loop-invariant code motion) were examined.</li>
 <li><strong>Rank 2 only,</strong> as throughout since Chapter 13.</li>
 <li><strong>The GPU path was not run on dynamic shapes;</strong> the bare-pointer option still requires static shapes (Chapter 12).</li>
@@ -2242,7 +2287,7 @@
 <p><strong>3. Full unrolling produced no error and no change on the dynamic chain. Why is "no error" a trap, and how was the no-op demonstrated?</strong></p>
 <p>Worked answer: a pass that declines to apply reports nothing, so a script or reader could assume the loops were unrolled when they were not. The chapter shows the output IR is byte-identical to the input (<code>cmp</code>), and the loop count stays at 4. The reason is that full unrolling must emit a fixed number of copies of the body, which needs a constant trip count; with a bound read from <code>memref.dim</code> there is none. With <code>tensor&lt;?x2xf64&gt;</code> the inner loop's count is the constant 2, and the same pass does unroll it (4 loops down to 3).</p>
 <p><strong>4. A natural guess is that the transpose's access pattern stops <code>--affine-loop-fusion</code> on the dynamic chain. How did the chapter test that guess, and what was the answer?</strong></p>
-<p>Worked answer: it ran fusion on three programs: the dynamic add-then-transpose chain, a dynamic add-then-add chain (identical index patterns, no transpose), and the same add-then-transpose chain with static 4x6 bounds. The dynamic add-then-add chain was also left at 4 loops, while the static add-then-transpose chain fused to 2. So the transpose is not the blocker; dynamic bounds are. The chapter then stops: it did not establish <em>why</em> dynamic bounds block fusion, and says no test distinguishes the candidate explanations.</p>
+<p>Worked answer: it ran fusion on three programs: the dynamic add-then-transpose chain, a dynamic add-then-add chain (identical index patterns, no transpose), and the same add-then-transpose chain with static 4x6 bounds. The dynamic add-then-add chain was also left at 4 loops, while the static add-then-transpose chain fused to 2. So the transpose is not the blocker; dynamic bounds are. The chapter then stops: it did not establish <em>why</em> dynamic bounds block fusion, and says no test distinguishes the candidate explanations. <em>(Update, added after Chapter 18: the pass requires constant trip counts for every loop in both nests, found by reading the source and confirmed with six experiments.)</em></p>
 <p><strong>5. Why does <code>fusion-declines.mlir</code> come with a companion test, <code>fusion-fires-when-static.mlir</code>, and what is the first test designed to do if the toolchain changes?</strong></p>
 <p>Worked answer: the first test passes when fusion leaves the dynamic nests alone, which would also be true if fusion were simply broken everywhere. The companion shows the same chain with static bounds <em>does</em> fuse (4 loops to 2), so the first test is passing for the specific reason the chapter claims. The first test is also designed to start failing if a newer toolchain begins fusing dynamic nests: that is the signal to revisit this chapter's finding, not a regression in the book.</p>
 
@@ -2295,6 +2340,22 @@
             </div>
           </a>
         
+        
+          
+          <a href="../../part18/18-why-fusion-declines/" class="md-footer__link md-footer__link--next" aria-label="Next: 18. Why Fusion Declines: Reading the Pass, and a Second Bug Found Along the Way">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                18. Why Fusion Declines: Reading the Pass, and a Second Bug Found Along the Way
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
         
       </nav>
     

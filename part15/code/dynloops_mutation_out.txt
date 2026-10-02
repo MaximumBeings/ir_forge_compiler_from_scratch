@@ -10,3 +10,13 @@ MUTATION 5: partial-static unroll test fed the fully dynamic chain
    FAIL: dynamic-loops/unroll-full-needs-constant-trip-count.mlir
 MUTATION 6: mismatch harness made to MATCH (no abort expected)
    FAIL: dynamic-loops/runtime-check-survives-transforms.mlir
+MUTATION 7: rule test: the DECLINES run for A fed the static control C
+   FAIL: dynamic-loops/fusion-needs-constant-trip-counts.mlir
+MUTATION 8: rule test: the FUSES run for B fed the dynamic-bound program A
+   FAIL: dynamic-loops/fusion-needs-constant-trip-counts.mlir
+MUTATION 9: rule test: the DECLINES run for G fed the static control C
+   FAIL: dynamic-loops/fusion-needs-constant-trip-counts.mlir
+MUTATION 10: bug-pin test: the dynamic run fed the STATIC chain (no error expected)
+   FAIL: dynamic-loops/fusion-after-tiling.mlir
+MUTATION 11: bug-pin test: static run for tile 1 given tile size 2 instead
+   FAIL: dynamic-loops/fusion-after-tiling.mlir

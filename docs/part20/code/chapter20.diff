@@ -1,0 +1,101 @@
+--- ../../part14/code/LowerToAffine.cpp	2026-10-01 23:01:57.028331238 +0000
++++ LowerToAffine.cpp	2026-10-02 02:52:35.252838267 +0000
+@@ -7,6 +7,7 @@
+ #include "mlir/Dialect/Func/IR/FuncOps.h"
+ #include "mlir/Dialect/Func/Transforms/FuncConversions.h"
+ #include "mlir/Dialect/MemRef/IR/MemRef.h"
++#include "mlir/Dialect/Tensor/IR/Tensor.h"
+ #include "mlir/IR/BuiltinTypes.h"
+ #include "mlir/Pass/Pass.h"
+ #include "mlir/Transforms/DialectConversion.h"
+@@ -197,6 +198,25 @@
+   }
+ };
+ 
++/// Chapter 20: tensor.cast, which the surface-syntax front end emits when a
++/// statically shaped value is passed to a function taking tensor<?x?xf64>.
++/// The bufferized form of a cast between tensor types is a memref.cast between
++/// the converted memref types; it changes only the *type*, never the data.
++struct TensorCastLowering : public OpConversionPattern<tensor::CastOp> {
++  using OpConversionPattern::OpConversionPattern;
++
++  LogicalResult
++  matchAndRewrite(tensor::CastOp op, OpAdaptor adaptor,
++                  ConversionPatternRewriter &rewriter) const override {
++    Type resultType = getTypeConverter()->convertType(op.getType());
++    if (!resultType)
++      return failure();
++    rewriter.replaceOpWithNewOp<memref::CastOp>(op, resultType,
++                                                adaptor.getSource());
++    return success();
++  }
++};
++
+ struct ConvertMgToAffinePass
+     : public PassWrapper<ConvertMgToAffinePass, OperationPass<ModuleOp>> {
+   MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(ConvertMgToAffinePass)
+@@ -209,7 +229,8 @@
+ 
+   void getDependentDialects(DialectRegistry &registry) const override {
+     registry.insert<affine::AffineDialect, memref::MemRefDialect,
+-                    arith::ArithDialect, cf::ControlFlowDialect>();
++                    arith::ArithDialect, cf::ControlFlowDialect,
++                    tensor::TensorDialect>();
+   }
+ 
+   void runOnOperation() override {
+@@ -218,6 +239,7 @@
+     target.addLegalDialect<affine::AffineDialect, memref::MemRefDialect,
+                            arith::ArithDialect, cf::ControlFlowDialect>();
+     target.addIllegalDialect<mg::MgDialect>();
++    target.addIllegalOp<tensor::CastOp>();
+ 
+     // A real, genuine gap this chapter's own first attempt hit directly:
+     // mg.add/mg.transpose's own *operations* are made illegal above, but a
+@@ -241,7 +263,7 @@
+ 
+     RewritePatternSet patterns(&getContext());
+     patterns.add<ConstantOpLowering, AddOpLowering, TransposeOpLowering,
+-                PrintOpLowering>(typeConverter, &getContext());
++                PrintOpLowering, TensorCastLowering>(typeConverter, &getContext());
+     populateFunctionOpInterfaceTypeConversionPattern<func::FuncOp>(patterns,
+                                                                    typeConverter);
+     populateCallOpTypeConversionPattern(patterns, typeConverter);
+--- ../../part19/code/mg-opt.cpp	2026-10-02 01:50:44.084955341 +0000
++++ mg-opt.cpp	2026-10-02 02:52:35.252958209 +0000
+@@ -11,6 +11,7 @@
+ #include "mlir/Dialect/Func/IR/FuncOps.h"
+ #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
+ #include "mlir/Dialect/MemRef/IR/MemRef.h"
++#include "mlir/Dialect/Tensor/IR/Tensor.h"
+ #include "mlir/IR/DialectRegistry.h"
+ #include "mlir/InitAllDialects.h"
+ #include "mlir/Tools/mlir-opt/MlirOptMain.h"
+@@ -36,7 +37,8 @@
+   registry.insert<mlir::func::FuncDialect, mlir::affine::AffineDialect,
+                   mlir::memref::MemRefDialect, mlir::arith::ArithDialect,
+                   mlir::bufferization::BufferizationDialect,
+-                  mlir::cf::ControlFlowDialect, mlir::LLVM::LLVMDialect>();
++                  mlir::cf::ControlFlowDialect, mlir::LLVM::LLVMDialect,
++                  mlir::tensor::TensorDialect>();
+   registry.insert<mg::MgDialect>();
+   mg::registerBufferizableOpInterfaceExternalModels(registry);
+   mlir::bufferization::func_ext::registerBufferizableOpInterfaceExternalModels(
+--- ../../part19/code/CMakeLists.txt	2026-10-02 01:50:44.084972667 +0000
++++ CMakeLists.txt	2026-10-02 02:52:41.806961706 +0000
+@@ -37,6 +37,7 @@
+   MLIRTransforms
+   MLIRAffineDialect
+   MLIRMemRefDialect
++  MLIRTensorDialect
+   MLIRArithDialect
+   MLIRFuncDialect
+   MLIRFuncTransforms
+@@ -74,6 +75,7 @@
+   MLIRTransforms
+   MLIRAffineDialect
+   MLIRMemRefDialect
++  MLIRTensorDialect
+   MLIRArithDialect
+   MLIRLLVMDialect
+   MLIRBufferizationDialect

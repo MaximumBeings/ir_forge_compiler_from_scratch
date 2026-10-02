@@ -36,4 +36,13 @@ config.substitutions += [
                            "--finalize-memref-to-llvm --convert-func-to-llvm --reconcile-unrealized-casts"),
     ("%to-gpu", to_gpu),
 ]
+# Chapter 20: the surface-syntax driver and its examples (they live in part20/code, not copied, so tests cannot drift from the book).
+ch20 = os.path.join(config.test_source_root, "..", "..", "..", "part20", "code")
+config.substitutions += [
+    ("%mgc", "env MG_OPT=" + mg_opt + " " + os.path.join(ch20, "mgc")),
+    ("%mgfront", "python3 " + os.path.join(ch20, "mgfront.py")),
+    ("%ex", os.path.join(ch20, "examples")),
+    ("%cpp", os.path.join(ch20, "cpp")),
+    ("%cxx", "clang++-18"),
+]
 config.environment["PATH"] = os.environ["PATH"]

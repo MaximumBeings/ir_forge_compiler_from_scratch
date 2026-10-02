@@ -1,0 +1,5 @@
+    21 lines  1_front_end.mlir
+   136 lines  2_after_convert_mg_to_affine.mlir
+   363 lines  3_llvm_dialect.mlir
+   269 lines  4_llvm_ir.ll
+write(2,... calls in stage 4: 2;  puts calls: 0

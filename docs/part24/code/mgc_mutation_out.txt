@@ -1,0 +1,5 @@
+NOTE: this script deliberately breaks mgc. 'caught by' lines are EXPECTED: they show the tests can detect the bug.
+run baseline (no bug): all tests pass (expected)
+--matmul-order ignored by mgc: caught by loop-order/flag-reaches-pass.mlir
+--matmul-order value passed to the wrong option: caught by loop-order/flag-reaches-pass.mlir
+restored (baseline again): all tests pass (expected)

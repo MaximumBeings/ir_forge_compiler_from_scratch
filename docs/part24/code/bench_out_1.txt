@@ -1,0 +1,41 @@
+machine: 4 CPUs, Intel(R) Xeon(R) Processor @ 2.10GHz, Ubuntu clang version 18.1.3 (1ubuntu1)
+pinned with: taskset -c 3   load average before: 0.86 0.43 0.17
+mg_O2 (dynamic sizes)      N=64    min     0.094 ms  median     0.104 ms     5.06 GFLOP/s (median)  result ok
+mg_O2 (dynamic sizes)      N=128   min     2.211 ms  median     2.257 ms     1.86 GFLOP/s (median)  result ok
+mg_O2 (dynamic sizes)      N=256   min    17.219 ms  median    17.788 ms     1.89 GFLOP/s (median)  result ok
+mg_O2 (static 256)         N=256   min    16.667 ms  median    16.867 ms     1.99 GFLOP/s (median)  result ok
+mg_O2 (dynamic sizes)      N=512   min   443.277 ms  median   490.884 ms     0.55 GFLOP/s (median)  result ok
+mg_O2_ikj (dynamic sizes)  N=64    min     0.063 ms  median     0.064 ms     8.13 GFLOP/s (median)  result ok
+mg_O2_ikj (dynamic sizes)  N=128   min     0.587 ms  median     0.646 ms     6.49 GFLOP/s (median)  result ok
+mg_O2_ikj (dynamic sizes)  N=256   min     6.264 ms  median     6.296 ms     5.33 GFLOP/s (median)  result ok
+mg_O2_ikj (static 256)     N=256   min     3.636 ms  median     3.645 ms     9.21 GFLOP/s (median)  result ok
+mg_O2_ikj (dynamic sizes)  N=512   min    43.697 ms  median    61.176 ms     4.39 GFLOP/s (median)  result ok
+mg_O2_ikj_tile32 (dynamic sizes) N=64    min     0.060 ms  median     0.061 ms     8.65 GFLOP/s (median)  result ok
+mg_O2_ikj_tile32 (dynamic sizes) N=128   min     0.470 ms  median     0.470 ms     8.92 GFLOP/s (median)  result ok
+mg_O2_ikj_tile32 (dynamic sizes) N=256   min     6.272 ms  median     7.019 ms     4.78 GFLOP/s (median)  result ok
+mg_O2_ikj_tile32 (static 256) N=256   min     4.967 ms  median     5.065 ms     6.63 GFLOP/s (median)  result ok
+mg_O2_ikj_tile32 (dynamic sizes) N=512   min    38.142 ms  median    38.334 ms     7.00 GFLOP/s (median)  result ok
+mg_O3_native_tile32 (dynamic sizes) N=64    min     0.100 ms  median     0.103 ms     5.07 GFLOP/s (median)  result ok
+mg_O3_native_tile32 (dynamic sizes) N=128   min     1.239 ms  median     1.309 ms     3.20 GFLOP/s (median)  result ok
+mg_O3_native_tile32 (dynamic sizes) N=256   min    11.280 ms  median    11.903 ms     2.82 GFLOP/s (median)  result ok
+mg_O3_native_tile32 (static 256) N=256   min     3.388 ms  median     3.478 ms     9.65 GFLOP/s (median)  result ok
+mg_O3_native_tile32 (dynamic sizes) N=512   min    78.325 ms  median    81.522 ms     3.29 GFLOP/s (median)  result ok
+mg_O3_native_ikj (dynamic sizes) N=64    min     0.035 ms  median     0.042 ms    12.50 GFLOP/s (median)  result ok
+mg_O3_native_ikj (dynamic sizes) N=128   min     0.491 ms  median     0.509 ms     8.24 GFLOP/s (median)  result ok
+mg_O3_native_ikj (dynamic sizes) N=256   min     3.865 ms  median     3.939 ms     8.52 GFLOP/s (median)  result ok
+mg_O3_native_ikj (static 256) N=256   min     3.370 ms  median     3.580 ms     9.37 GFLOP/s (median)  result ok
+mg_O3_native_ikj (dynamic sizes) N=512   min    34.144 ms  median    36.563 ms     7.34 GFLOP/s (median)  result ok
+mg_O3_native_ikj_tile32 (dynamic sizes) N=64    min     0.061 ms  median     0.068 ms     7.76 GFLOP/s (median)  result ok
+mg_O3_native_ikj_tile32 (dynamic sizes) N=128   min     0.366 ms  median     0.418 ms    10.04 GFLOP/s (median)  result ok
+mg_O3_native_ikj_tile32 (dynamic sizes) N=256   min     4.007 ms  median     4.863 ms     6.90 GFLOP/s (median)  result ok
+mg_O3_native_ikj_tile32 (static 256) N=256   min     2.601 ms  median     2.835 ms    11.84 GFLOP/s (median)  result ok
+mg_O3_native_ikj_tile32 (dynamic sizes) N=512   min    38.855 ms  median    42.166 ms     6.37 GFLOP/s (median)  result ok
+C++ ijk loop, clang -O2    N=64    min     0.130 ms  median     0.136 ms     3.86 GFLOP/s (median)  result ok
+C++ ijk loop, clang -O2    N=128   min     2.337 ms  median     2.424 ms     1.73 GFLOP/s (median)  result ok
+C++ ijk loop, clang -O2    N=256   min    17.151 ms  median    17.407 ms     1.93 GFLOP/s (median)  result ok
+C++ ijk loop, clang -O2    N=512   min   435.574 ms  median   489.424 ms     0.55 GFLOP/s (median)  result ok
+C++ ikj loop, -O3 native   N=64    min     0.037 ms  median     0.038 ms    13.95 GFLOP/s (median)  result ok
+C++ ikj loop, -O3 native   N=128   min     0.428 ms  median     0.443 ms     9.47 GFLOP/s (median)  result ok
+C++ ikj loop, -O3 native   N=256   min     4.076 ms  median     4.534 ms     7.40 GFLOP/s (median)  result ok
+C++ ikj loop, -O3 native   N=512   min    33.838 ms  median    35.939 ms     7.47 GFLOP/s (median)  result ok
+load average after: 0.91 0.48 0.19

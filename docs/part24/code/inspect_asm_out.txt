@@ -1,0 +1,8 @@
+ijk, untiled, mm_dyn: 0 vector/FMA instructions
+ijk, untiled, mm_256: 0 vector/FMA instructions
+ijk, tiled (32), mm_dyn: 0 vector/FMA instructions
+ijk, tiled (32), mm_256: 64 vector/FMA instructions
+ikj, untiled, mm_dyn: 8 vector/FMA instructions
+ikj, untiled, mm_256: 16 vector/FMA instructions
+ikj, tiled (32), mm_dyn: 8 vector/FMA instructions
+ikj, tiled (32), mm_256: 32 vector/FMA instructions

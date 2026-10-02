@@ -38,6 +38,13 @@ config.substitutions += [
 ]
 # The language tour (docs/tour): its examples are run in place, like the chapters' examples.
 config.substitutions += [("%tour", os.path.join(config.test_source_root, "..", "..", "..", "tour", "code"))]
+# Chapter 24: the matmul loop-order option ('%mgc24' must come before '%mgc').
+ch24 = os.path.join(config.test_source_root, "..", "..", "..", "part24", "code")
+config.substitutions += [
+    ("%mgc24", "env MG_OPT=" + mg_opt + " " + os.path.join(ch24, "mgc")),
+    ("%ex24", os.path.join(ch24, "examples")),
+    ("%cpp21b", os.path.join(config.test_source_root, "..", "..", "..", "part21", "code", "cpp")),
+]
 # Chapter 23: mgc's -O and --passes options, and the benchmark examples ('%mgc23' must come before '%mgc').
 ch23 = os.path.join(config.test_source_root, "..", "..", "..", "part23", "code")
 config.substitutions += [

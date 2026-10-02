@@ -1,0 +1,3 @@
+ijk and ikj outputs: identical (20 elements, every bit)
+compiled ikj output equals an independent Python sum in increasing k: True
+the same sum in DECREASING k order differs from it in 19 of 20 elements (so this check would notice a changed order)

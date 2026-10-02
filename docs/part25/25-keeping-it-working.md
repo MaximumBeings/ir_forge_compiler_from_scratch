@@ -1,6 +1,6 @@
 # 25. Keeping It Working: Continuous Integration and the Tests the Early Chapters Never Had
 
-**What you will understand:** what "continuous integration" is, how to build a small one for this book (a script plus a workflow file), how to check that it fails when it should, and why the honest description of a CI setup includes what has *not* yet run it. Along the way this chapter fills a gap listed since Chapter 15: Chapters 1, 2 and 9 had never had automated tests.
+**What you will understand:** what "continuous integration" is, how to build a small one for this book (a script plus a workflow file), how to check that it fails when it should, and why the honest description of a CI setup says what has actually run it and what has not. Along the way this chapter fills a gap listed since Chapter 15: Chapters 1, 2 and 9 had never had automated tests.
 
 **What you need to know first:** Chapter 15 (the `lit` test suite and what `FileCheck` does), Chapters 21 to 24 (the suite has grown to 99 tests and the compiler to its newest build). Nothing about GitHub or CI is assumed.
 
@@ -62,12 +62,27 @@ What each part does. **`on:`** says when: on every push to `main`, on every pull
 
 ## What was established, and what was not
 
-This is the part of the chapter that matters most. **The workflow file has not been run by GitHub Actions at the time of writing.** The environment this book is written in can push code but cannot see or start GitHub Actions runs, so what has been established is narrower than "CI works":
+This section was first written **before** the workflow had ever run, because the environment this book is written in can push code but could not start or watch GitHub Actions. It said so, listed what was and was not established, and told the reader to look at the Actions tab. The push of this chapter then triggered the workflow's first real run, and it can be checked, so here is the record, in two parts.
 
-- **Established:** `ci.sh` passes from start to finish on this machine (shown above), including the documentation build; `check_ci.py` parses the workflow and finds nothing wrong with it; and `ci.sh` **fails** with exit status 1 when the tests fail (the demonstration below).
-- **Not established:** that the workflow file is accepted by GitHub (a parse by a YAML library is not validation against GitHub's own rules), that the package names resolve on a fresh Ubuntu 24.04 runner, that the cached build is restored correctly, or that the whole run finishes within its 45-minute limit on a runner with different hardware. The first push after this chapter will be the first real test, and if it fails the failure is a finding, not a surprise to hide.
+**Before the first run, established:** `ci.sh` passes from start to finish on the author's machine (shown above); `check_ci.py` finds nothing wrong with the workflow; and `ci.sh` fails with exit status 1 when the tests fail (the demonstration below). **Not established:** that GitHub accepts the file, that the package names resolve on a fresh Ubuntu 24.04 runner, that the cached build is restored, and that the run finishes within its time limit.
 
-When you read this on the project's page, check the repository's "Actions" tab: a green mark there is evidence this chapter could not provide.
+**The first real run** (the `ci` workflow, run number 1, on the push that carried this chapter, commit `d8b1c2e`, read back through the GitHub API) **passed**. From its job log:
+
+```text
+=== check tools ... PASS (3 s)        === check workflow file ... PASS (0 s)
+=== build the compiler ... PASS (46 s)    (from nothing: the cache was empty)
+=== run the test suite ... PASS (24 s)    Total Discovered Tests: 102   Passed: 102 (100.00%)
+=== build the documentation ... PASS (4 s)
+CI passed.      whole job: about two minutes
+```
+
+That settles three of the four open items: **GitHub accepted the file** (a parse is not validation, but the run exists with every step listed), the **package names resolve on a fresh runner** (the install step took 25 seconds and everything after it found its tools), and the **run is far inside the 45-minute limit**. It also shows something the local run could not: the compiler builds from nothing in 46 seconds on a GitHub runner, much faster than the several minutes I had guessed above. The test suite took 24 seconds there (the Chapter 9 test, which builds a C++ program against MLIR, finished last).
+
+**Still not established:**
+
+- **That the cache is restored.** The first run had an empty cache and *saved* one (the log says `Cache saved with key: mg-opt-Linux-…`). A restore needs a second run with unchanged compiler sources. A documentation-only push such as the one that records this paragraph should hit it; whether it did is a thing to look at in that run's log, not something to assume.
+- **One run is one run.** It is evidence that the setup works, not that it is stable. A different runner image, a changed package version, or a flaky test would show up only over many runs.
+- **The warning the run printed.** GitHub reports that `actions/checkout@v4`, `actions/cache@v4` and `actions/setup-python@v5` target Node.js 20, which is deprecated, and is forcing them onto Node.js 24. They worked, but the versions will need bumping eventually; the workflow is not changed here because a change that is not needed yet is a change that can break a run that works.
 
 ## CI must be able to fail
 
@@ -111,7 +126,7 @@ Every damage is caught by the test for that chapter, and nothing else fails. The
 
 ## Limits and what is not established
 
-- **The workflow has not run on GitHub** (above). Treat it as a carefully checked draft until the Actions tab says otherwise.
+- **One real run so far** (above), which passed; cache restore and stability over time are not yet observed.
 - **The documentation step only checks that the site builds.** It does not check that the pages say true things; the tests and the "FAIL is expected" notes exist for that.
 - **Only the newest compiler build is built and tested.** The older chapters' own builds (Chapters 2 to 7, 13, 14, 19, 20, 21, 22) are not rebuilt by CI; their `build.sh` scripts were run once when written. A change that broke only an old chapter's build would not be noticed.
 - **The negative controls and mutation scripts are not run by CI** (they take minutes and several rebuild the compiler). They are evidence about the tests, run by hand and recorded.
@@ -135,7 +150,7 @@ cd docs/part15/code && ./run_lit.sh        # 102 tests
 - `ci.sh` checks the tools, checks the workflow, builds the newest compiler, runs the 102-test suite and builds the docs with `--strict`; it exits 1 on any failure, and a failed build skips the tests that depend on it.
 - It was shown able to fail: against an old compiler, 49 tests fail and `ci.sh` exits 1.
 - Three new tests give Chapters 1, 2 and 9 automated coverage of their own files; four deliberate damages to those files are all caught.
-- **The workflow file itself has not yet been run by GitHub**, and the chapter says so rather than claiming CI works.
+- The chapter first said the workflow had not been run by GitHub rather than claiming CI works; its first real run then passed (102 tests, compiler built from nothing in 46 s), which is recorded above, with the cache restore and long-run stability still to be observed.
 
 ## Self-check questions
 
@@ -156,10 +171,10 @@ Each answer is collapsed; try the question first.
     ??? note "Answer"
         A fresh machine has none of your leftover files, none of the packages installed long ago, and none of the environment variables you set, so it shows whether the project builds from nothing. It exposes dependencies you forgot you had: a package only installed on your machine, a file only present in your working directory, an older tool version.
 
-4. What has this chapter established about the workflow, and what has it explicitly *not*?
+4. Before the workflow's first real run, what had been established about it, and what changed afterwards?
 
     ??? note "Answer"
-        Established: the script it calls passes from start to finish, a parse of the workflow finds no inconsistency (triggers, packages, paths), and the script fails when tests fail. Not established: that GitHub accepts the file, that the packages install on a fresh runner, that the cache restores, and that the run finishes in time. The environment could not run GitHub Actions, so the first real push is the first real test.
+        Before: the script it calls passed locally, a parse of the workflow found no inconsistency (triggers, packages, paths), and the script failed when tests failed. Not established: that GitHub accepted the file, that the packages installed on a fresh runner, that the cache restored, and that the run finished in time. The environment could not run GitHub Actions. The first real run then passed (102 tests, compiler built from nothing in 46 s), settling acceptance, packages and time; only the cache restore and long-run stability remained open.
 
 5. Why is the compiler build cached, and what decides when the cache is used?
 
@@ -186,7 +201,7 @@ Each answer is collapsed; try the question first.
     ??? note "Answer"
         It catches mistakes you can see without GitHub: invalid YAML, a missing trigger, a deleted script, a path in the cache key that does not exist, a forgotten package. It misses anything only GitHub knows: whether an action version exists, whether a package name resolves on the runner image, whether the syntax is valid by GitHub's own rules. A successful parse is not validation.
 
-10. If the first real run on GitHub fails, what does the chapter's honesty about it say should happen?
+10. The chapter was written and committed before the workflow's first run, and said so. Why not wait and write it afterwards, and what would have been the right response had the run failed?
 
     ??? note "Answer"
-        The failure should be treated as a finding: read the log, fix the workflow or the script (and note which of the "not established" items it turned out to be), and rerun. The chapter said the workflow was unverified precisely so that a first failure is expected information rather than something to hide or to be embarrassed by.
+        Waiting would have hidden the real order of events and tempted the text to claim more than had been known at the time; stating what was unknown, then recording what the run showed, keeps the two apart and makes the unknowns checkable. Had the run failed, the failure would have been a finding: read the log, fix the workflow or the script, note which of the "not established" items it turned out to be, and rerun. A run that passes does not close every question (cache restore and stability remain), which is why the section still lists what is open.

@@ -1,7 +1,8 @@
 # Continuous integration for the Mountain Goat book: build the compiler, run the whole test suite, and build the site.
 # The work is done by ./ci.sh, which you can run on your own machine; this file only prepares an Ubuntu 24.04 runner for it.
-# NOTE: this workflow could not be run from the environment the book was written in (no access to GitHub Actions there);
-# the commands inside it were run there, step by step, by ./ci.sh. Chapter 25 says exactly what that does and does not establish.
+# History: this file was written in an environment that could not run GitHub Actions, then pushed. Its first real run (commit d8b1c2e)
+# passed on a fresh runner: compiler built in 46 s, 102 tests passed in 24 s, docs built in 4 s. Chapter 25 records what that shows
+# and what it does not (for example, the cache was saved by that run but a cache RESTORE had not yet been observed).
 name: ci
 
 on:

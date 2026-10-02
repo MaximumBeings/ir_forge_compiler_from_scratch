@@ -1,5 +1,6 @@
 #!/bin/sh
 # Reproduces the three Chapter 11 symptoms that Chapter 12 explains from MLIR's source, saving the real outputs.
+# NOTE: the crashes and errors this script reproduces are the SYMPTOMS Chapter 12 explains; they are expected, not regressions.
 HERE=$(cd "$(dirname "$0")" && pwd); IN=$HERE/../../part15/code/test/Inputs/add_host_device.mlir; O=$HERE/symptoms; mkdir -p $O
 K='nvvm-attach-target{chip=sm_70 features=+ptx60},gpu.module(convert-gpu-to-nvvm{index-bitwidth=64},reconcile-unrealized-casts)'
 mlir-opt-18 $IN --pass-pipeline='builtin.module(func.func(gpu-async-region))' -o $O/async.mlir

@@ -1,0 +1,8 @@
+NOTE: this script deliberately breaks mgc. 'caught by' lines are EXPECTED: they show the tests can detect the bug.
+run baseline (no bug): all tests pass (expected)
+old `[ ... ] && exec` bug (build exits 1 on success): caught by perf/flags-reach-clang.mlir, perf/tiling-structure.mlir
+--passes ignored: caught by perf/tiling-structure.mlir
+-O ignored when building executables: caught by perf/flags-reach-clang.mlir
+-O ignored when building libraries: caught by perf/flags-reach-clang.mlir
+MGC_CFLAGS ignored: caught by perf/flags-reach-clang.mlir
+restored (baseline again): all tests pass (expected)

@@ -38,6 +38,12 @@ config.substitutions += [
 ]
 # The language tour (docs/tour): its examples are run in place, like the chapters' examples.
 config.substitutions += [("%tour", os.path.join(config.test_source_root, "..", "..", "..", "tour", "code"))]
+# Chapter 23: mgc's -O and --passes options, and the benchmark examples ('%mgc23' must come before '%mgc').
+ch23 = os.path.join(config.test_source_root, "..", "..", "..", "part23", "code")
+config.substitutions += [
+    ("%mgc23", "env MG_OPT=" + mg_opt + " " + os.path.join(ch23, "mgc")),
+    ("%ex23", os.path.join(ch23, "examples")),
+]
 # Chapter 22: broadcasting, reductions, relu. (Listed before Chapter 21's: lit replaces by prefix, so '%mgc22' must come before '%mgc'.)
 ch22 = os.path.join(config.test_source_root, "..", "..", "..", "part22", "code")
 config.substitutions += [

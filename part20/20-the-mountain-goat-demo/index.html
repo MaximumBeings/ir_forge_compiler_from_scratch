@@ -1662,6 +1662,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part23/23-measuring-performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    23. Measuring Performance: Does Any of It Make the Code Fast?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1930,6 +1958,10 @@
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="nb">cd</span><span class="w"> </span>../part15/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_lit.sh<span class="w">   </span><span class="c1"># the test suite</span>
 </code></pre></div>
 Every listing and output on this page comes from these commands.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Why this page shows FAIL lines, and why that is good</p>
+<p>Parts of this page come from <strong>negative controls</strong>: the same tests run against an <em>older</em> build, or against <em>deliberately broken</em> code (a "mutation"). In those runs a <strong>FAIL is the expected, wanted result</strong>: it means a test noticed the problem, which is how we know the tests are worth anything. What would be wrong is the opposite, a deliberately broken build that passes everything. The <strong>baseline</strong> (the unmodified current build) must always show every test passing, and it does. Each script that does this says so in its own header and prints a reminder at the top of its output.</p>
 </div>
 <h2 id="primer-what-a-compiler-driver-is">Primer: what "a compiler driver" is<a class="headerlink" href="#primer-what-a-compiler-driver-is" title="Permanent link">&para;</a></h2>
 <p>Compilers are rarely one program. <code>gcc hello.c</code> looks like one command, but it runs a preprocessor, a compiler proper, an assembler and a linker, passing files between them. The command you type is the <strong>driver</strong>: it knows the stages, their order and their flags, so you do not have to.</p>
@@ -2356,7 +2388,7 @@ Every listing and output on this page comes from these commands.</p>
 <a id="__codelineno-9-35" name="__codelineno-9-35" href="#__codelineno-9-35"></a><span class="w">    </span><span class="k">fi</span>
 <a id="__codelineno-9-36" name="__codelineno-9-36" href="#__codelineno-9-36"></a><span class="w">    </span><span class="nv">exe</span><span class="o">=</span><span class="si">${</span><span class="nv">out</span><span class="k">:-</span><span class="nv">$W</span><span class="p">/</span><span class="nv">$base</span><span class="p">.exe</span><span class="si">}</span>
 <a id="__codelineno-9-37" name="__codelineno-9-37" href="#__codelineno-9-37"></a><span class="w">    </span>clang-18<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">/</span><span class="nv">$base</span><span class="s2">.ll&quot;</span><span class="w"> </span>-o<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$exe</span><span class="s2">&quot;</span><span class="w"> </span>-L<span class="s2">&quot;</span><span class="nv">$LIBDIR</span><span class="s2">&quot;</span><span class="w"> </span>-lmlir_runner_utils<span class="w"> </span>-Wl,-rpath,<span class="s2">&quot;</span><span class="nv">$LIBDIR</span><span class="s2">&quot;</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w">   </span><span class="c1"># 5. -&gt; native executable</span>
-<a id="__codelineno-9-38" name="__codelineno-9-38" href="#__codelineno-9-38"></a><span class="w">    </span><span class="o">[</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$cmd</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>run<span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">exec</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$exe</span><span class="s2">&quot;</span>
+<a id="__codelineno-9-38" name="__codelineno-9-38" href="#__codelineno-9-38"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$cmd</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>run<span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="nb">exec</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$exe</span><span class="s2">&quot;</span><span class="p">;</span><span class="w"> </span><span class="k">fi</span><span class="w">   </span><span class="c1"># (Chapter 23: this used to be `[ ... ] &amp;&amp; exec`, which made `mgc build` exit with status 1 on success)</span>
 <a id="__codelineno-9-39" name="__codelineno-9-39" href="#__codelineno-9-39"></a><span class="w">    </span><span class="p">;;</span>
 <a id="__codelineno-9-40" name="__codelineno-9-40" href="#__codelineno-9-40"></a><span class="w">  </span>ptx<span class="o">)</span>
 <a id="__codelineno-9-41" name="__codelineno-9-41" href="#__codelineno-9-41"></a><span class="w">    </span><span class="nv">$MG_OPT</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">/</span><span class="nv">$base</span><span class="s2">.mlir&quot;</span><span class="w"> </span>--convert-mg-to-affine<span class="w"> </span>-o<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">/</span><span class="nv">$base</span><span class="s2">.affine.mlir&quot;</span>
@@ -2787,60 +2819,65 @@ Every listing and output on this page comes from these commands.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="ch">#!/bin/sh</span>
 <a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="c1"># Show that the Chapter 20 tests can fail: (1) against Chapter 19&#39;s mg-opt (no tensor.cast lowering),</span>
 <a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="c1"># (2) against four deliberately broken copies of the front end / driver. Output: prove_tests_can_fail_out.txt</span>
-<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="nv">HERE</span><span class="o">=</span><span class="k">$(</span><span class="nb">cd</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>dirname<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$0</span><span class="s2">&quot;</span><span class="k">)</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">pwd</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="nv">LIT</span><span class="o">=</span><span class="nv">$HERE</span>/../../part15/code<span class="p">;</span><span class="w"> </span><span class="nv">W</span><span class="o">=</span><span class="nv">$HERE</span>/work/prove<span class="p">;</span><span class="w"> </span>rm<span class="w"> </span>-rf<span class="w"> </span><span class="nv">$W</span><span class="p">;</span><span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span><span class="nv">$W</span>
-<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>run<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w">  </span><span class="c1"># label, env...   -&gt; prints which frontend tests failed</span>
-<a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a><span class="w">  </span><span class="nb">printf</span><span class="w"> </span><span class="s1">&#39;%s\n&#39;</span><span class="w"> </span><span class="s2">&quot;### </span><span class="nv">$1</span><span class="s2">&quot;</span><span class="p">;</span><span class="w"> </span><span class="nb">shift</span>
-<a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a><span class="w">  </span>env<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$@</span><span class="s2">&quot;</span><span class="w"> </span><span class="nv">MG_TEST_TMP</span><span class="o">=</span><span class="nv">$W</span>/out<span class="w"> </span>sh<span class="w"> </span><span class="nv">$LIT</span>/run_lit.sh<span class="w"> </span>--filter<span class="w"> </span>frontend<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s2">&quot;^(FAIL|  Passed|  Failed)&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span><span class="s1">&#39;s#IR Forge / Mountain Goat :: ##&#39;</span>
-<a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a><span class="o">}</span>
-<a id="__codelineno-24-9" name="__codelineno-24-9" href="#__codelineno-24-9"></a>run<span class="w"> </span><span class="s2">&quot;baseline: Chapter 20 build&quot;</span><span class="w"> </span><span class="nv">MG_OPT</span><span class="o">=</span><span class="nv">$HERE</span>/build/mg-opt
-<a id="__codelineno-24-10" name="__codelineno-24-10" href="#__codelineno-24-10"></a>run<span class="w"> </span><span class="s2">&quot;Chapter 19 build (no tensor.cast lowering)&quot;</span><span class="w"> </span><span class="nv">MG_OPT</span><span class="o">=</span><span class="nv">$HERE</span>/../../part19/code/build/mg-opt
-<a id="__codelineno-24-11" name="__codelineno-24-11" href="#__codelineno-24-11"></a><span class="c1"># Broken copies: the lit config reads mgc/mgfront from part20/code, so mutate in place and always restore.</span>
-<a id="__codelineno-24-12" name="__codelineno-24-12" href="#__codelineno-24-12"></a>cp<span class="w"> </span><span class="nv">$HERE</span>/mgfront.py<span class="w"> </span><span class="nv">$W</span>/mgfront.orig<span class="p">;</span><span class="w"> </span>cp<span class="w"> </span><span class="nv">$HERE</span>/mgc<span class="w"> </span><span class="nv">$W</span>/mgc.orig
-<a id="__codelineno-24-13" name="__codelineno-24-13" href="#__codelineno-24-13"></a>restore<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w"> </span>cp<span class="w"> </span><span class="nv">$W</span>/mgfront.orig<span class="w"> </span><span class="nv">$HERE</span>/mgfront.py<span class="p">;</span><span class="w"> </span>cp<span class="w"> </span><span class="nv">$W</span>/mgc.orig<span class="w"> </span><span class="nv">$HERE</span>/mgc<span class="p">;</span><span class="w"> </span><span class="o">}</span>
-<a id="__codelineno-24-14" name="__codelineno-24-14" href="#__codelineno-24-14"></a><span class="nb">trap</span><span class="w"> </span>restore<span class="w"> </span>EXIT
-<a id="__codelineno-24-15" name="__codelineno-24-15" href="#__codelineno-24-15"></a>mutate<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w">  </span><span class="c1"># label file sed-expr</span>
-<a id="__codelineno-24-16" name="__codelineno-24-16" href="#__codelineno-24-16"></a><span class="w">  </span>restore<span class="p">;</span><span class="w"> </span>cp<span class="w"> </span><span class="nv">$2</span><span class="w"> </span><span class="nv">$W</span>/before<span class="p">;</span><span class="w"> </span>sed<span class="w"> </span>-i<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$3</span><span class="s2">&quot;</span><span class="w"> </span><span class="nv">$2</span>
-<a id="__codelineno-24-17" name="__codelineno-24-17" href="#__codelineno-24-17"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span>cmp<span class="w"> </span>-s<span class="w"> </span><span class="nv">$2</span><span class="w"> </span><span class="nv">$W</span>/before<span class="p">;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;### </span><span class="nv">$1</span><span class="s2">: MUTATION DID NOT APPLY&quot;</span><span class="p">;</span><span class="w"> </span><span class="k">return</span><span class="p">;</span><span class="w"> </span><span class="k">fi</span>
-<a id="__codelineno-24-18" name="__codelineno-24-18" href="#__codelineno-24-18"></a><span class="w">  </span>run<span class="w"> </span><span class="s2">&quot;mutation: </span><span class="nv">$1</span><span class="s2">&quot;</span><span class="w"> </span><span class="nv">MG_OPT</span><span class="o">=</span><span class="nv">$HERE</span>/build/mg-opt
-<a id="__codelineno-24-19" name="__codelineno-24-19" href="#__codelineno-24-19"></a><span class="o">}</span>
-<a id="__codelineno-24-20" name="__codelineno-24-20" href="#__codelineno-24-20"></a>mutate<span class="w"> </span><span class="s2">&quot;front end stops checking static add shapes&quot;</span><span class="w"> </span><span class="nv">$HERE</span>/mgfront.py<span class="w"> </span><span class="s1">&#39;s/if a is not None and b is not None and a != b:/if False:/&#39;</span>
-<a id="__codelineno-24-21" name="__codelineno-24-21" href="#__codelineno-24-21"></a>mutate<span class="w"> </span><span class="s2">&quot;front end drops tensor.cast for dynamic calls&quot;</span><span class="w"> </span><span class="nv">$HERE</span>/mgfront.py<span class="w"> </span><span class="s1">&#39;s/if s != p:  # static/if False:  # static/&#39;</span>
-<a id="__codelineno-24-22" name="__codelineno-24-22" href="#__codelineno-24-22"></a>mutate<span class="w"> </span><span class="s2">&quot;driver forgets Chapter 19&#39;s stderr pass&quot;</span><span class="w"> </span><span class="nv">$HERE</span>/mgc<span class="w"> </span><span class="s2">&quot;s/ --mg-lower-assert-to-stderr//&quot;</span>
-<a id="__codelineno-24-23" name="__codelineno-24-23" href="#__codelineno-24-23"></a>mutate<span class="w"> </span><span class="s2">&quot;driver links without the runtime printer&quot;</span><span class="w"> </span><span class="nv">$HERE</span>/mgc<span class="w"> </span><span class="s1">&#39;s/ -lmlir_runner_utils//&#39;</span>
-<a id="__codelineno-24-24" name="__codelineno-24-24" href="#__codelineno-24-24"></a>restore<span class="p">;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;### restored&quot;</span><span class="p">;</span><span class="w"> </span>run<span class="w"> </span><span class="s2">&quot;baseline again&quot;</span><span class="w"> </span><span class="nv">MG_OPT</span><span class="o">=</span><span class="nv">$HERE</span>/build/mg-opt
+<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="c1"># READ THIS FIRST: this script runs the Chapter 20 tests against an older build and against deliberately broken copies of the front end and driver.</span>
+<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a><span class="c1">#   FAIL lines (and non-zero exit statuses) in this script&#39;s output are the EXPECTED result: each broken copy SHOULD make at least one test fail (a FAIL line means a test caught the bug). The &quot;baseline&quot; sections must show all tests passing.</span>
+<a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a><span class="c1">#   The unmodified, current build is the baseline and must show no failures. A mutation or old build that makes NO test fail would be the problem.</span>
+<a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;NOTE: this script deliberately runs broken or older code. FAIL lines below are EXPECTED: they show the tests can detect the problem. The baseline (unmodified current build) must show none.&quot;</span>
+<a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a><span class="nv">HERE</span><span class="o">=</span><span class="k">$(</span><span class="nb">cd</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>dirname<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$0</span><span class="s2">&quot;</span><span class="k">)</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">pwd</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="nv">LIT</span><span class="o">=</span><span class="nv">$HERE</span>/../../part15/code<span class="p">;</span><span class="w"> </span><span class="nv">W</span><span class="o">=</span><span class="nv">$HERE</span>/work/prove<span class="p">;</span><span class="w"> </span>rm<span class="w"> </span>-rf<span class="w"> </span><span class="nv">$W</span><span class="p">;</span><span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span><span class="nv">$W</span>
+<a id="__codelineno-24-9" name="__codelineno-24-9" href="#__codelineno-24-9"></a>run<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w">  </span><span class="c1"># label, env...   -&gt; prints which frontend tests failed</span>
+<a id="__codelineno-24-10" name="__codelineno-24-10" href="#__codelineno-24-10"></a><span class="w">  </span><span class="nb">printf</span><span class="w"> </span><span class="s1">&#39;%s\n&#39;</span><span class="w"> </span><span class="s2">&quot;### </span><span class="nv">$1</span><span class="s2">&quot;</span><span class="p">;</span><span class="w"> </span><span class="nb">shift</span>
+<a id="__codelineno-24-11" name="__codelineno-24-11" href="#__codelineno-24-11"></a><span class="w">  </span>env<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$@</span><span class="s2">&quot;</span><span class="w"> </span><span class="nv">MG_TEST_TMP</span><span class="o">=</span><span class="nv">$W</span>/out<span class="w"> </span>sh<span class="w"> </span><span class="nv">$LIT</span>/run_lit.sh<span class="w"> </span>--filter<span class="w"> </span>frontend<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s2">&quot;^(FAIL|  Passed|  Failed)&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span><span class="s1">&#39;s#IR Forge / Mountain Goat :: ##&#39;</span>
+<a id="__codelineno-24-12" name="__codelineno-24-12" href="#__codelineno-24-12"></a><span class="o">}</span>
+<a id="__codelineno-24-13" name="__codelineno-24-13" href="#__codelineno-24-13"></a>run<span class="w"> </span><span class="s2">&quot;baseline: Chapter 20 build&quot;</span><span class="w"> </span><span class="nv">MG_OPT</span><span class="o">=</span><span class="nv">$HERE</span>/build/mg-opt
+<a id="__codelineno-24-14" name="__codelineno-24-14" href="#__codelineno-24-14"></a>run<span class="w"> </span><span class="s2">&quot;Chapter 19 build (no tensor.cast lowering)&quot;</span><span class="w"> </span><span class="nv">MG_OPT</span><span class="o">=</span><span class="nv">$HERE</span>/../../part19/code/build/mg-opt
+<a id="__codelineno-24-15" name="__codelineno-24-15" href="#__codelineno-24-15"></a><span class="c1"># Broken copies: the lit config reads mgc/mgfront from part20/code, so mutate in place and always restore.</span>
+<a id="__codelineno-24-16" name="__codelineno-24-16" href="#__codelineno-24-16"></a>cp<span class="w"> </span><span class="nv">$HERE</span>/mgfront.py<span class="w"> </span><span class="nv">$W</span>/mgfront.orig<span class="p">;</span><span class="w"> </span>cp<span class="w"> </span><span class="nv">$HERE</span>/mgc<span class="w"> </span><span class="nv">$W</span>/mgc.orig
+<a id="__codelineno-24-17" name="__codelineno-24-17" href="#__codelineno-24-17"></a>restore<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w"> </span>cp<span class="w"> </span><span class="nv">$W</span>/mgfront.orig<span class="w"> </span><span class="nv">$HERE</span>/mgfront.py<span class="p">;</span><span class="w"> </span>cp<span class="w"> </span><span class="nv">$W</span>/mgc.orig<span class="w"> </span><span class="nv">$HERE</span>/mgc<span class="p">;</span><span class="w"> </span><span class="o">}</span>
+<a id="__codelineno-24-18" name="__codelineno-24-18" href="#__codelineno-24-18"></a><span class="nb">trap</span><span class="w"> </span>restore<span class="w"> </span>EXIT
+<a id="__codelineno-24-19" name="__codelineno-24-19" href="#__codelineno-24-19"></a>mutate<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w">  </span><span class="c1"># label file sed-expr</span>
+<a id="__codelineno-24-20" name="__codelineno-24-20" href="#__codelineno-24-20"></a><span class="w">  </span>restore<span class="p">;</span><span class="w"> </span>cp<span class="w"> </span><span class="nv">$2</span><span class="w"> </span><span class="nv">$W</span>/before<span class="p">;</span><span class="w"> </span>sed<span class="w"> </span>-i<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$3</span><span class="s2">&quot;</span><span class="w"> </span><span class="nv">$2</span>
+<a id="__codelineno-24-21" name="__codelineno-24-21" href="#__codelineno-24-21"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span>cmp<span class="w"> </span>-s<span class="w"> </span><span class="nv">$2</span><span class="w"> </span><span class="nv">$W</span>/before<span class="p">;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;### </span><span class="nv">$1</span><span class="s2">: MUTATION DID NOT APPLY&quot;</span><span class="p">;</span><span class="w"> </span><span class="k">return</span><span class="p">;</span><span class="w"> </span><span class="k">fi</span>
+<a id="__codelineno-24-22" name="__codelineno-24-22" href="#__codelineno-24-22"></a><span class="w">  </span>run<span class="w"> </span><span class="s2">&quot;mutation: </span><span class="nv">$1</span><span class="s2">&quot;</span><span class="w"> </span><span class="nv">MG_OPT</span><span class="o">=</span><span class="nv">$HERE</span>/build/mg-opt
+<a id="__codelineno-24-23" name="__codelineno-24-23" href="#__codelineno-24-23"></a><span class="o">}</span>
+<a id="__codelineno-24-24" name="__codelineno-24-24" href="#__codelineno-24-24"></a>mutate<span class="w"> </span><span class="s2">&quot;front end stops checking static add shapes&quot;</span><span class="w"> </span><span class="nv">$HERE</span>/mgfront.py<span class="w"> </span><span class="s1">&#39;s/if a is not None and b is not None and a != b:/if False:/&#39;</span>
+<a id="__codelineno-24-25" name="__codelineno-24-25" href="#__codelineno-24-25"></a>mutate<span class="w"> </span><span class="s2">&quot;front end drops tensor.cast for dynamic calls&quot;</span><span class="w"> </span><span class="nv">$HERE</span>/mgfront.py<span class="w"> </span><span class="s1">&#39;s/if s != p:  # static/if False:  # static/&#39;</span>
+<a id="__codelineno-24-26" name="__codelineno-24-26" href="#__codelineno-24-26"></a>mutate<span class="w"> </span><span class="s2">&quot;driver forgets Chapter 19&#39;s stderr pass&quot;</span><span class="w"> </span><span class="nv">$HERE</span>/mgc<span class="w"> </span><span class="s2">&quot;s/ --mg-lower-assert-to-stderr//&quot;</span>
+<a id="__codelineno-24-27" name="__codelineno-24-27" href="#__codelineno-24-27"></a>mutate<span class="w"> </span><span class="s2">&quot;driver links without the runtime printer&quot;</span><span class="w"> </span><span class="nv">$HERE</span>/mgc<span class="w"> </span><span class="s1">&#39;s/ -lmlir_runner_utils//&#39;</span>
+<a id="__codelineno-24-28" name="__codelineno-24-28" href="#__codelineno-24-28"></a>restore<span class="p">;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;### restored&quot;</span><span class="p">;</span><span class="w"> </span>run<span class="w"> </span><span class="s2">&quot;baseline again&quot;</span><span class="w"> </span><span class="nv">MG_OPT</span><span class="o">=</span><span class="nv">$HERE</span>/build/mg-opt
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>### baseline: Chapter 20 build
-<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>  Passed  :  8 (13.33%)
-<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>### Chapter 19 build (no tensor.cast lowering)
-<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>FAIL: frontend/dynamic-runs.mlir (1 of 8)
-<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>FAIL: frontend/runtime-mismatch-aborts.mlir (2 of 8)
-<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a>  Passed  :  6 (10.00%)
-<a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a>  Failed  :  2 (3.33%)
-<a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a>### mutation: front end stops checking static add shapes
-<a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a>FAIL: frontend/front-end-errors.mlir (5 of 8)
-<a id="__codelineno-25-10" name="__codelineno-25-10" href="#__codelineno-25-10"></a>  Passed  :  7 (11.67%)
-<a id="__codelineno-25-11" name="__codelineno-25-11" href="#__codelineno-25-11"></a>  Failed  :  1 (1.67%)
-<a id="__codelineno-25-12" name="__codelineno-25-12" href="#__codelineno-25-12"></a>### mutation: front end drops tensor.cast for dynamic calls
-<a id="__codelineno-25-13" name="__codelineno-25-13" href="#__codelineno-25-13"></a>FAIL: frontend/runtime-mismatch-aborts.mlir (1 of 8)
-<a id="__codelineno-25-14" name="__codelineno-25-14" href="#__codelineno-25-14"></a>FAIL: frontend/dynamic-runs.mlir (3 of 8)
-<a id="__codelineno-25-15" name="__codelineno-25-15" href="#__codelineno-25-15"></a>FAIL: frontend/emit-mlir.mlir (5 of 8)
-<a id="__codelineno-25-16" name="__codelineno-25-16" href="#__codelineno-25-16"></a>  Passed  :  5 (8.33%)
-<a id="__codelineno-25-17" name="__codelineno-25-17" href="#__codelineno-25-17"></a>  Failed  :  3 (5.00%)
-<a id="__codelineno-25-18" name="__codelineno-25-18" href="#__codelineno-25-18"></a>### mutation: driver forgets Chapter 19&#39;s stderr pass
-<a id="__codelineno-25-19" name="__codelineno-25-19" href="#__codelineno-25-19"></a>FAIL: frontend/runtime-mismatch-aborts.mlir (2 of 8)
-<a id="__codelineno-25-20" name="__codelineno-25-20" href="#__codelineno-25-20"></a>FAIL: frontend/cpp-interop.mlir (7 of 8)
-<a id="__codelineno-25-21" name="__codelineno-25-21" href="#__codelineno-25-21"></a>  Passed  :  6 (10.00%)
-<a id="__codelineno-25-22" name="__codelineno-25-22" href="#__codelineno-25-22"></a>  Failed  :  2 (3.33%)
-<a id="__codelineno-25-23" name="__codelineno-25-23" href="#__codelineno-25-23"></a>### mutation: driver links without the runtime printer
-<a id="__codelineno-25-24" name="__codelineno-25-24" href="#__codelineno-25-24"></a>FAIL: frontend/more-examples.mlir (1 of 8)
-<a id="__codelineno-25-25" name="__codelineno-25-25" href="#__codelineno-25-25"></a>FAIL: frontend/dynamic-runs.mlir (2 of 8)
-<a id="__codelineno-25-26" name="__codelineno-25-26" href="#__codelineno-25-26"></a>FAIL: frontend/runtime-mismatch-aborts.mlir (3 of 8)
-<a id="__codelineno-25-27" name="__codelineno-25-27" href="#__codelineno-25-27"></a>FAIL: frontend/hello-and-static.mlir (7 of 8)
-<a id="__codelineno-25-28" name="__codelineno-25-28" href="#__codelineno-25-28"></a>  Passed  :  4 (6.67%)
-<a id="__codelineno-25-29" name="__codelineno-25-29" href="#__codelineno-25-29"></a>  Failed  :  4 (6.67%)
-<a id="__codelineno-25-30" name="__codelineno-25-30" href="#__codelineno-25-30"></a>### restored
-<a id="__codelineno-25-31" name="__codelineno-25-31" href="#__codelineno-25-31"></a>### baseline again
-<a id="__codelineno-25-32" name="__codelineno-25-32" href="#__codelineno-25-32"></a>  Passed  :  8 (13.33%)
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>NOTE: this script deliberately runs broken or older code. FAIL lines below are EXPECTED: they show the tests can detect the problem. The baseline (unmodified current build) must show none.
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>### baseline: Chapter 20 build
+<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>  Passed  :  8 (8.89%)
+<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>### Chapter 19 build (no tensor.cast lowering)
+<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>FAIL: frontend/dynamic-runs.mlir (1 of 8)
+<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a>FAIL: frontend/runtime-mismatch-aborts.mlir (5 of 8)
+<a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a>  Passed  :  6 (6.67%)
+<a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a>  Failed  :  2 (2.22%)
+<a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a>### mutation: front end stops checking static add shapes
+<a id="__codelineno-25-10" name="__codelineno-25-10" href="#__codelineno-25-10"></a>FAIL: frontend/front-end-errors.mlir (5 of 8)
+<a id="__codelineno-25-11" name="__codelineno-25-11" href="#__codelineno-25-11"></a>  Passed  :  7 (7.78%)
+<a id="__codelineno-25-12" name="__codelineno-25-12" href="#__codelineno-25-12"></a>  Failed  :  1 (1.11%)
+<a id="__codelineno-25-13" name="__codelineno-25-13" href="#__codelineno-25-13"></a>### mutation: front end drops tensor.cast for dynamic calls
+<a id="__codelineno-25-14" name="__codelineno-25-14" href="#__codelineno-25-14"></a>FAIL: frontend/dynamic-runs.mlir (1 of 8)
+<a id="__codelineno-25-15" name="__codelineno-25-15" href="#__codelineno-25-15"></a>FAIL: frontend/runtime-mismatch-aborts.mlir (3 of 8)
+<a id="__codelineno-25-16" name="__codelineno-25-16" href="#__codelineno-25-16"></a>FAIL: frontend/emit-mlir.mlir (5 of 8)
+<a id="__codelineno-25-17" name="__codelineno-25-17" href="#__codelineno-25-17"></a>  Passed  :  5 (5.56%)
+<a id="__codelineno-25-18" name="__codelineno-25-18" href="#__codelineno-25-18"></a>  Failed  :  3 (3.33%)
+<a id="__codelineno-25-19" name="__codelineno-25-19" href="#__codelineno-25-19"></a>### mutation: driver forgets Chapter 19&#39;s stderr pass
+<a id="__codelineno-25-20" name="__codelineno-25-20" href="#__codelineno-25-20"></a>FAIL: frontend/runtime-mismatch-aborts.mlir (2 of 8)
+<a id="__codelineno-25-21" name="__codelineno-25-21" href="#__codelineno-25-21"></a>FAIL: frontend/cpp-interop.mlir (6 of 8)
+<a id="__codelineno-25-22" name="__codelineno-25-22" href="#__codelineno-25-22"></a>  Passed  :  6 (6.67%)
+<a id="__codelineno-25-23" name="__codelineno-25-23" href="#__codelineno-25-23"></a>  Failed  :  2 (2.22%)
+<a id="__codelineno-25-24" name="__codelineno-25-24" href="#__codelineno-25-24"></a>### mutation: driver links without the runtime printer
+<a id="__codelineno-25-25" name="__codelineno-25-25" href="#__codelineno-25-25"></a>FAIL: frontend/runtime-mismatch-aborts.mlir (1 of 8)
+<a id="__codelineno-25-26" name="__codelineno-25-26" href="#__codelineno-25-26"></a>FAIL: frontend/dynamic-runs.mlir (2 of 8)
+<a id="__codelineno-25-27" name="__codelineno-25-27" href="#__codelineno-25-27"></a>FAIL: frontend/more-examples.mlir (3 of 8)
+<a id="__codelineno-25-28" name="__codelineno-25-28" href="#__codelineno-25-28"></a>FAIL: frontend/hello-and-static.mlir (5 of 8)
+<a id="__codelineno-25-29" name="__codelineno-25-29" href="#__codelineno-25-29"></a>  Passed  :  4 (4.44%)
+<a id="__codelineno-25-30" name="__codelineno-25-30" href="#__codelineno-25-30"></a>  Failed  :  4 (4.44%)
+<a id="__codelineno-25-31" name="__codelineno-25-31" href="#__codelineno-25-31"></a>### restored
+<a id="__codelineno-25-32" name="__codelineno-25-32" href="#__codelineno-25-32"></a>### baseline again
+<a id="__codelineno-25-33" name="__codelineno-25-33" href="#__codelineno-25-33"></a>  Passed  :  8 (8.89%)
 </code></pre></div>
 <p>Every one of the five breakages makes at least one test fail, and the baseline passes before and after (the script restores the files it mutates). The full suite passes against the new build:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>PASS: IR Forge / Mountain Goat :: lowering/dynamic-transpose-no-check.mlir (58 of 60)

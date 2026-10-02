@@ -1,6 +1,10 @@
 #!/bin/sh
 # Three deliberate source bugs, each applied to a COPY of Chapter 14's source tree, built, and tested.
 # Needs ../../part14/code/build.sh to have been run (it creates the tree/ directory this copies).
+# READ THIS FIRST: this script injects deliberate bugs ("mutations") into the compiler and re-runs the tests.
+#   FAIL lines (and non-zero exit statuses) in this script's output are the EXPECTED result: each injected bug SHOULD make at least one test fail; that is how we know the tests would notice that bug.
+#   The unmodified, current build is the baseline and must show no failures. A mutation or old build that makes NO test fail would be the problem.
+echo "NOTE: this script deliberately runs broken or older code. FAIL lines below are EXPECTED: they show the tests can detect the problem. The baseline (unmodified current build) must show none."
 set -e
 HERE=$(cd "$(dirname "$0")" && pwd); SRC=$HERE/../../part14/code/tree
 mutate() {  # name, python edit snippet (operates on files under $1)

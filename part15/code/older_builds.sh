@@ -2,6 +2,10 @@
 # Point the SAME suite at two older mg-opt builds to show the tests can fail:
 #   - Chapter 7's build (no dynamic shapes at all), assembled from Chapters 3, 5, 6, 7's own files
 #   - Chapter 13's build (dynamic shapes, no runtime check), built by Chapter 13's own build.sh
+# READ THIS FIRST: this script runs the SAME test suite against two OLDER builds of the compiler on purpose.
+#   FAIL lines (and non-zero exit statuses) in this script's output are the EXPECTED result: each older build lacks features the tests check (Chapter 7: no dynamic shapes; Chapter 13: no run-time check), so the tests that need them SHOULD fail. That proves the tests can fail.
+#   The unmodified, current build is the baseline and must show no failures. A mutation or old build that makes NO test fail would be the problem.
+echo "NOTE: this script deliberately runs broken or older code. FAIL lines below are EXPECTED: they show the tests can detect the problem. The baseline (unmodified current build) must show none."
 set -e
 HERE=$(cd "$(dirname "$0")" && pwd); D=$HERE/../..; W=$HERE/work/ch7; T=$W/tree
 mkdir -p $T/include/mg $T/lib $T/tools $W/build/include/mg

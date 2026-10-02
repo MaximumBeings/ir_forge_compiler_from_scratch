@@ -1641,6 +1641,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part23/23-measuring-performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    23. Measuring Performance: Does Any of It Make the Code Fast?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1881,6 +1909,10 @@
 <p class="admonition-title">Compile and run</p>
 <p>Every command, listing and output on this page is reproduced by the commands in <a href="#reproducing-this-chapter">Reproducing this chapter</a> at the bottom of the page, which also lists what must be built first. The chain of builds is in <a href="../../getting-started/#which-build-does-each-chapter-need">Getting Started</a>.</p>
 </div>
+<div class="admonition note">
+<p class="admonition-title">Why this page shows FAIL lines, and why that is good</p>
+<p>Parts of this page come from <strong>negative controls</strong>: the same tests run against an <em>older</em> build, or against <em>deliberately broken</em> code (a "mutation"). In those runs a <strong>FAIL is the expected, wanted result</strong>: it means a test noticed the problem, which is how we know the tests are worth anything. What would be wrong is the opposite, a deliberately broken build that passes everything. The <strong>baseline</strong> (the unmodified current build) must always show every test passing, and it does. Each script that does this says so in its own header and prints a reminder at the top of its output.</p>
+</div>
 <h2 id="background-static-and-dynamic-shapes">Background: static and dynamic shapes<a class="headerlink" href="#background-static-and-dynamic-shapes" title="Permanent link">&para;</a></h2>
 <p>Every example in Chapters 1 through 12 uses shapes written into the program: <code>tensor&lt;2x2xf64&gt;</code> means exactly four doubles, and the compiler knows that while it compiles. A <strong>dynamic</strong> extent is written <code>?</code>: <code>tensor&lt;?x?xf64&gt;</code> is a rank-2 tensor whose two sizes are only known when the program runs, so one compiled function can serve a 2x3 input and a 1x6 input. Three consequences drive everything in this chapter:</p>
 <ul>
@@ -1948,20 +1980,24 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="ch">#!/bin/sh</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># Real outputs of the UNMODIFIED compiler (the Chapter 7 build, before this chapter&#39;s fixes) on dynamic-shape inputs.</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># Needs ../../part15/code/older_builds.sh to have been run once (it builds the Chapter 7 mg-opt this uses).</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="nv">HERE</span><span class="o">=</span><span class="k">$(</span><span class="nb">cd</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>dirname<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$0</span><span class="s2">&quot;</span><span class="k">)</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">pwd</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="nv">OLD</span><span class="o">=</span><span class="nv">$HERE</span>/../../part15/code/work/ch7/build/mg-opt<span class="p">;</span><span class="w"> </span><span class="nv">O</span><span class="o">=</span><span class="nv">$HERE</span>/before<span class="p">;</span><span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span><span class="nv">$O</span><span class="p">;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span><span class="nv">$HERE</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="nv">LOW</span><span class="o">=</span><span class="s1">&#39;--lower-affine --convert-scf-to-cf --convert-arith-to-llvm --finalize-memref-to-llvm --convert-func-to-llvm --reconcile-unrealized-casts&#39;</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="nv">$OLD</span><span class="w"> </span>dyn_add.mlir<span class="w">                                   </span>&gt;<span class="w"> </span><span class="nv">$O</span>/dyn_add_verify.txt<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="nv">$OLD</span><span class="w"> </span>dyn_transpose.mlir<span class="w">                             </span>&gt;<span class="w"> </span><span class="nv">$O</span>/dyn_transpose_verify.txt<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="nv">$OLD</span><span class="w"> </span>mixed_add.mlir<span class="w">                                 </span>&gt;<span class="w"> </span><span class="nv">$O</span>/mixed_add_verify.txt<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="nv">$OLD</span><span class="w"> </span>dyn_add.mlir<span class="w"> </span>--convert-mg-to-affine<span class="w">            </span>&gt;<span class="w"> </span><span class="nv">$O</span>/dyn_add_convert.txt<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="nv">$OLD</span><span class="w"> </span>dyn_add.mlir<span class="w"> </span>--one-shot-bufferize<span class="o">=</span><span class="s2">&quot;bufferize-function-boundaries&quot;</span><span class="w"> </span>&gt;<span class="w"> </span><span class="nv">$O</span>/dyn_add_bufferize.txt<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="nv">$OLD</span><span class="w"> </span>unranked.mlir<span class="w">                                  </span>&gt;<span class="w"> </span><span class="nv">$O</span>/unranked_verify.txt<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
-<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="nv">$OLD</span><span class="w"> </span>tt.mlir<span class="w"> </span>--canonicalize<span class="w">                       </span>&gt;<span class="w"> </span><span class="nv">$O</span>/tt_on_chapter7_build.txt<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
-<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="c1"># The canonicalizer bug only shows once the verifier accepts the program, i.e. with the relaxed verifiers but WITHOUT</span>
-<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="c1"># the exact-type guard. That state is Chapter 15&#39;s mutation 1 (needs ../../part15/code/mutation.sh to have been run).</span>
-<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="nv">MUT1</span><span class="o">=</span><span class="nv">$HERE</span>/../../part15/code/work/mut-1/build/mg-opt
-<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="o">[</span><span class="w"> </span>-x<span class="w"> </span><span class="nv">$MUT1</span><span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nv">$MUT1</span><span class="w"> </span>tt.mlir<span class="w"> </span>--canonicalize<span class="w">        </span>&gt;<span class="w"> </span><span class="nv">$O</span>/tt_without_guard.txt<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
-<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="nb">exit</span><span class="w"> </span><span class="m">0</span><span class="w">   </span><span class="c1"># the compiler errors above are the point; do not propagate them</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># READ THIS FIRST: this script shows how the UNMODIFIED, earlier compiler behaves on this chapter&#39;s programs.</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1">#   FAIL lines (and non-zero exit statuses) in this script&#39;s output are the EXPECTED result: the earlier compiler cannot handle dynamic shapes, so errors and failures here are the &quot;before&quot; picture and are expected.</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="c1">#   The unmodified, current build is the baseline and must show no failures. A mutation or old build that makes NO test fail would be the problem.</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;NOTE: this script deliberately runs broken or older code. FAIL lines below are EXPECTED: they show the tests can detect the problem. The baseline (unmodified current build) must show none.&quot;</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="nv">HERE</span><span class="o">=</span><span class="k">$(</span><span class="nb">cd</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>dirname<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$0</span><span class="s2">&quot;</span><span class="k">)</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">pwd</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="nv">OLD</span><span class="o">=</span><span class="nv">$HERE</span>/../../part15/code/work/ch7/build/mg-opt<span class="p">;</span><span class="w"> </span><span class="nv">O</span><span class="o">=</span><span class="nv">$HERE</span>/before<span class="p">;</span><span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span><span class="nv">$O</span><span class="p">;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span><span class="nv">$HERE</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="nv">LOW</span><span class="o">=</span><span class="s1">&#39;--lower-affine --convert-scf-to-cf --convert-arith-to-llvm --finalize-memref-to-llvm --convert-func-to-llvm --reconcile-unrealized-casts&#39;</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="nv">$OLD</span><span class="w"> </span>dyn_add.mlir<span class="w">                                   </span>&gt;<span class="w"> </span><span class="nv">$O</span>/dyn_add_verify.txt<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="nv">$OLD</span><span class="w"> </span>dyn_transpose.mlir<span class="w">                             </span>&gt;<span class="w"> </span><span class="nv">$O</span>/dyn_transpose_verify.txt<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="nv">$OLD</span><span class="w"> </span>mixed_add.mlir<span class="w">                                 </span>&gt;<span class="w"> </span><span class="nv">$O</span>/mixed_add_verify.txt<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="nv">$OLD</span><span class="w"> </span>dyn_add.mlir<span class="w"> </span>--convert-mg-to-affine<span class="w">            </span>&gt;<span class="w"> </span><span class="nv">$O</span>/dyn_add_convert.txt<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="nv">$OLD</span><span class="w"> </span>dyn_add.mlir<span class="w"> </span>--one-shot-bufferize<span class="o">=</span><span class="s2">&quot;bufferize-function-boundaries&quot;</span><span class="w"> </span>&gt;<span class="w"> </span><span class="nv">$O</span>/dyn_add_bufferize.txt<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="nv">$OLD</span><span class="w"> </span>unranked.mlir<span class="w">                                  </span>&gt;<span class="w"> </span><span class="nv">$O</span>/unranked_verify.txt<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="nv">$OLD</span><span class="w"> </span>tt.mlir<span class="w"> </span>--canonicalize<span class="w">                       </span>&gt;<span class="w"> </span><span class="nv">$O</span>/tt_on_chapter7_build.txt<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="c1"># The canonicalizer bug only shows once the verifier accepts the program, i.e. with the relaxed verifiers but WITHOUT</span>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="c1"># the exact-type guard. That state is Chapter 15&#39;s mutation 1 (needs ../../part15/code/mutation.sh to have been run).</span>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="nv">MUT1</span><span class="o">=</span><span class="nv">$HERE</span>/../../part15/code/work/mut-1/build/mg-opt
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="o">[</span><span class="w"> </span>-x<span class="w"> </span><span class="nv">$MUT1</span><span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nv">$MUT1</span><span class="w"> </span>tt.mlir<span class="w"> </span>--canonicalize<span class="w">        </span>&gt;<span class="w"> </span><span class="nv">$O</span>/tt_without_guard.txt<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="nb">exit</span><span class="w"> </span><span class="m">0</span><span class="w">   </span><span class="c1"># the compiler errors above are the point; do not propagate them</span>
 </code></pre></div>
 <p>The inputs (<code>dyn_add.mlir</code>, <code>dyn_transpose.mlir</code>, <code>mixed_add.mlir</code>):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>func.func @add_dyn(%a: tensor&lt;?x?xf64&gt;, %b: tensor&lt;?x?xf64&gt;) -&gt; tensor&lt;?x?xf64&gt; {

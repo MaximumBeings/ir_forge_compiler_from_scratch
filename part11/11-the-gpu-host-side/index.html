@@ -1607,6 +1607,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part23/23-measuring-performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    23. Measuring Performance: Does Any of It Make the Code Fast?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1812,6 +1840,10 @@
 <div class="admonition tip">
 <p class="admonition-title">Compile and run</p>
 <p>Every command, listing and output on this page is reproduced by the commands in <a href="#reproducing-this-chapter">Reproducing this chapter</a> at the bottom of the page, which also lists what must be built first. The chain of builds is in <a href="../../getting-started/#which-build-does-each-chapter-need">Getting Started</a>.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">A wrong or missing answer here is the point</p>
+<p>This chapter's controls and reproductions are <strong>supposed</strong> to look broken: a wrong answer, a crash, or a non-zero exit status. They show what happens without the fix or without the real behavior. The correct build's output is shown beside them. Each script says so in its own header.</p>
 </div>
 <h2 id="primer-what-the-host-does-around-a-kernel">Primer: what the host does around a kernel<a class="headerlink" href="#primer-what-the-host-does-around-a-kernel" title="Permanent link">&para;</a></h2>
 <p>A GPU has its own memory. A kernel can only read and write memory on the device, so a host program that wants to use one must, in order:</p>
@@ -2094,10 +2126,11 @@
 <a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="c1"># Negative control: the same host code and harness, linked with a stub whose kernel arithmetic is REMOVED.</span>
 <a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="c1"># If the real stub&#39;s answer did not depend on the launch parameters being read correctly, this would still print 6 8 / 10 12.</span>
 <a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="c1"># Needs ./host.o from pipeline.sh. Output: negative_control_out.txt</span>
-<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="nb">cd</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>dirname<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$0</span><span class="s2">&quot;</span><span class="k">)</span><span class="s2">&quot;</span>
-<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>sed<span class="w"> </span><span class="s1">&#39;s/c\[i\] = a\[i\] + b\[i\];/(void)a;(void)b;(void)c;(void)i;/&#39;</span><span class="w"> </span>stub_gpu_runtime.c<span class="w"> </span>&gt;<span class="w"> </span>/tmp/stub_noop_ch11.c
-<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>clang-18<span class="w"> </span>harness.c<span class="w"> </span>host.o<span class="w"> </span>/tmp/stub_noop_ch11.c<span class="w"> </span>-o<span class="w"> </span>/tmp/noop_demo_ch11<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>/tmp/noop_demo_ch11<span class="w"> </span><span class="m">2</span>&gt;/dev/null
-<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a>rm<span class="w"> </span>-f<span class="w"> </span>/tmp/stub_noop_ch11.c<span class="w"> </span>/tmp/noop_demo_ch11
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="c1"># NOTE: the output of this script is SUPPOSED to show a wrong answer (or no answer). That is the control: it proves the real stub&#39;s correct answer is not an accident.</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="nb">cd</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>dirname<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$0</span><span class="s2">&quot;</span><span class="k">)</span><span class="s2">&quot;</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>sed<span class="w"> </span><span class="s1">&#39;s/c\[i\] = a\[i\] + b\[i\];/(void)a;(void)b;(void)c;(void)i;/&#39;</span><span class="w"> </span>stub_gpu_runtime.c<span class="w"> </span>&gt;<span class="w"> </span>/tmp/stub_noop_ch11.c
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a>clang-18<span class="w"> </span>harness.c<span class="w"> </span>host.o<span class="w"> </span>/tmp/stub_noop_ch11.c<span class="w"> </span>-o<span class="w"> </span>/tmp/noop_demo_ch11<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>/tmp/noop_demo_ch11<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a>rm<span class="w"> </span>-f<span class="w"> </span>/tmp/stub_noop_ch11.c<span class="w"> </span>/tmp/noop_demo_ch11
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>add_tensors([[1,2],[3,4]], [[5,6],[7,8]]) =
 <a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>0 0 

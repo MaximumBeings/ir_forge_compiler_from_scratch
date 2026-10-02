@@ -1,0 +1,2479 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A Toy Language Compiled Through a Real MLIR Dialect, Down to Real Native Machine Code">
+      
+      
+        <meta name="author" content="Oluwaseyi Awoga">
+      
+      
+      
+        <link rel="prev" href="../../part22/22-broadcasting-reductions-and-relu/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>23. Measuring Performance: Does Any of It Make the Code Fast? - IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#23-measuring-performance-does-any-of-it-make-the-code-fast" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-header__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              23. Measuring Performance: Does Any of It Make the Code Fast?
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-nav__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tour/language-tour/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Mountain Goat Language: A Short Tour
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part1/01-why-a-multi-level-ir-at-all/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1. Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part2/02-a-minimal-dialect-from-scratch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2. A Minimal Dialect From Scratch: Mountain Goat's Own mg Dialect
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part3/03-the-pass-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3. The Real Pass Infrastructure: Canonicalizing Mountain Goat
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 3 -- Progressive Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 3 -- Progressive Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part4/04-progressive-lowering-to-affine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4. Progressive Lowering: Mountain Goat to affine, Two Real Ways
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part5/05-affine-to-scf-to-llvm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5. Finishing Progressive Lowering: affine to scf to llvm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 4 -- Optimization Across Levels
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 4 -- Optimization Across Levels
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/06-real-bufferization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6. Real Bufferization: Closing Chapter 4's Own Honest Gap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part7/07-real-loop-transforms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    7. Real Loop Transforms: Fusion, Tiling, and Unrolling at the affine Level
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 5 -- Code Generation via LLVM
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 5 -- Code Generation via LLVM
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part8/08-a-standalone-native-executable/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    8. A Standalone Native Executable: Mountain Goat Without MLIR At Runtime
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part9/09-the-execution-engine-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    9. MLIR's Own Real C++ ExecutionEngine API, Called In-Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 6 -- GPU Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 6 -- GPU Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part10/10-gpu-lowering-to-ptx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10. GPU Lowering: Mountain Goat to the gpu Dialect, NVVM, and Real PTX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part11/11-the-gpu-host-side/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    11. The GPU Host Side: Device Memory, Real Runtime Calls, and a Stub Device
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 7 -- Case Studies
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 7 -- Case Studies
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part12/12-reading-the-production-pipelines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    12. Reading MLIR's Own Production Pipelines: What This Book's Compiler Is Missing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part13/13-dynamic-shapes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    13. Dynamic Shapes: Closing Chapter 12's Biggest Unknown
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part14/14-runtime-shape-checks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    14. A Runtime Shape Check: Closing Chapter 13's Memory-Safety Hole
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part15/15-a-real-test-suite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    15. A Real Test Suite: lit, FileCheck, and Proof That the Tests Can Fail
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part16/16-testing-the-gpu-path-and-loop-transforms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    16. Testing the GPU Path and the Loop Transforms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part17/17-loop-transforms-on-dynamic-bounds/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    17. Loop Transforms on Dynamic Bounds
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part18/18-why-fusion-declines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    18. Why Fusion Declines: Reading the Pass, and a Second Bug Found Along the Way
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part19/19-a-better-abort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    19. A Better Abort: Reporting Assertion Failures on stderr
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part20/20-the-mountain-goat-demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    20. The Mountain Goat Demo: A Surface Syntax, a Driver, and C++ Calling Compiled Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part21/21-more-operations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    21. More Operations: Subtract, Hadamard, Divide, Matrix Product, and Scalars
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part22/22-broadcasting-reductions-and-relu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    22. Broadcasting, Reductions and relu: Enough Operations for a Neural-Network Layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    23. Measuring Performance: Does Any of It Make the Code Fast?
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    23. Measuring Performance: Does Any of It Make the Code Fast?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#primer-what-is-being-measured" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Primer: what is being measured
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#two-new-options-for-mgc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two new options for mgc
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-experiment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The experiment
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-machine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The machine
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Results
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reading-the-numbers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reading the numbers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#looking-at-the-machine-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Looking at the machine code
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tests
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limits-and-what-is-not-established" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits and what is not established
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#primer-what-is-being-measured" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Primer: what is being measured
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#two-new-options-for-mgc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two new options for mgc
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-experiment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The experiment
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-machine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The machine
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Results
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reading-the-numbers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reading the numbers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#looking-at-the-machine-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Looking at the machine code
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tests
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limits-and-what-is-not-established" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits and what is not established
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="23-measuring-performance-does-any-of-it-make-the-code-fast">23. Measuring Performance: Does Any of It Make the Code Fast?<a class="headerlink" href="#23-measuring-performance-does-any-of-it-make-the-code-fast" title="Permanent link">&para;</a></h1>
+<p><strong>What you will understand:</strong> how to measure a compiler's output honestly, and what the measurements say about Mountain Goat's matrix product. Every chapter so far said "no performance claim is made". This chapter makes some, carefully: it times one operation under different compiler settings and loop transforms, compares it with hand-written C++, shows the noise in its own numbers, and looks at the machine code to explain one result. It also finds, on the way, a bug in the driver that had been there since Chapter 20.</p>
+<p><strong>What you need to know first:</strong> Chapter 7 (loop tiling and the other loop transforms), Chapter 17 (those transforms on dynamic bounds), Chapters 20 and 21 (the <code>mgc</code> driver and <code>@</code>, the matrix product). No performance background is assumed; the terms are explained below.</p>
+<div class="admonition tip">
+<p class="admonition-title">Compile and run</p>
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">cd</span><span class="w"> </span>docs/part23/code
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>../part22/code/build.sh<span class="w">                       </span><span class="c1"># once: Chapter 22&#39;s mg-opt (this chapter changes only the driver)</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>./machine_info.sh<span class="w"> </span>&gt;<span class="w"> </span>machine_info_out.txt<span class="w">      </span><span class="c1"># what machine the numbers come from</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>./run_bench.sh<span class="w"> </span>&gt;<span class="w"> </span>bench_out_1.txt<span class="w">              </span><span class="c1"># build and time every variant (takes about a minute)</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>./run_bench.sh<span class="w"> </span>&gt;<span class="w"> </span>bench_out_2.txt<span class="w">              </span><span class="c1"># a second, independent pass</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>python3<span class="w"> </span>summarize.py<span class="w"> </span>bench_out_1.txt<span class="w"> </span>bench_out_2.txt<span class="w"> </span>&gt;<span class="w"> </span>summary.txt
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>./inspect_asm.sh<span class="w"> </span>&gt;<span class="w"> </span>inspect_asm_out.txt<span class="w">        </span><span class="c1"># look at the machine code behind one result</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>./mgc<span class="w"> </span>run<span class="w"> </span>examples/matmul_odd.mg<span class="w"> </span>-O2<span class="w"> </span>--passes<span class="w"> </span><span class="s2">&quot;--affine-loop-tile=tile-size=2&quot;</span><span class="w">   </span><span class="c1"># the new options on one program</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>./mgc_mutation.py<span class="w"> </span>&gt;<span class="w"> </span>mgc_mutation_out.txt<span class="w">      </span><span class="c1"># breaks mgc on purpose to test the tests</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="nb">cd</span><span class="w"> </span>../part15/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_lit.sh<span class="w">             </span><span class="c1"># the whole test suite</span>
+</code></pre></div>
+Every listing and output on this page comes from these commands. Timings will differ on your machine; that is expected.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Why this page shows FAIL lines, and why that is good</p>
+<p>The mutation output near the end comes from a <strong>negative control</strong>: deliberately broken code run against the tests. There a "caught by" line (a test failed) is the expected, wanted result. The baseline lines must say "all tests pass", and they do.</p>
+</div>
+<h2 id="primer-what-is-being-measured">Primer: what is being measured<a class="headerlink" href="#primer-what-is-being-measured" title="Permanent link">&para;</a></h2>
+<p><strong>Throughput and GFLOP/s.</strong> Multiplying two N by N matrices takes N³ multiplications and N³ additions, so <strong>2·N³ floating-point operations</strong> (FLOPs). Dividing that by the time gives a speed in <strong>GFLOP/s</strong> (billions of floating-point operations per second). It is a fair way to compare implementations of the same operation at the same size, and a bad way to compare different sizes or machines, because caches and clock speeds matter.</p>
+<p><strong>Why speeds differ so much between correct programs.</strong> All the programs below compute exactly the same numbers. They differ in <em>how the computer is asked to do it</em>:</p>
+<ul>
+<li><strong>Optimization level.</strong> <code>-O0</code> tells the C compiler (clang) to do almost no optimization; <code>-O2</code> and <code>-O3</code> ask for increasingly aggressive rewriting. Until this chapter every Mountain Goat program was built at <code>-O0</code> (clang's default for a <code>.ll</code> file), which is fine for demonstrating correctness and wrong for anything about speed.</li>
+<li><strong>Memory and caches.</strong> A processor reads memory through small, fast <strong>caches</strong>. Reading consecutive addresses is fast; jumping around memory is slow, because each jump may miss the cache. In the textbook matrix-product loop the innermost loop walks down a <em>column</em> of the right-hand matrix, which in row-major storage means jumping a whole row's length each step.</li>
+<li><strong>Loop tiling</strong> (also called blocking, Chapter 7) restructures the loops to work on small square <strong>tiles</strong> at a time, so the data a tile needs stays in cache while it is reused. Here the tile is 32 by 32 numbers; three of them (one from each matrix) are 24 KiB, which fits in this machine's 48 KiB of L1 data cache per core.</li>
+<li><strong>Vectorization</strong> (SIMD) uses instructions that operate on several numbers at once. <code>-march=native</code> tells clang it may use every instruction this particular CPU supports, which includes wide vector instructions on this machine.</li>
+<li><strong>Loop order.</strong> The same triple loop can be written with its three loops in different orders (<code>i,j,k</code> or <code>i,k,j</code>), which changes which memory is read in what pattern. Order matters enormously and the compiler will not reliably change it for you.</li>
+</ul>
+<p><strong>What makes a measurement trustworthy.</strong> Computers are noisy. A fair measurement runs the code once to warm up (page faults, cold caches), repeats it several times, reports the <strong>median</strong> (robust to a slow outlier) and the <strong>minimum</strong> (the least disturbed run), checks that the answer is still right, says what machine it ran on, and repeats the whole experiment to show how much results move between runs.</p>
+<h2 id="two-new-options-for-mgc">Two new options for <code>mgc</code><a class="headerlink" href="#two-new-options-for-mgc" title="Permanent link">&para;</a></h2>
+<p><code>mgc</code> gains two options (and two environment variables) so that these experiments are one-line changes:</p>
+<ul>
+<li><code>-O0</code>, <code>-O1</code>, <code>-O2</code>, <code>-O3</code>: the optimization level for the final clang step (default <code>-O0</code>, so nothing earlier changes).</li>
+<li><code>--passes "…"</code>: extra <code>mg-opt</code> passes run on the affine loops <strong>before</strong> they are lowered further. For example <code>--passes "--affine-loop-tile=tile-size=32"</code> runs Chapter 7's tiling pass on every loop nest in the program.</li>
+<li><code>MGC_CFLAGS</code>: extra flags for clang, such as <code>-march=native</code>. <code>MGC_CLANG</code>: which clang to call (a test seam, explained below).</li>
+</ul>
+<p>The change against Chapter 22's driver:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="gd">--- ../../part22/code/mgc   2026-10-02 16:29:34.479578094 +0000</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="gi">+++ mgc 2026-10-02 16:31:18.251194699 +0000</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="gu">@@ -5,36 +5,39 @@</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w"> </span>#   mgc lib   prog.mg [-o dir]   compile the &#39;def&#39;s to prog.o plus a C++ header prog.h (no main), for linking into your own program
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w"> </span>#   mgc mlir  prog.mg            print the mg-dialect MLIR the front end produces
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w"> </span>#   mgc ptx   prog.mg            compile to PTX (no launch: this machine has no GPU) and print the PTX
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="gd">-# Env: MG_OPT (default Chapter 22 build), MGC_KEEP=dir (keep every intermediate file there).</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="gi">+# Options (Chapter 23): -O0|-O1|-O2|-O3        optimization level for the final clang step (default -O0, as in every earlier chapter)</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="gi">+#   --passes &quot;--affine-loop-tile=tile-size=32&quot;  extra mg-opt passes run on the affine IR, before lowering (quote as one argument)</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="gi">+# Env: MG_OPT (default Chapter 22 build), MGC_KEEP=dir (keep every intermediate file there), MGC_CFLAGS (extra flags for clang, e.g. -march=native),</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="gi">+#      MGC_CLANG (the clang to call; tests set it to `echo` to see exactly which flags mgc passes).</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w"> </span>set -e
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w"> </span>HERE=$(cd &quot;$(dirname &quot;$0&quot;)&quot; &amp;&amp; pwd)
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w"> </span>MG_OPT=${MG_OPT:-$HERE/../../part22/code/build/mg-opt}
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w"> </span>LIBDIR=${MLIR_LIBDIR:-/usr/lib/llvm-18/lib}
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="gd">-usage() { echo &quot;usage: mgc run|build|lib|mlir|ptx prog.mg [-o exe]&quot; &gt;&amp;2; exit 2; }</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="gi">+usage() { echo &quot;usage: mgc run|build|lib|mlir|ptx prog.mg [-o exe] [-O0..-O3] [--passes \&quot;...\&quot;]&quot; &gt;&amp;2; exit 2; }</span>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w"> </span>[ $# -ge 2 ] || usage
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="gd">-cmd=$1; src=$2; shift 2; out=</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="gd">-while [ $# -gt 0 ]; do case $1 in -o) out=$2; shift 2;; *) usage;; esac; done</span>
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="gi">+cmd=$1; src=$2; shift 2; out=; OPT=; PASSES=</span>
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="gi">+while [ $# -gt 0 ]; do case $1 in -o) out=$2; shift 2;; -O0|-O1|-O2|-O3) OPT=$1; shift;; --passes) PASSES=$2; shift 2;; *) usage;; esac; done</span>
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="w"> </span>[ -f &quot;$src&quot; ] || { echo &quot;mgc: no such file: $src&quot; &gt;&amp;2; exit 2; }
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="w"> </span>W=${MGC_KEEP:-$(mktemp -d)}; mkdir -p &quot;$W&quot;
+<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="w"> </span>base=$(basename &quot;$src&quot; .mg)
+<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="w"> </span>LIBFLAG=; [ &quot;$cmd&quot; = lib ] &amp;&amp; LIBFLAG=--lib
+<a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="gd">-python3 &quot;$HERE/mgfront.py&quot; $LIBFLAG &quot;$src&quot; &gt; &quot;$W/$base.mlir&quot;          # 1. surface syntax -&gt; mg dialect (exit 1 + message on a syntax/shape error)</span>
+<a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="gi">+python3 &quot;$HERE/../../part22/code/mgfront.py&quot; $LIBFLAG &quot;$src&quot; &gt; &quot;$W/$base.mlir&quot;          # 1. surface syntax -&gt; mg dialect (exit 1 + message on a syntax/shape error)</span>
+<a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="w"> </span>[ &quot;$cmd&quot; = mlir ] &amp;&amp; { cat &quot;$W/$base.mlir&quot;; exit 0; }
+<a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="w"> </span>[ -x &quot;$MG_OPT&quot; ] || { echo &quot;mgc: no mg-opt at $MG_OPT (run part22/code/build.sh)&quot; &gt;&amp;2; exit 2; }
+<a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="w"> </span>case $cmd in
+<a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="w"> </span>  build|run|lib)
+<a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a><span class="w"> </span>    LOWER=&#39;--lower-affine --convert-scf-to-cf --mg-lower-assert-to-stderr --convert-arith-to-llvm --finalize-memref-to-llvm --convert-func-to-llvm --reconcile-unrealized-casts&#39;
+<a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a><span class="gd">-    $MG_OPT &quot;$W/$base.mlir&quot; --convert-mg-to-affine -o &quot;$W/$base.affine.mlir&quot;   # 2. mg -&gt; affine/memref/arith (+ runtime shape checks)</span>
+<a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a><span class="gi">+    $MG_OPT &quot;$W/$base.mlir&quot; --convert-mg-to-affine $PASSES -o &quot;$W/$base.affine.mlir&quot;   # 2. mg -&gt; affine/memref/arith (+ runtime shape checks)</span>
+<a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a><span class="w"> </span>    $MG_OPT &quot;$W/$base.affine.mlir&quot; $LOWER -o &quot;$W/$base.llvm.mlir&quot;               # 3. -&gt; LLVM dialect, assertions -&gt; write(2,..)+abort
+<a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a><span class="w"> </span>    mlir-translate-18 --mlir-to-llvmir &quot;$W/$base.llvm.mlir&quot; -o &quot;$W/$base.ll&quot;    # 4. -&gt; LLVM IR
+<a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a><span class="w"> </span>    if [ &quot;$cmd&quot; = lib ]; then   # object + header; the object is linked by the caller
+<a id="__codelineno-1-39" name="__codelineno-1-39" href="#__codelineno-1-39"></a><span class="w"> </span>      dir=${out:-$W}; mkdir -p &quot;$dir&quot;
+<a id="__codelineno-1-40" name="__codelineno-1-40" href="#__codelineno-1-40"></a><span class="gd">-      clang-18 -c &quot;$W/$base.ll&quot; -o &quot;$dir/$base.o&quot; 2&gt;/dev/null</span>
+<a id="__codelineno-1-41" name="__codelineno-1-41" href="#__codelineno-1-41"></a><span class="gd">-      python3 &quot;$HERE/mgfront.py&quot; --header &quot;$src&quot; &gt; &quot;$dir/$base.h&quot;</span>
+<a id="__codelineno-1-42" name="__codelineno-1-42" href="#__codelineno-1-42"></a><span class="gi">+      ${MGC_CLANG:-clang-18} $OPT $MGC_CFLAGS -c &quot;$W/$base.ll&quot; -o &quot;$dir/$base.o&quot; 2&gt;/dev/null</span>
+<a id="__codelineno-1-43" name="__codelineno-1-43" href="#__codelineno-1-43"></a><span class="gi">+      python3 &quot;$HERE/../../part22/code/mgfront.py&quot; --header &quot;$src&quot; &gt; &quot;$dir/$base.h&quot;</span>
+<a id="__codelineno-1-44" name="__codelineno-1-44" href="#__codelineno-1-44"></a><span class="w"> </span>      echo &quot;wrote $dir/$base.o and $dir/$base.h&quot;; exit 0
+<a id="__codelineno-1-45" name="__codelineno-1-45" href="#__codelineno-1-45"></a><span class="w"> </span>    fi
+<a id="__codelineno-1-46" name="__codelineno-1-46" href="#__codelineno-1-46"></a><span class="w"> </span>    exe=${out:-$W/$base.exe}
+<a id="__codelineno-1-47" name="__codelineno-1-47" href="#__codelineno-1-47"></a><span class="gd">-    clang-18 &quot;$W/$base.ll&quot; -o &quot;$exe&quot; -L&quot;$LIBDIR&quot; -lmlir_runner_utils -Wl,-rpath,&quot;$LIBDIR&quot; 2&gt;/dev/null   # 5. -&gt; native executable</span>
+<a id="__codelineno-1-48" name="__codelineno-1-48" href="#__codelineno-1-48"></a><span class="gi">+    ${MGC_CLANG:-clang-18} $OPT $MGC_CFLAGS &quot;$W/$base.ll&quot; -o &quot;$exe&quot; -L&quot;$LIBDIR&quot; -lmlir_runner_utils -Wl,-rpath,&quot;$LIBDIR&quot; 2&gt;/dev/null   # 5. -&gt; native executable</span>
+<a id="__codelineno-1-49" name="__codelineno-1-49" href="#__codelineno-1-49"></a><span class="w"> </span>    if [ &quot;$cmd&quot; = run ]; then exec &quot;$exe&quot;; fi   # (Chapter 23: this used to be `[ ... ] &amp;&amp; exec`, which made `mgc build` exit with status 1 on success)
+<a id="__codelineno-1-50" name="__codelineno-1-50" href="#__codelineno-1-50"></a><span class="w"> </span>    ;;
+<a id="__codelineno-1-51" name="__codelineno-1-51" href="#__codelineno-1-51"></a><span class="w"> </span>  ptx)
+<a id="__codelineno-1-52" name="__codelineno-1-52" href="#__codelineno-1-52"></a><span class="gu">@@ -43,7 +46,7 @@</span>
+<a id="__codelineno-1-53" name="__codelineno-1-53" href="#__codelineno-1-53"></a><span class="w"> </span>      --pass-pipeline=&#39;builtin.module(func.func(affine-parallelize,lower-affine,gpu-map-parallel-loops,convert-parallel-loops-to-gpu),gpu-kernel-outlining)&#39; -o &quot;$W/$base.gpu.mlir&quot;
+<a id="__codelineno-1-54" name="__codelineno-1-54" href="#__codelineno-1-54"></a><span class="w"> </span>    mlir-opt-18 &quot;$W/$base.gpu.mlir&quot; \
+<a id="__codelineno-1-55" name="__codelineno-1-55" href="#__codelineno-1-55"></a><span class="w"> </span>      --pass-pipeline=&#39;builtin.module(lower-affine,nvvm-attach-target{chip=sm_70 features=+ptx60},gpu.module(convert-scf-to-cf,convert-gpu-to-nvvm{index-bitwidth=64},reconcile-unrealized-casts),gpu-module-to-binary{format=isa})&#39; -o &quot;$W/$base.bin.mlir&quot;
+<a id="__codelineno-1-56" name="__codelineno-1-56" href="#__codelineno-1-56"></a><span class="gd">-    python3 &quot;$HERE/decode_ptx.py&quot; &quot;$W/$base.bin.mlir&quot;</span>
+<a id="__codelineno-1-57" name="__codelineno-1-57" href="#__codelineno-1-57"></a><span class="gi">+    python3 &quot;$HERE/../../part22/code/decode_ptx.py&quot; &quot;$W/$base.bin.mlir&quot;</span>
+<a id="__codelineno-1-58" name="__codelineno-1-58" href="#__codelineno-1-58"></a><span class="w"> </span>    ;;
+<a id="__codelineno-1-59" name="__codelineno-1-59" href="#__codelineno-1-59"></a><span class="w"> </span>  *) usage;;
+<a id="__codelineno-1-60" name="__codelineno-1-60" href="#__codelineno-1-60"></a><span class="w"> </span>esac
+</code></pre></div>
+<p><strong>A bug found while writing the tests.</strong> Testing <code>mgc build</code> showed that it exited with <strong>status 1 even on success</strong>. The last line of the script was <code>[ "$cmd" = run ] &amp;&amp; exec "$exe"</code>, and when the command is <code>build</code> that comparison is false, so the script's final status is 1. Chapters 20 to 22 only ever used <code>mgc run</code> (which replaces the shell with the program) and <code>mgc lib</code> (which exits explicitly), so nothing noticed. It is fixed in all four copies of <code>mgc</code> (Chapters 20 to 23), and the new test <code>tiling-structure</code> builds with <code>mgc build</code> and would fail on the old behavior.</p>
+<h2 id="the-experiment">The experiment<a class="headerlink" href="#the-experiment" title="Permanent link">&para;</a></h2>
+<p>The function being measured is a matrix product, once with dynamic sizes and once with a fixed 256 by 256 shape:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a># The function being measured: a matrix product, once with dynamic sizes and once with a fixed 256x256 shape.
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>def mm_dyn(a: tensor[?x?], b: tensor[?x?]) = a @ b
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>def mm_256(a: tensor[256x256], b: tensor[256x256]) = a @ b
+</code></pre></div>
+<p>The harness times it from C++ (the compiled code is linked in through the generated object file, as in Chapter 20) at N = 64, 128, 256 and 512. It computes a reference answer with an ordinary triple loop and <strong>checks every variant's result against it</strong> (the inputs are small whole numbers, so every product and sum is exact and the comparison is exact equality, not a tolerance). Each variant is built from the same harness source; only the object being timed changes:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1">// Times one matrix-product implementation at several sizes and checks every result against a reference.</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="c1">// Built once per variant: -DVARIANT_MG links the Mountain Goat object (mm_dyn, and mm_256 at N=256);</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="c1">// -DVARIANT_IJK / -DVARIANT_IKJ time a plain C++ triple loop in that loop order. Everything else is identical.</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;algorithm&gt;</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;chrono&gt;</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;cmath&gt;</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;cstdint&gt;</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;cstdio&gt;</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;cstdlib&gt;</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;string&gt;</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;vector&gt;</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="cp">#ifdef VARIANT_MG</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="c1">// The memref calling convention (Chapters 1, 8, 20): each matrix is (allocated, aligned, offset, size0, size1, stride0, stride1).</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="k">struct</span><span class="w"> </span><span class="nc">Desc</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">allocated</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">aligned</span><span class="p">;</span><span class="w"> </span><span class="kt">int64_t</span><span class="w"> </span><span class="n">offset</span><span class="p">,</span><span class="w"> </span><span class="n">sizes</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="w"> </span><span class="n">strides</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="p">};</span>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="k">extern</span><span class="w"> </span><span class="s">&quot;C&quot;</span><span class="w"> </span><span class="n">Desc</span><span class="w"> </span><span class="n">mm_dyn</span><span class="p">(</span><span class="kt">double</span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="p">);</span>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="k">extern</span><span class="w"> </span><span class="s">&quot;C&quot;</span><span class="w"> </span><span class="n">Desc</span><span class="w"> </span><span class="n">mm_256</span><span class="p">(</span><span class="kt">double</span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="p">);</span>
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="cp">#endif</span>
+<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>
+<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="k">using</span><span class="w"> </span><span class="n">Clock</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">chrono</span><span class="o">::</span><span class="n">steady_clock</span><span class="p">;</span>
+<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="k">static</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="nf">seconds</span><span class="p">(</span><span class="n">Clock</span><span class="o">::</span><span class="n">time_point</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">Clock</span><span class="o">::</span><span class="n">time_point</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">chrono</span><span class="o">::</span><span class="n">duration</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="n">b</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">a</span><span class="p">).</span><span class="n">count</span><span class="p">();</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a>
+<a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a><span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">ref_ijk</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a><span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">n</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">n</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">n</span><span class="p">;</span><span class="w"> </span><span class="n">k</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">k</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">b</span><span class="p">[</span><span class="n">k</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">j</span><span class="p">];</span><span class="w"> </span><span class="n">c</span><span class="p">[</span><span class="n">i</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">j</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a><span class="p">}</span>
+<a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a><span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">ref_ikj</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">fill</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="p">)</span><span class="n">n</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">);</span>
+<a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a><span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">n</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">n</span><span class="p">;</span><span class="w"> </span><span class="n">k</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">k</span><span class="p">];</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">n</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="n">c</span><span class="p">[</span><span class="n">i</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">j</span><span class="p">]</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">b</span><span class="p">[</span><span class="n">k</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">j</span><span class="p">];</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a><span class="p">}</span>
+<a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a>
+<a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a><span class="c1">// Run `f` (which writes an n*n result into c) enough times to measure, and return per-call seconds for each of `trials` trials.</span>
+<a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">F</span><span class="o">&gt;</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="w"> </span><span class="n">measure</span><span class="p">(</span><span class="n">F</span><span class="w"> </span><span class="n">f</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">trials</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-33" name="__codelineno-3-33" href="#__codelineno-3-33"></a><span class="w">  </span><span class="n">f</span><span class="p">();</span><span class="w">                                              </span><span class="c1">// warm-up (page faults, caches, lazy binding)</span>
+<a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a><span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">t0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Clock</span><span class="o">::</span><span class="n">now</span><span class="p">();</span><span class="w"> </span><span class="n">f</span><span class="p">();</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">one</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">seconds</span><span class="p">(</span><span class="n">t0</span><span class="p">,</span><span class="w"> </span><span class="n">Clock</span><span class="o">::</span><span class="n">now</span><span class="p">());</span>
+<a id="__codelineno-3-35" name="__codelineno-3-35" href="#__codelineno-3-35"></a><span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">reps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">std</span><span class="o">::</span><span class="n">ceil</span><span class="p">(</span><span class="mf">0.05</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">max</span><span class="p">(</span><span class="n">one</span><span class="p">,</span><span class="w"> </span><span class="mf">1e-9</span><span class="p">)));</span><span class="w">   </span><span class="c1">// aim for at least 50 ms per trial</span>
+<a id="__codelineno-3-36" name="__codelineno-3-36" href="#__codelineno-3-36"></a><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="w"> </span><span class="n">t</span><span class="p">;</span>
+<a id="__codelineno-3-37" name="__codelineno-3-37" href="#__codelineno-3-37"></a><span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">trials</span><span class="p">;</span><span class="w"> </span><span class="n">k</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Clock</span><span class="o">::</span><span class="n">now</span><span class="p">();</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">reps</span><span class="p">;</span><span class="w"> </span><span class="n">r</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="n">f</span><span class="p">();</span><span class="w"> </span><span class="n">t</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">seconds</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="n">Clock</span><span class="o">::</span><span class="n">now</span><span class="p">())</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">reps</span><span class="p">);</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-3-38" name="__codelineno-3-38" href="#__codelineno-3-38"></a><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">sort</span><span class="p">(</span><span class="n">t</span><span class="p">.</span><span class="n">begin</span><span class="p">(),</span><span class="w"> </span><span class="n">t</span><span class="p">.</span><span class="n">end</span><span class="p">());</span>
+<a id="__codelineno-3-39" name="__codelineno-3-39" href="#__codelineno-3-39"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">t</span><span class="p">;</span>
+<a id="__codelineno-3-40" name="__codelineno-3-40" href="#__codelineno-3-40"></a><span class="p">}</span>
+<a id="__codelineno-3-41" name="__codelineno-3-41" href="#__codelineno-3-41"></a>
+<a id="__codelineno-3-42" name="__codelineno-3-42" href="#__codelineno-3-42"></a><span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">report</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">label</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="w"> </span><span class="o">&amp;</span><span class="n">t</span><span class="p">,</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">ok</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-43" name="__codelineno-3-43" href="#__codelineno-3-43"></a><span class="w">  </span><span class="kt">double</span><span class="w"> </span><span class="n">med</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">t</span><span class="p">[</span><span class="n">t</span><span class="p">.</span><span class="n">size</span><span class="p">()</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">2</span><span class="p">],</span><span class="w"> </span><span class="n">mn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="w"> </span><span class="n">flops</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">2.0</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">n</span><span class="p">;</span>
+<a id="__codelineno-3-44" name="__codelineno-3-44" href="#__codelineno-3-44"></a><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;%-26s N=%-4d  min %9.3f ms  median %9.3f ms  %7.2f GFLOP/s (median)  %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">label</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="n">mn</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="p">,</span><span class="w"> </span><span class="n">med</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="p">,</span><span class="w"> </span><span class="n">flops</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">med</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e9</span><span class="p">,</span><span class="w"> </span><span class="n">ok</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;result ok&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;RESULT WRONG&quot;</span><span class="p">);</span>
+<a id="__codelineno-3-45" name="__codelineno-3-45" href="#__codelineno-3-45"></a><span class="p">}</span>
+<a id="__codelineno-3-46" name="__codelineno-3-46" href="#__codelineno-3-46"></a>
+<a id="__codelineno-3-47" name="__codelineno-3-47" href="#__codelineno-3-47"></a><span class="kt">int</span><span class="w"> </span><span class="n">main</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">**</span><span class="n">argv</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-48" name="__codelineno-3-48" href="#__codelineno-3-48"></a><span class="w">  </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">label</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">argc</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;variant&quot;</span><span class="p">;</span>
+<a id="__codelineno-3-49" name="__codelineno-3-49" href="#__codelineno-3-49"></a><span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">trials</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">7</span><span class="p">;</span>
+<a id="__codelineno-3-50" name="__codelineno-3-50" href="#__codelineno-3-50"></a><span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="mi">64</span><span class="p">,</span><span class="w"> </span><span class="mi">128</span><span class="p">,</span><span class="w"> </span><span class="mi">256</span><span class="p">,</span><span class="w"> </span><span class="mi">512</span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-51" name="__codelineno-3-51" href="#__codelineno-3-51"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="w"> </span><span class="n">a</span><span class="p">((</span><span class="kt">size_t</span><span class="p">)</span><span class="n">n</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">n</span><span class="p">),</span><span class="w"> </span><span class="n">b</span><span class="p">((</span><span class="kt">size_t</span><span class="p">)</span><span class="n">n</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">n</span><span class="p">),</span><span class="w"> </span><span class="n">c</span><span class="p">((</span><span class="kt">size_t</span><span class="p">)</span><span class="n">n</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">n</span><span class="p">),</span><span class="w"> </span><span class="n">want</span><span class="p">((</span><span class="kt">size_t</span><span class="p">)</span><span class="n">n</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">n</span><span class="p">);</span>
+<a id="__codelineno-3-52" name="__codelineno-3-52" href="#__codelineno-3-52"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">size</span><span class="p">();</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">double</span><span class="p">)((</span><span class="n">i</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">7</span><span class="p">)</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mi">11</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span><span class="w"> </span><span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">double</span><span class="p">)((</span><span class="n">i</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">5</span><span class="p">)</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mi">13</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">6</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w">   </span><span class="c1">// small integers: every product and sum is exact</span>
+<a id="__codelineno-3-53" name="__codelineno-3-53" href="#__codelineno-3-53"></a><span class="w">    </span><span class="n">ref_ijk</span><span class="p">(</span><span class="n">a</span><span class="p">.</span><span class="n">data</span><span class="p">(),</span><span class="w"> </span><span class="n">b</span><span class="p">.</span><span class="n">data</span><span class="p">(),</span><span class="w"> </span><span class="n">want</span><span class="p">.</span><span class="n">data</span><span class="p">(),</span><span class="w"> </span><span class="n">n</span><span class="p">);</span>
+<a id="__codelineno-3-54" name="__codelineno-3-54" href="#__codelineno-3-54"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">same</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="o">&amp;</span><span class="p">](</span><span class="k">const</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">want</span><span class="p">.</span><span class="n">size</span><span class="p">();</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">want</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span><span class="w"> </span><span class="p">};</span>
+<a id="__codelineno-3-55" name="__codelineno-3-55" href="#__codelineno-3-55"></a><span class="cp">#if defined(VARIANT_IJK)</span>
+<a id="__codelineno-3-56" name="__codelineno-3-56" href="#__codelineno-3-56"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">measure</span><span class="p">([</span><span class="o">&amp;</span><span class="p">]</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">ref_ijk</span><span class="p">(</span><span class="n">a</span><span class="p">.</span><span class="n">data</span><span class="p">(),</span><span class="w"> </span><span class="n">b</span><span class="p">.</span><span class="n">data</span><span class="p">(),</span><span class="w"> </span><span class="n">c</span><span class="p">.</span><span class="n">data</span><span class="p">(),</span><span class="w"> </span><span class="n">n</span><span class="p">);</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="n">trials</span><span class="p">);</span><span class="w"> </span><span class="n">report</span><span class="p">(</span><span class="n">label</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="n">t</span><span class="p">,</span><span class="w"> </span><span class="n">same</span><span class="p">(</span><span class="n">c</span><span class="p">.</span><span class="n">data</span><span class="p">()));</span>
+<a id="__codelineno-3-57" name="__codelineno-3-57" href="#__codelineno-3-57"></a><span class="cp">#elif defined(VARIANT_IKJ)</span>
+<a id="__codelineno-3-58" name="__codelineno-3-58" href="#__codelineno-3-58"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">measure</span><span class="p">([</span><span class="o">&amp;</span><span class="p">]</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">ref_ikj</span><span class="p">(</span><span class="n">a</span><span class="p">.</span><span class="n">data</span><span class="p">(),</span><span class="w"> </span><span class="n">b</span><span class="p">.</span><span class="n">data</span><span class="p">(),</span><span class="w"> </span><span class="n">c</span><span class="p">.</span><span class="n">data</span><span class="p">(),</span><span class="w"> </span><span class="n">n</span><span class="p">);</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="n">trials</span><span class="p">);</span><span class="w"> </span><span class="n">report</span><span class="p">(</span><span class="n">label</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="n">t</span><span class="p">,</span><span class="w"> </span><span class="n">same</span><span class="p">(</span><span class="n">c</span><span class="p">.</span><span class="n">data</span><span class="p">()));</span>
+<a id="__codelineno-3-59" name="__codelineno-3-59" href="#__codelineno-3-59"></a><span class="cp">#elif defined(VARIANT_MG)</span>
+<a id="__codelineno-3-60" name="__codelineno-3-60" href="#__codelineno-3-60"></a><span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">ok</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
+<a id="__codelineno-3-61" name="__codelineno-3-61" href="#__codelineno-3-61"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">run</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="o">&amp;</span><span class="p">](</span><span class="n">Desc</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">fn</span><span class="p">)(</span><span class="kt">double</span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-62" name="__codelineno-3-62" href="#__codelineno-3-62"></a><span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="p">[</span><span class="o">&amp;</span><span class="p">,</span><span class="w"> </span><span class="n">fn</span><span class="p">]</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">Desc</span><span class="w"> </span><span class="n">d</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fn</span><span class="p">(</span><span class="n">a</span><span class="p">.</span><span class="n">data</span><span class="p">(),</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">data</span><span class="p">(),</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">.</span><span class="n">data</span><span class="p">(),</span><span class="w"> </span><span class="n">b</span><span class="p">.</span><span class="n">data</span><span class="p">(),</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<a id="__codelineno-3-63" name="__codelineno-3-63" href="#__codelineno-3-63"></a><span class="w">                       </span><span class="n">ok</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ok</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">same</span><span class="p">(</span><span class="n">d</span><span class="p">.</span><span class="n">aligned</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">d</span><span class="p">.</span><span class="n">offset</span><span class="p">);</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">free</span><span class="p">(</span><span class="n">d</span><span class="p">.</span><span class="n">allocated</span><span class="p">);</span><span class="w"> </span><span class="p">};</span>
+<a id="__codelineno-3-64" name="__codelineno-3-64" href="#__codelineno-3-64"></a><span class="w">    </span><span class="p">};</span>
+<a id="__codelineno-3-65" name="__codelineno-3-65" href="#__codelineno-3-65"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">measure</span><span class="p">(</span><span class="n">run</span><span class="p">(</span><span class="n">mm_dyn</span><span class="p">),</span><span class="w"> </span><span class="n">trials</span><span class="p">);</span><span class="w"> </span><span class="n">report</span><span class="p">((</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="p">(</span><span class="n">label</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot; (dynamic sizes)&quot;</span><span class="p">).</span><span class="n">c_str</span><span class="p">(),</span><span class="w"> </span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="n">t</span><span class="p">,</span><span class="w"> </span><span class="n">ok</span><span class="p">);</span>
+<a id="__codelineno-3-66" name="__codelineno-3-66" href="#__codelineno-3-66"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">n</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">256</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">ok</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">t2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">measure</span><span class="p">(</span><span class="n">run</span><span class="p">(</span><span class="n">mm_256</span><span class="p">),</span><span class="w"> </span><span class="n">trials</span><span class="p">);</span><span class="w"> </span><span class="n">report</span><span class="p">((</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="p">(</span><span class="n">label</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot; (static 256)&quot;</span><span class="p">).</span><span class="n">c_str</span><span class="p">(),</span><span class="w"> </span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="n">t2</span><span class="p">,</span><span class="w"> </span><span class="n">ok</span><span class="p">);</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-3-67" name="__codelineno-3-67" href="#__codelineno-3-67"></a><span class="cp">#endif</span>
+<a id="__codelineno-3-68" name="__codelineno-3-68" href="#__codelineno-3-68"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-3-69" name="__codelineno-3-69" href="#__codelineno-3-69"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-3-70" name="__codelineno-3-70" href="#__codelineno-3-70"></a><span class="p">}</span>
+</code></pre></div>
+<p>The script that builds and runs all the variants:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="ch">#!/bin/sh</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="c1"># Build and time every variant of the matrix product. Output: bench_out_1.txt, bench_out_2.txt (two complete passes).</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1"># What is timed: one call to a 64..512 square matrix product, per-call time over 7 trials (each trial repeats the call until it lasts &gt;= 50 ms).</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># Every variant&#39;s result is compared against a reference computed with an ordinary triple loop (small integers, so every sum is exact).</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="nv">HERE</span><span class="o">=</span><span class="k">$(</span><span class="nb">cd</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>dirname<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$0</span><span class="s2">&quot;</span><span class="k">)</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">pwd</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="nv">W</span><span class="o">=</span><span class="nv">$HERE</span>/work/bench<span class="p">;</span><span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span><span class="nv">$W</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="nv">MGC</span><span class="o">=</span><span class="nv">$HERE</span>/mgc<span class="p">;</span><span class="w"> </span><span class="nv">SRC</span><span class="o">=</span><span class="nv">$HERE</span>/bench/matmul.mg<span class="p">;</span><span class="w"> </span><span class="nv">H</span><span class="o">=</span><span class="nv">$HERE</span>/bench/bench.cpp
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="nv">CORE</span><span class="o">=</span><span class="p">;</span><span class="w"> </span><span class="nb">command</span><span class="w"> </span>-v<span class="w"> </span>taskset<span class="w"> </span>&gt;/dev/null<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nv">CORE</span><span class="o">=</span><span class="s2">&quot;taskset -c 3&quot;</span><span class="w">      </span><span class="c1"># pin to one core to reduce scheduler noise</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>build_mg<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w">  </span><span class="c1"># name  mgc-flags...   (MGC_CFLAGS may be set by the caller)</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">  </span><span class="nv">name</span><span class="o">=</span><span class="nv">$1</span><span class="p">;</span><span class="w"> </span>shift<span class="p">;</span><span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span><span class="nv">$W</span>/<span class="nv">$name</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">  </span><span class="nv">$MGC</span><span class="w"> </span>lib<span class="w"> </span><span class="nv">$SRC</span><span class="w"> </span>-o<span class="w"> </span><span class="nv">$W</span>/<span class="nv">$name</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$@</span><span class="s2">&quot;</span><span class="w"> </span>&gt;/dev/null
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">  </span>clang++-18<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-O2<span class="w"> </span>-DVARIANT_MG<span class="w"> </span><span class="nv">$H</span><span class="w"> </span><span class="nv">$W</span>/<span class="nv">$name</span>/matmul.o<span class="w"> </span>-o<span class="w"> </span><span class="nv">$W</span>/<span class="nv">$name</span>/bench
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="o">}</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>build_mg<span class="w"> </span>mg_O0
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>build_mg<span class="w"> </span>mg_O2<span class="w"> </span>-O2
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>build_mg<span class="w"> </span>mg_O2_tile32<span class="w"> </span>-O2<span class="w"> </span>--passes<span class="w"> </span><span class="s2">&quot;--affine-loop-tile=tile-size=32&quot;</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="nv">MGC_CFLAGS</span><span class="o">=</span>-march<span class="o">=</span>native<span class="w"> </span>build_mg<span class="w"> </span>mg_O3_native<span class="w"> </span>-O3
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="nv">MGC_CFLAGS</span><span class="o">=</span>-march<span class="o">=</span>native<span class="w"> </span>build_mg<span class="w"> </span>mg_O3_native_tile32<span class="w"> </span>-O3<span class="w"> </span>--passes<span class="w"> </span><span class="s2">&quot;--affine-loop-tile=tile-size=32&quot;</span>
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>clang++-18<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-O2<span class="w"> </span>-DVARIANT_IJK<span class="w"> </span><span class="nv">$H</span><span class="w"> </span>-o<span class="w"> </span><span class="nv">$W</span>/ref_ijk
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>clang++-18<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-O3<span class="w"> </span>-march<span class="o">=</span>native<span class="w"> </span>-DVARIANT_IKJ<span class="w"> </span><span class="nv">$H</span><span class="w"> </span>-o<span class="w"> </span><span class="nv">$W</span>/ref_ikj_native
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;machine: </span><span class="k">$(</span>nproc<span class="k">)</span><span class="s2"> CPUs, </span><span class="k">$(</span>grep<span class="w"> </span>-m1<span class="w"> </span><span class="s1">&#39;model name&#39;</span><span class="w"> </span>/proc/cpuinfo<span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span><span class="s1">&#39;s/.*: //&#39;</span><span class="k">)</span><span class="s2">, </span><span class="k">$(</span>clang++-18<span class="w"> </span>--version<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-1<span class="k">)</span><span class="s2">&quot;</span>
+<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;pinned with: </span><span class="si">${</span><span class="nv">CORE</span><span class="k">:-</span><span class="nv">nothing</span><span class="si">}</span><span class="s2">   load average before: </span><span class="k">$(</span>cut<span class="w"> </span>-d<span class="s1">&#39; &#39;</span><span class="w"> </span>-f1-3<span class="w"> </span>/proc/loadavg<span class="k">)</span><span class="s2">&quot;</span>
+<a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a><span class="k">for</span><span class="w"> </span>v<span class="w"> </span><span class="k">in</span><span class="w"> </span>mg_O0<span class="w"> </span>mg_O2<span class="w"> </span>mg_O2_tile32<span class="w"> </span>mg_O3_native<span class="w"> </span>mg_O3_native_tile32<span class="p">;</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="nv">$CORE</span><span class="w"> </span><span class="nv">$W</span>/<span class="nv">$v</span>/bench<span class="w"> </span><span class="nv">$v</span><span class="p">;</span><span class="w"> </span><span class="k">done</span>
+<a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a><span class="nv">$CORE</span><span class="w"> </span><span class="nv">$W</span>/ref_ijk<span class="w"> </span><span class="s2">&quot;C++ ijk loop, clang -O2&quot;</span>
+<a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a><span class="nv">$CORE</span><span class="w"> </span><span class="nv">$W</span>/ref_ikj_native<span class="w"> </span><span class="s2">&quot;C++ ikj loop, -O3 native&quot;</span>
+<a id="__codelineno-4-25" name="__codelineno-4-25" href="#__codelineno-4-25"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;load average after: </span><span class="k">$(</span>cut<span class="w"> </span>-d<span class="s1">&#39; &#39;</span><span class="w"> </span>-f1-3<span class="w"> </span>/proc/loadavg<span class="k">)</span><span class="s2">&quot;</span>
+</code></pre></div>
+<p>The variants:</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mg_O0</code></td>
+<td>Mountain Goat's matmul, built the way every earlier chapter built things</td>
+</tr>
+<tr>
+<td><code>mg_O2</code></td>
+<td>the same, with clang <code>-O2</code></td>
+</tr>
+<tr>
+<td><code>mg_O2_tile32</code></td>
+<td><code>-O2</code>, and the loops tiled 32 by 32 by Chapter 7's pass</td>
+</tr>
+<tr>
+<td><code>mg_O3_native</code></td>
+<td><code>-O3 -march=native</code> (all of this CPU's instructions)</td>
+</tr>
+<tr>
+<td><code>mg_O3_native_tile32</code></td>
+<td><code>-O3 -march=native</code> and tiled</td>
+</tr>
+<tr>
+<td><code>C++ ijk loop, clang -O2</code></td>
+<td>the textbook triple loop, in the same loop order Mountain Goat generates, written in C++</td>
+</tr>
+<tr>
+<td><code>C++ ikj loop, -O3 native</code></td>
+<td>what a person who knows about caches would write: the middle two loops swapped, built with every optimization</td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-machine">The machine<a class="headerlink" href="#the-machine" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>CPU:      Intel(R) Xeon(R) Processor @ 2.10GHz
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>CPU(s): 4
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>Thread(s) per core: 1
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>Core(s) per socket: 4
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>Socket(s): 1
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>L1d cache: 192 KiB (4 instances)
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>L2 cache: 8 MiB (4 instances)
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>L3 cache: 260 MiB (1 instance)
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>vector extensions available: avx avx2 avx512f fma sse4_2 
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>memory:   16094 MiB
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>kernel:   Linux 6.18.44-fc-v51
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>compiler: Ubuntu clang version 18.1.3 (1ubuntu1)
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>mlir:     Ubuntu LLVM version 18.1.3
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>This is a shared cloud virtual machine, not a quiet benchmarking box; see the chapter for what that means for the numbers.
+</code></pre></div>
+<p>This is a <strong>shared cloud virtual machine</strong>, not a quiet benchmarking host. Other tenants may be using the same physical hardware, the clock speed is not fixed by me, and the cache sizes shown are what the virtual machine reports. The harness pins itself to one core (<code>taskset -c 3</code>) to reduce scheduler noise, which helps but does not remove it. Treat every number below as "what happened on this machine in this session", not as a property of Mountain Goat.</p>
+<h2 id="results">Results<a class="headerlink" href="#results" title="Permanent link">&para;</a></h2>
+<p>The raw output of both passes (click to expand):</p>
+<details class="note">
+<summary>Pass 1: <code>bench_out_1.txt</code></summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>machine: 4 CPUs, Intel(R) Xeon(R) Processor @ 2.10GHz, Ubuntu clang version 18.1.3 (1ubuntu1)
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>pinned with: taskset -c 3   load average before: 0.57 0.39 0.16
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>mg_O0 (dynamic sizes)      N=64    min     0.641 ms  median     0.652 ms     0.80 GFLOP/s (median)  result ok
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>mg_O0 (dynamic sizes)      N=128   min     4.806 ms  median     5.377 ms     0.78 GFLOP/s (median)  result ok
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>mg_O0 (dynamic sizes)      N=256   min    48.290 ms  median    60.533 ms     0.55 GFLOP/s (median)  result ok
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>mg_O0 (static 256)         N=256   min    41.836 ms  median    43.641 ms     0.77 GFLOP/s (median)  result ok
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>mg_O0 (dynamic sizes)      N=512   min   846.780 ms  median   985.506 ms     0.27 GFLOP/s (median)  result ok
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>mg_O2 (dynamic sizes)      N=64    min     0.078 ms  median     0.126 ms     4.16 GFLOP/s (median)  result ok
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>mg_O2 (dynamic sizes)      N=128   min     2.232 ms  median     2.256 ms     1.86 GFLOP/s (median)  result ok
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>mg_O2 (dynamic sizes)      N=256   min    17.257 ms  median    18.489 ms     1.81 GFLOP/s (median)  result ok
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>mg_O2 (static 256)         N=256   min    16.208 ms  median    17.697 ms     1.90 GFLOP/s (median)  result ok
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>mg_O2 (dynamic sizes)      N=512   min   393.451 ms  median   438.605 ms     0.61 GFLOP/s (median)  result ok
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>mg_O2_tile32 (dynamic sizes) N=64    min     0.094 ms  median     0.094 ms     5.55 GFLOP/s (median)  result ok
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>mg_O2_tile32 (dynamic sizes) N=128   min     0.877 ms  median     1.197 ms     3.50 GFLOP/s (median)  result ok
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>mg_O2_tile32 (dynamic sizes) N=256   min     6.202 ms  median     6.691 ms     5.01 GFLOP/s (median)  result ok
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>mg_O2_tile32 (static 256)  N=256   min     5.561 ms  median     6.464 ms     5.19 GFLOP/s (median)  result ok
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>mg_O2_tile32 (dynamic sizes) N=512   min    79.821 ms  median    82.943 ms     3.24 GFLOP/s (median)  result ok
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a>mg_O3_native (dynamic sizes) N=64    min     0.115 ms  median     0.123 ms     4.28 GFLOP/s (median)  result ok
+<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a>mg_O3_native (dynamic sizes) N=128   min     2.106 ms  median     2.284 ms     1.84 GFLOP/s (median)  result ok
+<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a>mg_O3_native (dynamic sizes) N=256   min    15.787 ms  median    17.117 ms     1.96 GFLOP/s (median)  result ok
+<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a>mg_O3_native (static 256)  N=256   min    16.755 ms  median    17.475 ms     1.92 GFLOP/s (median)  result ok
+<a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a>mg_O3_native (dynamic sizes) N=512   min   430.051 ms  median   457.523 ms     0.59 GFLOP/s (median)  result ok
+<a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a>mg_O3_native_tile32 (dynamic sizes) N=64    min     0.094 ms  median     0.108 ms     4.88 GFLOP/s (median)  result ok
+<a id="__codelineno-6-24" name="__codelineno-6-24" href="#__codelineno-6-24"></a>mg_O3_native_tile32 (dynamic sizes) N=128   min     0.730 ms  median     0.765 ms     5.48 GFLOP/s (median)  result ok
+<a id="__codelineno-6-25" name="__codelineno-6-25" href="#__codelineno-6-25"></a>mg_O3_native_tile32 (dynamic sizes) N=256   min     8.011 ms  median     8.426 ms     3.98 GFLOP/s (median)  result ok
+<a id="__codelineno-6-26" name="__codelineno-6-26" href="#__codelineno-6-26"></a>mg_O3_native_tile32 (static 256) N=256   min     2.714 ms  median     3.454 ms     9.72 GFLOP/s (median)  result ok
+<a id="__codelineno-6-27" name="__codelineno-6-27" href="#__codelineno-6-27"></a>mg_O3_native_tile32 (dynamic sizes) N=512   min    75.085 ms  median    76.763 ms     3.50 GFLOP/s (median)  result ok
+<a id="__codelineno-6-28" name="__codelineno-6-28" href="#__codelineno-6-28"></a>C++ ijk loop, clang -O2    N=64    min     0.088 ms  median     0.089 ms     5.88 GFLOP/s (median)  result ok
+<a id="__codelineno-6-29" name="__codelineno-6-29" href="#__codelineno-6-29"></a>C++ ijk loop, clang -O2    N=128   min     2.233 ms  median     2.243 ms     1.87 GFLOP/s (median)  result ok
+<a id="__codelineno-6-30" name="__codelineno-6-30" href="#__codelineno-6-30"></a>C++ ijk loop, clang -O2    N=256   min    17.162 ms  median    18.716 ms     1.79 GFLOP/s (median)  result ok
+<a id="__codelineno-6-31" name="__codelineno-6-31" href="#__codelineno-6-31"></a>C++ ijk loop, clang -O2    N=512   min   413.616 ms  median   429.951 ms     0.62 GFLOP/s (median)  result ok
+<a id="__codelineno-6-32" name="__codelineno-6-32" href="#__codelineno-6-32"></a>C++ ikj loop, -O3 native   N=64    min     0.038 ms  median     0.039 ms    13.30 GFLOP/s (median)  result ok
+<a id="__codelineno-6-33" name="__codelineno-6-33" href="#__codelineno-6-33"></a>C++ ikj loop, -O3 native   N=128   min     0.419 ms  median     0.497 ms     8.44 GFLOP/s (median)  result ok
+<a id="__codelineno-6-34" name="__codelineno-6-34" href="#__codelineno-6-34"></a>C++ ikj loop, -O3 native   N=256   min     3.366 ms  median     3.514 ms     9.55 GFLOP/s (median)  result ok
+<a id="__codelineno-6-35" name="__codelineno-6-35" href="#__codelineno-6-35"></a>C++ ikj loop, -O3 native   N=512   min    35.847 ms  median    36.792 ms     7.30 GFLOP/s (median)  result ok
+<a id="__codelineno-6-36" name="__codelineno-6-36" href="#__codelineno-6-36"></a>load average after: 0.76 0.46 0.19
+</code></pre></div>
+</details>
+<details class="note">
+<summary>Pass 2: <code>bench_out_2.txt</code></summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>machine: 4 CPUs, Intel(R) Xeon(R) Processor @ 2.10GHz, Ubuntu clang version 18.1.3 (1ubuntu1)
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>pinned with: taskset -c 3   load average before: 0.66 0.46 0.19
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>mg_O0 (dynamic sizes)      N=64    min     0.589 ms  median     0.612 ms     0.86 GFLOP/s (median)  result ok
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>mg_O0 (dynamic sizes)      N=128   min     4.930 ms  median     5.955 ms     0.70 GFLOP/s (median)  result ok
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>mg_O0 (dynamic sizes)      N=256   min    42.032 ms  median    42.235 ms     0.79 GFLOP/s (median)  result ok
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>mg_O0 (static 256)         N=256   min    39.039 ms  median    41.589 ms     0.81 GFLOP/s (median)  result ok
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>mg_O0 (dynamic sizes)      N=512   min   693.236 ms  median   872.763 ms     0.31 GFLOP/s (median)  result ok
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>mg_O2 (dynamic sizes)      N=64    min     0.092 ms  median     0.093 ms     5.66 GFLOP/s (median)  result ok
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>mg_O2 (dynamic sizes)      N=128   min     2.126 ms  median     2.239 ms     1.87 GFLOP/s (median)  result ok
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>mg_O2 (dynamic sizes)      N=256   min    16.380 ms  median    17.584 ms     1.91 GFLOP/s (median)  result ok
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>mg_O2 (static 256)         N=256   min    16.753 ms  median    17.039 ms     1.97 GFLOP/s (median)  result ok
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>mg_O2 (dynamic sizes)      N=512   min   401.258 ms  median   428.123 ms     0.63 GFLOP/s (median)  result ok
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>mg_O2_tile32 (dynamic sizes) N=64    min     0.095 ms  median     0.101 ms     5.19 GFLOP/s (median)  result ok
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>mg_O2_tile32 (dynamic sizes) N=128   min     0.749 ms  median     0.764 ms     5.49 GFLOP/s (median)  result ok
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>mg_O2_tile32 (dynamic sizes) N=256   min     6.563 ms  median     7.045 ms     4.76 GFLOP/s (median)  result ok
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>mg_O2_tile32 (static 256)  N=256   min     6.098 ms  median     6.259 ms     5.36 GFLOP/s (median)  result ok
+<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>mg_O2_tile32 (dynamic sizes) N=512   min    77.953 ms  median    84.527 ms     3.18 GFLOP/s (median)  result ok
+<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a>mg_O3_native (dynamic sizes) N=64    min     0.102 ms  median     0.128 ms     4.09 GFLOP/s (median)  result ok
+<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a>mg_O3_native (dynamic sizes) N=128   min     2.047 ms  median     2.219 ms     1.89 GFLOP/s (median)  result ok
+<a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a>mg_O3_native (dynamic sizes) N=256   min    16.391 ms  median    16.639 ms     2.02 GFLOP/s (median)  result ok
+<a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a>mg_O3_native (static 256)  N=256   min    16.541 ms  median    17.779 ms     1.89 GFLOP/s (median)  result ok
+<a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a>mg_O3_native (dynamic sizes) N=512   min   435.270 ms  median   481.596 ms     0.56 GFLOP/s (median)  result ok
+<a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a>mg_O3_native_tile32 (dynamic sizes) N=64    min     0.093 ms  median     0.105 ms     5.01 GFLOP/s (median)  result ok
+<a id="__codelineno-7-24" name="__codelineno-7-24" href="#__codelineno-7-24"></a>mg_O3_native_tile32 (dynamic sizes) N=128   min     0.867 ms  median     0.895 ms     4.69 GFLOP/s (median)  result ok
+<a id="__codelineno-7-25" name="__codelineno-7-25" href="#__codelineno-7-25"></a>mg_O3_native_tile32 (dynamic sizes) N=256   min     8.011 ms  median     8.551 ms     3.92 GFLOP/s (median)  result ok
+<a id="__codelineno-7-26" name="__codelineno-7-26" href="#__codelineno-7-26"></a>mg_O3_native_tile32 (static 256) N=256   min     2.586 ms  median     3.501 ms     9.58 GFLOP/s (median)  result ok
+<a id="__codelineno-7-27" name="__codelineno-7-27" href="#__codelineno-7-27"></a>mg_O3_native_tile32 (dynamic sizes) N=512   min    76.260 ms  median    78.824 ms     3.41 GFLOP/s (median)  result ok
+<a id="__codelineno-7-28" name="__codelineno-7-28" href="#__codelineno-7-28"></a>C++ ijk loop, clang -O2    N=64    min     0.089 ms  median     0.092 ms     5.71 GFLOP/s (median)  result ok
+<a id="__codelineno-7-29" name="__codelineno-7-29" href="#__codelineno-7-29"></a>C++ ijk loop, clang -O2    N=128   min     2.183 ms  median     2.372 ms     1.77 GFLOP/s (median)  result ok
+<a id="__codelineno-7-30" name="__codelineno-7-30" href="#__codelineno-7-30"></a>C++ ijk loop, clang -O2    N=256   min    16.488 ms  median    16.990 ms     1.97 GFLOP/s (median)  result ok
+<a id="__codelineno-7-31" name="__codelineno-7-31" href="#__codelineno-7-31"></a>C++ ijk loop, clang -O2    N=512   min   402.685 ms  median   424.304 ms     0.63 GFLOP/s (median)  result ok
+<a id="__codelineno-7-32" name="__codelineno-7-32" href="#__codelineno-7-32"></a>C++ ikj loop, -O3 native   N=64    min     0.039 ms  median     0.042 ms    12.59 GFLOP/s (median)  result ok
+<a id="__codelineno-7-33" name="__codelineno-7-33" href="#__codelineno-7-33"></a>C++ ikj loop, -O3 native   N=128   min     0.487 ms  median     0.513 ms     8.18 GFLOP/s (median)  result ok
+<a id="__codelineno-7-34" name="__codelineno-7-34" href="#__codelineno-7-34"></a>C++ ikj loop, -O3 native   N=256   min     3.385 ms  median     3.481 ms     9.64 GFLOP/s (median)  result ok
+<a id="__codelineno-7-35" name="__codelineno-7-35" href="#__codelineno-7-35"></a>C++ ikj loop, -O3 native   N=512   min    34.685 ms  median    35.454 ms     7.57 GFLOP/s (median)  result ok
+<a id="__codelineno-7-36" name="__codelineno-7-36" href="#__codelineno-7-36"></a>load average after: 0.81 0.52 0.23
+</code></pre></div>
+</details>
+<p>And the two passes combined by <code>summarize.py</code>. The columns are the median time per call in each pass, how much the two passes differ (a rough measure of noise), the average GFLOP/s, and the speedup compared with the plain <code>mgc -O2</code> build at the same size (above 1.00 is faster). Every result was checked against the reference:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>implementation                        N  pass 1 ms  pass 2 ms  differ  GFLOP/s vs mg -O2  results
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>mg_O0 (dynamic sizes)                64      0.652      0.612      6%     0.83     0.17x  ok
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>mg_O2 (dynamic sizes)                64      0.126      0.093     30%     4.91     1.00x  ok
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>mg_O2_tile32 (dynamic sizes)         64      0.094      0.101      7%     5.37     1.12x  ok
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>mg_O3_native (dynamic sizes)         64      0.123      0.128      4%     4.19     0.87x  ok
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>mg_O3_native_tile32 (dynamic sizes)   64      0.108      0.105      3%     4.95     1.03x  ok
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>C++ ijk loop, clang -O2              64      0.089      0.092      3%     5.79     1.21x  ok
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>C++ ikj loop, -O3 native             64      0.039      0.042      7%    12.95     2.70x  ok
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>mg_O0 (dynamic sizes)               128      5.377      5.955     10%     0.74     0.40x  ok
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>mg_O2 (dynamic sizes)               128      2.256      2.239      1%     1.87     1.00x  ok
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>mg_O2_tile32 (dynamic sizes)        128      1.197      0.764     44%     4.50     2.29x  ok
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>mg_O3_native (dynamic sizes)        128      2.284      2.219      3%     1.86     1.00x  ok
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>mg_O3_native_tile32 (dynamic sizes)  128      0.765      0.895     16%     5.09     2.71x  ok
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>C++ ijk loop, clang -O2             128      2.243      2.372      6%     1.82     0.97x  ok
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a>C++ ikj loop, -O3 native            128      0.497      0.513      3%     8.31     4.45x  ok
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a>
+<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a>mg_O0 (dynamic sizes)               256     60.533     42.235     36%     0.67     0.35x  ok
+<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a>mg_O0 (static 256)                  256     43.641     41.589      5%     0.79     0.42x  ok
+<a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a>mg_O2 (dynamic sizes)               256     18.489     17.584      5%     1.86     1.00x  ok
+<a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a>mg_O2 (static 256)                  256     17.697     17.039      4%     1.94     1.04x  ok
+<a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a>mg_O2_tile32 (dynamic sizes)        256      6.691      7.045      5%     4.88     2.63x  ok
+<a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a>mg_O2_tile32 (static 256)           256      6.464      6.259      3%     5.28     2.84x  ok
+<a id="__codelineno-8-24" name="__codelineno-8-24" href="#__codelineno-8-24"></a>mg_O3_native (dynamic sizes)        256     17.117     16.639      3%     1.99     1.07x  ok
+<a id="__codelineno-8-25" name="__codelineno-8-25" href="#__codelineno-8-25"></a>mg_O3_native (static 256)           256     17.475     17.779      2%     1.90     1.02x  ok
+<a id="__codelineno-8-26" name="__codelineno-8-26" href="#__codelineno-8-26"></a>mg_O3_native_tile32 (dynamic sizes)  256      8.426      8.551      1%     3.95     2.12x  ok
+<a id="__codelineno-8-27" name="__codelineno-8-27" href="#__codelineno-8-27"></a>mg_O3_native_tile32 (static 256)    256      3.454      3.501      1%     9.65     5.19x  ok
+<a id="__codelineno-8-28" name="__codelineno-8-28" href="#__codelineno-8-28"></a>C++ ijk loop, clang -O2             256     18.716     16.990     10%     1.88     1.01x  ok
+<a id="__codelineno-8-29" name="__codelineno-8-29" href="#__codelineno-8-29"></a>C++ ikj loop, -O3 native            256      3.514      3.481      1%     9.60     5.16x  ok
+<a id="__codelineno-8-30" name="__codelineno-8-30" href="#__codelineno-8-30"></a>
+<a id="__codelineno-8-31" name="__codelineno-8-31" href="#__codelineno-8-31"></a>mg_O0 (dynamic sizes)               512    985.506    872.763     12%     0.29     0.47x  ok
+<a id="__codelineno-8-32" name="__codelineno-8-32" href="#__codelineno-8-32"></a>mg_O2 (dynamic sizes)               512    438.605    428.123      2%     0.62     1.00x  ok
+<a id="__codelineno-8-33" name="__codelineno-8-33" href="#__codelineno-8-33"></a>mg_O2_tile32 (dynamic sizes)        512     82.943     84.527      2%     3.21     5.18x  ok
+<a id="__codelineno-8-34" name="__codelineno-8-34" href="#__codelineno-8-34"></a>mg_O3_native (dynamic sizes)        512    457.523    481.596      5%     0.57     0.92x  ok
+<a id="__codelineno-8-35" name="__codelineno-8-35" href="#__codelineno-8-35"></a>mg_O3_native_tile32 (dynamic sizes)  512     76.763     78.824      3%     3.46     5.57x  ok
+<a id="__codelineno-8-36" name="__codelineno-8-36" href="#__codelineno-8-36"></a>C++ ijk loop, clang -O2             512    429.951    424.304      1%     0.62     1.01x  ok
+<a id="__codelineno-8-37" name="__codelineno-8-37" href="#__codelineno-8-37"></a>C++ ikj loop, -O3 native            512     36.792     35.454      4%     7.44    12.00x  ok
+</code></pre></div>
+<h2 id="reading-the-numbers">Reading the numbers<a class="headerlink" href="#reading-the-numbers" title="Permanent link">&para;</a></h2>
+<p>Each statement below is about this table, and is followed by what the evidence does and does not show.</p>
+<p><strong>1. Turning on the C compiler's optimizer matters a lot.</strong> <code>-O2</code> is between about 2× (at N = 512) and 6× (at N = 64) faster than the <code>-O0</code> that every earlier chapter used. Nothing in Mountain Goat changed; only the flag. (At N = 64 each call takes about a tenth of a millisecond, so that figure is the least reliable.)</p>
+<p><strong>2. Mountain Goat's generated matmul is as fast as the same loop written in C++.</strong> At <code>-O2</code>, <code>mg_O2</code> and <code>C++ ijk loop, clang -O2</code> are within the noise of each other at every size (the ratio column is 0.97 to 1.21; at N = 128 and above the two passes of each disagree by at most 10%, at N = 64 by up to 30%). That is what you would expect: the compiler lowers <code>a @ b</code> to exactly the textbook <code>i, j, k</code> loop. It is <em>not</em> a claim that Mountain Goat is fast; it is a claim that it is no slower than the algorithm it implements.</p>
+<p><strong>3. Tiling helps, and helps more as the matrices get bigger.</strong> Tiling by 32 at <code>-O2</code> is 1.1× at N = 64 (within noise), 2.3× at N = 128, 2.6× at N = 256 and <strong>5.2×</strong> at N = 512, relative to untiled <code>-O2</code>. The trend is consistent with the cache explanation in the primer: the untiled loop's column walk costs more as the matrices outgrow the cache. This chapter did not measure cache misses (no hardware counters were used), so the explanation is a consistent story, not a proven mechanism.</p>
+<p><strong>4. <code>-O3 -march=native</code> alone did nothing.</strong> Without tiling, <code>mg_O3_native</code> is 0.87× to 1.07× of <code>mg_O2</code>: no gain. The machine code shows why (next section): the compiled loop is scalar, with no vector instructions at all, despite the CPU having wide ones.</p>
+<p><strong>5. One combination is very fast: tiled, fixed shape, all instructions.</strong> <code>mg_O3_native_tile32 (static 256)</code> reaches 9.65 GFLOP/s, <strong>5.2×</strong> the plain <code>-O2</code> build and equal to the hand-written <code>ikj</code> loop at the same size (9.60 GFLOP/s). The same transform on the <em>dynamic-size</em> function reaches only 3.95 GFLOP/s (2.1×). So there is a gap between "the compiler knew the sizes" and "it did not".</p>
+<p><strong>6. At N = 512 nothing from Mountain Goat gets close to the hand-written loop.</strong> The best Mountain Goat variant (tiled, <code>-O3 -march=native</code>, dynamic sizes) reaches 3.46 GFLOP/s; the hand-written <code>ikj</code> loop reaches 7.44, about <strong>2.1× faster</strong>. There is no fixed-size 512 function in the experiment, so this does not say what a fixed-size 512 build would do. A better Mountain Goat matmul (the loop order, a tuned tile size, a micro-kernel) is not built here.</p>
+<p><strong>7. The numbers are noisy.</strong> The two passes of the same experiment differ by up to 44% (<code>mg_O2_tile32</code> at N = 128), 36% (<code>mg_O0</code> at N = 256) and 30% (<code>mg_O2</code> at N = 64). Differences smaller than about this are not meaningful, which is why the statements above compare large effects (2× and up) and call 1.0× to 1.2× "within the noise".</p>
+<h2 id="looking-at-the-machine-code">Looking at the machine code<a class="headerlink" href="#looking-at-the-machine-code" title="Permanent link">&para;</a></h2>
+<p>Result 4 says the code is scalar and result 5 says one build is different. <code>inspect_asm.sh</code> checks directly, by counting vector and fused multiply-add instructions in the assembly of each function:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="ch">#!/bin/sh</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="c1"># Look at the machine code behind the benchmark: do the compiled matrix products use vector (packed/FMA) instructions?</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="c1"># Counts vfmadd/vmulpd/vaddpd instructions in each function of an -O3 -march=native build. Output: inspect_asm_out.txt</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="nv">HERE</span><span class="o">=</span><span class="k">$(</span><span class="nb">cd</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>dirname<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$0</span><span class="s2">&quot;</span><span class="k">)</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">pwd</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="nv">W</span><span class="o">=</span><span class="nv">$HERE</span>/work/asm<span class="p">;</span><span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span><span class="nv">$W</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>count<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w">  </span><span class="c1"># name label mgc-flags...</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">  </span><span class="nv">name</span><span class="o">=</span><span class="nv">$1</span><span class="p">;</span><span class="w"> </span><span class="nv">label</span><span class="o">=</span><span class="nv">$2</span><span class="p">;</span><span class="w"> </span><span class="nb">shift</span><span class="w"> </span><span class="m">2</span><span class="p">;</span><span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span><span class="nv">$W</span>/<span class="nv">$name</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">  </span><span class="nv">MGC_KEEP</span><span class="o">=</span><span class="nv">$W</span>/<span class="nv">$name</span><span class="w"> </span><span class="nv">MGC_CFLAGS</span><span class="o">=</span>-march<span class="o">=</span>native<span class="w"> </span><span class="nv">$HERE</span>/mgc<span class="w"> </span>lib<span class="w"> </span><span class="nv">$HERE</span>/bench/matmul.mg<span class="w"> </span>-o<span class="w"> </span><span class="nv">$W</span>/<span class="nv">$name</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$@</span><span class="s2">&quot;</span><span class="w"> </span>&gt;/dev/null
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">  </span>clang-18<span class="w"> </span>-O3<span class="w"> </span>-march<span class="o">=</span>native<span class="w"> </span>-S<span class="w"> </span><span class="nv">$W</span>/<span class="nv">$name</span>/matmul.ll<span class="w"> </span>-o<span class="w"> </span><span class="nv">$W</span>/<span class="nv">$name</span>/matmul.s<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">  </span><span class="k">for</span><span class="w"> </span>f<span class="w"> </span><span class="k">in</span><span class="w"> </span>mm_dyn<span class="w"> </span>mm_256<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="w">    </span><span class="nv">n</span><span class="o">=</span><span class="k">$(</span>awk<span class="w"> </span><span class="s2">&quot;/^</span><span class="nv">$f</span><span class="s2">:/,/\\.cfi_endproc/&quot;</span><span class="w"> </span><span class="nv">$W</span>/<span class="nv">$name</span>/matmul.s<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;vfmadd\|vmulpd\|vaddpd&#39;</span><span class="k">)</span>
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$label</span><span class="s2">, </span><span class="nv">$f</span><span class="s2">: </span><span class="nv">$n</span><span class="s2"> vector/FMA instructions&quot;</span>
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="w">  </span><span class="k">done</span>
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="o">}</span>
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a>count<span class="w"> </span>untiled<span class="w"> </span><span class="s2">&quot;untiled, -O3 -march=native&quot;</span><span class="w"> </span>-O3
+<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a>count<span class="w"> </span>tiled32<span class="w"> </span><span class="s2">&quot;tiled (32), -O3 -march=native&quot;</span><span class="w"> </span>-O3<span class="w"> </span>--passes<span class="w"> </span><span class="s2">&quot;--affine-loop-tile=tile-size=32&quot;</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>untiled, -O3 -march=native, mm_dyn: 0 vector/FMA instructions
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>untiled, -O3 -march=native, mm_256: 0 vector/FMA instructions
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>tiled (32), -O3 -march=native, mm_dyn: 0 vector/FMA instructions
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>tiled (32), -O3 -march=native, mm_256: 64 vector/FMA instructions
+</code></pre></div>
+<p>Only the <strong>tiled, fixed-shape</strong> function (<code>mm_256</code> in the tiled build) contains vector instructions (64 of them). The dynamic-size function has none in either build, and the untiled fixed-shape function has none. That matches the speed ranking in result 5. What it does <em>not</em> tell us is <strong>which</strong> of the two ingredients (the tiling, or the fixed shape) is the one that unlocks vectorization on its own: only the combination was tried. For comparison, the plain <code>-O2</code> build's inner loop is a chain of scalar <code>mulsd</code>/<code>addsd</code> instructions, unrolled four times, with the running sum kept in a register (so the compiler <em>did</em> avoid reloading and storing the result on every step).</p>
+<h2 id="tests">Tests<a class="headerlink" href="#tests" title="Permanent link">&para;</a></h2>
+<p>Three new test files in <code>test/perf/</code> (the suite now has 93 tests). Note what is <strong>not</strong> tested: no test asserts that anything is <em>faster</em>. Timings depend on the machine and its load, and a test that fails when a shared machine is busy is worse than no test. Instead the tests check the things that must hold regardless of speed:</p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>What it checks</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>options-same-results</code></td>
+<td>the same 3×5 by 5×2 product (no dimension a multiple of the tile size) gives identical output at <code>-O0</code>, <code>-O2</code>, tiled by 2 and by 3 with dynamic shapes, and tiled by 2 with static shapes, and equals the hand-computed <code>12 15 / 32 35 / 52 55</code></td>
+</tr>
+<tr>
+<td><code>tiling-structure</code></td>
+<td><code>--passes</code> really reaches <code>mg-opt</code>: the plain build has 5 loops, the tiled one 10, with <code>min</code> bounds at the edges; and <code>mgc build</code> exits with status 0</td>
+</tr>
+<tr>
+<td><code>flags-reach-clang</code></td>
+<td><code>-O2</code>, <code>-O3</code> and <code>MGC_CFLAGS</code> reach the final clang command, for both <code>build</code> and <code>lib</code>, and no <code>-O</code> appears when none was given</td>
+</tr>
+</tbody>
+</table>
+<p>The third test needs an explanation, because it came from a failure of the first two. Optimization flags never change a program's <em>results</em>, so no test of the output can tell whether <code>-O2</code> was applied. I broke <code>mgc</code> so that <code>-O</code> was ignored, and <strong>both</strong> result-checking tests still passed. The fix is a small seam: <code>MGC_CLANG</code> names the clang to call, and the test sets it to <code>echo</code>, so <code>mgc</code> prints the command line it would have run and the test checks that line. Without that seam, "-O is ignored" would be an equivalent mutant (Chapter 22): a bug no test of results can see.</p>
+<p><code>mgc_mutation.py</code> breaks the driver five ways, one at a time, and runs the tests each time:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="ch">#!/usr/bin/env python3</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="c1"># READ THIS FIRST: this script injects deliberate bugs into the mgc driver and re-runs the Chapter 23 tests (test/perf).</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="c1">#   &quot;caught by &lt;tests&gt;&quot; lines are the EXPECTED, wanted result: a test noticed the bug. &quot;NOT CAUGHT&quot; would be a test gap.</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="c1">#   mgc is restored afterwards. Output: mgc_mutation_out.txt</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">subprocess</span><span class="o">,</span> <span class="nn">sys</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="n">HERE</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">));</span> <span class="n">MGC</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">HERE</span><span class="p">,</span> <span class="s2">&quot;mgc&quot;</span><span class="p">)</span>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="n">LIT</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">HERE</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;part15&quot;</span><span class="p">,</span> <span class="s2">&quot;code&quot;</span><span class="p">,</span> <span class="s2">&quot;run_lit.sh&quot;</span><span class="p">)</span>
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;NOTE: this script deliberately breaks mgc. &#39;caught by&#39; lines are EXPECTED: they show the tests can detect the bug.&quot;</span><span class="p">)</span>
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">baseline</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>    <span class="n">r</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s2">&quot;sh&quot;</span><span class="p">,</span> <span class="n">LIT</span><span class="p">,</span> <span class="s2">&quot;--filter&quot;</span><span class="p">,</span> <span class="s2">&quot;:: perf/&quot;</span><span class="p">],</span> <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>                       <span class="n">env</span><span class="o">=</span><span class="p">{</span><span class="o">**</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">,</span> <span class="s2">&quot;MG_OPT&quot;</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">HERE</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;part22&quot;</span><span class="p">,</span> <span class="s2">&quot;code&quot;</span><span class="p">,</span> <span class="s2">&quot;build&quot;</span><span class="p">,</span> <span class="s2">&quot;mg-opt&quot;</span><span class="p">),</span> <span class="s2">&quot;MG_TEST_TMP&quot;</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">HERE</span><span class="p">,</span> <span class="s2">&quot;work&quot;</span><span class="p">,</span> <span class="s2">&quot;perfmut&quot;</span><span class="p">)})</span>
+<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>    <span class="n">fails</span> <span class="o">=</span> <span class="p">[</span><span class="n">l</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;::&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; (&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span> <span class="k">if</span> <span class="n">l</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;FAIL&quot;</span><span class="p">)]</span>
+<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>    <span class="k">if</span> <span class="n">baseline</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">: &quot;</span> <span class="o">+</span> <span class="p">(</span><span class="s2">&quot;all tests pass (expected)&quot;</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">fails</span> <span class="k">else</span> <span class="s2">&quot;UNEXPECTED FAILURES: &quot;</span> <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fails</span><span class="p">)))</span>
+<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a>    <span class="k">else</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">: &quot;</span> <span class="o">+</span> <span class="p">(</span><span class="s2">&quot;caught by &quot;</span> <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fails</span><span class="p">)</span> <span class="k">if</span> <span class="n">fails</span> <span class="k">else</span> <span class="s2">&quot;NOT CAUGHT (a test gap)&quot;</span><span class="p">))</span>
+<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a><span class="n">orig</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">MGC</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a><span class="n">base</span> <span class="o">=</span> <span class="s2">&quot;run baseline (no bug)&quot;</span>
+<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a><span class="n">run</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">baseline</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a><span class="n">muts</span> <span class="o">=</span> <span class="p">[(</span><span class="s2">&quot;old `[ ... ] &amp;&amp; exec` bug (build exits 1 on success)&quot;</span><span class="p">,</span> <span class="s1">&#39;if [ &quot;$cmd&quot; = run ]; then exec &quot;$exe&quot;; fi   # (Chapter 23: this used to be `[ ... ] &amp;&amp; exec`, which made `mgc build` exit with status 1 on success)&#39;</span><span class="p">,</span> <span class="s1">&#39;[ &quot;$cmd&quot; = run ] &amp;&amp; exec &quot;$exe&quot;&#39;</span><span class="p">),</span>
+<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a>        <span class="p">(</span><span class="s2">&quot;--passes ignored&quot;</span><span class="p">,</span> <span class="s1">&#39;--convert-mg-to-affine $PASSES -o&#39;</span><span class="p">,</span> <span class="s1">&#39;--convert-mg-to-affine -o&#39;</span><span class="p">),</span>
+<a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a>        <span class="p">(</span><span class="s2">&quot;-O ignored when building executables&quot;</span><span class="p">,</span> <span class="s1">&#39;${MGC_CLANG:-clang-18} $OPT $MGC_CFLAGS &quot;$W/$base.ll&quot;&#39;</span><span class="p">,</span> <span class="s1">&#39;${MGC_CLANG:-clang-18} $MGC_CFLAGS &quot;$W/$base.ll&quot;&#39;</span><span class="p">),</span>
+<a id="__codelineno-11-21" name="__codelineno-11-21" href="#__codelineno-11-21"></a>        <span class="p">(</span><span class="s2">&quot;-O ignored when building libraries&quot;</span><span class="p">,</span> <span class="s1">&#39;${MGC_CLANG:-clang-18} $OPT $MGC_CFLAGS -c&#39;</span><span class="p">,</span> <span class="s1">&#39;${MGC_CLANG:-clang-18} $MGC_CFLAGS -c&#39;</span><span class="p">),</span>
+<a id="__codelineno-11-22" name="__codelineno-11-22" href="#__codelineno-11-22"></a>        <span class="p">(</span><span class="s2">&quot;MGC_CFLAGS ignored&quot;</span><span class="p">,</span> <span class="s1">&#39;$OPT $MGC_CFLAGS &quot;$W/$base.ll&quot;&#39;</span><span class="p">,</span> <span class="s1">&#39;$OPT &quot;$W/$base.ll&quot;&#39;</span><span class="p">)]</span>
+<a id="__codelineno-11-23" name="__codelineno-11-23" href="#__codelineno-11-23"></a><span class="k">try</span><span class="p">:</span>
+<a id="__codelineno-11-24" name="__codelineno-11-24" href="#__codelineno-11-24"></a>    <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">muts</span><span class="p">:</span>
+<a id="__codelineno-11-25" name="__codelineno-11-25" href="#__codelineno-11-25"></a>        <span class="k">if</span> <span class="n">a</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">orig</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;: MUTATION DID NOT APPLY&quot;</span><span class="p">);</span> <span class="k">continue</span>
+<a id="__codelineno-11-26" name="__codelineno-11-26" href="#__codelineno-11-26"></a>        <span class="nb">open</span><span class="p">(</span><span class="n">MGC</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">orig</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="mi">1</span><span class="p">));</span> <span class="n">run</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+<a id="__codelineno-11-27" name="__codelineno-11-27" href="#__codelineno-11-27"></a><span class="k">finally</span><span class="p">:</span>
+<a id="__codelineno-11-28" name="__codelineno-11-28" href="#__codelineno-11-28"></a>    <span class="nb">open</span><span class="p">(</span><span class="n">MGC</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">orig</span><span class="p">)</span>
+<a id="__codelineno-11-29" name="__codelineno-11-29" href="#__codelineno-11-29"></a><span class="n">run</span><span class="p">(</span><span class="s2">&quot;restored (baseline again)&quot;</span><span class="p">,</span> <span class="n">baseline</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>NOTE: this script deliberately breaks mgc. &#39;caught by&#39; lines are EXPECTED: they show the tests can detect the bug.
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>run baseline (no bug): all tests pass (expected)
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>old `[ ... ] &amp;&amp; exec` bug (build exits 1 on success): caught by perf/flags-reach-clang.mlir, perf/tiling-structure.mlir
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>--passes ignored: caught by perf/tiling-structure.mlir
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>-O ignored when building executables: caught by perf/flags-reach-clang.mlir
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>-O ignored when building libraries: caught by perf/flags-reach-clang.mlir
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>MGC_CFLAGS ignored: caught by perf/flags-reach-clang.mlir
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>restored (baseline again): all tests pass (expected)
+</code></pre></div>
+<h2 id="limits-and-what-is-not-established">Limits and what is not established<a class="headerlink" href="#limits-and-what-is-not-established" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>One machine, one session.</strong> A shared cloud VM with four vCPUs, pinned to one core. Nothing here says how Mountain Goat behaves on other hardware, other compilers, or a quiet machine.</li>
+<li><strong>One operation.</strong> Square <code>f64</code> matrix products from 64 to 512. Nothing about elementwise operations, reductions, other shapes or sizes.</li>
+<li><strong>One tile size (32), not tuned.</strong> A better tile size would likely do better; none was searched for.</li>
+<li><strong>No hardware counters.</strong> Explanations involving caches are consistent with the data but not demonstrated by measuring cache misses.</li>
+<li><strong>No multithreading.</strong> Everything ran on one core. The machine has four.</li>
+<li><strong>Which ingredient matters is not isolated</strong> for result 5 (tiling versus fixed shape); only the combination was measured.</li>
+<li><strong>The GPU path is not measured at all.</strong> There is no GPU here.</li>
+<li><strong>No test asserts speed</strong>, by design.</li>
+<li><strong>Not a competitive matrix product.</strong> The best Mountain Goat variant is more than twice as slow as a simple hand-written loop at N = 512, and far below what a tuned library would achieve on this CPU.</li>
+</ul>
+<h2 id="reproducing">Reproducing<a class="headerlink" href="#reproducing" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nb">cd</span><span class="w"> </span>docs/part23/code
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>../part22/code/build.sh<span class="w">               </span><span class="c1"># once</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>./machine_info.sh<span class="w"> </span>&gt;<span class="w"> </span>machine_info_out.txt
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>./run_bench.sh<span class="w"> </span>&gt;<span class="w"> </span>bench_out_1.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_bench.sh<span class="w"> </span>&gt;<span class="w"> </span>bench_out_2.txt
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>python3<span class="w"> </span>summarize.py<span class="w"> </span>bench_out_1.txt<span class="w"> </span>bench_out_2.txt<span class="w"> </span>&gt;<span class="w"> </span>summary.txt
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>./inspect_asm.sh<span class="w"> </span>&gt;<span class="w"> </span>inspect_asm_out.txt
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>./mgc_mutation.py<span class="w"> </span>&gt;<span class="w"> </span>mgc_mutation_out.txt
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="nb">cd</span><span class="w"> </span>../../part15/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_lit.sh<span class="w">  </span><span class="c1"># 93 tests</span>
+</code></pre></div>
+<h2 id="chapter-summary">Chapter summary<a class="headerlink" href="#chapter-summary" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>mgc</code> gained <code>-O0</code> to <code>-O3</code>, <code>--passes</code>, <code>MGC_CFLAGS</code> and <code>MGC_CLANG</code>; the old default (<code>-O0</code>) is unchanged.</li>
+<li>Measured on one shared VM: clang's <code>-O2</code> makes the generated matmul 2× to 6× faster than <code>-O0</code>; at <code>-O2</code> it matches the same loop written in C++, so Mountain Goat adds no overhead but also no cleverness.</li>
+<li>Chapter 7's tiling pass gives 2.6× at N = 256 and 5.2× at N = 512 over untiled <code>-O2</code>; with a fixed shape and all CPU instructions, it matches a hand-written <code>ikj</code> loop at N = 256 and is the only build whose machine code uses vector instructions.</li>
+<li>At N = 512 the best Mountain Goat variant is still about 2.1× slower than that hand-written loop.</li>
+<li>Repeated runs differ by up to 44%, so only large differences are claims.</li>
+<li>Testing the new options found a bug in <code>mgc build</code> (exit status 1 on success) and an equivalent-mutant problem for <code>-O</code>, solved with a test seam.</li>
+</ul>
+<h2 id="self-check-questions">Self-check questions<a class="headerlink" href="#self-check-questions" title="Permanent link">&para;</a></h2>
+<p>Each answer is collapsed; try the question first.</p>
+<ol>
+<li>
+<p>Why does this chapter report both the median and the minimum, and why does it run the whole experiment twice?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>Timings on a real computer include interference (other processes, frequency changes, a cold cache), so one number is unreliable. The median ignores a few slow outliers and the minimum shows the least disturbed run. Running the whole experiment a second time shows how much the numbers move from run to run: here by up to 44%, which tells the reader which differences (large ones) can be trusted and which (1.0× to 1.2×) cannot.</p>
+</details>
+</li>
+<li>
+<p>What is a GFLOP/s, and why can it compare two implementations of the same product at the same size but not different sizes?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>It is billions of floating-point operations per second; a product of N by N matrices costs 2·N³ operations, so dividing by the time gives the speed. At a fixed size the work is the same, so a higher number is simply faster. Across sizes the memory behavior changes (the matrices stop fitting in cache), so the same code runs at different speeds at different sizes, and the numbers do not measure the same thing.</p>
+</details>
+</li>
+<li>
+<p>The Mountain Goat matmul at <code>-O2</code> matches the C++ <code>ijk</code> loop. Does that mean Mountain Goat is fast?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>No. It means the compiler turned <code>a @ b</code> into exactly the textbook loop, so it is no slower than that algorithm. The same table shows a hand-written loop with the middle loops swapped running about 5× faster at N = 256 and 12× faster at N = 512. "Matches the naive version" is a statement about overhead, not about speed.</p>
+</details>
+</li>
+<li>
+<p>What does loop tiling do, and what would you expect to happen to its benefit as N grows?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>It restructures the loops to work on small square blocks at a time so that the data a block needs stays in cache while it is reused. Its benefit should grow with N because the untiled loop's memory traffic gets worse as the matrices become larger than the cache. The measurements are consistent with that: 1.1× at N = 64, 2.3× at 128, 2.6× at 256, 5.2× at 512. Cache misses were not measured, so this is consistent with the data, not proven by it.</p>
+</details>
+</li>
+<li>
+<p><code>-O3 -march=native</code> made the untiled matmul no faster. What did the machine code show, and what can you conclude?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>The assembly of the untiled functions contains zero vector or fused-multiply-add instructions: the loop is scalar, even though the CPU supports wide vectors. So "allow every instruction" cannot help if the compiler does not use them. What can be concluded is only that these builds are scalar; why the compiler declined to vectorize them was not investigated.</p>
+</details>
+</li>
+<li>
+<p>Result 5 says the tiled, fixed-shape build is fast and contains vector instructions. What does the chapter say it has <em>not</em> established?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>Which ingredient matters. Only the combination (tiled and fixed shape) was built and measured. The dynamic-size tiled build is not vectorized, and the untiled fixed-shape build is not either, but a fixed-shape build tiled differently, or a dynamic build with a different tile size, was not tried. Claiming that "knowing the sizes" alone, or "tiling" alone, is the cause would go beyond the evidence.</p>
+</details>
+</li>
+<li>
+<p>Why is there no test saying "the tiled build is faster than the untiled one"?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>Speed depends on the machine and how busy it is. A test like that would fail randomly on a loaded shared machine and pass on a quiet one, which makes it noise that teaches people to ignore failures. The tests instead check what must always hold: the results are identical across variants, the tiling pass really runs (loop counts), and the flags reach the compiler.</p>
+</details>
+</li>
+<li>
+<p>Ignoring the <code>-O</code> flag did not make any result-checking test fail. Why not, and how was it caught?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>An optimization level changes how fast the program runs, not what it computes, so no test of the output can see whether it was applied. The bug is an equivalent mutant with respect to results. It was caught by adding a seam (<code>MGC_CLANG</code>) that lets a test substitute <code>echo</code> for clang, so <code>mgc</code> prints the command line it would have run, and the test checks that <code>-O2</code> is on it.</p>
+</details>
+</li>
+<li>
+<p>How did testing <code>mgc build</code> find a bug that had existed since Chapter 20, and what was it?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>Earlier tests used <code>mgc run</code> and <code>mgc lib</code>, which never reach the script's last line in the failing way. A new test used <code>mgc build</code> and checked it succeeded. The last line, <code>[ "$cmd" = run ] &amp;&amp; exec "$exe"</code>, evaluates to false when the command is <code>build</code>, and in a shell script the last command's status becomes the script's status, so <code>build</code> exited 1 on success. The fix is an explicit <code>if</code>. The lesson is that a new test exercised a path no earlier test used.</p>
+</details>
+</li>
+<li>
+<p>What would you need to do to turn this chapter's results into a claim about Mountain Goat's performance in general?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>Run on more machines (ideally quiet, fixed-frequency ones), more operations and shapes, tune the tile size, use hardware counters to check the cache explanation, isolate the tiling and fixed-shape effects, and compare against a tuned library. This chapter did none of that, so its results are statements about one operation on one shared virtual machine in one session.</p>
+</details>
+</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../../part22/22-broadcasting-reductions-and-relu/" class="md-footer__link md-footer__link--prev" aria-label="Previous: 22. Broadcasting, Reductions and relu: Enough Operations for a Neural-Network Layer">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                22. Broadcasting, Reductions and relu: Enough Operations for a Neural-Network Layer
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 Oluwaseyi Awoga
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

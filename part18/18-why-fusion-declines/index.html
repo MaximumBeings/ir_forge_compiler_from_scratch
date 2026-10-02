@@ -1635,6 +1635,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part23/23-measuring-performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    23. Measuring Performance: Does Any of It Make the Code Fast?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1868,6 +1896,10 @@
 <div class="admonition tip">
 <p class="admonition-title">Compile and run</p>
 <p>Every command, listing and output on this page is reproduced by the commands in <a href="#reproducing-this-chapter">Reproducing this chapter</a> at the bottom of the page, which also lists what must be built first. The chain of builds is in <a href="../../getting-started/#which-build-does-each-chapter-need">Getting Started</a>.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Why this page shows FAIL lines, and why that is good</p>
+<p>Parts of this page come from <strong>negative controls</strong>: the same tests run against an <em>older</em> build, or against <em>deliberately broken</em> code (a "mutation"). In those runs a <strong>FAIL is the expected, wanted result</strong>: it means a test noticed the problem, which is how we know the tests are worth anything. What would be wrong is the opposite, a deliberately broken build that passes everything. The <strong>baseline</strong> (the unmodified current build) must always show every test passing, and it does. Each script that does this says so in its own header and prints a reminder at the top of its output.</p>
 </div>
 <h2 id="background-what-a-fusion-pass-decides">Background: what a fusion pass decides<a class="headerlink" href="#background-what-a-fusion-pass-decides" title="Permanent link">&para;</a></h2>
 <p>Two adjacent loop nests, where the first writes a buffer and the second reads it, can often be merged into one nest, so each element is consumed right after it is produced and the intermediate buffer can shrink. Chapter 7 showed this on static loops: an add nest and a transpose nest became one nest and a 4x6 buffer became a single scalar slot. But fusion is not always a win (it can duplicate work), so the pass does not fuse blindly. It runs a <strong>profitability analysis</strong>: a cost model that counts operation instances (roughly, ops in the body times trip counts) for the nests before and after fusion and compares them. A cost model made of products of trip counts needs the trip counts as <em>numbers</em>. That is the thread this chapter pulls.</p>

@@ -1,6 +1,10 @@
 #!/bin/sh
 # Show that the Chapter 20 tests can fail: (1) against Chapter 19's mg-opt (no tensor.cast lowering),
 # (2) against four deliberately broken copies of the front end / driver. Output: prove_tests_can_fail_out.txt
+# READ THIS FIRST: this script runs the Chapter 20 tests against an older build and against deliberately broken copies of the front end and driver.
+#   FAIL lines (and non-zero exit statuses) in this script's output are the EXPECTED result: each broken copy SHOULD make at least one test fail (a FAIL line means a test caught the bug). The "baseline" sections must show all tests passing.
+#   The unmodified, current build is the baseline and must show no failures. A mutation or old build that makes NO test fail would be the problem.
+echo "NOTE: this script deliberately runs broken or older code. FAIL lines below are EXPECTED: they show the tests can detect the problem. The baseline (unmodified current build) must show none."
 HERE=$(cd "$(dirname "$0")" && pwd); LIT=$HERE/../../part15/code; W=$HERE/work/prove; rm -rf $W; mkdir -p $W
 run() {  # label, env...   -> prints which frontend tests failed
   printf '%s\n' "### $1"; shift

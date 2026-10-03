@@ -1,5 +1,7 @@
 # 15. A Real Test Suite: `lit`, `FileCheck`, and Proof That the Tests Can Fail
 
+<p style="text-align:center"><img src="../assets/goats/ch-15.svg" alt="Mountain goats on the mountain in black and white at dusk" style="max-width:100%;height:auto;border-radius:6px"></p>
+
 **What you will understand:** how to turn this book's "run it once and paste the output" scripts into an assertion-based regression suite that fails when behavior changes, and, more important, how to *show* that it can fail. Every one of the suite's 22 original tests is printed here exactly as it exists in the repository, **next to the real output it checks**, so you can see what each pattern is matching and why. Chapters 12 through 14 each flagged the same gap ("no `lit`/`FileCheck` tests, no CI"); this chapter closes the first half of it. Continuous integration is not done here.
 
 **What you need to know first:** Chapters 3 through 14's behavior. The suite tests what those chapters built; it adds no compiler features.

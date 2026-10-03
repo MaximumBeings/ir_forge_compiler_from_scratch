@@ -1,5 +1,7 @@
 # 13. Dynamic Shapes: Closing Chapter 12's Biggest Unknown
 
+<p style="text-align:center"><img src="../assets/goats/ch-13.svg" alt="Mountain goats on the mountain at midday" style="max-width:100%;height:auto;border-radius:6px"></p>
+
 **What you will understand:** what actually happens when Mountain Goat meets a tensor whose size is not known until runtime (`tensor<?x?xf64>`), what broke, how it was fixed on *both* of this book's lowering paths, and what is still not safe. Chapter 12 listed "dynamic shapes are untested" as the largest unknown about this compiler; this chapter turns that unknown into measured facts. The page shows the old code that carried the hazard, the real error output of the unmodified compiler, the new helper and the complete diff, and the real output of every test, so nothing has to be taken on trust.
 
 **What you need to know first:** Chapter 3's verifiers and canonicalizer, Chapter 4/5's hand-written `--convert-mg-to-affine`, Chapter 6's bufferization models, and Chapter 8's calling convention. New ground: `?` dimensions, `memref.dim`, and dynamic `memref.alloc`.

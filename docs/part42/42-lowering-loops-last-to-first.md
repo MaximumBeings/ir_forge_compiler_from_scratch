@@ -1,5 +1,7 @@
 # 42. Lowering the Loops Last to First: Testing the Idea Chapter 39 Left Open
 
+<p style="text-align:center"><img src="../assets/goats/ch-42.svg" alt="Mountain goats on the mountain in autumn" style="max-width:100%;height:auto;border-radius:6px"></p>
+
 **What you will understand:** how a hypothesis that comes out of a profile gets tested. Chapter 39 found *why* MLIR's `SCFToControlFlow` is quadratic in the number of loops in one function (each loop splits its block and moves everything behind it) and said, in its limits section, that lowering the loops from the last to the first "would make each split move a short tail; that is an idea suggested by the mechanism, not something tested here". This chapter tests it. It writes a small pass, `--mg-scf-to-cf-reverse`, that lowers the top-level statements of a function one at a time, last first, and measures it: against MLIR's own pass on a synthetic function (312 seconds against 1.2 seconds at 64,000 loops), on the real 200-step training program (the lowering pass goes from 2,106 seconds to 3 seconds with no outlining at all), and on its output, which turns out to be byte-for-byte the same IR. It also measures what the pass does **not** fix.
 
 **What you need to know first:** Chapter 38 (the quadratic, outlining) and Chapter 39 (the profile and the mechanism: `Block::splitBlock`, `transferNodesFromList`). The new pass is about 40 lines of C++ on top of MLIR's own conversion patterns; you do not need to know C++ to follow the measurements.

@@ -1,5 +1,7 @@
 # 2. A Minimal Dialect From Scratch: Mountain Goat's Own `mg` Dialect
 
+<p style="text-align:center"><img src="../assets/goats/ch-02.svg" alt="Mountain goats on the mountain in sepia" style="max-width:100%;height:auto;border-radius:6px"></p>
+
 **What you will understand:** how a real MLIR dialect is actually defined -- not sketched, but genuinely built, through MLIR's own real TableGen/ODS (Operation Definition Specification) system, compiled by the real `mlir-tblgen-18` generator, and wired into a real, custom command-line tool (`mg-opt`) that parses, prints, and verifies it. This chapter introduces **Mountain Goat**, this book's own toy source language (tensor/array expressions and functions), and builds its own real dialect, `mg`, from nothing.
 
 **What you need to know first:** Chapter 1's own vocabulary (dialects, operations, `mlir-opt-18`'s role as parser/verifier/pass-driver) and enough C++ to read a class definition. TableGen itself -- the declarative language the `.td` files in this chapter are written in -- is explained here, for the first time, from its own real official documentation.

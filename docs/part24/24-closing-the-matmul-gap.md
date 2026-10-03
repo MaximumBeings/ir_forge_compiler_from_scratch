@@ -1,5 +1,7 @@
 # 24. Closing the Gap: A Matrix Product That Walks Memory in a Better Order
 
+<p style="text-align:center"><img src="../assets/goats/ch-24.svg" alt="Mountain goats on the mountain in a storm" style="max-width:100%;height:auto;border-radius:6px"></p>
+
 **What you will understand:** how a change to the *order* of three loops, with no change to the arithmetic, can make a program several times faster, and how to add that change to a compiler without breaking anything that depends on the old behavior. Chapter 23 measured Mountain Goat's matrix product, found it more than twice as slow as a simple hand-written C++ loop at N = 512, and listed "isolating why" as unfinished. This chapter finishes the job: it adds a second loop order to the lowering, measures it, looks at the machine code, and shows that the two orders give identical answers to the last bit.
 
 **What you need to know first:** Chapter 23 (the benchmark, the noise, `-O` and `--passes`), Chapter 21 (how `mg.matmul` is lowered), and Chapter 7 (loop tiling). The new idea (loop order and memory access) is explained from scratch.

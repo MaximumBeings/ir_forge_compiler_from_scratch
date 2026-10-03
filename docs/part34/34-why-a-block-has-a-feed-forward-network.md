@@ -1,5 +1,7 @@
 # 34. Why a Block Has a Feed-Forward Network: Backpropagation Through Layer Normalization, ReLU and Residuals
 
+<p style="text-align:center"><img src="../assets/goats/ch-34.svg" alt="Mountain goats on the mountain at night" style="max-width:100%;height:auto;border-radius:6px"></p>
+
 **What you will understand:** why a transformer block does not stop at attention. A model made of attention alone fails at a small, clean task; the same model with a **feed-forward network**, a **layer normalization** and a **residual connection** added learns it. Getting there means deriving, by hand, the backward pass through three more pieces: the layer normalization (the hardest formula so far), the ReLU (including what to do at its corner) and the residual connection (where two gradient paths meet). Every piece is a Mountain Goat function, every formula is checked against an independent Python calculation and against finite differences of the loss **for every one of the 120 weights**, and the two models are then compared on **all 81 possible inputs**.
 
 **What you need to know first:** Chapter 33 (the attention classifier and its backward pass; this chapter reuses it unchanged for the attention part), Chapter 30 (what layer normalization and the feed-forward network are) and Chapter 31 (cross-entropy). **No new compiler operation** is needed: the programs run on Chapter 32's compiler.

@@ -1,5 +1,7 @@
 # Background: LLVM and MLIR in Twenty Minutes
 
+<p style="text-align:center"><img src="assets/goats/background.svg" alt="Mountain goats on the mountain in sepia" style="max-width:100%;height:auto;border-radius:6px"></p>
+
 **What you will understand:** just enough about LLVM and MLIR to read the rest of this book. What LLVM IR looks like and why it is written the way it is; what MLIR adds on top (dialects, operations, regions, passes); what "lowering" means; and how a program travels from a high-level description down to a running executable. Every command below was run, and every output is the real output of the Ubuntu LLVM 18.1.3 tools this book uses. This page is a map, not a manual: the book builds the details one chapter at a time, and the "Limits" section says what is left out.
 
 **What you need to know first:** nothing about compilers. You should be able to read a few lines of C.

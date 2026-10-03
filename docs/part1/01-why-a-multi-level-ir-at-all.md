@@ -1,5 +1,7 @@
 # 1. Why a Multi-Level IR at All
 
+<p style="text-align:center"><img src="../assets/goats/ch-01.svg" alt="Mountain goats on the mountain in autumn" style="max-width:100%;height:auto;border-radius:6px"></p>
+
 **What you will understand:** why MLIR represents a program at more than one level of abstraction at once, demonstrated concretely -- one small, real, structured loop is parsed, genuinely lowered through MLIR's own real passes, translated to real LLVM IR, compiled, and run, with the exact moment its own loop structure disappears captured directly in the tool's own output.
 
 **What you need to know first:** nothing beyond Getting Started's own stated prerequisites -- what an intermediate representation, a basic block, and SSA form are. Every MLIR-specific idea this chapter uses is introduced here, for the first time, grounded in a real example rather than a diagram.

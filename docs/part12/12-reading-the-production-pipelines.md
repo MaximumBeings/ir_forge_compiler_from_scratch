@@ -1,5 +1,7 @@
 # 12. Reading MLIR's Own Production Pipelines: What This Book's Compiler Is Missing
 
+<p style="text-align:center"><img src="../assets/goats/ch-12.svg" alt="Mountain goats on the mountain in winter snow" style="max-width:100%;height:auto;border-radius:6px"></p>
+
 **What you will understand:** how this book's Mountain Goat pipeline compares to the real, in-tree pass pipelines that ship inside MLIR itself, read directly from the source and shown on this page, not recalled. It also settles three explanations Chapter 11 could only call hypotheses, by pairing each real symptom with the exact lines of MLIR's source that cause it, and it corrects one claim Chapter 10 got wrong. Every excerpt of LLVM code below is embedded from an unmodified copy kept in the repository (with its provenance and license in `code/llvm-18.1.3/NOTICE.md`).
 
 **What you need to know first:** Chapters 10 and 11's GPU pipeline. New ground: reading MLIR's own pipeline-construction C++, and the idea that a "pipeline" is just an ordered list of passes.

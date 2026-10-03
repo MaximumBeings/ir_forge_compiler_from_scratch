@@ -1,5 +1,7 @@
 # 17. Loop Transforms on Dynamic Bounds
 
+<p style="text-align:center"><img src="../assets/goats/ch-17.svg" alt="Mountain goats on the mountain in winter snow" style="max-width:100%;height:auto;border-radius:6px"></p>
+
 **What you will understand:** whether Chapter 7's three loop transforms (fusion, tiling, unrolling) still work, and still give correct answers, when the loop bounds are not known until runtime. Chapter 13 made Mountain Goat handle dynamic shapes and listed this as untested; Chapter 16 listed it again among what the suite did not cover. The chapter runs nine transform variants on a dynamic program across eleven runtime shapes, checks every result against an independent computation, finds what each transform actually does to the IR, and explains the two places where a transform quietly does nothing. Every test, script, harness and IR listing is embedded from the repository.
 
 **What you need to know first:** Chapter 7's transforms on static loops, Chapter 13's dynamic lowering (`memref.dim`, operand-bound loops) and Chapter 14's runtime shape check. New ground: how a loop transform copes with a trip count it cannot know.

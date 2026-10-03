@@ -1,5 +1,7 @@
 # 5. Finishing Progressive Lowering: `affine` to `scf` to `llvm`, and Mountain Goat Finally Runs
 
+<p style="text-align:center"><img src="../assets/goats/ch-05.svg" alt="Mountain goats on the mountain drawn as a blueprint" style="max-width:100%;height:auto;border-radius:6px"></p>
+
 **What you will understand:** how Mountain Goat's own real `affine.for` loop nests (Chapter 4) continue down through the exact same real pipeline Chapter 1 proved works -- `affine` to `scf`, `scf` to a bare control-flow graph, and on to MLIR's own `llvm` dialect, real LLVM IR, and a genuinely executed answer. This chapter also finally gives `mg.print` a real, working implementation -- Mountain Goat's own first genuinely observable, run, correct output.
 
 **What you need to know first:** Chapter 4's own `ConvertMgToAffinePass` and Chapter 1's own five-pass `scf`-to-`llvm` pipeline. This chapter's own new ground: MLIR's real, built-in `--lower-affine` pass, and MLIR's own pre-existing runtime support library.

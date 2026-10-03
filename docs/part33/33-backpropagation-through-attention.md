@@ -1,5 +1,7 @@
 # 33. Backpropagation Through Attention: Training a One-Head Classifier
 
+<p style="text-align:center"><img src="../assets/goats/ch-33.svg" alt="Mountain goats on the mountain in black and white at dusk" style="max-width:100%;height:auto;border-radius:6px"></p>
+
 **What you will understand:** how a model with **attention** is trained, by working out its gradient by hand, step by step backwards through the computation (**backpropagation**), writing every step as a Mountain Goat function, and training the model with it. The model reads four tokens in any order and must say which one ranks highest under a hidden priority list: a job a bigram (Chapter 31) cannot do, because the answer depends on all four tokens. The backward pass, including the one tricky piece (the gradient through a softmax), is checked three ways: against an independent Python calculation done one token at a time, against a numerical estimate for every one of its 48 weights, and by whether the training run it drives lands where the reference lands. Then the trained model is tried on **all 625 possible inputs**, and the one it gets wrong is explained.
 
 **What you need to know first:** Chapter 29 (attention), Chapter 31 (cross-entropy loss and the gradient of a softmax output) and Chapter 28's `reshape`. **No new compiler operation** is needed: the chapter's programs run on Chapter 32's compiler. It is also the first chapter whose model has more than one layer of structure to differentiate, so the section "The backward pass" is the heart of it.

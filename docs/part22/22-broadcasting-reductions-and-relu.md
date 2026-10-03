@@ -1,5 +1,7 @@
 # 22. Broadcasting, Reductions and relu: Enough Operations for a Neural-Network Layer
 
+<p style="text-align:center"><img src="../assets/goats/ch-22.svg" alt="Mountain goats on the mountain in black and white" style="max-width:100%;height:auto;border-radius:6px"></p>
+
 **What you will understand:** how to express "add this row to every row", "total each column" and "clamp negatives to zero", the three ideas (broadcasting, reduction, an activation function) that turn matrix arithmetic into a neural-network layer. You will see how each becomes loops, why broadcasting is a rule about shapes and not new arithmetic, what a reduction does to a shape, and why a test suite can pass while a real bug hides in it.
 
 **What you need to know first:** the [language tour](../tour/language-tour.md) (syntax and shapes), Chapter 21 (the elementwise operations and `@`), and Chapters 13 and 14 for what `?` means and what is checked at run time.

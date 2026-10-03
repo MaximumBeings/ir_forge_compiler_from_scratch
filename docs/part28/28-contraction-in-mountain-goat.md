@@ -1,5 +1,7 @@
 # 28. Tensor Contractions in Mountain Goat Itself
 
+<p style="text-align:center"><img src="../assets/goats/ch-28.svg" alt="Mountain goats on the mountain drawn as a blueprint" style="max-width:100%;height:auto;border-radius:6px"></p>
+
 **What you will understand:** how Mountain Goat gets tensors of rank 3 and more, and how a general tensor contraction becomes a short Mountain Goat program with **no C++ in it**. Chapter 27 did the axis bookkeeping (permuting and reshaping) in C++ and left only the matrix product to the language; its "Limits" section said a language-level reshape and permute were not built. This chapter builds them: two new compiler operations, `mg.reshape` and `mg.permute`, and three new built-ins, `reshape`, `permute` and `contract`. Everything is checked against the *definition* of a contraction (plain nested loops, no matrix product) on thirteen shape combinations, and against the worked examples of the *Tensor Contractions (CPU)* appendix of the companion book *CUDA From First Principles*.
 
 **What you need to know first:** Chapter 27 (what a contraction is and why it is a matrix product in disguise: read its primer first), Chapter 22 (how an operation is added to the dialect, the lowering and the front end) and the language tour.

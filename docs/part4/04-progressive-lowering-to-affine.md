@@ -1,5 +1,7 @@
 # 4. Progressive Lowering: Mountain Goat to `affine`, Two Real Ways
 
+<p style="text-align:center"><img src="../assets/goats/ch-04.svg" alt="Mountain goats on the mountain in black and white" style="max-width:100%;height:auto;border-radius:6px"></p>
+
 **What you will understand:** how a tensor-based toy op genuinely becomes a real loop nest over real memory -- the concrete, code-level answer to the value-semantics-to-buffer-semantics gap every real MLIR pipeline that uses `tensor` types up high and `affine`/`memref` down low has to cross somewhere. This chapter crosses it twice: once by hand, fully understood step by step, and once by reaching for MLIR's own real, built-in production machinery -- and shows, honestly, exactly where the second attempt stops short.
 
 **What you need to know first:** Chapters 2 and 3's own `mg` dialect and its real canonicalization patterns. This chapter's own new vocabulary -- dialect conversion's real `ConversionTarget`/`TypeConverter`/`ConversionPattern`, and real bufferization -- was introduced only conceptually in Chapter 3; it is used for real, for the first time, here.

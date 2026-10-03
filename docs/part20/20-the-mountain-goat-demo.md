@@ -1,5 +1,7 @@
 # 20. The Mountain Goat Demo: A Surface Syntax, a Driver, and C++ Calling Compiled Code
 
+<p style="text-align:center"><img src="../assets/goats/ch-20.svg" alt="Mountain goats on the mountain in sepia" style="max-width:100%;height:auto;border-radius:6px"></p>
+
 **What you will understand:** how every earlier chapter fits together by *using* the compiler. You will write Mountain Goat programs in a small text language, compile them to native executables with one command, call compiled Mountain Goat functions from a C++ program, and push a program down the GPU path to PTX. This chapter adds a front end (so there is finally a language to write), a driver (`mgc`) and one small lowering, and it runs ten example programs.
 
 **What you need to know first:** nothing new beyond the earlier chapters' vocabulary: tensors and `mg.add`/`mg.transpose` (Chapters 1 to 5), dynamic shapes and the runtime check (Chapters 13 and 14), the stderr abort (Chapter 19) and the GPU recipe (Chapters 10 and 11). Each section says which chapter it is using.

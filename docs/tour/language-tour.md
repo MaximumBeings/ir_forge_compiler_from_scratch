@@ -1,5 +1,7 @@
 # Mountain Goat: A Short Tour of the Language
 
+<p style="text-align:center"><img src="../assets/goats/tour.svg" alt="Mountain goats on the mountain in spring" style="max-width:100%;height:auto;border-radius:6px"></p>
+
 This page is a short introduction to the Mountain Goat **language**: what a program looks like, what values and types exist, how to declare things, and what each operator does. It is the page to read first if you have not seen the language before. Chapters 20 and 21 build and extend the compiler for it; this page only describes what you can write.
 
 Everything on this page was run for real. Each example is a file in `docs/tour/code/`, and each output below is what the compiler and the program printed.

@@ -1,5 +1,7 @@
 # 23. Measuring Performance: Does Any of It Make the Code Fast?
 
+<p style="text-align:center"><img src="../assets/goats/ch-23.svg" alt="Mountain goats on the mountain drawn as a blueprint" style="max-width:100%;height:auto;border-radius:6px"></p>
+
 **What you will understand:** how to measure a compiler's output honestly, and what the measurements say about Mountain Goat's matrix product. Every chapter so far said "no performance claim is made". This chapter makes some, carefully: it times one operation under different compiler settings and loop transforms, compares it with hand-written C++, shows the noise in its own numbers, and looks at the machine code to explain one result. It also finds, on the way, a bug in the driver that had been there since Chapter 20.
 
 **What you need to know first:** Chapter 7 (loop tiling and the other loop transforms), Chapter 17 (those transforms on dynamic bounds), Chapters 20 and 21 (the `mgc` driver and `@`, the matrix product). No performance background is assumed; the terms are explained below.

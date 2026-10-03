@@ -1,5 +1,7 @@
 # 16. Testing the GPU Path and the Loop Transforms
 
+<p style="text-align:center"><img src="../assets/goats/ch-16.svg" alt="Mountain goats on the mountain at night" style="max-width:100%;height:auto;border-radius:6px"></p>
+
 **What you will understand:** how to bring Chapter 7's loop transforms and Chapters 10 through 12's GPU pipeline under the assertion-based suite Chapter 15 built, with no GPU required. Every test is shown here **exactly as it exists in the repository, next to the real output it matches**, so you can see what each `CHECK` line is checking. Along the way the chapter explains the GPU concepts those checks depend on: what a launch grid is, why one matrix becomes seven kernel parameters, and how to read the PTX the compiler produces. It also checks, again, that the new tests can fail, and records two mistakes made while writing them.
 
 **What you need to know first:** Chapter 15's suite and its `lit`/`FileCheck` basics (this chapter re-explains only the directives it uses); Chapter 7's tiling and unrolling; Chapters 10 through 12's GPU recipe.

@@ -1,5 +1,7 @@
 # 25. Keeping It Working: Continuous Integration and the Tests the Early Chapters Never Had
 
+<p style="text-align:center"><img src="../assets/goats/ch-25.svg" alt="Mountain goats on the mountain above a desert" style="max-width:100%;height:auto;border-radius:6px"></p>
+
 **What you will understand:** what "continuous integration" is, how to build a small one for this book (a script plus a workflow file), how to check that it fails when it should, and why the honest description of a CI setup says what has actually run it and what has not. Along the way this chapter fills a gap listed since Chapter 15: Chapters 1, 2 and 9 had never had automated tests.
 
 **What you need to know first:** Chapter 15 (the `lit` test suite and what `FileCheck` does), Chapters 21 to 24 (the suite has grown to 99 tests and the compiler to its newest build). Nothing about GitHub or CI is assumed.

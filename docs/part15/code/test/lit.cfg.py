@@ -38,6 +38,13 @@ config.substitutions += [
 ]
 # The language tour (docs/tour): its examples are run in place, like the chapters' examples.
 config.substitutions += [("%tour", os.path.join(config.test_source_root, "..", "..", "..", "tour", "code"))]
+# Chapter 38: outlining loop nests (--mg-outline-loops, mgc --outline). '%mgc38' must come before the shorter '%mgc'.
+ch38 = os.path.join(config.test_source_root, "..", "..", "..", "part38", "code")
+config.substitutions += [
+    ("%mgc38", "env MG_OPT=" + mg_opt + " " + os.path.join(ch38, "mgc")),
+    ("%ex38", os.path.join(ch38, "examples")),
+    ("%ch38", ch38),
+]
 # Chapter 37: inside the LLVM stage (reading the IR, the passes, the vectorizer's reasons, the backend). No new compiler operation; the tests run LLVM's own tools.
 ch37 = os.path.join(config.test_source_root, "..", "..", "..", "part37", "code")
 config.substitutions += [

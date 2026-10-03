@@ -1,0 +1,7 @@
+SCFToControlFlow time in seconds, by number of loop nests n (each copies 4 numbers); one run each
+      n  one function  500 per function  one function, outlined first  whole mg-opt run, outlined
+   2000         0.059             0.021                         0.001                       0.067
+   4000         0.534             0.040                         0.002                       0.125      one function grew 9.0x for 2x the loops
+   8000         5.188             0.075                         0.004                       0.229      one function grew 9.7x for 2x the loops
+  16000        24.763             0.230                         0.009                       0.456      one function grew 4.8x for 2x the loops
+  32000        88.003             0.416                         0.015                       0.818      one function grew 3.6x for 2x the loops

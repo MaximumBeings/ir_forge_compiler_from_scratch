@@ -60,12 +60,13 @@ Each chapter's page starts with a "Compile and run" box (Chapters 1 to 9, 20 and
 | 29 | `part29/code/build.sh` | adds `mg.exp`; the newest compiler |
 | 30 | `part30/code/build.sh` | adds `mg.sqrt`; the compiler as of Chapter 30; `part30/code/mgc` runs the transformer |
 | 31 | `part31/code/build.sh` | adds `mg.log`; the compiler as of Chapter 31; `part31/code/mgc` runs the trainer |
-| 32 | `part32/code/build.sh` | adds `mg.ge`; the newest compiler, which `run_lit.sh` and CI use; `part32/code/mgc` runs the experiments |
+| 32 | `part32/code/build.sh` | adds `mg.ge`; the compiler from Chapter 32 to 37; `part32/code/mgc` runs the experiments |
 | 33 | `part32/code/build.sh` | adds nothing to the compiler; `part33/code` has the programs, which run with Chapter 32's `mgc` |
 | 34 | `part32/code/build.sh` | adds nothing to the compiler; `part34/code` has the programs, which run with Chapter 32's `mgc` |
 | 35 | `part32/code/build.sh` | adds nothing to the compiler; `part35/code` has the programs, which run with Chapter 32's `mgc` |
 | 36 | `part32/code/build.sh` | adds nothing to the compiler; `part36/code` has the programs, which run with Chapter 32's `mgc` |
 | 37 | `part32/code/build.sh` | adds nothing to the compiler; `part37/code` has the scripts, which run with Chapter 32's `mgc` and LLVM's own `opt-18`, `clang-18` and `llvm-mca-18` |
+| 38 | `part38/code/build.sh` | adds the `--mg-outline-loops` pass (`mgc --outline`); the newest compiler, which `run_lit.sh` and CI use; `part38/code/mgc` is the driver |
 | the test suite (`part15/code/run_lit.sh`) | any build; it picks the newest that exists | the newest build runs every test |
 
 Every build needs `cmake`, `make`, `llvm-18-dev`, `libmlir-18-dev` and `mlir-18-tools` (see above), and takes a few minutes the first time. Every `run.sh` and `demo.sh` writes its intermediate files under `./work/` or `./show/`, which are git-ignored.

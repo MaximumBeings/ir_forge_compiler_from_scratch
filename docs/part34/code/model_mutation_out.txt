@@ -1,0 +1,12 @@
+NOTE: this script deliberately runs wrong backward passes. 'caught' lines are EXPECTED: they show the checker can detect the mistake.
+baseline (nothing broken): checker passes (expected)
+layer-norm backward misses the mean-subtraction term: caught by 14 failing checks (the reference, finite differences)
+layer-norm backward misses the projection term (the y * mean(d * y) part): caught by 17 failing checks (the reference, finite differences, the experiment)
+layer-norm backward forgets to divide by sigma: caught by 15 failing checks (the reference, finite differences, the experiment)
+the residual path is dropped from the gradient (d_h = the layer-norm path only): caught by 14 failing checks (the reference, finite differences)
+the relu mask is omitted (the gradient passes everywhere): caught by 17 failing checks (the reference, finite differences, the experiment)
+the relu mask is the wrong way round (passes where the input is NEGATIVE): caught by 17 failing checks (the reference, finite differences, the experiment)
+grad_gm forgets to multiply by the normalised input: caught by 14 failing checks (the reference, finite differences)
+grad_w1 uses the un-normalised input instead of the layer-norm output: caught by 17 failing checks (the reference, finite differences, the experiment)
+the layer-norm epsilon is 0.1 in the forward AND backward pass (consistent with itself, not with the reference): caught by 15 failing checks (the reference, the experiment)
+the forward pass drops the residual connection (the backward pass still has it): caught by 15 failing checks (the reference, finite differences)

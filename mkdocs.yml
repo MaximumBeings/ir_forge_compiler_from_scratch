@@ -111,6 +111,7 @@ nav:
       - "31. Training a Language Model: Gradient Descent on a Bigram": part31/31-training-a-bigram-model.md
       - "32. Does It Generalize? Held-Out Data, Overfitting and Weight Decay": part32/32-does-it-generalize.md
       - "33. Backpropagation Through Attention: Training a One-Head Classifier": part33/33-backpropagation-through-attention.md
+      - "34. Why a Block Has a Feed-Forward Network: Backpropagation Through Layer Norm, ReLU and Residuals": part34/34-why-a-block-has-a-feed-forward-network.md
 
 extra:
   social: []

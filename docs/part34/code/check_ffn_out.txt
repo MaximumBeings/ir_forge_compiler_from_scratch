@@ -1,0 +1,43 @@
+-- the hand-derived backward passes against the independent per-example gradient, and against finite differences
+  ok   model A, starting weights #1: the loss and all 4 gradients equal the reference
+  ok   model A, starting weights #1: all 36 weights agree with finite differences (largest difference 2.6e-04)
+  ok   model A, starting weights #2: the loss and all 4 gradients equal the reference
+  ok   model A, starting weights #2: all 36 weights agree with finite differences (largest difference 3.9e-04)
+  ok   model A, starting weights #3: the loss and all 4 gradients equal the reference
+  ok   model A, starting weights #3: all 36 weights agree with finite differences (largest difference 2.8e-04)
+  ok   model B, starting weights #1: the loss and all 10 gradients equal the reference
+  ok   model B, starting weights #1: all 120 weights agree with finite differences (largest difference 3.9e-04)
+  ok   model B, starting weights #2: the loss and all 10 gradients equal the reference
+  ok   model B, starting weights #2: all 120 weights agree with finite differences (largest difference 3.9e-04)
+  ok   model B, starting weights #3: the loss and all 10 gradients equal the reference
+  ok   model B, starting weights #3: all 120 weights agree with finite differences (largest difference 4.4e-04)
+-- training model A against the independent Python trainer
+  ok   model A, step 0: loss 0.698663 and 25 of 54 correct equal the reference
+  ok   model A, step 1: loss 0.697193 and 25 of 54 correct equal the reference
+  ok   model A, step 10: loss 0.686293 and 34 of 54 correct equal the reference
+  ok   model A, step 50: loss 0.558370 and 41 of 54 correct equal the reference
+  ok   model A, step 100: loss 0.526339 and 34 of 54 correct equal the reference
+  ok   model A, step 200: loss 0.509436 and 38 of 54 correct equal the reference
+  ok   model A, step 400: loss 0.433010 and 46 of 54 correct equal the reference
+  ok   model A, step 600: loss 0.428121 and 46 of 54 correct equal the reference
+  ok   model A: the 27 held-out sequences: 23 correct and loss 0.696900 equal the reference
+  ok   model A: the number correct in each of the three chunks of 27 of all 81 sequences, [22, 20, 27], equals the reference's
+-- training model B against the independent Python trainer
+  ok   model B, step 0: loss 0.685080 and 37 of 54 correct equal the reference
+  ok   model B, step 1: loss 0.640907 and 34 of 54 correct equal the reference
+  ok   model B, step 10: loss 0.650084 and 34 of 54 correct equal the reference
+  ok   model B, step 50: loss 0.607979 and 36 of 54 correct equal the reference
+  ok   model B, step 100: loss 0.433422 and 45 of 54 correct equal the reference
+  ok   model B, step 200: loss 0.002263 and 54 of 54 correct equal the reference
+  ok   model B, step 400: loss 0.000506 and 54 of 54 correct equal the reference
+  ok   model B, step 600: loss 0.000266 and 54 of 54 correct equal the reference
+  ok   model B: the 27 held-out sequences: 26 correct and loss 0.467902 equal the reference
+  ok   model B: the number correct in each of the three chunks of 27 of all 81 sequences, [26, 27, 27], equals the reference's
+-- the experiment: does the feed-forward block matter?
+  ok   model A cannot fit its own training data: 46 of 54 right, loss 0.428 after 600 steps
+  ok   model A gets only 69 of the 81 possible sequences right
+  ok   model B fits all 54 training sequences (loss 0.000266)
+  ok   model B gets 80 of 81 right, 11 more than model A
+  ok   the one sequence model B gets wrong is 0 0 0 0, which is not among the training sequences (misses: [[0, 0, 0, 0]])
+  ok   in the program, the first row of the first chunk (0 0 0 0) scores [-5.00221, 7.62303] and so is classified as 1; its label is 0
+all checks pass

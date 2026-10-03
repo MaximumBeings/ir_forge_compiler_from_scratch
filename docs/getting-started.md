@@ -62,6 +62,7 @@ Each chapter's page starts with a "Compile and run" box (Chapters 1 to 9, 20 and
 | 31 | `part31/code/build.sh` | adds `mg.log`; the compiler as of Chapter 31; `part31/code/mgc` runs the trainer |
 | 32 | `part32/code/build.sh` | adds `mg.ge`; the newest compiler, which `run_lit.sh` and CI use; `part32/code/mgc` runs the experiments |
 | 33 | `part32/code/build.sh` | adds nothing to the compiler; `part33/code` has the programs, which run with Chapter 32's `mgc` |
+| 34 | `part32/code/build.sh` | adds nothing to the compiler; `part34/code` has the programs, which run with Chapter 32's `mgc` |
 | the test suite (`part15/code/run_lit.sh`) | any build; it picks the newest that exists | the newest build runs every test |
 
 Every build needs `cmake`, `make`, `llvm-18-dev`, `libmlir-18-dev` and `mlir-18-tools` (see above), and takes a few minutes the first time. Every `run.sh` and `demo.sh` writes its intermediate files under `./work/` or `./show/`, which are git-ignored.

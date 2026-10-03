@@ -1,0 +1,23 @@
+-- the hand-derived backward pass against the independent per-position gradient, and against finite differences
+  ok   starting weights #1: the loss and all 16 gradient matrices equal the reference
+  ok   starting weights #1: 32 weights (two of every matrix) agree with finite differences (largest difference 1.6e-04)
+  ok   starting weights #2: the loss and all 16 gradient matrices equal the reference
+  ok   starting weights #3: the loss and all 16 gradient matrices equal the reference
+-- training 200 steps against the independent Python trainer
+  ok   step 0: loss 1.429187 and 20 of 64 correct equal the reference
+  ok   step 1: loss 1.287565 and 29 of 64 correct equal the reference
+  ok   step 10: loss 0.965858 and 39 of 64 correct equal the reference
+  ok   step 25: loss 0.727803 and 45 of 64 correct equal the reference
+  ok   step 50: loss 0.525403 and 53 of 64 correct equal the reference
+  --   step 100: loss 0.035612, 64 of 64 correct (the reference gives 0.034635, 64: inside the chaotic phase, not compared)
+  ok   step 150: loss 0.001928 (below 0.01) and 64 of 64 correct (the reference's run, 0.001926, differs by rounding-level amplification; not compared digit for digit)
+  ok   step 200: loss 0.000918 (below 0.01) and 64 of 64 correct (the reference's run, 0.000912, differs by rounding-level amplification; not compared digit for digit)
+  --   the 16 held-out sequences: 64 of 64 correct, loss 0.007591 (the reference run gives 0.008777; compared by the experiment's claims below)
+  ok   the number correct in each of the four chunks of 16 of all 64 sequences, [64, 64, 64, 64], equals the reference's [64, 64, 64, 64] (or the run is past the tight region and the experiment's claims below decide)
+  ok   every attention row sums to 1 and puts exactly 0 on every later position (the mask works)
+-- the experiment
+  ok   it fits its 16 training sequences: loss 0.000918, 64 of 64 predictions right
+  ok   it gets all 16 held-out sequences right (64 of 64 predictions)
+  ok   it gets all 64 possible sequences right: 256 of 256 predictions
+  ok   for the first training sequence [2, 2, 2, 2, 2, 2, 2], position 5 (predicting token 2) attends mostly to position 3 (weight 0.783); the page reports the whole pattern
+all checks pass

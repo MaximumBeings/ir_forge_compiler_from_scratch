@@ -1,0 +1,171 @@
+################ mgc run 01_stacked_causal_mask.mg
+  | # Two sequences of three tokens are stacked into one 6-row matrix, so attention is computed over all 6 rows at once. The mask must let row r look at
+  | # column c only if c is in the SAME sequence and c <= r. Entries that must not be seen get -1000000000, which softmax turns into exactly 0.
+  | # (Rows 0-2 are sequence one, rows 3-5 sequence two.) The scores are made up: each is 1, so without the mask every row would be uniform.
+  | def softmax_rows(m: tensor[6x6]) = exp(m - row_max(m)) / row_sum(exp(m - row_max(m)))
+  | let mask = [[0, -1000000000, -1000000000, -1000000000, -1000000000, -1000000000], [0, 0, -1000000000, -1000000000, -1000000000, -1000000000], [0, 0, 0, -1000000000, -1000000000, -1000000000], [-1000000000, -1000000000, -100000
+  | let scores = [[1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1]]
+  | print softmax_rows(scores + mask)
+  | # Each row sums to 1; row 0 is all on itself, row 2 is 1/3 each on rows 0-2, row 5 is 1/3 each on rows 3-5, and nothing leaks between the two sequences.
+  | print row_sum(softmax_rows(scores + mask))
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [6, 6] strides = [6, 1] data = 
+[[1,   0,   0,   0,   0,   0], 
+ [0.5,   0.5,   0,   0,   0,   0], 
+ [0.333333,   0.333333,   0.333333,   0,   0,   0], 
+ [0,   0,   0,   1,   0,   0], 
+ [0,   0,   0,   0.5,   0.5,   0], 
+ [0,   0,   0,   0.333333,   0.333333,   0.333333]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [6, 1] strides = [1, 1] data = 
+[[1], 
+ [1], 
+ [1], 
+ [1], 
+ [1], 
+ [1]]
+  ----- exit status 0
+
+################ mgc run 02_masked_cross_entropy.mg
+  | # Only some rows of the stacked matrix are predictions. Here a 4-row logits matrix over 3 words, of which rows 1 and 3 are targets (mr is 1 on them, 0 elsewhere).
+  | # y holds the correct next word one-hot on the target rows and zeros elsewhere. The loss averages over the 2 target rows (hence the 0.5), and the gradient with
+  | # respect to the logits is (softmax(z) * mr - y) * 0.5: the rows that are not targets get exactly zero gradient.
+  | def log_softmax(z: tensor[4x3]) = z - row_max(z) - log(row_sum(exp(z - row_max(z))))
+  | let z = [[1, 2, 3], [0, 0, 0], [5, 1, 1], [1, 3, 2]]
+  | let mr = [[0], [1], [0], [1]]
+  | let y = [[0, 0, 0], [0, 1, 0], [0, 0, 0], [0, 0, 1]]
+  | print col_sum(row_sum(y * log_softmax(z))) * -0.5
+  | print (exp(log_softmax(z)) * mr - y) * 0.5
+  | # Second row: three equal logits give each word 1/3; the correct word is the middle one, so that row's gradient is (1/3, 1/3 - 1, 1/3) / 2 = (0.1667, -0.3333, 0.1667).
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1.25311]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [4, 3] strides = [3, 1] data = 
+[[0,   0,   0], 
+ [0.166667,   -0.333333,   0.166667], 
+ [0,   0,   0], 
+ [0.0450153,   0.33262,   -0.377636]]
+  ----- exit status 0
+
+################ mgc run 03_train_10_steps.mg
+  | (785 lines: the definitions are in lm_lib.py; the file holds the data, the unrolled training steps and the prints, written by make_examples.py)
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1.42919]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[20]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1.28756]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[29]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.965858]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[39]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1.58847]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[20]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[11]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[31]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[39]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[20]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [7, 7] strides = [7, 1] data = 
+[[1,   0,   0,   0,   0,   0,   0], 
+ [0.416434,   0.583566,   0,   0,   0,   0,   0], 
+ [0.375767,   0.356487,   0.267746,   0,   0,   0,   0], 
+ [0.445018,   0.32708,   0.141979,   0.0859235,   0,   0,   0], 
+ [0.436527,   0.296865,   0.121964,   0.0729565,   0.0716872,   0,   0], 
+ [0.334917,   0.24728,   0.132274,   0.0910244,   0.0858113,   0.108694,   0], 
+ [0.252324,   0.205006,   0.132171,   0.0983111,   0.08894,   0.100532,   0.122715]]
+  ----- exit status 0
+
+################ mgc run 04_train_200_steps.mg
+  | (12455 lines: the definitions are in lm_lib.py; the file holds the data, the unrolled training steps and the prints, written by make_examples.py)
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1.42919]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[20]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1.28756]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[29]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.965858]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[39]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.727803]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[45]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.525403]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[53]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.0356118]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[64]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.00192844]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[64]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.000917701]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[64]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.00759067]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[64]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[64]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[64]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[64]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[64]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [7, 7] strides = [7, 1] data = 
+[[1,   0,   0,   0,   0,   0,   0], 
+ [0.990166,   0.00983402,   0,   0,   0,   0,   0], 
+ [0.977195,   0.0224568,   0.000348693,   0,   0,   0,   0], 
+ [0.429867,   0.518344,   0.0497861,   0.00200291,   0,   0,   0], 
+ [0.00284028,   0.10505,   0.803391,   0.0871705,   0.00154816,   0,   0], 
+ [3.99338e-05,   0.00111138,   0.149104,   0.783051,   0.0653207,   0.00137268,   0], 
+ [1.24684e-05,   1.48271e-05,   0.00118552,   0.187334,   0.785065,   0.0261648,   0.000223552]]
+  ----- exit status 0
+
+################ mgc run errors/e1_mask_of_the_wrong_size.mg
+  | # The mask must be as large as the score matrix: 6 x 6 here. A 4 x 4 mask does not fit, and the compiler says so.
+  | def softmax_rows(m: tensor[6x6]) = exp(m - row_max(m)) / row_sum(exp(m - row_max(m)))
+  | let scores = [[1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1]]
+  | let mask = [[0, -1000000000, -1000000000, -1000000000], [0, 0, -1000000000, -1000000000], [0, 0, 0, -1000000000], [0, 0, 0, 0]]
+  | print softmax_rows(scores + mask)
+  ----- output
+errors/e1_mask_of_the_wrong_size.mg:5: error: cannot add shapes 6x6 and 4x4: dimensions 6 and 4 differ and neither is 1
+  ----- exit status 1
+
+################ mgc run errors/e2_missing_argument.mg
+  | # ln_back takes three arguments (the upstream gradient, the layer's input and the scale). Two is an arity error, reported before any code exists.
+  | def ln_sigma(h: tensor[2x4]) = sqrt(row_mean((h - row_mean(h)) * (h - row_mean(h))) + 0.00001)
+  | def ln_hat(h: tensor[2x4]) = (h - row_mean(h)) / ln_sigma(h)
+  | def ln_back(d: tensor[2x4], h: tensor[2x4], g: tensor[1x4]) = ((d * g) - row_mean(d * g) - ln_hat(h) * row_mean((d * g) * ln_hat(h))) / ln_sigma(h)
+  | print ln_back([[1, 2, 3, 4], [4, 3, 2, 1]], [[1, 2, 4, 8], [8, 4, 2, 1]])
+  ----- output
+errors/e2_missing_argument.mg:5: error: ln_back takes 3 arguments, got 2
+  ----- exit status 1
+
+################ mgc run errors/e3_stacked_rows_do_not_match.mg
+  | # The tokens matrix has one row per token of every stacked sequence (6 here); the mask-row vector must have the same 6 rows. A 4-row one cannot multiply it.
+  | let logits = [[1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3]]
+  | let mr = [[0], [1], [0], [1]]
+  | print logits * mr
+  ----- output
+errors/e3_stacked_rows_do_not_match.mg:4: error: cannot multiply shapes 6x3 and 4x1: dimensions 6 and 4 differ and neither is 1
+  ----- exit status 1
+

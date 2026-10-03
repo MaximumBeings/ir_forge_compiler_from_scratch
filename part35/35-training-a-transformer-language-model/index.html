@@ -1,0 +1,3148 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A Toy Language Compiled Through a Real MLIR Dialect, Down to Real Native Machine Code">
+      
+      
+        <meta name="author" content="Oluwaseyi Awoga">
+      
+      
+      
+        <link rel="prev" href="../../part34/34-why-a-block-has-a-feed-forward-network/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>35. Training a Transformer Language Model: Backpropagation Through Causal Attention and Embeddings - IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#35-training-a-transformer-language-model-backpropagation-through-causal-attention-layer-norms-a-feed-forward-network-and-embeddings" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-header__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              35. Training a Transformer Language Model: Backpropagation Through Causal Attention and Embeddings
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-nav__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../background/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background (LLVM and MLIR in Twenty Minutes)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tour/language-tour/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Mountain Goat Language: A Short Tour
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part1/01-why-a-multi-level-ir-at-all/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1. Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part2/02-a-minimal-dialect-from-scratch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2. A Minimal Dialect From Scratch: Mountain Goat's Own mg Dialect
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part3/03-the-pass-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3. The Real Pass Infrastructure: Canonicalizing Mountain Goat
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 3 -- Progressive Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 3 -- Progressive Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part4/04-progressive-lowering-to-affine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4. Progressive Lowering: Mountain Goat to affine, Two Real Ways
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part5/05-affine-to-scf-to-llvm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5. Finishing Progressive Lowering: affine to scf to llvm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 4 -- Optimization Across Levels
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 4 -- Optimization Across Levels
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/06-real-bufferization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6. Real Bufferization: Closing Chapter 4's Own Honest Gap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part7/07-real-loop-transforms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    7. Real Loop Transforms: Fusion, Tiling, and Unrolling at the affine Level
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 5 -- Code Generation via LLVM
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 5 -- Code Generation via LLVM
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part8/08-a-standalone-native-executable/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    8. A Standalone Native Executable: Mountain Goat Without MLIR At Runtime
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part9/09-the-execution-engine-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    9. MLIR's Own Real C++ ExecutionEngine API, Called In-Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 6 -- GPU Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 6 -- GPU Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part10/10-gpu-lowering-to-ptx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10. GPU Lowering: Mountain Goat to the gpu Dialect, NVVM, and Real PTX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part11/11-the-gpu-host-side/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    11. The GPU Host Side: Device Memory, Real Runtime Calls, and a Stub Device
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 7 -- Case Studies
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 7 -- Case Studies
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part12/12-reading-the-production-pipelines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    12. Reading MLIR's Own Production Pipelines: What This Book's Compiler Is Missing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part13/13-dynamic-shapes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    13. Dynamic Shapes: Closing Chapter 12's Biggest Unknown
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part14/14-runtime-shape-checks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    14. A Runtime Shape Check: Closing Chapter 13's Memory-Safety Hole
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part15/15-a-real-test-suite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    15. A Real Test Suite: lit, FileCheck, and Proof That the Tests Can Fail
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part16/16-testing-the-gpu-path-and-loop-transforms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    16. Testing the GPU Path and the Loop Transforms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part17/17-loop-transforms-on-dynamic-bounds/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    17. Loop Transforms on Dynamic Bounds
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part18/18-why-fusion-declines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    18. Why Fusion Declines: Reading the Pass, and a Second Bug Found Along the Way
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part19/19-a-better-abort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    19. A Better Abort: Reporting Assertion Failures on stderr
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part20/20-the-mountain-goat-demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    20. The Mountain Goat Demo: A Surface Syntax, a Driver, and C++ Calling Compiled Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part21/21-more-operations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    21. More Operations: Subtract, Hadamard, Divide, Matrix Product, and Scalars
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part22/22-broadcasting-reductions-and-relu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    22. Broadcasting, Reductions and relu: Enough Operations for a Neural-Network Layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part23/23-measuring-performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    23. Measuring Performance: Does Any of It Make the Code Fast?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part24/24-closing-the-matmul-gap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    24. Closing the Gap: A Matrix Product That Walks Memory in a Better Order
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part25/25-keeping-it-working/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    25. Keeping It Working: Continuous Integration and the Tests the Early Chapters Never Had
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part26/26-learning-from-data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    26. Learning From Data: Gradient Descent in Mountain Goat
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part27/27-tensor-contractions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    27. Tensor Contractions as Matrix Products
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part28/28-contraction-in-mountain-goat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    28. Tensor Contractions in Mountain Goat Itself
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part29/29-softmax-and-attention/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    29. Softmax and Attention
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part30/30-a-small-transformer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    30. A Small Transformer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part31/31-training-a-bigram-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    31. Training a Language Model: Gradient Descent on a Bigram
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part32/32-does-it-generalize/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    32. Does It Generalize? Held-Out Data, Overfitting and Weight Decay
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part33/33-backpropagation-through-attention/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    33. Backpropagation Through Attention: Training a One-Head Classifier
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part34/34-why-a-block-has-a-feed-forward-network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    34. Why a Block Has a Feed-Forward Network: Backpropagation Through Layer Norm, ReLU and Residuals
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    35. Training a Transformer Language Model: Backpropagation Through Causal Attention and Embeddings
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    35. Training a Transformer Language Model: Backpropagation Through Causal Attention and Embeddings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-task-copy-the-token-from-two-positions-back" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The task: copy the token from two positions back
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#many-sequences-one-matrix-and-the-causal-mask" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Many sequences, one matrix, and the causal mask
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-loss-counts-only-some-rows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The loss counts only some rows
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-backward-pass-what-is-new" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The backward pass: what is new
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The definitions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#training" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Training
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#training-is-chaotic-a-measured-caution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Training is chaotic: a measured caution
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-reliable-is-this-a-python-only-sweep" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How reliable is this? A Python-only sweep
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mistakes-the-compiler-reports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mistakes the compiler reports
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#are-the-checks-good-enough-run-eighteen-wrong-programs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Are the checks good enough? Run eighteen wrong programs.
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limits-and-what-is-not-established" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits and what is not established
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-task-copy-the-token-from-two-positions-back" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The task: copy the token from two positions back
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#many-sequences-one-matrix-and-the-causal-mask" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Many sequences, one matrix, and the causal mask
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-loss-counts-only-some-rows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The loss counts only some rows
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-backward-pass-what-is-new" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The backward pass: what is new
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The definitions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#training" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Training
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#training-is-chaotic-a-measured-caution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Training is chaotic: a measured caution
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-reliable-is-this-a-python-only-sweep" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How reliable is this? A Python-only sweep
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mistakes-the-compiler-reports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mistakes the compiler reports
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#are-the-checks-good-enough-run-eighteen-wrong-programs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Are the checks good enough? Run eighteen wrong programs.
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limits-and-what-is-not-established" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits and what is not established
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="35-training-a-transformer-language-model-backpropagation-through-causal-attention-layer-norms-a-feed-forward-network-and-embeddings">35. Training a Transformer Language Model: Backpropagation Through Causal Attention, Layer Norms, a Feed-Forward Network and Embeddings<a class="headerlink" href="#35-training-a-transformer-language-model-backpropagation-through-causal-attention-layer-norms-a-feed-forward-network-and-embeddings" title="Permanent link">&para;</a></h1>
+<p><strong>What you will understand:</strong> how to train, in Mountain Goat, a small but complete <strong>causal transformer language model</strong>: token embeddings plus positions, a layer-normalized block of <strong>causal self-attention</strong> and a <strong>feed-forward network</strong> with residual connections, a final layer norm and a projection to the vocabulary, trained to predict the next token. Chapter 30 built the forward pass of such a model with random weights; Chapters 33 and 34 derived the backward pass piece by piece for a classifier. This chapter joins the pieces and adds the four that were missing: the <strong>causal mask</strong> inside the attention backward pass, <strong>many sequences stacked into one matrix</strong>, the <strong>per-position (masked) cross-entropy</strong>, and the <strong>embedding gradient</strong>. The model has 648 weights in 16 matrices; the hand-derived gradient of all 16 matrices is checked against an independent Python calculation, and against finite differences. After 200 steps the model predicts every token it is supposed to be able to predict on all 64 possible sequences, <strong>and the page then shows why you should not take that result as more than it is</strong> (training turns out to be chaotic).</p>
+<p><strong>What you need to know first:</strong> Chapter 33 (the attention backward pass), Chapter 34 (layer norm, ReLU and residual backward passes), Chapter 31 (cross-entropy) and Chapter 30 (the transformer's forward pass). <strong>No new compiler operation</strong> is needed: the programs run on Chapter 32's compiler.</p>
+<div class="admonition tip">
+<p class="admonition-title">Compile and run</p>
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">cd</span><span class="w"> </span>docs/part32/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./build.sh<span class="w">                 </span><span class="c1"># once: the newest compiler (this chapter adds nothing to it)</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>../../part35/code
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>python3<span class="w"> </span>make_examples.py<span class="w">                          </span><span class="c1"># (re)writes the examples from lm_lib.py</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>../../part32/code/mgc<span class="w"> </span>run<span class="w"> </span>examples/03_train_10_steps.mg<span class="w">    </span><span class="c1"># 10 training steps (under a minute)</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>../../part32/code/mgc<span class="w"> </span>run<span class="w"> </span>examples/04_train_200_steps.mg<span class="w">   </span><span class="c1"># the full 200 steps: a 12,455-line program, about 8 minutes</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>./run_examples.sh<span class="w"> </span>&gt;<span class="w"> </span>examples_out.txt<span class="w">              </span><span class="c1"># every example and every error example on this page (about 8 minutes)</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>./check_lm.py<span class="w">                                     </span><span class="c1"># the quick check: gradients, finite differences, 10 training steps (about 25 seconds)</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>./check_lm.py<span class="w"> </span>--full<span class="w"> </span>&gt;<span class="w"> </span>check_lm_out.txt<span class="w">           </span><span class="c1"># the page&#39;s 200 steps against the reference, and the experiment (about 8 minutes)</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>./sensitivity.py<span class="w"> </span>&gt;<span class="w"> </span>sensitivity_out.txt<span class="w">            </span><span class="c1"># Python only: how sensitive is training to a 1e-12 change? (about 15 seconds)</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>./lr_sweep.py<span class="w"> </span>&gt;<span class="w"> </span>lr_sweep_out.txt<span class="w">                  </span><span class="c1"># Python only: learning rates and starting weights (a few minutes)</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>./model_mutation.py<span class="w"> </span>&gt;<span class="w"> </span>model_mutation_out.txt<span class="w">      </span><span class="c1"># runs 18 WRONG programs through the quick check (about ten minutes)</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="nb">cd</span><span class="w"> </span>../../part15/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_lit.sh<span class="w">              </span><span class="c1"># the whole test suite</span>
+</code></pre></div>
+Every listing and output on this page comes from these commands.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Why this page shows FAIL lines and error messages, and why that is good</p>
+<p>The three error examples are programs the compiler must reject (each ends <code>exit status 1</code>). The mutation output is a negative control: deliberately wrong programs run against the checker, where "caught" is the wanted result and "NOT CAUGHT" would be a gap (one is reported, and explained). The <code>--</code> lines in the full check are not failures: they mark values the page deliberately does <strong>not</strong> compare digit for digit, for a reason the page measures.</p>
+</div>
+<h2 id="the-task-copy-the-token-from-two-positions-back">The task: copy the token from two positions back<a class="headerlink" href="#the-task-copy-the-token-from-two-positions-back" title="Permanent link">&para;</a></h2>
+<p>A sequence has seven tokens from a vocabulary of four (0, 1, 2, 3). The first three are chosen freely and then the sequence repeats them: <code>a b c a b c a</code>. For example <code>0 1 2 0 1 2 0</code> and <code>3 3 1 3 3 1 3</code>. There are 4<sup>3</sup> = <strong>64</strong> possible sequences. A language model is trained to predict, at each position, the <strong>next</strong> token. In these sequences the next token is <em>predictable</em> only at positions 2 to 5: there, token <em>i+1</em> equals token <em>i−2</em> (the model has seen <code>a b c</code> and must say <code>a</code>, then <code>b</code>, then <code>c</code>, then <code>a</code>). At positions 0 and 1 the next token is a free choice, and position 6 has no next token, so those three positions are <strong>not scored</strong>. That leaves 4 scored predictions per sequence, and <strong>256 scored predictions over all 64 sequences</strong>. Guessing gives 25%; so does always answering the most common token.</p>
+<p>16 random sequences train the model (their first triples are <code>222 101 130 221 322 312 200 302 123 232 211 220 133 131 001 310</code>), 16 others are <strong>held out</strong> (<code>121 212 331 223 311 010 112 002 032 313 230 332 033 321 213 012</code>), and the remaining 32 are seen only by the exhaustive check at the end. A model that memorizes its 16 sequences scores 64 of 64 on them and learns nothing about the rest; a model that has found the rule gets 256 of 256.</p>
+<h2 id="the-model">The model<a class="headerlink" href="#the-model" title="Permanent link">&para;</a></h2>
+<p>The tokens are one-hot rows. For a sequence of 7 tokens, the matrices below have 7 rows (<code>N = 7</code>); the width is <code>D = 8</code>, the feed-forward width <code>H = 16</code>, the vocabulary <code>V = 4</code>:</p>
+<table>
+<thead>
+<tr>
+<th>step</th>
+<th>what it computes</th>
+<th>shape</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>x0 = x @ e + ps</code></td>
+<td>embed each token (<code>e</code> is learned, 4×8), add the fixed sinusoidal position vectors <code>ps</code></td>
+<td>N×8</td>
+</tr>
+<tr>
+<td><code>u1 = ln_out(x0, g1, n1)</code></td>
+<td>layer norm 1</td>
+<td>N×8</td>
+</tr>
+<tr>
+<td><code>q, k, v = u1 @ wq, u1 @ wk, u1 @ wv</code></td>
+<td>queries, keys, values (one head, width 8)</td>
+<td>N×8</td>
+</tr>
+<tr>
+<td><code>a = softmax_rows(q @ kᵀ / √8 + mask)</code></td>
+<td>causal attention weights</td>
+<td>N×N</td>
+</tr>
+<tr>
+<td><code>o = a @ v</code>; <code>x1 = x0 + o @ wo</code></td>
+<td>mix values; project; <strong>residual</strong></td>
+<td>N×8</td>
+</tr>
+<tr>
+<td><code>u2 = ln_out(x1, g2, n2)</code></td>
+<td>layer norm 2</td>
+<td>N×8</td>
+</tr>
+<tr>
+<td><code>pre = u2 @ w1 + c1</code>; <code>r = relu(pre)</code></td>
+<td>feed-forward, first layer</td>
+<td>N×16</td>
+</tr>
+<tr>
+<td><code>x2 = x1 + (r @ w2 + c2)</code></td>
+<td>feed-forward, second layer; <strong>residual</strong></td>
+<td>N×8</td>
+</tr>
+<tr>
+<td><code>uf = ln_out(x2, gf, nf)</code>; <code>lg = uf @ wu</code></td>
+<td>final layer norm; scores for the 4 next-token candidates</td>
+<td>N×4</td>
+</tr>
+</tbody>
+</table>
+<p>The loss is the average over the scored positions of <code>−log softmax(lg)[correct next token]</code>. Position vectors are fixed (sines and cosines of the position, never trained), so only the 16 matrices <code>e, g1, n1, wq, wk, wv, wo, g2, n2, w1, c1, w2, c2, gf, nf, wu</code> are learned (32 + 8 + 8 + 4·64 + 8 + 8 + 128 + 16 + 128 + 8 + 8 + 8 + 32 = <strong>648</strong> numbers).</p>
+<h3 id="many-sequences-one-matrix-and-the-causal-mask">Many sequences, one matrix, and the causal mask<a class="headerlink" href="#many-sequences-one-matrix-and-the-causal-mask" title="Permanent link">&para;</a></h3>
+<p>Mountain Goat has matrices and no batch dimension, so 16 sequences are <strong>stacked</strong>: 16 × 7 = <strong>112 rows</strong>, and attention is computed for all 112 rows at once, a 112×112 score matrix. Row <em>r</em> must be allowed to look only at columns in <strong>its own sequence</strong> (no leaking between sequences) and only at positions <strong>not after itself</strong> (causal: no looking at the answer). The mask adds 0 to allowed entries and −10⁹ to the rest, and softmax turns those into exactly 0. Here is the idea at a size you can read, two sequences of three tokens (6 rows), with every score equal to 1 so that all structure comes from the mask:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a># Two sequences of three tokens are stacked into one 6-row matrix, so attention is computed over all 6 rows at once. The mask must let row r look at
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a># column c only if c is in the SAME sequence and c &lt;= r. Entries that must not be seen get -1000000000, which softmax turns into exactly 0.
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a># (Rows 0-2 are sequence one, rows 3-5 sequence two.) The scores are made up: each is 1, so without the mask every row would be uniform.
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>def softmax_rows(m: tensor[6x6]) = exp(m - row_max(m)) / row_sum(exp(m - row_max(m)))
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>let mask = [[0, -1000000000, -1000000000, -1000000000, -1000000000, -1000000000], [0, 0, -1000000000, -1000000000, -1000000000, -1000000000], [0, 0, 0, -1000000000, -1000000000, -1000000000], [-1000000000, -1000000000, -1000000000, 0, -1000000000, -1000000000], [-1000000000, -1000000000, -1000000000, 0, 0, -1000000000], [-1000000000, -1000000000, -1000000000, 0, 0, 0]]
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>let scores = [[1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1]]
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>print softmax_rows(scores + mask)
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a># Each row sums to 1; row 0 is all on itself, row 2 is 1/3 each on rows 0-2, row 5 is 1/3 each on rows 3-5, and nothing leaks between the two sequences.
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>print row_sum(softmax_rows(scores + mask))
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>################ mgc run 01_stacked_causal_mask.mg
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  | # Two sequences of three tokens are stacked into one 6-row matrix, so attention is computed over all 6 rows at once. The mask must let row r look at
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  | # column c only if c is in the SAME sequence and c &lt;= r. Entries that must not be seen get -1000000000, which softmax turns into exactly 0.
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>  | # (Rows 0-2 are sequence one, rows 3-5 sequence two.) The scores are made up: each is 1, so without the mask every row would be uniform.
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>  | def softmax_rows(m: tensor[6x6]) = exp(m - row_max(m)) / row_sum(exp(m - row_max(m)))
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>  | let mask = [[0, -1000000000, -1000000000, -1000000000, -1000000000, -1000000000], [0, 0, -1000000000, -1000000000, -1000000000, -1000000000], [0, 0, 0, -1000000000, -1000000000, -1000000000], [-1000000000, -1000000000, -100000
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>  | let scores = [[1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1]]
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>  | print softmax_rows(scores + mask)
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>  | # Each row sums to 1; row 0 is all on itself, row 2 is 1/3 each on rows 0-2, row 5 is 1/3 each on rows 3-5, and nothing leaks between the two sequences.
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>  | print row_sum(softmax_rows(scores + mask))
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>  ----- output
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [6, 6] strides = [6, 1] data = 
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>[[1,   0,   0,   0,   0,   0], 
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a> [0.5,   0.5,   0,   0,   0,   0], 
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a> [0.333333,   0.333333,   0.333333,   0,   0,   0], 
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a> [0,   0,   0,   1,   0,   0], 
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a> [0,   0,   0,   0.5,   0.5,   0], 
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a> [0,   0,   0,   0.333333,   0.333333,   0.333333]]
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [6, 1] strides = [1, 1] data = 
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>[[1], 
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a> [1], 
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a> [1], 
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a> [1], 
+<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a> [1], 
+<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a> [1]]
+<a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a>  ----- exit status 0
+</code></pre></div>
+<p>Row 0 attends to itself only; row 2 splits its attention equally over rows 0 to 2; row 5 over rows 3 to 5; nothing crosses from rows 0–2 to rows 3–5. The real mask is the same pattern with blocks of 7 inside 112×112 (a literal in the programs).</p>
+<h3 id="the-loss-counts-only-some-rows">The loss counts only some rows<a class="headerlink" href="#the-loss-counts-only-some-rows" title="Permanent link">&para;</a></h3>
+<p>Of the 112 stacked rows only 4 in 7 are predictions. The program carries a column <code>mr</code> (1 on scored rows, 0 elsewhere) and a one-hot matrix <code>y</code> that is all zeros on unscored rows, so that unscored rows add nothing to the loss, and <code>mr</code> also zeros their <strong>gradient</strong>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a># Only some rows of the stacked matrix are predictions. Here a 4-row logits matrix over 3 words, of which rows 1 and 3 are targets (mr is 1 on them, 0 elsewhere).
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a># y holds the correct next word one-hot on the target rows and zeros elsewhere. The loss averages over the 2 target rows (hence the 0.5), and the gradient with
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a># respect to the logits is (softmax(z) * mr - y) * 0.5: the rows that are not targets get exactly zero gradient.
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>def log_softmax(z: tensor[4x3]) = z - row_max(z) - log(row_sum(exp(z - row_max(z))))
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>let z = [[1, 2, 3], [0, 0, 0], [5, 1, 1], [1, 3, 2]]
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>let mr = [[0], [1], [0], [1]]
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>let y = [[0, 0, 0], [0, 1, 0], [0, 0, 0], [0, 0, 1]]
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>print col_sum(row_sum(y * log_softmax(z))) * -0.5
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>print (exp(log_softmax(z)) * mr - y) * 0.5
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a># Second row: three equal logits give each word 1/3; the correct word is the middle one, so that row&#39;s gradient is (1/3, 1/3 - 1, 1/3) / 2 = (0.1667, -0.3333, 0.1667).
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>################ mgc run 02_masked_cross_entropy.mg
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>  | # Only some rows of the stacked matrix are predictions. Here a 4-row logits matrix over 3 words, of which rows 1 and 3 are targets (mr is 1 on them, 0 elsewhere).
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>  | # y holds the correct next word one-hot on the target rows and zeros elsewhere. The loss averages over the 2 target rows (hence the 0.5), and the gradient with
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>  | # respect to the logits is (softmax(z) * mr - y) * 0.5: the rows that are not targets get exactly zero gradient.
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>  | def log_softmax(z: tensor[4x3]) = z - row_max(z) - log(row_sum(exp(z - row_max(z))))
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>  | let z = [[1, 2, 3], [0, 0, 0], [5, 1, 1], [1, 3, 2]]
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>  | let mr = [[0], [1], [0], [1]]
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>  | let y = [[0, 0, 0], [0, 1, 0], [0, 0, 0], [0, 0, 1]]
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>  | print col_sum(row_sum(y * log_softmax(z))) * -0.5
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>  | print (exp(log_softmax(z)) * mr - y) * 0.5
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>  | # Second row: three equal logits give each word 1/3; the correct word is the middle one, so that row&#39;s gradient is (1/3, 1/3 - 1, 1/3) / 2 = (0.1667, -0.3333, 0.1667).
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>  ----- output
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>[[1.25311]]
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [4, 3] strides = [3, 1] data = 
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>[[0,   0,   0], 
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a> [0.166667,   -0.333333,   0.166667], 
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a> [0,   0,   0], 
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a> [0.0450153,   0.33262,   -0.377636]]
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>  ----- exit status 0
+</code></pre></div>
+<p>The loss <code>1.25311</code> is the mean of <code>ln 3 = 1.0986</code> (three equal logits) and <code>1.4076</code> (the correct word has probability 0.245). The rows 0 and 2 of the gradient are exactly zero; row 1 is <code>(1/3, 1/3 − 1, 1/3)/2</code>. In the real model the factor is <code>1/64</code>, one over the number of scored predictions in the batch.</p>
+<h2 id="the-backward-pass-what-is-new">The backward pass: what is new<a class="headerlink" href="#the-backward-pass-what-is-new" title="Permanent link">&para;</a></h2>
+<p>Everything below <code>dl</code> (the gradient of the loss with respect to the scores) is a rule met before, applied in reverse order of the forward pass. The new rows:</p>
+<ul>
+<li><strong>The scores' gradient, masked:</strong> <code>dl = (exp(log_softmax(lg)) * mr − y) / 64</code>: softmax minus one-hot (Chapter 31), zeroed on unscored rows.</li>
+<li><strong>Through the final layer norm and the two residuals:</strong> <code>ln_back</code> (Chapter 34) and <code>dx1 = dx2 + ln_back(du2, …)</code>: where a residual joins, the gradient paths <strong>add</strong>.</li>
+<li><strong>Through the ReLU:</strong> multiply by <code>ge(pre, [[0]])</code> (Chapter 34).</li>
+<li><strong>Through softmax attention:</strong> <code>da = do @ vᵀ</code>, then <code>ds = a * (da − row_sum(a * da))</code> (Chapter 33). <strong>The mask needs no special treatment</strong>: it is a constant added before the softmax, so it has no gradient, and the masked entries of <code>a</code> are exactly 0, so <code>ds</code> is exactly 0 there: no gradient flows to a position that was not seen. This is the one place where one might expect an extra term, and there is none.</li>
+<li><strong>Three paths into <code>u1</code>:</strong> <code>u1</code> feeds <code>q</code>, <code>k</code> and <code>v</code>, so <code>du1 = dq @ wqᵀ + dk @ wkᵀ + dv @ wvᵀ</code>, three terms that add. (<code>dq = ds @ k / √8</code>, <code>dk = dsᵀ @ q / √8</code>, <code>dv = aᵀ @ do</code>.)</li>
+<li><strong>The embedding gradient:</strong> <code>x</code> is one-hot, so <code>x0 = x @ e + ps</code> is a <em>lookup</em>; its weight gradient is <code>transpose(x) @ dx0</code>: each row of <code>e</code> receives the sum of <code>dx0</code> over the positions where that token occurs (a scatter-add written as a matrix product). The positions <code>ps</code> are constants, so they receive nothing.</li>
+</ul>
+<h2 id="the-definitions">The definitions<a class="headerlink" href="#the-definitions" title="Permanent link">&para;</a></h2>
+<p>One training step as Mountain Goat text (the lets of the forward pass, the backward pass, the update); in the generated training programs each step's names carry a suffix and every step is unrolled, which is why the 200-step program has 12,455 lines:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a># A one-block, one-head, causal transformer language model and its hand-derived backward pass. B = 16 sequences of 7 tokens are stacked into one
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a># matrix of 112 rows; attention is over all 112 rows with a mask that allows a position to see only earlier positions of its OWN sequence.
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a># (This listing is one training step with every step&#39;s suffix removed: the parameters are named after their matrices, e.g. e is the embedding. In the training
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a># programs each step&#39;s lets carry a suffix such as _s7, and the parameters are numbered per step, e0 .. e200.)
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>def softmax_rows(m: tensor[112x112]) = exp(m - row_max(m)) / row_sum(exp(m - row_max(m)))
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>def ln_sigma(h: tensor[112x8]) = sqrt(row_mean((h - row_mean(h)) * (h - row_mean(h))) + 1e-05)
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>def ln_hat(h: tensor[112x8]) = (h - row_mean(h)) / ln_sigma(h)
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>def ln_out(h: tensor[112x8], g: tensor[1x8], t: tensor[1x8]) = ln_hat(h) * g + t
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>def ln_back(d: tensor[112x8], h: tensor[112x8], g: tensor[1x8]) = ((d * g) - row_mean(d * g) - ln_hat(h) * row_mean((d * g) * ln_hat(h))) / ln_sigma(h)
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>def log_softmax(z: tensor[112x4]) = z - row_max(z) - log(row_sum(exp(z - row_max(z))))
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a># ---- the forward pass, one let per step
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>let x0_ = x @ e + ps
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>let u1_ = ln_out(x0_, g1, n1)
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>let q_ = u1_ @ wq
+<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>let k_ = u1_ @ wk
+<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>let v_ = u1_ @ wv
+<a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a>let a_ = softmax_rows(q_ @ transpose(k_) * 0.35355339059327373 + mk)
+<a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a>let o_ = a_ @ v_
+<a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a>let x1_ = x0_ + o_ @ wo
+<a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a>let u2_ = ln_out(x1_, g2, n2)
+<a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a>let pre_ = u2_ @ w1 + c1
+<a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a>let r_ = relu(pre_)
+<a id="__codelineno-5-25" name="__codelineno-5-25" href="#__codelineno-5-25"></a>let x2_ = x1_ + (r_ @ w2 + c2)
+<a id="__codelineno-5-26" name="__codelineno-5-26" href="#__codelineno-5-26"></a>let uf_ = ln_out(x2_, gf, nf)
+<a id="__codelineno-5-27" name="__codelineno-5-27" href="#__codelineno-5-27"></a>let lg_ = uf_ @ wu
+<a id="__codelineno-5-28" name="__codelineno-5-28" href="#__codelineno-5-28"></a># ---- the loss, and the number of correct predictions
+<a id="__codelineno-5-29" name="__codelineno-5-29" href="#__codelineno-5-29"></a># loss    = col_sum(row_sum(y * log_softmax(lg_))) * -0.015625
+<a id="__codelineno-5-30" name="__codelineno-5-30" href="#__codelineno-5-30"></a># correct = col_sum(row_sum(ge(lg_, row_max(lg_)) * y))
+<a id="__codelineno-5-31" name="__codelineno-5-31" href="#__codelineno-5-31"></a>
+<a id="__codelineno-5-32" name="__codelineno-5-32" href="#__codelineno-5-32"></a># ---- the backward pass, one let per step, working backwards from the loss
+<a id="__codelineno-5-33" name="__codelineno-5-33" href="#__codelineno-5-33"></a>let dl_ = (exp(log_softmax(lg_)) * mr - y) * 0.015625
+<a id="__codelineno-5-34" name="__codelineno-5-34" href="#__codelineno-5-34"></a>let Gwu_ = transpose(uf_) @ dl_
+<a id="__codelineno-5-35" name="__codelineno-5-35" href="#__codelineno-5-35"></a>let duf_ = dl_ @ transpose(wu)
+<a id="__codelineno-5-36" name="__codelineno-5-36" href="#__codelineno-5-36"></a>let Gnf_ = col_sum(duf_)
+<a id="__codelineno-5-37" name="__codelineno-5-37" href="#__codelineno-5-37"></a>let Ggf_ = col_sum(duf_ * ln_hat(x2_))
+<a id="__codelineno-5-38" name="__codelineno-5-38" href="#__codelineno-5-38"></a>let dx2_ = ln_back(duf_, x2_, gf)
+<a id="__codelineno-5-39" name="__codelineno-5-39" href="#__codelineno-5-39"></a>let Gc2_ = col_sum(dx2_)
+<a id="__codelineno-5-40" name="__codelineno-5-40" href="#__codelineno-5-40"></a>let Gw2_ = transpose(r_) @ dx2_
+<a id="__codelineno-5-41" name="__codelineno-5-41" href="#__codelineno-5-41"></a>let dpre_ = (dx2_ @ transpose(w2)) * ge(pre_, [[0]])
+<a id="__codelineno-5-42" name="__codelineno-5-42" href="#__codelineno-5-42"></a>let Gc1_ = col_sum(dpre_)
+<a id="__codelineno-5-43" name="__codelineno-5-43" href="#__codelineno-5-43"></a>let Gw1_ = transpose(u2_) @ dpre_
+<a id="__codelineno-5-44" name="__codelineno-5-44" href="#__codelineno-5-44"></a>let du2_ = dpre_ @ transpose(w1)
+<a id="__codelineno-5-45" name="__codelineno-5-45" href="#__codelineno-5-45"></a>let Gn2_ = col_sum(du2_)
+<a id="__codelineno-5-46" name="__codelineno-5-46" href="#__codelineno-5-46"></a>let Gg2_ = col_sum(du2_ * ln_hat(x1_))
+<a id="__codelineno-5-47" name="__codelineno-5-47" href="#__codelineno-5-47"></a>let dx1_ = dx2_ + ln_back(du2_, x1_, g2)
+<a id="__codelineno-5-48" name="__codelineno-5-48" href="#__codelineno-5-48"></a>let Gwo_ = transpose(o_) @ dx1_
+<a id="__codelineno-5-49" name="__codelineno-5-49" href="#__codelineno-5-49"></a>let do_ = dx1_ @ transpose(wo)
+<a id="__codelineno-5-50" name="__codelineno-5-50" href="#__codelineno-5-50"></a>let dv_ = transpose(a_) @ do_
+<a id="__codelineno-5-51" name="__codelineno-5-51" href="#__codelineno-5-51"></a>let da_ = do_ @ transpose(v_)
+<a id="__codelineno-5-52" name="__codelineno-5-52" href="#__codelineno-5-52"></a>let ds_ = a_ * (da_ - row_sum(a_ * da_))
+<a id="__codelineno-5-53" name="__codelineno-5-53" href="#__codelineno-5-53"></a>let dq_ = ds_ @ k_ * 0.35355339059327373
+<a id="__codelineno-5-54" name="__codelineno-5-54" href="#__codelineno-5-54"></a>let dk_ = transpose(ds_) @ q_ * 0.35355339059327373
+<a id="__codelineno-5-55" name="__codelineno-5-55" href="#__codelineno-5-55"></a>let Gwq_ = transpose(u1_) @ dq_
+<a id="__codelineno-5-56" name="__codelineno-5-56" href="#__codelineno-5-56"></a>let Gwk_ = transpose(u1_) @ dk_
+<a id="__codelineno-5-57" name="__codelineno-5-57" href="#__codelineno-5-57"></a>let Gwv_ = transpose(u1_) @ dv_
+<a id="__codelineno-5-58" name="__codelineno-5-58" href="#__codelineno-5-58"></a>let du1_ = dq_ @ transpose(wq) + dk_ @ transpose(wk) + dv_ @ transpose(wv)
+<a id="__codelineno-5-59" name="__codelineno-5-59" href="#__codelineno-5-59"></a>let Gn1_ = col_sum(du1_)
+<a id="__codelineno-5-60" name="__codelineno-5-60" href="#__codelineno-5-60"></a>let Gg1_ = col_sum(du1_ * ln_hat(x0_))
+<a id="__codelineno-5-61" name="__codelineno-5-61" href="#__codelineno-5-61"></a>let dx0_ = dx1_ + ln_back(du1_, x0_, g1)
+<a id="__codelineno-5-62" name="__codelineno-5-62" href="#__codelineno-5-62"></a>let Ge_ = transpose(x) @ dx0_
+<a id="__codelineno-5-63" name="__codelineno-5-63" href="#__codelineno-5-63"></a>
+<a id="__codelineno-5-64" name="__codelineno-5-64" href="#__codelineno-5-64"></a># ---- the update, one per matrix (lr = 1.0)
+<a id="__codelineno-5-65" name="__codelineno-5-65" href="#__codelineno-5-65"></a>let e_new = e - Ge_ * 1.0
+<a id="__codelineno-5-66" name="__codelineno-5-66" href="#__codelineno-5-66"></a>let g1_new = g1 - Gg1_ * 1.0
+<a id="__codelineno-5-67" name="__codelineno-5-67" href="#__codelineno-5-67"></a>let n1_new = n1 - Gn1_ * 1.0
+<a id="__codelineno-5-68" name="__codelineno-5-68" href="#__codelineno-5-68"></a>let wq_new = wq - Gwq_ * 1.0
+<a id="__codelineno-5-69" name="__codelineno-5-69" href="#__codelineno-5-69"></a>let wk_new = wk - Gwk_ * 1.0
+<a id="__codelineno-5-70" name="__codelineno-5-70" href="#__codelineno-5-70"></a>let wv_new = wv - Gwv_ * 1.0
+<a id="__codelineno-5-71" name="__codelineno-5-71" href="#__codelineno-5-71"></a>let wo_new = wo - Gwo_ * 1.0
+<a id="__codelineno-5-72" name="__codelineno-5-72" href="#__codelineno-5-72"></a>let g2_new = g2 - Gg2_ * 1.0
+<a id="__codelineno-5-73" name="__codelineno-5-73" href="#__codelineno-5-73"></a>let n2_new = n2 - Gn2_ * 1.0
+<a id="__codelineno-5-74" name="__codelineno-5-74" href="#__codelineno-5-74"></a>let w1_new = w1 - Gw1_ * 1.0
+<a id="__codelineno-5-75" name="__codelineno-5-75" href="#__codelineno-5-75"></a>let c1_new = c1 - Gc1_ * 1.0
+<a id="__codelineno-5-76" name="__codelineno-5-76" href="#__codelineno-5-76"></a>let w2_new = w2 - Gw2_ * 1.0
+<a id="__codelineno-5-77" name="__codelineno-5-77" href="#__codelineno-5-77"></a>let c2_new = c2 - Gc2_ * 1.0
+<a id="__codelineno-5-78" name="__codelineno-5-78" href="#__codelineno-5-78"></a>let gf_new = gf - Ggf_ * 1.0
+<a id="__codelineno-5-79" name="__codelineno-5-79" href="#__codelineno-5-79"></a>let nf_new = nf - Gnf_ * 1.0
+<a id="__codelineno-5-80" name="__codelineno-5-80" href="#__codelineno-5-80"></a>let wu_new = wu - Gwu_ * 1.0
+</code></pre></div>
+<p><strong>Why one <code>let</code> per step and not nested functions.</strong> The first version of this chapter wrote each gradient as a function of the parameters (as in Chapter 34). For this model <code>mgc</code> was killed (exit status −9; running out of memory is the likely cause, not confirmed beyond that): a nested function is expanded in place at every use, so a quantity used several times is recomputed several times, the generated code never frees memory, and the cost multiplied at every level. Binding every intermediate result with <code>let</code> computes it once. This is a property of this compiler (no common-subexpression elimination, no freeing of temporaries), not of the method.</p>
+<h2 id="training">Training<a class="headerlink" href="#training" title="Permanent link">&para;</a></h2>
+<p>The program for the page, <code>examples/04_train_200_steps.mg</code>, runs 200 steps of gradient descent with learning rate 1.0 from seeded starting weights, printing the loss and the number of correct predictions (of 64) on the 16 training sequences at checkpoints 0, 1, 10, 25, 50, 100, 150 and 200; then the held-out loss and count; then the number correct on each of four chunks of 16 of <strong>all 64 possible sequences</strong>; then the attention weights of the first 7 rows (the first training sequence). First, the same program stopped at 10 steps (<code>03_train_10_steps.mg</code>, which the test suite runs):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>################ mgc run 03_train_10_steps.mg
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>  | (785 lines: the definitions are in lm_lib.py; the file holds the data, the unrolled training steps and the prints, written by make_examples.py)
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>  ----- output
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>[[1.42919]]
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>[[20]]
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>[[1.28756]]
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>[[29]]
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>[[0.965858]]
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>[[39]]
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>[[1.58847]]
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a>[[20]]
+<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a>[[11]]
+<a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a>[[31]]
+<a id="__codelineno-6-24" name="__codelineno-6-24" href="#__codelineno-6-24"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-6-25" name="__codelineno-6-25" href="#__codelineno-6-25"></a>[[39]]
+<a id="__codelineno-6-26" name="__codelineno-6-26" href="#__codelineno-6-26"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-6-27" name="__codelineno-6-27" href="#__codelineno-6-27"></a>[[20]]
+<a id="__codelineno-6-28" name="__codelineno-6-28" href="#__codelineno-6-28"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [7, 7] strides = [7, 1] data = 
+<a id="__codelineno-6-29" name="__codelineno-6-29" href="#__codelineno-6-29"></a>[[1,   0,   0,   0,   0,   0,   0], 
+<a id="__codelineno-6-30" name="__codelineno-6-30" href="#__codelineno-6-30"></a> [0.416434,   0.583566,   0,   0,   0,   0,   0], 
+<a id="__codelineno-6-31" name="__codelineno-6-31" href="#__codelineno-6-31"></a> [0.375767,   0.356487,   0.267746,   0,   0,   0,   0], 
+<a id="__codelineno-6-32" name="__codelineno-6-32" href="#__codelineno-6-32"></a> [0.445018,   0.32708,   0.141979,   0.0859235,   0,   0,   0], 
+<a id="__codelineno-6-33" name="__codelineno-6-33" href="#__codelineno-6-33"></a> [0.436527,   0.296865,   0.121964,   0.0729565,   0.0716872,   0,   0], 
+<a id="__codelineno-6-34" name="__codelineno-6-34" href="#__codelineno-6-34"></a> [0.334917,   0.24728,   0.132274,   0.0910244,   0.0858113,   0.108694,   0], 
+<a id="__codelineno-6-35" name="__codelineno-6-35" href="#__codelineno-6-35"></a> [0.252324,   0.205006,   0.132171,   0.0983111,   0.08894,   0.100532,   0.122715]]
+<a id="__codelineno-6-36" name="__codelineno-6-36" href="#__codelineno-6-36"></a>  ----- exit status 0
+</code></pre></div>
+<p>(The first six numbers are loss and number correct at steps 0, 1 and 10; the next two are the held-out loss and count; then the four chunk counts; then the attention matrix, which at this early stage is spread broadly: row 6 puts 0.25, 0.21, 0.13, … on the seven positions.) The loss falls from 1.429 to 0.966 in ten steps; the number correct rises from 20 of 64 (chance is 16) to 39. And the full run:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>################ mgc run 04_train_200_steps.mg
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  | (12455 lines: the definitions are in lm_lib.py; the file holds the data, the unrolled training steps and the prints, written by make_examples.py)
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  ----- output
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>[[1.42919]]
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>[[20]]
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>[[1.28756]]
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>[[29]]
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>[[0.965858]]
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>[[39]]
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>[[0.727803]]
+<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a>[[45]]
+<a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a>[[0.525403]]
+<a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a>[[53]]
+<a id="__codelineno-7-24" name="__codelineno-7-24" href="#__codelineno-7-24"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-7-25" name="__codelineno-7-25" href="#__codelineno-7-25"></a>[[0.0356118]]
+<a id="__codelineno-7-26" name="__codelineno-7-26" href="#__codelineno-7-26"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-7-27" name="__codelineno-7-27" href="#__codelineno-7-27"></a>[[64]]
+<a id="__codelineno-7-28" name="__codelineno-7-28" href="#__codelineno-7-28"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-7-29" name="__codelineno-7-29" href="#__codelineno-7-29"></a>[[0.00192844]]
+<a id="__codelineno-7-30" name="__codelineno-7-30" href="#__codelineno-7-30"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-7-31" name="__codelineno-7-31" href="#__codelineno-7-31"></a>[[64]]
+<a id="__codelineno-7-32" name="__codelineno-7-32" href="#__codelineno-7-32"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-7-33" name="__codelineno-7-33" href="#__codelineno-7-33"></a>[[0.000917701]]
+<a id="__codelineno-7-34" name="__codelineno-7-34" href="#__codelineno-7-34"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-7-35" name="__codelineno-7-35" href="#__codelineno-7-35"></a>[[64]]
+<a id="__codelineno-7-36" name="__codelineno-7-36" href="#__codelineno-7-36"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-7-37" name="__codelineno-7-37" href="#__codelineno-7-37"></a>[[0.00759067]]
+<a id="__codelineno-7-38" name="__codelineno-7-38" href="#__codelineno-7-38"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-7-39" name="__codelineno-7-39" href="#__codelineno-7-39"></a>[[64]]
+<a id="__codelineno-7-40" name="__codelineno-7-40" href="#__codelineno-7-40"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-7-41" name="__codelineno-7-41" href="#__codelineno-7-41"></a>[[64]]
+<a id="__codelineno-7-42" name="__codelineno-7-42" href="#__codelineno-7-42"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-7-43" name="__codelineno-7-43" href="#__codelineno-7-43"></a>[[64]]
+<a id="__codelineno-7-44" name="__codelineno-7-44" href="#__codelineno-7-44"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-7-45" name="__codelineno-7-45" href="#__codelineno-7-45"></a>[[64]]
+<a id="__codelineno-7-46" name="__codelineno-7-46" href="#__codelineno-7-46"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-7-47" name="__codelineno-7-47" href="#__codelineno-7-47"></a>[[64]]
+<a id="__codelineno-7-48" name="__codelineno-7-48" href="#__codelineno-7-48"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [7, 7] strides = [7, 1] data = 
+<a id="__codelineno-7-49" name="__codelineno-7-49" href="#__codelineno-7-49"></a>[[1,   0,   0,   0,   0,   0,   0], 
+<a id="__codelineno-7-50" name="__codelineno-7-50" href="#__codelineno-7-50"></a> [0.990166,   0.00983402,   0,   0,   0,   0,   0], 
+<a id="__codelineno-7-51" name="__codelineno-7-51" href="#__codelineno-7-51"></a> [0.977195,   0.0224568,   0.000348693,   0,   0,   0,   0], 
+<a id="__codelineno-7-52" name="__codelineno-7-52" href="#__codelineno-7-52"></a> [0.429867,   0.518344,   0.0497861,   0.00200291,   0,   0,   0], 
+<a id="__codelineno-7-53" name="__codelineno-7-53" href="#__codelineno-7-53"></a> [0.00284028,   0.10505,   0.803391,   0.0871705,   0.00154816,   0,   0], 
+<a id="__codelineno-7-54" name="__codelineno-7-54" href="#__codelineno-7-54"></a> [3.99338e-05,   0.00111138,   0.149104,   0.783051,   0.0653207,   0.00137268,   0], 
+<a id="__codelineno-7-55" name="__codelineno-7-55" href="#__codelineno-7-55"></a> [1.24684e-05,   1.48271e-05,   0.00118552,   0.187334,   0.785065,   0.0261648,   0.000223552]]
+<a id="__codelineno-7-56" name="__codelineno-7-56" href="#__codelineno-7-56"></a>  ----- exit status 0
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>after step</th>
+<th>0</th>
+<th>1</th>
+<th>10</th>
+<th>25</th>
+<th>50</th>
+<th>100</th>
+<th>150</th>
+<th>200</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>training loss</td>
+<td>1.429</td>
+<td>1.288</td>
+<td>0.966</td>
+<td>0.728</td>
+<td>0.525</td>
+<td>0.0356</td>
+<td>0.0019</td>
+<td><strong>0.0009</strong></td>
+</tr>
+<tr>
+<td>correct of 64</td>
+<td>20</td>
+<td>29</td>
+<td>39</td>
+<td>45</td>
+<td>53</td>
+<td>64</td>
+<td>64</td>
+<td><strong>64</strong></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>It fits the training data:</strong> loss 0.0009, all 64 scored predictions right.</li>
+<li><strong>It generalizes, on this run:</strong> the 16 held-out sequences give loss 0.0076 and 64 of 64, and every one of the four chunks of 16 of all 64 possible sequences gives 64 of 64: <strong>256 of 256</strong>.</li>
+<li><strong>The attention has learned where to look.</strong> The last matrix (the first training sequence, <code>2 2 2 2 2 2 2</code>) shows each row attending to the position <strong>two before itself</strong>: row 2 puts 0.977 on position 0, row 3 puts 0.518 on position 1 (and 0.430 on position 0), row 4 puts 0.803 on position 2, row 5 puts 0.783 on position 3, row 6 puts 0.785 on position 4. Position <em>i</em> is predicting token <em>i+1</em>, which equals token <em>i−2</em>, and that is where it looks. This is a <em>positional</em> pattern; because this sequence has the same token everywhere, it cannot show whether the attention also depends on the token <strong>content</strong>, and no other sequence's attention was printed, so that is <strong>not established</strong>.</li>
+<li><strong>The loss did not fall smoothly.</strong> It is 0.525 at step 50, rises to about 0.58 at step 75 (from the Python run, below), and has collapsed to 0.036 by step 100. It is the shape of a model finding the trick, and it has a consequence, next.</li>
+</ul>
+<h2 id="training-is-chaotic-a-measured-caution">Training is chaotic: a measured caution<a class="headerlink" href="#training-is-chaotic-a-measured-caution" title="Permanent link">&para;</a></h2>
+<p><code>check_lm.py</code> compares the Mountain Goat training with the independent Python trainer. The comparison is <strong>digit for digit up to step 50</strong> (losses and counts equal to a relative 10⁻⁵, the six digits <code>mgc</code> prints) and then <strong>stops being possible</strong>. At step 100 the program's loss is 0.0356 and the Python reference's is 0.0346; the first version of the checker, which demanded agreement at every checkpoint, failed there. Was something wrong? The Python-only <code>sensitivity.py</code> answers by training the <strong>same Python code</strong> twice, once as is and once with a single starting weight changed by <strong>10⁻¹²</strong>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a> step   train loss  nudged by 1e-12   held-out loss     nudged
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>    0     1.429187         1.429187        1.478939   1.478939
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>   25     0.727803         0.727803        1.666671   1.666671
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>   50     0.525403         0.525403        1.564036   1.564036
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>   60     0.631461         0.631461        1.574613   1.574613
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>   70     0.208339         0.208347        1.179501   1.179517
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>   75     0.581304         0.580148        1.207885   1.206682
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>   80     0.602086         0.599439        1.239171   1.236996
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>   90     0.376693         0.322604        0.808559   0.995614
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>  100     0.034635         0.211520        0.251165   0.896438
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>  125     0.003914         0.041846        0.042737   0.279762
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>  150     0.001926         0.003073        0.020251   0.167249
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>  200     0.000912         0.001132        0.008777   0.154761
+</code></pre></div>
+<p>A change of one part in a trillion in one weight is invisible for the first 60 steps and then <strong>grows until the two runs differ completely</strong>: at step 100 the loss is 0.035 in one run and 0.21 in the other; at step 200 the held-out loss is 0.0088 in one and <strong>0.155</strong> in the other. Two <em>correct</em> implementations differ at about that level (different order of floating-point operations), so exact agreement cannot be expected after the transition. What this does and does not mean:</p>
+<ul>
+<li><strong>The backward pass is right</strong> (all 16 gradient matrices equal the reference at three starting points, to 10⁻⁵, and agree with finite differences), and the training agrees digit for digit while the run is still stable. Divergence after the transition is a property of the training, not of the gradient.</li>
+<li><strong>Where the check cannot compare, it checks claims instead:</strong> from step 150 on, the program's loss must be below 0.01 with 64 of 64 right; and the final result is judged by the experiment's claims. The <code>--</code> lines in the output below are the values left uncompared.</li>
+<li><strong>"256 of 256" is a statement about this particular run</strong>, not about the model class. The nudged Python run has the same training loss to within 0.0002 and a held-out loss 18 times larger.</li>
+</ul>
+<h2 id="how-reliable-is-this-a-python-only-sweep">How reliable is this? A Python-only sweep<a class="headerlink" href="#how-reliable-is-this-a-python-only-sweep" title="Permanent link">&para;</a></h2>
+<p><code>lr_sweep.py</code> (plain Python, not <code>mgc</code>) trains for 200 steps with four learning rates and four starting-weight seeds, and reports the final training loss and the number correct of all 256 scored predictions:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>   lr   per starting-weight seed 1..4: (final training loss, correct of 256)
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a> 0.25   (0.00843, 228)  (0.0056, 239)  (0.00273, 225)  (0.011, 235)
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>  0.5   (0.00144, 249)  (0.00218, 234)  (0.00125, 231)  (0.0494, 189)
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>  1.0   (0.000912, 256)  (0.00334, 239)  (0.00118, 249)  (0.00419, 239)
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>  2.0   (1.15, 104)  (0.723, 134)  (0.836, 124)  (0.862, 150)
+</code></pre></div>
+<ul>
+<li><strong>Learning rate 1.0 (the page's) always drives the training loss below 0.005</strong>, but the number correct over all 64 sequences is 256, 239, 249, 239: <strong>seed 1, the page's, is the best of the four.</strong> A model can fit all 16 training sequences and still be wrong on 5 to 7% of the scored predictions the data never showed.</li>
+<li><strong>0.25 and 0.5 are slower</strong> and do no better on unseen sequences (225–239 at 0.25; 189–249 at 0.5, where one seed's training loss is still 0.049). The sweep did not run longer.</li>
+<li><strong>2.0 does not learn at all</strong> (loss above 0.7 after 200 steps; no overflow, it just does not settle).</li>
+<li>Seeds differ, and (as the sensitivity table shows) so can two correct implementations on one seed. With 16 training sequences out of 64, which sequences are held out is a further source of variation that was not varied.</li>
+</ul>
+<h2 id="mistakes-the-compiler-reports">Mistakes the compiler reports<a class="headerlink" href="#mistakes-the-compiler-reports" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>################ mgc run errors/e1_mask_of_the_wrong_size.mg
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>  | # The mask must be as large as the score matrix: 6 x 6 here. A 4 x 4 mask does not fit, and the compiler says so.
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>  | def softmax_rows(m: tensor[6x6]) = exp(m - row_max(m)) / row_sum(exp(m - row_max(m)))
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>  | let scores = [[1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1]]
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>  | let mask = [[0, -1000000000, -1000000000, -1000000000], [0, 0, -1000000000, -1000000000], [0, 0, 0, -1000000000], [0, 0, 0, 0]]
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>  | print softmax_rows(scores + mask)
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>  ----- output
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>errors/e1_mask_of_the_wrong_size.mg:5: error: cannot add shapes 6x6 and 4x4: dimensions 6 and 4 differ and neither is 1
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>  ----- exit status 1
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>################ mgc run errors/e2_missing_argument.mg
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>  | # ln_back takes three arguments (the upstream gradient, the layer&#39;s input and the scale). Two is an arity error, reported before any code exists.
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>  | def ln_sigma(h: tensor[2x4]) = sqrt(row_mean((h - row_mean(h)) * (h - row_mean(h))) + 0.00001)
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>  | def ln_hat(h: tensor[2x4]) = (h - row_mean(h)) / ln_sigma(h)
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>  | def ln_back(d: tensor[2x4], h: tensor[2x4], g: tensor[1x4]) = ((d * g) - row_mean(d * g) - ln_hat(h) * row_mean((d * g) * ln_hat(h))) / ln_sigma(h)
+<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>  | print ln_back([[1, 2, 3, 4], [4, 3, 2, 1]], [[1, 2, 4, 8], [8, 4, 2, 1]])
+<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a>  ----- output
+<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a>errors/e2_missing_argument.mg:5: error: ln_back takes 3 arguments, got 2
+<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a>  ----- exit status 1
+<a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a>
+<a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a>################ mgc run errors/e3_stacked_rows_do_not_match.mg
+<a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a>  | # The tokens matrix has one row per token of every stacked sequence (6 here); the mask-row vector must have the same 6 rows. A 4-row one cannot multiply it.
+<a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a>  | let logits = [[1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3]]
+<a id="__codelineno-10-24" name="__codelineno-10-24" href="#__codelineno-10-24"></a>  | let mr = [[0], [1], [0], [1]]
+<a id="__codelineno-10-25" name="__codelineno-10-25" href="#__codelineno-10-25"></a>  | print logits * mr
+<a id="__codelineno-10-26" name="__codelineno-10-26" href="#__codelineno-10-26"></a>  ----- output
+<a id="__codelineno-10-27" name="__codelineno-10-27" href="#__codelineno-10-27"></a>errors/e3_stacked_rows_do_not_match.mg:4: error: cannot multiply shapes 6x3 and 4x1: dimensions 6 and 4 differ and neither is 1
+<a id="__codelineno-10-28" name="__codelineno-10-28" href="#__codelineno-10-28"></a>  ----- exit status 1
+</code></pre></div>
+<p>A mask of the wrong size for its scores, a call with a missing argument, and a row-selection column that does not match the stacked rows. As always, the shapes are types.</p>
+<h2 id="tests">Tests<a class="headerlink" href="#tests" title="Permanent link">&para;</a></h2>
+<p>Three new <code>lit</code> files in <code>test/lm35/</code> (the suite is now 141 tests; no <code>verifiers</code> or <code>ir</code> test because no compiler operation was added):</p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>What it checks</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>examples</code></td>
+<td>the two small examples (worked out above) and the loss and correct count of the 10-step training run</td>
+</tr>
+<tr>
+<td><code>errors</code></td>
+<td>the three mistakes give the exact messages</td>
+</tr>
+<tr>
+<td><code>against-reference</code></td>
+<td><code>check_lm.py</code> in its quick mode, below (about 25 seconds). The 200-step run is not in CI because it takes about 8 minutes; <code>check_lm.py --full</code> runs it</td>
+</tr>
+</tbody>
+</table>
+<p><code>check_lm.py</code> compares with an <strong>independent</strong> Python implementation (plain lists, one sequence and one position at a time; every gradient derived element by element) and checks, in order:</p>
+<ol>
+<li><strong>The gradients,</strong> for three starting-weight sets: the loss and all 16 gradient matrices equal the reference's, and for the first set <strong>two weights of every matrix</strong> (the first, and the one with the largest gradient: 32 weights) agree with a finite-difference estimate (step 0.001). Checking every one of the 648 would take 1,296 more forward passes in one program and has not been done.</li>
+<li><strong>Training:</strong> loss and correct count at the checkpoints up to step 50 (and, in the quick mode, up to step 10), the held-out loss and count, the four chunk counts and the attention pattern equal the reference's; every attention row sums to 1 and puts exactly 0 after the diagonal.</li>
+<li><strong>The experiment (<code>--full</code>):</strong> the 200-step run fits the training sequences (loss below 0.002), gets all 16 held-out and all 64 possible sequences right, with the later checkpoints held to their claims rather than to digits.</li>
+</ol>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>-- the hand-derived backward pass against the independent per-position gradient, and against finite differences
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>  ok   starting weights #1: the loss and all 16 gradient matrices equal the reference
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>  ok   starting weights #1: 32 weights (two of every matrix) agree with finite differences (largest difference 1.6e-04)
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>  ok   starting weights #2: the loss and all 16 gradient matrices equal the reference
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>  ok   starting weights #3: the loss and all 16 gradient matrices equal the reference
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>-- training 200 steps against the independent Python trainer
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>  ok   step 0: loss 1.429187 and 20 of 64 correct equal the reference
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>  ok   step 1: loss 1.287565 and 29 of 64 correct equal the reference
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>  ok   step 10: loss 0.965858 and 39 of 64 correct equal the reference
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>  ok   step 25: loss 0.727803 and 45 of 64 correct equal the reference
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>  ok   step 50: loss 0.525403 and 53 of 64 correct equal the reference
+<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>  --   step 100: loss 0.035612, 64 of 64 correct (the reference gives 0.034635, 64: inside the chaotic phase, not compared)
+<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>  ok   step 150: loss 0.001928 (below 0.01) and 64 of 64 correct (the reference&#39;s run, 0.001926, differs by rounding-level amplification; not compared digit for digit)
+<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a>  ok   step 200: loss 0.000918 (below 0.01) and 64 of 64 correct (the reference&#39;s run, 0.000912, differs by rounding-level amplification; not compared digit for digit)
+<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a>  --   the 16 held-out sequences: 64 of 64 correct, loss 0.007591 (the reference run gives 0.008777; compared by the experiment&#39;s claims below)
+<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a>  ok   the number correct in each of the four chunks of 16 of all 64 sequences, [64, 64, 64, 64], equals the reference&#39;s [64, 64, 64, 64] (or the run is past the tight region and the experiment&#39;s claims below decide)
+<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a>  ok   every attention row sums to 1 and puts exactly 0 on every later position (the mask works)
+<a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a>-- the experiment
+<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a>  ok   it fits its 16 training sequences: loss 0.000918, 64 of 64 predictions right
+<a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a>  ok   it gets all 16 held-out sequences right (64 of 64 predictions)
+<a id="__codelineno-11-21" name="__codelineno-11-21" href="#__codelineno-11-21"></a>  ok   it gets all 64 possible sequences right: 256 of 256 predictions
+<a id="__codelineno-11-22" name="__codelineno-11-22" href="#__codelineno-11-22"></a>  ok   for the first training sequence [2, 2, 2, 2, 2, 2, 2], position 5 (predicting token 2) attends mostly to position 3 (weight 0.783); the page reports the whole pattern
+<a id="__codelineno-11-23" name="__codelineno-11-23" href="#__codelineno-11-23"></a>all checks pass
+</code></pre></div>
+<p><strong>A repaired check.</strong> The finite-difference check first failed (largest difference 2.8·10⁻³ against a threshold of 10⁻³). The gradient was not wrong: the loss is about 1.4 and <code>mgc</code> prints six significant digits, so each printed loss carries an error of about 5·10⁻⁶, which divided by the step 0.002 becomes about 2.5·10⁻³. The program now forms the <strong>difference</strong> of the two losses inside Mountain Goat and prints that, so that the six digits are spent on the small difference, and the largest difference fell to 1.6·10⁻⁴.</p>
+<h3 id="are-the-checks-good-enough-run-eighteen-wrong-programs">Are the checks good enough? Run eighteen wrong programs.<a class="headerlink" href="#are-the-checks-good-enough-run-eighteen-wrong-programs" title="Permanent link">&para;</a></h3>
+<p><code>model_mutation.py</code> writes eighteen versions of the program, each with one mistake, and runs the quick checker on each:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>NOTE: this script deliberately runs wrong backward passes. &#39;caught&#39; lines are EXPECTED: they show the checker can detect the mistake.
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>baseline (nothing broken): checker passes (expected)
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>layer-norm backward misses the mean-subtraction term: caught by 9 failing checks (the reference gradient, finite differences, the reference training run, other)
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>layer-norm backward misses the projection term: caught by 9 failing checks (the reference gradient, finite differences, the reference training run, other)
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>layer-norm backward forgets to divide by sigma: caught by 9 failing checks (the reference gradient, finite differences, the reference training run, other)
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>softmax backward misses the row-sum correction (ds = a * da): caught by 4 failing checks (the reference gradient, finite differences)
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>the 1/sqrt(8) score scale is missing from dq: caught by 4 failing checks (the reference gradient, finite differences)
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>dk forgets to transpose ds: caught by 4 failing checks (the reference gradient, finite differences)
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>the gradient of the cross-entropy is not masked to the target rows: caught by 9 failing checks (the reference gradient, finite differences, the reference training run, other)
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>the loss&#39;s 1/64 is 1/32 in the backward pass only: caught by 9 failing checks (the reference gradient, finite differences, the reference training run, other)
+<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a>the relu mask is omitted (the gradient passes everywhere): caught by 4 failing checks (the reference gradient, finite differences)
+<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a>the relu mask is the wrong way round: caught by 4 failing checks (the reference gradient, finite differences)
+<a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a>the residual path is dropped from dx1: caught by 4 failing checks (the reference gradient, finite differences)
+<a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a>the residual path is dropped from dx0 (the embedding gradient): caught by 4 failing checks (the reference gradient, finite differences)
+<a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a>the value path is dropped from du1 (attention&#39;s three inputs become two): caught by 4 failing checks (the reference gradient, finite differences)
+<a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a>the forward pass lets every position see ALL 112 rows (no mask; the backward pass is unchanged): caught by 10 failing checks (the reference gradient, the reference training run, other, the mask check)
+<a id="__codelineno-12-17" name="__codelineno-12-17" href="#__codelineno-12-17"></a>the position encodings are left out of the forward pass only: caught by 10 failing checks (the reference gradient, finite differences, the reference training run, other)
+<a id="__codelineno-12-18" name="__codelineno-12-18" href="#__codelineno-12-18"></a>the layer-norm epsilon is 0.1 in the forward AND backward pass (consistent with itself, not with the reference): caught by 9 failing checks (the reference gradient, the reference training run, other)
+<a id="__codelineno-12-19" name="__codelineno-12-19" href="#__codelineno-12-19"></a>naive softmax (no row-max subtraction); algebraically identical, and the masked entries are exp(-1e9) = 0: NOT CAUGHT
+<a id="__codelineno-12-20" name="__codelineno-12-20" href="#__codelineno-12-20"></a>the training step has the wrong learning rate (0.5 instead of 1.0): caught by 5 failing checks (the reference training run, other)
+</code></pre></div>
+<p>Seventeen of eighteen are caught. What the pattern shows:</p>
+<ul>
+<li><strong>Thirteen are mistakes in the backward pass alone</strong> (the three layer-norm errors, softmax's missing row-sum correction, the dropped <code>1/√8</code> in <code>dq</code>, <code>dk</code> without the transpose, the loss gradient not masked to the scored rows, <code>1/32</code> instead of <code>1/64</code>, the ReLU mask omitted or reversed, the residual dropped from <code>dx1</code> or from <code>dx0</code>, the value path dropped from <code>du1</code>). Each is caught by the reference gradient <strong>and by the finite differences</strong>, which see only the loss.</li>
+<li><strong>The forward-only changes are caught by the reference, not by finite differences.</strong> The forward pass with no mask (every position sees all 112 rows) is also caught by the mask check and the training run; the layer-norm epsilon of 0.1 in forward <strong>and</strong> backward is consistent with itself, so finite differences cannot see it, and only the comparison with the reference does (as in Chapter 34). The wrong learning rate changes only training, and only the comparison of the training run notices.</li>
+<li><strong>A caveat about one line.</strong> The mutant that drops the position vectors from the forward pass is reported as caught by finite differences too; that is partly an artifact of the mutation script, which changed the program's main forward pass but not the perturbed copies used for the embedding's finite differences. It is caught regardless, by the reference.</li>
+<li><strong>One is NOT CAUGHT: the softmax without the row-maximum subtraction.</strong> It is algebraically the same function, and with scores of this size (and the masked entries <code>exp(−10⁹) = 0</code> exactly) it gives the same numbers. The reason for subtracting the maximum is to avoid overflow for <strong>large</strong> scores, and no check here has large scores. This is a gap in the checks, not in the program: a test with scores of a few hundred would catch it, and none was written.</li>
+</ul>
+<p>There is no compiler-mutation run for this chapter: no compiler code changed.</p>
+<p>The full suite:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>-- Testing: 141 tests, 4 workers --
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>PASS: IR Forge / Mountain Goat :: attention33/examples.mlir (1 of 141)
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>PASS: IR Forge / Mountain Goat :: attention33/against-reference.mlir (2 of 141)
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>PASS: IR Forge / Mountain Goat :: generalize32/against-reference.mlir (3 of 141)
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>PASS: IR Forge / Mountain Goat :: transformer30/against-reference.mlir (4 of 141)
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>PASS: IR Forge / Mountain Goat :: lm35/against-reference.mlir (5 of 141)
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>PASS: IR Forge / Mountain Goat :: contraction/tensor-contraction.mlir (6 of 141)
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>PASS: IR Forge / Mountain Goat :: contraction28/against-definition.mlir (7 of 141)
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>PASS: IR Forge / Mountain Goat :: attention29/against-reference.mlir (8 of 141)
+<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a>PASS: IR Forge / Mountain Goat :: learning/gradient-descent.mlir (9 of 141)
+<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a>PASS: IR Forge / Mountain Goat :: lm35/examples.mlir (10 of 141)
+<a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a>PASS: IR Forge / Mountain Goat :: bigram31/against-reference.mlir (11 of 141)
+<a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a>PASS: IR Forge / Mountain Goat :: generalize32/examples.mlir (12 of 141)
+<a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a>PASS: IR Forge / Mountain Goat :: tour/gallery.mlir (13 of 141)
+<a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a>PASS: IR Forge / Mountain Goat :: attention29/examples.mlir (14 of 141)
+<a id="__codelineno-13-16" name="__codelineno-13-16" href="#__codelineno-13-16"></a>PASS: IR Forge / Mountain Goat :: contraction28/examples.mlir (15 of 141)
+<a id="__codelineno-13-17" name="__codelineno-13-17" href="#__codelineno-13-17"></a>PASS: IR Forge / Mountain Goat :: broadcast/values.mlir (16 of 141)
+<a id="__codelineno-13-18" name="__codelineno-13-18" href="#__codelineno-13-18"></a>PASS: IR Forge / Mountain Goat :: tour/more-examples.mlir (17 of 141)
+<a id="__codelineno-13-19" name="__codelineno-13-19" href="#__codelineno-13-19"></a>PASS: IR Forge / Mountain Goat :: bigram31/examples.mlir (18 of 141)
+<a id="__codelineno-13-20" name="__codelineno-13-20" href="#__codelineno-13-20"></a>PASS: IR Forge / Mountain Goat :: tour/tour-examples.mlir (19 of 141)
+<a id="__codelineno-13-21" name="__codelineno-13-21" href="#__codelineno-13-21"></a>PASS: IR Forge / Mountain Goat :: transformer30/examples.mlir (20 of 141)
+<a id="__codelineno-13-22" name="__codelineno-13-22" href="#__codelineno-13-22"></a>PASS: IR Forge / Mountain Goat :: loop-order/bitwise-identical.mlir (21 of 141)
+<a id="__codelineno-13-23" name="__codelineno-13-23" href="#__codelineno-13-23"></a>PASS: IR Forge / Mountain Goat :: loop-order/results-identical.mlir (22 of 141)
+<a id="__codelineno-13-24" name="__codelineno-13-24" href="#__codelineno-13-24"></a>PASS: IR Forge / Mountain Goat :: perf/options-same-results.mlir (23 of 141)
+<a id="__codelineno-13-25" name="__codelineno-13-25" href="#__codelineno-13-25"></a>PASS: IR Forge / Mountain Goat :: broadcast/cpp-interop-reductions.mlir (24 of 141)
+<a id="__codelineno-13-26" name="__codelineno-13-26" href="#__codelineno-13-26"></a>PASS: IR Forge / Mountain Goat :: contraction/mismatch-trap.mlir (25 of 141)
+<a id="__codelineno-13-27" name="__codelineno-13-27" href="#__codelineno-13-27"></a>PASS: IR Forge / Mountain Goat :: loop-order/cpp-ikj.mlir (26 of 141)
+<a id="__codelineno-13-28" name="__codelineno-13-28" href="#__codelineno-13-28"></a>PASS: IR Forge / Mountain Goat :: ops/values.mlir (27 of 141)
+<a id="__codelineno-13-29" name="__codelineno-13-29" href="#__codelineno-13-29"></a>PASS: IR Forge / Mountain Goat :: frontend/cpp-interop.mlir (28 of 141)
+<a id="__codelineno-13-30" name="__codelineno-13-30" href="#__codelineno-13-30"></a>PASS: IR Forge / Mountain Goat :: ops/elementwise-mismatch-aborts.mlir (29 of 141)
+<a id="__codelineno-13-31" name="__codelineno-13-31" href="#__codelineno-13-31"></a>PASS: IR Forge / Mountain Goat :: tour/scientific-literals.mlir (30 of 141)
+<a id="__codelineno-13-32" name="__codelineno-13-32" href="#__codelineno-13-32"></a>PASS: IR Forge / Mountain Goat :: ops/cpp-interop-ops.mlir (31 of 141)
+<a id="__codelineno-13-33" name="__codelineno-13-33" href="#__codelineno-13-33"></a>PASS: IR Forge / Mountain Goat :: broadcast/networks.mlir (32 of 141)
+<a id="__codelineno-13-34" name="__codelineno-13-34" href="#__codelineno-13-34"></a>PASS: IR Forge / Mountain Goat :: execution/gpu-host-with-stub-runtime.mlir (33 of 141)
+<a id="__codelineno-13-35" name="__codelineno-13-35" href="#__codelineno-13-35"></a>PASS: IR Forge / Mountain Goat :: ops/precedence-and-identities.mlir (34 of 141)
+<a id="__codelineno-13-36" name="__codelineno-13-36" href="#__codelineno-13-36"></a>PASS: IR Forge / Mountain Goat :: frontend/more-examples.mlir (35 of 141)
+<a id="__codelineno-13-37" name="__codelineno-13-37" href="#__codelineno-13-37"></a>PASS: IR Forge / Mountain Goat :: ops/negate-and-dynamic-divide.mlir (36 of 141)
+<a id="__codelineno-13-38" name="__codelineno-13-38" href="#__codelineno-13-38"></a>PASS: IR Forge / Mountain Goat :: broadcast/dynamic-reductions.mlir (37 of 141)
+<a id="__codelineno-13-39" name="__codelineno-13-39" href="#__codelineno-13-39"></a>PASS: IR Forge / Mountain Goat :: ops/composed-programs.mlir (38 of 141)
+<a id="__codelineno-13-40" name="__codelineno-13-40" href="#__codelineno-13-40"></a>PASS: IR Forge / Mountain Goat :: ops/dynamic-ops.mlir (39 of 141)
+<a id="__codelineno-13-41" name="__codelineno-13-41" href="#__codelineno-13-41"></a>PASS: IR Forge / Mountain Goat :: frontend/runtime-mismatch-aborts.mlir (40 of 141)
+<a id="__codelineno-13-42" name="__codelineno-13-42" href="#__codelineno-13-42"></a>PASS: IR Forge / Mountain Goat :: broadcast/identities.mlir (41 of 141)
+<a id="__codelineno-13-43" name="__codelineno-13-43" href="#__codelineno-13-43"></a>PASS: IR Forge / Mountain Goat :: loop-order/flag-reaches-pass.mlir (42 of 141)
+<a id="__codelineno-13-44" name="__codelineno-13-44" href="#__codelineno-13-44"></a>PASS: IR Forge / Mountain Goat :: chapters/ch09-execution-engine.mlir (43 of 141)
+<a id="__codelineno-13-45" name="__codelineno-13-45" href="#__codelineno-13-45"></a>PASS: IR Forge / Mountain Goat :: execution/mismatch-aborts.mlir (44 of 141)
+<a id="__codelineno-13-46" name="__codelineno-13-46" href="#__codelineno-13-46"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/message-on-stderr.mlir (45 of 141)
+<a id="__codelineno-13-47" name="__codelineno-13-47" href="#__codelineno-13-47"></a>PASS: IR Forge / Mountain Goat :: frontend/dynamic-runs.mlir (46 of 141)
+<a id="__codelineno-13-48" name="__codelineno-13-48" href="#__codelineno-13-48"></a>PASS: IR Forge / Mountain Goat :: perf/flags-reach-clang.mlir (47 of 141)
+<a id="__codelineno-13-49" name="__codelineno-13-49" href="#__codelineno-13-49"></a>PASS: IR Forge / Mountain Goat :: tour/tour-errors.mlir (48 of 141)
+<a id="__codelineno-13-50" name="__codelineno-13-50" href="#__codelineno-13-50"></a>PASS: IR Forge / Mountain Goat :: execution/mismatch-columns-aborts.mlir (49 of 141)
+<a id="__codelineno-13-51" name="__codelineno-13-51" href="#__codelineno-13-51"></a>PASS: IR Forge / Mountain Goat :: contraction28/errors.mlir (50 of 141)
+<a id="__codelineno-13-52" name="__codelineno-13-52" href="#__codelineno-13-52"></a>PASS: IR Forge / Mountain Goat :: execution/dynamic-shapes-run.mlir (51 of 141)
+<a id="__codelineno-13-53" name="__codelineno-13-53" href="#__codelineno-13-53"></a>PASS: IR Forge / Mountain Goat :: ops/ptx-new-ops.mlir (52 of 141)
+<a id="__codelineno-13-54" name="__codelineno-13-54" href="#__codelineno-13-54"></a>PASS: IR Forge / Mountain Goat :: perf/tiling-structure.mlir (53 of 141)
+<a id="__codelineno-13-55" name="__codelineno-13-55" href="#__codelineno-13-55"></a>PASS: IR Forge / Mountain Goat :: ops/matmul-mismatch-aborts.mlir (54 of 141)
+<a id="__codelineno-13-56" name="__codelineno-13-56" href="#__codelineno-13-56"></a>PASS: IR Forge / Mountain Goat :: frontend/hello-and-static.mlir (55 of 141)
+<a id="__codelineno-13-57" name="__codelineno-13-57" href="#__codelineno-13-57"></a>PASS: IR Forge / Mountain Goat :: execution/static-add-runs.mlir (56 of 141)
+<a id="__codelineno-13-58" name="__codelineno-13-58" href="#__codelineno-13-58"></a>PASS: IR Forge / Mountain Goat :: ops/division-ieee.mlir (57 of 141)
+<a id="__codelineno-13-59" name="__codelineno-13-59" href="#__codelineno-13-59"></a>PASS: IR Forge / Mountain Goat :: bigram31/errors.mlir (58 of 141)
+<a id="__codelineno-13-60" name="__codelineno-13-60" href="#__codelineno-13-60"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/runtime-check-survives-transforms.mlir (59 of 141)
+<a id="__codelineno-13-61" name="__codelineno-13-61" href="#__codelineno-13-61"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/tiling-runs.mlir (60 of 141)
+<a id="__codelineno-13-62" name="__codelineno-13-62" href="#__codelineno-13-62"></a>PASS: IR Forge / Mountain Goat :: transformer30/errors.mlir (61 of 141)
+<a id="__codelineno-13-63" name="__codelineno-13-63" href="#__codelineno-13-63"></a>PASS: IR Forge / Mountain Goat :: broadcast/ptx-layer.mlir (62 of 141)
+<a id="__codelineno-13-64" name="__codelineno-13-64" href="#__codelineno-13-64"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/valid-shapes-still-pass.mlir (63 of 141)
+<a id="__codelineno-13-65" name="__codelineno-13-65" href="#__codelineno-13-65"></a>PASS: IR Forge / Mountain Goat :: attention33/errors.mlir (64 of 141)
+<a id="__codelineno-13-66" name="__codelineno-13-66" href="#__codelineno-13-66"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/fusion-after-tiling.mlir (65 of 141)
+<a id="__codelineno-13-67" name="__codelineno-13-67" href="#__codelineno-13-67"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/unroll-runs.mlir (66 of 141)
+<a id="__codelineno-13-68" name="__codelineno-13-68" href="#__codelineno-13-68"></a>PASS: IR Forge / Mountain Goat :: generalize32/errors.mlir (67 of 141)
+<a id="__codelineno-13-69" name="__codelineno-13-69" href="#__codelineno-13-69"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/nested-assert-runs.mlir (68 of 141)
+<a id="__codelineno-13-70" name="__codelineno-13-70" href="#__codelineno-13-70"></a>PASS: IR Forge / Mountain Goat :: execution/mixed-static-dynamic.mlir (69 of 141)
+<a id="__codelineno-13-71" name="__codelineno-13-71" href="#__codelineno-13-71"></a>PASS: IR Forge / Mountain Goat :: ffn34/errors.mlir (70 of 141)
+<a id="__codelineno-13-72" name="__codelineno-13-72" href="#__codelineno-13-72"></a>PASS: IR Forge / Mountain Goat :: gpu/host-runtime-calls.mlir (71 of 141)
+<a id="__codelineno-13-73" name="__codelineno-13-73" href="#__codelineno-13-73"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/message-bytes-exact.mlir (72 of 141)
+<a id="__codelineno-13-74" name="__codelineno-13-74" href="#__codelineno-13-74"></a>PASS: IR Forge / Mountain Goat :: contraction28/ir.mlir (73 of 141)
+<a id="__codelineno-13-75" name="__codelineno-13-75" href="#__codelineno-13-75"></a>PASS: IR Forge / Mountain Goat :: attention29/errors.mlir (74 of 141)
+<a id="__codelineno-13-76" name="__codelineno-13-76" href="#__codelineno-13-76"></a>PASS: IR Forge / Mountain Goat :: gpu/ptx-default.mlir (75 of 141)
+<a id="__codelineno-13-77" name="__codelineno-13-77" href="#__codelineno-13-77"></a>PASS: IR Forge / Mountain Goat :: lm35/errors.mlir (76 of 141)
+<a id="__codelineno-13-78" name="__codelineno-13-78" href="#__codelineno-13-78"></a>PASS: IR Forge / Mountain Goat :: loop-order/structure.mlir (77 of 141)
+<a id="__codelineno-13-79" name="__codelineno-13-79" href="#__codelineno-13-79"></a>PASS: IR Forge / Mountain Goat :: gpu/ptx-bare-pointers.mlir (78 of 141)
+<a id="__codelineno-13-80" name="__codelineno-13-80" href="#__codelineno-13-80"></a>PASS: IR Forge / Mountain Goat :: gpu/pass-order-crash.mlir (79 of 141)
+<a id="__codelineno-13-81" name="__codelineno-13-81" href="#__codelineno-13-81"></a>PASS: IR Forge / Mountain Goat :: execution/strided-view.mlir (80 of 141)
+<a id="__codelineno-13-82" name="__codelineno-13-82" href="#__codelineno-13-82"></a>PASS: IR Forge / Mountain Goat :: gpu/host-runtime-calls-bare.mlir (81 of 141)
+<a id="__codelineno-13-83" name="__codelineno-13-83" href="#__codelineno-13-83"></a>PASS: IR Forge / Mountain Goat :: frontend/ptx-from-source.mlir (82 of 141)
+<a id="__codelineno-13-84" name="__codelineno-13-84" href="#__codelineno-13-84"></a>PASS: IR Forge / Mountain Goat :: gpu/ptx-index32.mlir (83 of 141)
+<a id="__codelineno-13-85" name="__codelineno-13-85" href="#__codelineno-13-85"></a>PASS: IR Forge / Mountain Goat :: chapters/ch01-pipeline.mlir (84 of 141)
+<a id="__codelineno-13-86" name="__codelineno-13-86" href="#__codelineno-13-86"></a>PASS: IR Forge / Mountain Goat :: ops/front-end-errors.mlir (85 of 141)
+<a id="__codelineno-13-87" name="__codelineno-13-87" href="#__codelineno-13-87"></a>PASS: IR Forge / Mountain Goat :: frontend/front-end-errors.mlir (86 of 141)
+<a id="__codelineno-13-88" name="__codelineno-13-88" href="#__codelineno-13-88"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/fusion-needs-constant-trip-counts.mlir (87 of 141)
+<a id="__codelineno-13-89" name="__codelineno-13-89" href="#__codelineno-13-89"></a>PASS: IR Forge / Mountain Goat :: broadcast/front-end-errors.mlir (88 of 141)
+<a id="__codelineno-13-90" name="__codelineno-13-90" href="#__codelineno-13-90"></a>PASS: IR Forge / Mountain Goat :: broadcast/roundtrip-and-lowering.mlir (89 of 141)
+<a id="__codelineno-13-91" name="__codelineno-13-91" href="#__codelineno-13-91"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/unroll-full-needs-constant-trip-count.mlir (90 of 141)
+<a id="__codelineno-13-92" name="__codelineno-13-92" href="#__codelineno-13-92"></a>PASS: IR Forge / Mountain Goat :: transformer30/ir.mlir (91 of 141)
+<a id="__codelineno-13-93" name="__codelineno-13-93" href="#__codelineno-13-93"></a>PASS: IR Forge / Mountain Goat :: chapters/ch02-example-programs.mlir (92 of 141)
+<a id="__codelineno-13-94" name="__codelineno-13-94" href="#__codelineno-13-94"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/guard-nested-assert.mlir (93 of 141)
+<a id="__codelineno-13-95" name="__codelineno-13-95" href="#__codelineno-13-95"></a>PASS: IR Forge / Mountain Goat :: canonicalize/transpose-twice-dynamic-mixed.mlir (94 of 141)
+<a id="__codelineno-13-96" name="__codelineno-13-96" href="#__codelineno-13-96"></a>PASS: IR Forge / Mountain Goat :: gpu/nvvm-lowering.mlir (95 of 141)
+<a id="__codelineno-13-97" name="__codelineno-13-97" href="#__codelineno-13-97"></a>PASS: IR Forge / Mountain Goat :: ops/matmul-lowering-structure.mlir (96 of 141)
+<a id="__codelineno-13-98" name="__codelineno-13-98" href="#__codelineno-13-98"></a>PASS: IR Forge / Mountain Goat :: bigram31/ir.mlir (97 of 141)
+<a id="__codelineno-13-99" name="__codelineno-13-99" href="#__codelineno-13-99"></a>PASS: IR Forge / Mountain Goat :: ops/matmul-inner-mismatch.mlir (98 of 141)
+<a id="__codelineno-13-100" name="__codelineno-13-100" href="#__codelineno-13-100"></a>PASS: IR Forge / Mountain Goat :: broadcast/verifier-broadcast.mlir (99 of 141)
+<a id="__codelineno-13-101" name="__codelineno-13-101" href="#__codelineno-13-101"></a>PASS: IR Forge / Mountain Goat :: verifier/transpose-bad-shape.mlir (100 of 141)
+<a id="__codelineno-13-102" name="__codelineno-13-102" href="#__codelineno-13-102"></a>PASS: IR Forge / Mountain Goat :: frontend/emit-mlir.mlir (101 of 141)
+<a id="__codelineno-13-103" name="__codelineno-13-103" href="#__codelineno-13-103"></a>PASS: IR Forge / Mountain Goat :: generalize32/ir.mlir (102 of 141)
+<a id="__codelineno-13-104" name="__codelineno-13-104" href="#__codelineno-13-104"></a>PASS: IR Forge / Mountain Goat :: verifier/dynamic-accepted.mlir (103 of 141)
+<a id="__codelineno-13-105" name="__codelineno-13-105" href="#__codelineno-13-105"></a>PASS: IR Forge / Mountain Goat :: gpu/kernel-outlining.mlir (104 of 141)
+<a id="__codelineno-13-106" name="__codelineno-13-106" href="#__codelineno-13-106"></a>PASS: IR Forge / Mountain Goat :: verifier/add-static-mismatch.mlir (105 of 141)
+<a id="__codelineno-13-107" name="__codelineno-13-107" href="#__codelineno-13-107"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/run-twice-no-collision.mlir (106 of 141)
+<a id="__codelineno-13-108" name="__codelineno-13-108" href="#__codelineno-13-108"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/static-unchanged.mlir (107 of 141)
+<a id="__codelineno-13-109" name="__codelineno-13-109" href="#__codelineno-13-109"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/tiling-structure.mlir (108 of 141)
+<a id="__codelineno-13-110" name="__codelineno-13-110" href="#__codelineno-13-110"></a>PASS: IR Forge / Mountain Goat :: ops/matmul-bad-result-shape.mlir (109 of 141)
+<a id="__codelineno-13-111" name="__codelineno-13-111" href="#__codelineno-13-111"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/fusion-declines.mlir (110 of 141)
+<a id="__codelineno-13-112" name="__codelineno-13-112" href="#__codelineno-13-112"></a>PASS: IR Forge / Mountain Goat :: gpu/cuda-comparison.mlir (111 of 141)
+<a id="__codelineno-13-113" name="__codelineno-13-113" href="#__codelineno-13-113"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/fusion-fires-when-static.mlir (112 of 141)
+<a id="__codelineno-13-114" name="__codelineno-13-114" href="#__codelineno-13-114"></a>PASS: IR Forge / Mountain Goat :: lowering/bufferize-static-add.mlir (113 of 141)
+<a id="__codelineno-13-115" name="__codelineno-13-115" href="#__codelineno-13-115"></a>PASS: IR Forge / Mountain Goat :: attention29/ir.mlir (114 of 141)
+<a id="__codelineno-13-116" name="__codelineno-13-116" href="#__codelineno-13-116"></a>PASS: IR Forge / Mountain Goat :: verifier/unranked-rejected.mlir (115 of 141)
+<a id="__codelineno-13-117" name="__codelineno-13-117" href="#__codelineno-13-117"></a>PASS: IR Forge / Mountain Goat :: verifier/transpose-rank3.mlir (116 of 141)
+<a id="__codelineno-13-118" name="__codelineno-13-118" href="#__codelineno-13-118"></a>PASS: IR Forge / Mountain Goat :: loops/tiling.mlir (117 of 141)
+<a id="__codelineno-13-119" name="__codelineno-13-119" href="#__codelineno-13-119"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/unroll-epilogue.mlir (118 of 141)
+<a id="__codelineno-13-120" name="__codelineno-13-120" href="#__codelineno-13-120"></a>PASS: IR Forge / Mountain Goat :: broadcast/verifier-reduce.mlir (119 of 141)
+<a id="__codelineno-13-121" name="__codelineno-13-121" href="#__codelineno-13-121"></a>PASS: IR Forge / Mountain Goat :: loops/fusion.mlir (120 of 141)
+<a id="__codelineno-13-122" name="__codelineno-13-122" href="#__codelineno-13-122"></a>PASS: IR Forge / Mountain Goat :: lowering/dynamic-transpose-no-check.mlir (121 of 141)
+<a id="__codelineno-13-123" name="__codelineno-13-123" href="#__codelineno-13-123"></a>PASS: IR Forge / Mountain Goat :: bigram31/verifiers.mlir (122 of 141)
+<a id="__codelineno-13-124" name="__codelineno-13-124" href="#__codelineno-13-124"></a>PASS: IR Forge / Mountain Goat :: loops/unroll-full.mlir (123 of 141)
+<a id="__codelineno-13-125" name="__codelineno-13-125" href="#__codelineno-13-125"></a>PASS: IR Forge / Mountain Goat :: lowering/bufferize-dynamic-add.mlir (124 of 141)
+<a id="__codelineno-13-126" name="__codelineno-13-126" href="#__codelineno-13-126"></a>PASS: IR Forge / Mountain Goat :: ops/dynamic-accepted.mlir (125 of 141)
+<a id="__codelineno-13-127" name="__codelineno-13-127" href="#__codelineno-13-127"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/rewrite-structure.mlir (126 of 141)
+<a id="__codelineno-13-128" name="__codelineno-13-128" href="#__codelineno-13-128"></a>PASS: IR Forge / Mountain Goat :: ops/elementwise-static-mismatch.mlir (127 of 141)
+<a id="__codelineno-13-129" name="__codelineno-13-129" href="#__codelineno-13-129"></a>PASS: IR Forge / Mountain Goat :: canonicalize/fold-constant-add.mlir (128 of 141)
+<a id="__codelineno-13-130" name="__codelineno-13-130" href="#__codelineno-13-130"></a>PASS: IR Forge / Mountain Goat :: canonicalize/transpose-twice.mlir (129 of 141)
+<a id="__codelineno-13-131" name="__codelineno-13-131" href="#__codelineno-13-131"></a>PASS: IR Forge / Mountain Goat :: ops/scalar-bad-op.mlir (130 of 141)
+<a id="__codelineno-13-132" name="__codelineno-13-132" href="#__codelineno-13-132"></a>PASS: IR Forge / Mountain Goat :: lowering/static-add-affine.mlir (131 of 141)
+<a id="__codelineno-13-133" name="__codelineno-13-133" href="#__codelineno-13-133"></a>PASS: IR Forge / Mountain Goat :: lowering/mixed-add-one-check.mlir (132 of 141)
+<a id="__codelineno-13-134" name="__codelineno-13-134" href="#__codelineno-13-134"></a>PASS: IR Forge / Mountain Goat :: canonicalize/transpose-twice-dynamic-exact.mlir (133 of 141)
+<a id="__codelineno-13-135" name="__codelineno-13-135" href="#__codelineno-13-135"></a>PASS: IR Forge / Mountain Goat :: loop-order/bad-option.mlir (134 of 141)
+<a id="__codelineno-13-136" name="__codelineno-13-136" href="#__codelineno-13-136"></a>PASS: IR Forge / Mountain Goat :: transformer30/verifiers.mlir (135 of 141)
+<a id="__codelineno-13-137" name="__codelineno-13-137" href="#__codelineno-13-137"></a>PASS: IR Forge / Mountain Goat :: lowering/dynamic-add-affine.mlir (136 of 141)
+<a id="__codelineno-13-138" name="__codelineno-13-138" href="#__codelineno-13-138"></a>PASS: IR Forge / Mountain Goat :: contraction28/verifiers.mlir (137 of 141)
+<a id="__codelineno-13-139" name="__codelineno-13-139" href="#__codelineno-13-139"></a>PASS: IR Forge / Mountain Goat :: attention29/verifiers.mlir (138 of 141)
+<a id="__codelineno-13-140" name="__codelineno-13-140" href="#__codelineno-13-140"></a>PASS: IR Forge / Mountain Goat :: generalize32/verifiers.mlir (139 of 141)
+<a id="__codelineno-13-141" name="__codelineno-13-141" href="#__codelineno-13-141"></a>PASS: IR Forge / Mountain Goat :: ffn34/examples.mlir (140 of 141)
+<a id="__codelineno-13-142" name="__codelineno-13-142" href="#__codelineno-13-142"></a>PASS: IR Forge / Mountain Goat :: ffn34/against-reference.mlir (141 of 141)
+<a id="__codelineno-13-143" name="__codelineno-13-143" href="#__codelineno-13-143"></a>
+<a id="__codelineno-13-144" name="__codelineno-13-144" href="#__codelineno-13-144"></a>Testing Time: 142.50s
+<a id="__codelineno-13-145" name="__codelineno-13-145" href="#__codelineno-13-145"></a>
+<a id="__codelineno-13-146" name="__codelineno-13-146" href="#__codelineno-13-146"></a>Total Discovered Tests: 141
+<a id="__codelineno-13-147" name="__codelineno-13-147" href="#__codelineno-13-147"></a>  Passed: 141 (100.00%)
+</code></pre></div>
+<h2 id="limits-and-what-is-not-established">Limits and what is not established<a class="headerlink" href="#limits-and-what-is-not-established" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>One toy language.</strong> Seven tokens, four symbols, a rule that a single attention head can implement by looking two positions back. The result does not show that the model could learn anything harder, and nothing was tried on text.</li>
+<li><strong>Not Chapter 30's transformer.</strong> This model has <strong>one</strong> head, <strong>one</strong> block and a single <code>D = 8</code> width. Chapter 30's has two heads and a different layout; <strong>its backward pass is still not derived and its weights are still random.</strong> Two heads and stacked blocks need a split-and-merge of heads in the backward pass and a second set of residual paths, not done here.</li>
+<li><strong>The result is one run in a chaotic regime.</strong> The measured sensitivity (a 10⁻¹² nudge changes the step-100 loss by a factor of six) means this exact run cannot be reproduced digit for digit by a differently ordered computation after about step 70. In the sweep's 12 runs at rates 0.25 to 1.0 the training loss ends below 0.05, and the number correct of all 256 ranges from 189 to 256; <strong>the 256 of 256 is the best case.</strong> Whether the spread would narrow with more steps was not tested.</li>
+<li><strong>The mask-and-content question is open.</strong> The attention pattern printed is for one all-identical sequence. That the model looks two positions back is shown there; that it copies the <em>content</em> it finds there is only indirectly supported by 256 of 256 correct predictions on all 64 sequences, and the attention for other sequences was not looked at.</li>
+<li><strong>Finite differences cover two weights per matrix,</strong> 32 of 648, for one starting-weight set; the gradient-versus-reference comparison covers all of them for three. The agreement is limited to about 10⁻⁴ by the step and the printed digits.</li>
+<li><strong>The softmax-without-max gap</strong> (above) means overflow robustness is untested.</li>
+<li><strong>The training program is large and slow.</strong> 12,455 lines and about 8 minutes (one measurement, this container) because the compiler has no loops over steps for this program shape, no common-subexpression elimination, and never frees temporaries. That is a limitation of this compiler, not of the method; no attempt was made to speed it up.</li>
+<li><strong>Generation is not shown.</strong> The model is trained to predict the next token; this chapter does not sample from it or measure tie-breaking, which Chapter 32 did for a bigram model.</li>
+<li><strong>Platform:</strong> x86-64 Linux, LLVM 18.1.3.</li>
+</ul>
+<h2 id="reproducing">Reproducing<a class="headerlink" href="#reproducing" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="nb">cd</span><span class="w"> </span>docs/part32/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./build.sh
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="nb">cd</span><span class="w"> </span>../../part35/code
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>python3<span class="w"> </span>make_examples.py<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_examples.sh<span class="w"> </span>&gt;<span class="w"> </span>examples_out.txt
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>./check_lm.py<span class="w"> </span>--full<span class="w"> </span>&gt;<span class="w"> </span>check_lm_out.txt
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>./sensitivity.py<span class="w"> </span>&gt;<span class="w"> </span>sensitivity_out.txt
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>./lr_sweep.py<span class="w"> </span>&gt;<span class="w"> </span>lr_sweep_out.txt
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>./model_mutation.py<span class="w"> </span>&gt;<span class="w"> </span>model_mutation_out.txt
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="nb">cd</span><span class="w"> </span>../../part15/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_lit.sh<span class="w">          </span><span class="c1"># 141 tests</span>
+</code></pre></div>
+<h2 id="chapter-summary">Chapter summary<a class="headerlink" href="#chapter-summary" title="Permanent link">&para;</a></h2>
+<ul>
+<li>A one-block, one-head, causal transformer language model (embeddings, layer norms, attention, feed-forward, residuals, vocabulary projection; 648 weights) is trained in Mountain Goat by hand-derived backpropagation. The task is to repeat a triple; after 200 steps the loss is 0.0009 and every scored prediction on all 64 possible sequences (256) is right, with attention that looks two positions back.</li>
+<li>New pieces: 16 sequences stacked into 112 rows with a block-diagonal causal mask; a cross-entropy that counts only scored rows; the attention backward pass through the mask (it needs no extra term); the three-path gradient into the layer norm; and the embedding gradient <code>transpose(x) @ dx0</code>.</li>
+<li>All 16 gradient matrices equal an independent per-position Python calculation at three starting points; 32 weights agree with finite differences (after a repair to the check, reported above).</li>
+<li>Training is <strong>chaotic</strong>: a 10⁻¹² change in one weight changes the loss at step 100 by a factor of six, so the run agrees with the reference digit for digit only up to about step 50 and is checked by its claims afterwards. The 256 of 256 is the best of four seeds (256, 239, 249, 239).</li>
+<li>Eighteen wrong programs were run through the checker: seventeen caught, one not (softmax without the row-max subtraction, which only matters for large scores).</li>
+</ul>
+<h2 id="self-check-questions">Self-check questions<a class="headerlink" href="#self-check-questions" title="Permanent link">&para;</a></h2>
+<p>Each answer is collapsed; try the question first.</p>
+<ol>
+<li>
+<p>Why does the attention backward pass need no extra term for the causal mask?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>The mask is a constant added to the scores before the softmax, so it has no gradient of its own. The masked entries of the attention matrix <code>a</code> are exactly 0 (softmax of −10⁹), and <code>ds = a * (da − row_sum(a * da))</code> is a product with <code>a</code>, so <code>ds</code> is exactly 0 there: nothing flows back to positions that were not seen. The mask is already inside <code>a</code>.</p>
+</details>
+</li>
+<li>
+<p>The embedding is a lookup, yet its gradient is written <code>transpose(x) @ dx0</code>. Why does that work?</p>
+<details class="note">
+<summary>Answer</summary>
+<p><code>x</code> has one 1 per row, in the column of that row's token. <code>transpose(x) @ dx0</code> gives row <em>t</em> = the sum of the rows of <code>dx0</code> over the positions whose token is <em>t</em>: a scatter-add. That is the gradient of a lookup: a token used in several places receives the sum of the gradients from all of them, and a token not used receives zero.</p>
+</details>
+</li>
+<li>
+<p>Why are the 16 sequences stacked into one 112×112 attention instead of being processed one at a time?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>Mountain Goat has only rank-2 matrices, no batch dimension; stacking is the way to process several sequences in one program, and the mask (block-diagonal as well as causal) prevents any row from attending to another sequence. The price is that the score matrix is 112×112, 16 times larger than 16 separate 7×7 matrices would need, mostly entries that the mask zeroes.</p>
+</details>
+</li>
+<li>
+<p>At step 100 the program's loss is 0.0356 and the Python reference's is 0.0346. Is the program wrong?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>No evidence says so. The two agree to six digits up to step 50, all 16 gradient matrices agree at three starting points, and <code>sensitivity.py</code> shows that the same Python code, with one weight changed by 10⁻¹², goes from 0.0346 to 0.2115 at step 100. The training is chaotic after about step 70, so two correct implementations whose floating-point operations are ordered differently will not agree digit for digit there. This is why the check compares claims instead of digits from step 100 on.</p>
+</details>
+</li>
+<li>
+<p>The sweep shows 256, 239, 249, 239 correct for the four seeds at learning rate 1.0. What does that say about the "256 of 256" result?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>That it is the best of the four runs, not typical: the model reliably fits its 16 training sequences (loss below 0.005 in all four) but generalizes to the other 48 sequences only 93% to 100% of the time, depending on the starting weights. "The model learns the task" is true of the training; "the model has found the rule" is true of some runs and only approximately of others.</p>
+</details>
+</li>
+<li>
+<p>One mutant, softmax without the row-maximum subtraction, was not caught. Does that mean the checks are wrong?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>No, it means they have a gap. Without the subtraction softmax is the same function, and for scores of this size the numbers are the same; the subtraction exists to prevent overflow of <code>exp</code> for large scores. None of the checks uses large scores, so none can tell the two apart. A test with scores in the hundreds would catch it; none was written, and the page says so rather than counting the mutant as caught.</p>
+</details>
+</li>
+<li>
+<p>Why was every intermediate result bound with its own <code>let</code>, instead of writing each gradient as a function as in Chapter 34?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>Because Mountain Goat expands a function call in place wherever it is used, so a quantity used by several later gradients is recomputed for each, and the work multiplies with depth; the generated code also never frees memory. The nested version was killed, most likely for lack of memory. Binding each intermediate with <code>let</code> computes it once.</p>
+</details>
+</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../../part34/34-why-a-block-has-a-feed-forward-network/" class="md-footer__link md-footer__link--prev" aria-label="Previous: 34. Why a Block Has a Feed-Forward Network: Backpropagation Through Layer Norm, ReLU and Residuals">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                34. Why a Block Has a Feed-Forward Network: Backpropagation Through Layer Norm, ReLU and Residuals
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 Oluwaseyi Awoga
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

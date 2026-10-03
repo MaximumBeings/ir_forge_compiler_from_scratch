@@ -173,3 +173,6 @@ config.substitutions += [("%ch43", ch43)]
 # Chapter 44: fast-math flags (--mg-set-fastmath, mgc --fast-math); the newest mg-opt build is this chapter's.
 ch44 = os.path.join(config.test_source_root, "..", "..", "..", "part44", "code")
 config.substitutions += [("%ch44", ch44)]
+# Chapter 45: automatic differentiation (autograd.py, a source-to-source transformation; it runs programs with mgc and needs mg-opt of Chapter 44's build).
+ch45 = os.path.join(config.test_source_root, "..", "..", "..", "part45", "code")
+config.substitutions += [("%ch45", ch45)]

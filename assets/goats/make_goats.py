@@ -132,6 +132,11 @@ SPACE = {
  "saturn":  dict(far="#c9b88f", mid="#a89870", near="#8a7a58", ground="#6e6046", shade="#4c4230", sky=("#000000", "#0a0a14"), where="on a moon of Saturn"),
  "mars":    dict(far="#c98a6a", mid="#a8654a", near="#864a35", ground="#6a3a2a", shade="#4a281c", sky=("#d9a37a", "#f2d2a8"), where="on Mars"),
  "pluto":   dict(far="#9c8478", mid="#7e665c", near="#5e4a42", ground="#4a3a34", shade="#2e231f", sky=("#000000", "#0b0a12"), where="on Pluto"),
+ "mercury": dict(far="#8d8780", mid="#6f6a64", near="#524e49", ground="#3e3a36", shade="#262320", sky=("#000000", "#0a0806"), where="on Mercury"),
+ "venus":   dict(far="#b9803f", mid="#9a6630", near="#7a4f25", ground="#5e3b1c", shade="#3f2711", sky=("#c98b2e", "#f1cf86"), where="on Venus, under its clouds"),
+ "io":      dict(far="#d9c35a", mid="#b8a040", near="#8f7b2c", ground="#6e5e20", shade="#3f3510", sky=("#000000", "#0a0905"), where="on Io, a moon of Jupiter"),
+ "uranus":  dict(far="#b9d3d6", mid="#93b3b8", near="#6e8e93", ground="#52716f", shade="#34504e", sky=("#000000", "#06090c"), where="on Titania, a moon of Uranus"),
+ "neptune": dict(far="#e3cfd0", mid="#c4aeb0", near="#9d878a", ground="#7a666a", shade="#4f3f43", sky=("#000000", "#050810"), where="on Triton, a moon of Neptune"),
  "europa":  dict(far="#cfdcea", mid="#a9bdd2", near="#8aa2bd", ground="#6f87a3", shade="#4e647c", sky=("#000000", "#080a12"), where="on Europa, a moon of Jupiter"),
 }
 def planet(kind, rng, c):
@@ -142,6 +147,19 @@ def planet(kind, rng, c):
         o.append(f'<g clip-path="url(#pl)"><ellipse cx="{cx - 15}" cy="{cy - 8}" rx="{r * .4:.0f}" ry="{r * .32:.0f}" fill="#4e9a4e"/><ellipse cx="{cx + 20}" cy="{cy + 14}" rx="{r * .3:.0f}" ry="{r * .22:.0f}" fill="#5aa35a"/><ellipse cx="{cx + 6}" cy="{cy - 22}" rx="{r * .5:.0f}" ry="5" fill="#ffffff" opacity=".75"/><ellipse cx="{cx - 20}" cy="{cy + 20}" rx="{r * .4:.0f}" ry="4" fill="#ffffff" opacity=".7"/><circle cx="{cx + r * .45:.0f}" cy="{cy + r * .3:.0f}" r="{r * 1.05:.0f}" fill="#000" opacity=".4"/></g>')
     elif kind == "mars":    # Phobos and a small sun
         o.append('<circle cx="640" cy="60" r="12" fill="#fff4d6" opacity=".95"/><circle cx="640" cy="60" r="26" fill="#fff4d6" opacity=".25"/><ellipse cx="170" cy="70" rx="16" ry="11" fill="#8a7a6e"/>')
+    elif kind == "mercury":   # a huge sun low over the horizon
+        o.append('<circle cx="560" cy="175" r="95" fill="#ffd9a0" opacity=".16"/><circle cx="560" cy="175" r="62" fill="#ffe7bd" opacity=".35"/><circle cx="560" cy="175" r="40" fill="#fff6e3"/>')
+    elif kind == "venus":     # bands of cloud and a dim sun behind them
+        o.append('<circle cx="190" cy="60" r="34" fill="#fff0c0" opacity=".45"/>' + "".join(f'<ellipse cx="{rng.randint(0, W)}" cy="{rng.randint(15, 150)}" rx="{rng.randint(90, 220)}" ry="{rng.randint(5, 12)}" fill="#e3b45a" opacity=".5"/>' for _ in range(9)))
+    elif kind == "io":        # Jupiter, huge, rising over a sulphur landscape
+        cx, cy, r = 600, 60, 105
+        o.append(f'<clipPath id="pl"><circle cx="{cx}" cy="{cy}" r="{r}"/></clipPath><circle cx="{cx}" cy="{cy}" r="{r}" fill="#e9c79a"/><g clip-path="url(#pl)">' + "".join(f'<rect x="{cx - r}" y="{cy - r + k * r / 3.6:.0f}" width="{2 * r}" height="{r / 6.5:.0f}" fill="{col}" opacity=".75"/>' for k, col in enumerate(["#b5703f", "#f3e1c0", "#c98450", "#efd6ad", "#a65f33", "#f0dcb8", "#c47a4a", "#e6c797", "#b5703f"])) + f'<ellipse cx="{cx - r * .25:.0f}" cy="{cy + r * .35:.0f}" rx="{r * .2:.0f}" ry="{r * .12:.0f}" fill="#b8472f"/></g>')
+    elif kind == "uranus":    # a pale cyan disc with a thin tilted ring system
+        cx, cy, r = 560, 100, 50
+        o.append(f'<ellipse cx="{cx}" cy="{cy}" rx="{r * 1.9:.0f}" ry="{r * .22:.0f}" fill="none" stroke="#cfe9ee" stroke-width="3" opacity=".8" transform="rotate(-72 {cx} {cy})"/><circle cx="{cx}" cy="{cy}" r="{r}" fill="#a8dde3"/><circle cx="{cx + 12}" cy="{cy + 8}" r="{r}" fill="#000" opacity=".12"/>')
+    elif kind == "neptune":   # deep blue with a dark storm and bright streaks
+        cx, cy, r = 520, 95, 52
+        o.append(f'<clipPath id="pl"><circle cx="{cx}" cy="{cy}" r="{r}"/></clipPath><circle cx="{cx}" cy="{cy}" r="{r}" fill="#2f55c9"/><g clip-path="url(#pl)"><ellipse cx="{cx - 14}" cy="{cy + 6}" rx="14" ry="8" fill="#1a2f8a"/><ellipse cx="{cx + 6}" cy="{cy - 18}" rx="26" ry="2.5" fill="#ffffff" opacity=".7"/><ellipse cx="{cx + 14}" cy="{cy + 20}" rx="20" ry="2" fill="#ffffff" opacity=".6"/><circle cx="{cx + 16}" cy="{cy + 12}" r="{r * 1.05:.0f}" fill="#000" opacity=".4"/></g>')
     elif kind in ("saturn", "pluto", "europa"):
         cx, cy, r = rng.randint(480, 680), rng.randint(80, 120), {"saturn": 54, "pluto": 34, "europa": 62}[kind]
         if kind == "saturn":
@@ -157,7 +175,7 @@ def space_scene(n, body, title):
     c = dict(PAL["bw"]); c.update(goat="#ffffff", goat2="#d9dde6", line="#12151c", ground=P["ground"], shade=P["shade"])
     o.append(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" role="img" aria-labelledby="t{n}"><title id="t{n}">{title}</title>')
     o.append(f'<defs><linearGradient id="g{n}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="{P["sky"][0]}"/><stop offset="1" stop-color="{P["sky"][1]}"/></linearGradient></defs><rect width="{W}" height="{H}" fill="url(#g{n})"/>')
-    if body != "mars":
+    if body not in ("mars", "venus"):
         for _ in range(110): o.append(f'<circle cx="{rng.randint(3, W - 3)}" cy="{rng.randint(3, 190)}" r="{rng.choice([0.7, 0.9, 1.2, 1.7])}" fill="#ffffff" opacity="{rng.uniform(.4, 1):.2f}"/>')
     o.append(planet(body, rng, P))
     far = ridge(rng, 185, 60, rough=.6); mid = ridge(rng, 215, 45, rough=.55); near = ridge(rng, 240, 30, rough=.5)
@@ -183,7 +201,8 @@ def space_scene(n, body, title):
 # one entry per picture: (file, theme, alt text)
 THEMES = ["dawn", "noon", "sunset", "night", "storm", "autumn", "spring", "bw", "winter", "desert", "sepia", "inkdark", "blueprint"]
 def pick(n): return THEMES[(n * 5 + n // 13) % len(THEMES)] if n else "noon"
-SPACE_PAGES = {"ch-04": "moon", "ch-08": "saturn", "ch-13": "mars", "ch-17": "pluto", "ch-21": "europa", "ch-25": "moon", "ch-29": "saturn", "ch-33": "mars", "ch-37": "europa", "ch-40": "moon", "ch-41": "pluto", "ch-42": "saturn", "ch-44": "mars", "ch-45": "europa", "tour": "moon"}
+SPACE_PAGES = {"ch-04": "moon", "ch-06": "mercury", "ch-08": "saturn", "ch-10": "venus", "ch-13": "mars", "ch-15": "io", "ch-17": "pluto", "ch-19": "uranus", "ch-21": "europa", "ch-23": "neptune", "ch-25": "moon", "ch-27": "mercury",
+               "ch-29": "saturn", "ch-31": "venus", "ch-33": "mars", "ch-35": "io", "ch-37": "uranus", "ch-39": "neptune", "ch-40": "moon", "ch-41": "pluto", "ch-42": "saturn", "ch-43": "europa", "ch-44": "mars", "ch-45": "uranus", "tour": "moon", "background": "venus"}
 PAGES = [(f"ch-{n:02d}", pick(n)) for n in range(1, 46)] + [("tour", "spring"), ("background", "sepia"), ("start", "dawn")]
 if __name__ == "__main__":
     for i, (name, theme) in enumerate(PAGES, start=1):

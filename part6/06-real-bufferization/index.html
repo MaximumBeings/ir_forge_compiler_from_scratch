@@ -2261,6 +2261,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part45/45-automatic-differentiation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    45. Automatic Differentiation: Letting the Compiler Write the Backward Pass
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2472,7 +2500,7 @@
 
 
 <h1 id="6-real-bufferization-closing-chapter-4s-own-honest-gap">6. Real Bufferization: Closing Chapter 4's Own Honest Gap<a class="headerlink" href="#6-real-bufferization-closing-chapter-4s-own-honest-gap" title="Permanent link">&para;</a></h1>
-<p><img alt="Mountain goats on the mountain in a storm" src="../../assets/goats/ch-06.svg" style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" /></p>
+<p><img alt="Mountain goats in space helmets on Mercury" src="../../assets/goats/ch-06.svg" style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" /></p>
 <p><strong>What you will understand:</strong> how to make MLIR's own real, built-in <code>--one-shot-bufferize</code> pass genuinely succeed on a custom dialect, by implementing the real <code>BufferizableOpInterface</code> -- the exact extension point Chapter 4 named but did not use, when it ran into a real, honest failure (<code>error: op was not bufferized</code>) and deferred the fix. This chapter closes that gap for real, and the result is a second, entirely independent way to get Mountain Goat's own tensor IR down to memrefs -- not a replacement for Chapter 4's hand-written pass, a second real path, compared directly against the first.</p>
 <p><strong>What you need to know first:</strong> Chapter 4's own <code>ConvertMgToAffinePass</code> and its real negative result against <code>--one-shot-bufferize</code>; Chapter 3's own constant-folding discussion; Chapter 5's own <code>printMemrefF64</code> mechanism, reused directly in this chapter rather than reinvented.</p>
 <div class="admonition tip">

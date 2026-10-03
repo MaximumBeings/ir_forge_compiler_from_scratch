@@ -2250,6 +2250,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part45/45-automatic-differentiation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    45. Automatic Differentiation: Letting the Compiler Write the Backward Pass
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2450,7 +2478,7 @@
 
 
 <h1 id="27-tensor-contractions-as-matrix-products">27. Tensor Contractions as Matrix Products<a class="headerlink" href="#27-tensor-contractions-as-matrix-products" title="Permanent link">&para;</a></h1>
-<p><img alt="Mountain goats on the mountain in black and white" src="../../assets/goats/ch-27.svg" style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" /></p>
+<p><img alt="Mountain goats in space helmets on Mercury" src="../../assets/goats/ch-27.svg" style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" /></p>
 <p><strong>What you will understand:</strong> what a tensor contraction is, why every contraction is "a matrix multiply in disguise", and how to take the disguise off: rearrange the axes of two tensors of any rank so that the entire contraction becomes a single matrix product, which is the one operation Mountain Goat is built around. The matrix product is Mountain Goat's compiled <code>@</code>; the axis bookkeeping around it is C++. The result is compared, bit for bit, with the definition of a contraction written out directly, on the worked examples of the <em>Tensor Contractions (CPU)</em> appendix of the companion book <em>CUDA From First Principles</em>, plus seven more cases.</p>
 <p><strong>What you need to know first:</strong> Chapter 21 (<code>@</code>, the matrix product), Chapter 20 (calling compiled Mountain Goat from C++), Chapter 24 (the loop-order option) and, for the final comparison, Chapter 14 (the run-time inner-dimension check). The appendix is not required; its ideas are explained here, and the page links to it.</p>
 <div class="admonition tip">

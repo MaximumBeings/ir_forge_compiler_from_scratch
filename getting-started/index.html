@@ -2156,6 +2156,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part45/45-automatic-differentiation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    45. Automatic Differentiation: Letting the Compiler Write the Backward Pass
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2455,7 +2483,12 @@
 <tr>
 <td>44</td>
 <td><code>part44/code/build.sh</code></td>
-<td>adds the <code>--mg-set-fastmath</code> pass (<code>mgc --fast-math[=flags]</code>, off by default); the newest compiler, which <code>run_lit.sh</code> and CI use; <code>part44/code/mgc</code> is the driver</td>
+<td>adds the <code>--mg-set-fastmath</code> pass (<code>mgc --fast-math[=flags]</code>, off by default); the newest compiler build, which <code>run_lit.sh</code> and CI use; <code>part44/code/mgc</code> is the driver</td>
+</tr>
+<tr>
+<td>45</td>
+<td><code>part44/code/build.sh</code></td>
+<td>no compiler change; <code>part45/code/autograd.py</code> is a Python program that writes Mountain Goat programs (reverse-mode automatic differentiation), run with <code>part45/code/mgc</code></td>
 </tr>
 <tr>
 <td>the test suite (<code>part15/code/run_lit.sh</code>)</td>

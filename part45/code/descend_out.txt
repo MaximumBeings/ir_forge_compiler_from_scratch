@@ -1,0 +1,12 @@
+steps  loss with generated gradients    Chapter 33 (hand-derived)
+    0                        1.60134                      1.60134
+    1                        1.51356                      1.51356
+    2                        1.36719          (not printed there)
+    3                        1.09744          (not printed there)
+    4                       0.812335          (not printed there)
+    5                       0.625597                     0.625597
+    6                       0.495025          (not printed there)
+    7                       0.403562          (not printed there)
+    8                       0.342366          (not printed there)
+    9                       0.302609          (not printed there)
+   10                       0.273815                     0.273815

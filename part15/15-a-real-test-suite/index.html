@@ -2317,6 +2317,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part45/45-automatic-differentiation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    45. Automatic Differentiation: Letting the Compiler Write the Backward Pass
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2584,7 +2612,7 @@
 
 
 <h1 id="15-a-real-test-suite-lit-filecheck-and-proof-that-the-tests-can-fail">15. A Real Test Suite: <code>lit</code>, <code>FileCheck</code>, and Proof That the Tests Can Fail<a class="headerlink" href="#15-a-real-test-suite-lit-filecheck-and-proof-that-the-tests-can-fail" title="Permanent link">&para;</a></h1>
-<p><img alt="Mountain goats on the mountain in black and white at dusk" src="../../assets/goats/ch-15.svg" style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" /></p>
+<p><img alt="Mountain goats in space helmets on Io, a moon of Jupiter" src="../../assets/goats/ch-15.svg" style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" /></p>
 <p><strong>What you will understand:</strong> how to turn this book's "run it once and paste the output" scripts into an assertion-based regression suite that fails when behavior changes, and, more important, how to <em>show</em> that it can fail. Every one of the suite's 22 original tests is printed here exactly as it exists in the repository, <strong>next to the real output it checks</strong>, so you can see what each pattern is matching and why. Chapters 12 through 14 each flagged the same gap ("no <code>lit</code>/<code>FileCheck</code> tests, no CI"); this chapter closes the first half of it. Continuous integration is not done here.</p>
 <p><strong>What you need to know first:</strong> Chapters 3 through 14's behavior. The suite tests what those chapters built; it adds no compiler features.</p>
 <div class="admonition tip">
@@ -2779,6 +2807,9 @@
 <a id="__codelineno-0-173" name="__codelineno-0-173" href="#__codelineno-0-173"></a><span class="c1"># Chapter 44: fast-math flags (--mg-set-fastmath, mgc --fast-math); the newest mg-opt build is this chapter&#39;s.</span>
 <a id="__codelineno-0-174" name="__codelineno-0-174" href="#__codelineno-0-174"></a><span class="n">ch44</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">test_source_root</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;part44&quot;</span><span class="p">,</span> <span class="s2">&quot;code&quot;</span><span class="p">)</span>
 <a id="__codelineno-0-175" name="__codelineno-0-175" href="#__codelineno-0-175"></a><span class="n">config</span><span class="o">.</span><span class="n">substitutions</span> <span class="o">+=</span> <span class="p">[(</span><span class="s2">&quot;</span><span class="si">%c</span><span class="s2">h44&quot;</span><span class="p">,</span> <span class="n">ch44</span><span class="p">)]</span>
+<a id="__codelineno-0-176" name="__codelineno-0-176" href="#__codelineno-0-176"></a><span class="c1"># Chapter 45: automatic differentiation (autograd.py, a source-to-source transformation; it runs programs with mgc and needs mg-opt of Chapter 44&#39;s build).</span>
+<a id="__codelineno-0-177" name="__codelineno-0-177" href="#__codelineno-0-177"></a><span class="n">ch45</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">test_source_root</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;part45&quot;</span><span class="p">,</span> <span class="s2">&quot;code&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-178" name="__codelineno-0-178" href="#__codelineno-0-178"></a><span class="n">config</span><span class="o">.</span><span class="n">substitutions</span> <span class="o">+=</span> <span class="p">[(</span><span class="s2">&quot;</span><span class="si">%c</span><span class="s2">h45&quot;</span><span class="p">,</span> <span class="n">ch45</span><span class="p">)]</span>
 </code></pre></div>
 <p>The one design decision worth noticing is <code>MG_OPT</code>: <strong>which <code>mg-opt</code> binary is tested is an environment variable</strong>, not a constant. That is what lets the same suite be pointed at older builds later in this chapter to show the tests can fail. Each test gets its own scratch name (<code>%t</code>), so tests cannot read each other's files.</p>
 <p>The launcher script is three lines of real logic:</p>

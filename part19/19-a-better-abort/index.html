@@ -2278,6 +2278,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part45/45-automatic-differentiation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    45. Automatic Differentiation: Letting the Compiler Write the Backward Pass
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2506,7 +2534,7 @@
 
 
 <h1 id="19-a-better-abort-reporting-assertion-failures-on-stderr">19. A Better Abort: Reporting Assertion Failures on stderr<a class="headerlink" href="#19-a-better-abort-reporting-assertion-failures-on-stderr" title="Permanent link">&para;</a></h1>
-<p><img alt="Mountain goats on the mountain in autumn" src="../../assets/goats/ch-19.svg" style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" /></p>
+<p><img alt="Mountain goats in space helmets on Titania, a moon of Uranus" src="../../assets/goats/ch-19.svg" style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" /></p>
 <p><strong>What you will understand:</strong> how to replace the lowering of MLIR's <code>cf.assert</code> with a small custom pass, so a failed runtime check reports its message on <strong>standard error</strong> and never loses it. Chapter 14 closed an out-of-bounds read with a runtime shape check, but found that its explanation vanished whenever stdout was a pipe or a file. This chapter fixes that, shows the fix working in three ways of capturing output, and then does what the earlier chapters' lessons demand: attacks it. Two real bugs surfaced while hardening the pass (an invalid-IR case and a symbol collision), each reproduced with its actual error text. All code, tests and outputs are embedded from the repository.</p>
 <p><strong>What you need to know first:</strong> Chapter 14's runtime check (<code>cf.assert</code>, abort on shape mismatch) and the stdout-buffering problem it found. New ground: file descriptors, the <code>write</code> system call, and writing an MLIR rewrite pattern that splits blocks.</p>
 <div class="admonition tip">

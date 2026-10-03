@@ -5,6 +5,8 @@ row_sum; the vector multiplies left in ijk after the whole -O3 pipeline; the fus
 Output: cpu_dependence_out.txt"""
 import os, re, subprocess, sys, tempfile
 here = os.path.dirname(os.path.abspath(__file__)); mgc = os.path.join(here, "..", "..", "part32", "code", "mgc"); work = tempfile.mkdtemp(prefix="ch37cpu_")
+_newest = [os.path.join(here, "..", "..", p, "code", "build", "mg-opt") for p in ("part38", "part32")]      # the newest compiler build that exists (CI builds only Chapter 38's)
+os.environ.setdefault("MG_OPT", next((p for p in _newest if os.path.exists(p)), _newest[-1]))
 def sh(c, **k): return subprocess.run(c, capture_output=True, text=True, **k)
 def build(src, name, order="ijk"):
     d = os.path.join(work, name); os.makedirs(d, exist_ok=True); sh([mgc, "lib", os.path.join(here, src), "-o", d, "-O0", "--matmul-order", order], env=dict(os.environ, MGC_KEEP=d)); return os.path.join(d, os.path.basename(src)[:-3] + ".ll")

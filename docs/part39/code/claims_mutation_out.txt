@@ -1,0 +1,9 @@
+NOTE: this script deliberately breaks inputs. 'caught' lines are EXPECTED: they show each check can fail.
+baseline (nothing broken): checker passes (expected)
+the 'functions of 100' case is really one function (CHK_PER=100000): caught by 1 failing check(s):
+      functions of 100000 loops: transferNodesFromList grows x3.93 and x3.97 per doubling (2 = linear)
+the outlining pass is replaced by canonicalize (a pass that does not outline): caught by 1 failing check(s):
+      after --canonicalize: no transferNodesFromList and no splitBlock in the profile (n = 500, 1000)
+the profile is of --lower-affine only, without SCFToControlFlow (the pass under study): caught by 2 failing check(s):
+      one function: transferNodesFromList grows x0.00 and x0.00 per doubling (4 = quadratic)
+      transferNodesFromList is called by Block::splitBlock

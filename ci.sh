@@ -22,7 +22,7 @@ skipped() { SUMMARY="$SUMMARY$(printf '  SKIP %-40s' "$1")
 
 check_tools() {
   missing=""
-  for t in clang-18 clang++-18 mlir-opt-18 mlir-translate-18 mlir-cpu-runner-18 FileCheck-18 not-18 cmake make python3 lit mkdocs; do
+  for t in clang-18 clang++-18 mlir-opt-18 mlir-translate-18 mlir-cpu-runner-18 FileCheck-18 not-18 valgrind callgrind_annotate cmake make python3 lit mkdocs; do
     command -v $t >/dev/null 2>&1 || missing="$missing $t"
   done
   [ -z "$missing" ] || { echo "missing tools:$missing"; return 1; }

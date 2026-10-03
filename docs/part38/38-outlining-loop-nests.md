@@ -147,7 +147,7 @@ All eleven are caught. Two lines are worth reading:
 
 ## Limits and what is not established
 
-- **The mechanism is not identified.** The measurements show the cost of `SCFToControlFlow` depends on the number of loops in one function and not in the module, and that splitting the function removes it. Why (block splitting, an analysis that is recomputed, memory behaviour) was not found. The doubling factors were not a clean power law (9.0, 9.7, 4.8, 3.6 in the synthetic experiment), and the extrapolation to 200 steps is not a prediction.
+- **The mechanism was not identified in this chapter** (Chapter 39 identifies it: `Block::splitBlock` moving the rest of the block for each loop lowered). The measurements here show the cost of `SCFToControlFlow` depends on the number of loops in one function and not in the module, and that splitting the function removes it. Why (block splitting, an analysis that is recomputed, memory behaviour) was not found. The doubling factors were not a clean power law (9.0, 9.7, 4.8, 3.6 in the synthetic experiment), and the extrapolation to 200 steps is not a prediction.
 - **Only top-level `affine.for` nests are outlined,** in functions with at least 32 of them. The straight-line `affine.store`s that initialize the 112 × 112 mask and the other literals in `main` (21,714 of them directly in `main` in the 1-step program) are untouched; whether they cost anything was not measured. The threshold of 32 was chosen by hand and not tuned.
 - **Deduplication is by printed text,** so it finds nests that are identical, not nests that are equivalent: `a + a` and `a + b` stay different (Example 1), a nest with its two loops in the other order is another function.
 - **The pass is off by default** (`--outline` or `--mg-outline-loops`). Making it the default would change the IR of every program with 32 or more top-level nests (the earlier chapters' tests would need new expectations), and was not done.
@@ -172,7 +172,7 @@ cd ../../part15/code && ./run_lit.sh          # 149 tests
 - Chapter 36's 40-minute compile was one MLIR pass, `SCFToControlFlow`, whose time grows much faster than the number of loops in **one function** (about 3× for every doubling of the steps; 88 s for 32,000 synthetic loops in one function against 0.4 s for the same loops in functions of 500).
 - **`--mg-outline-loops`** moves each top-level loop nest into a small private function, clones constants in, passes everything else as arguments, and **deduplicates** identical functions: the 200-step program has 75 distinct nests. `mgc --outline` turns it on.
 - With it the 200-step training program compiles in **94 s and runs in 4 s**, and prints exactly what Chapter 36 recorded; at 32 steps the compile falls from 59.9 s to 13.6 s.
-- The mechanism inside MLIR was not found; the evidence is a synthetic experiment that isolates the number of loops per function.
+- The mechanism inside MLIR was not found in this chapter (Chapter 39 finds it with a profiler); the evidence here is a synthetic experiment that isolates the number of loops per function.
 - Eleven deliberate breakages of the driver and the pass were all caught; one (not erasing the original loop) is invisible to an output comparison and is caught only by IR-level tests.
 - The test suite and the CI now use this chapter's `mg-opt`; the pass is opt-in.
 

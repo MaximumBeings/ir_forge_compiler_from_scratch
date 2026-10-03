@@ -38,6 +38,9 @@ config.substitutions += [
 ]
 # The language tour (docs/tour): its examples are run in place, like the chapters' examples.
 config.substitutions += [("%tour", os.path.join(config.test_source_root, "..", "..", "..", "tour", "code"))]
+# Chapter 39: a differential profile (valgrind callgrind) of the lowering pass. No compiler change.
+ch39 = os.path.join(config.test_source_root, "..", "..", "..", "part39", "code")
+config.substitutions += [("%ch39", ch39)]
 # Chapter 38: outlining loop nests (--mg-outline-loops, mgc --outline). '%mgc38' must come before the shorter '%mgc'.
 ch38 = os.path.join(config.test_source_root, "..", "..", "..", "part38", "code")
 config.substitutions += [

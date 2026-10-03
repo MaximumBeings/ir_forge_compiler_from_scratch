@@ -1,0 +1,24 @@
+PART 1. callgrind instruction counts (millions) for --lower-affine --convert-scf-to-cf on n loop nests in ONE function
+     n  all functions  growth  transferNodesFromList  growth
+  1000          352.0                            8.1        
+  2000          695.7   x1.98                   32.1   x3.98
+  4000         1430.4   x2.06                  128.3   x3.99
+  8000         3091.5   x2.16                  512.5   x4.00
+
+the functions that account for the growth from n = 2000 to n = 8000 (millions of instructions at 2000, at 8000, ratio; 4x the loops: ratio 4 = linear, 16 = quadratic)
+     32.1      512.5  x 15.9  llvm::ilist_traits<mlir::Operation>::transferNodesFromList(llvm::ilist_traits<mlir::Operation>&, llvm::ilist_i
+     24.1       94.7  x  3.9  std::pair<llvm::DenseMapIterator<llvm::PointerUnion<mlir::Operation*, mlir::Block*>, llvm::detail::DenseSetEmp
+     20.1       80.7  x  4.0  mlir::detail::StorageUniquerImpl::getOrCreate(mlir::TypeID, unsigned int, llvm::function_ref<bool (mlir::Stora
+     16.2       64.6  x  4.0  std::pair<llvm::detail::DenseSetImpl<(anonymous namespace)::ParametricStorageUniquer::HashedStorage, llvm::Den
+     15.2       60.8  x  4.0  (anonymous namespace)::OperationVerifier::verifyOpAndDominance(mlir::Operation&)
+     12.7       48.3  x  3.8  ./malloc/./malloc/malloc.c:_int_malloc
+
+PART 2. who calls it, and the cache misses (callgrind --cache-sim=yes, n = 6000)
+columns: instructions, L1 read misses, L1 write misses (each with its share of the whole program)
+its caller (Block::splitBlock): 288,480,000 (13.00%) 17,985,138 (63.30%) 71,993,324 (97.54%) < ???:mlir::Block::splitBlock(llvm::ilist_iterator<llvm::ilist_detail::node_options<mlir:
+the function itself:           288,408,032 (13.00%) 17,985,138 (63.30%) 71,993,324 (97.54%) * ???:llvm::ilist_traits<mlir::Operation>::transferNodesFromList(llvm::ilist_traits<mlir:
+program totals: 2,219,248,260 (100.0%) 28,412,768 (100.0%) 73,809,483 (100.0%) PROGRAM TOTALS
+
+PART 3. the same function after --mg-outline-loops (Chapter 38): instruction counts at n = 2000 and 8000
+n = 2000: all functions 483.7 million, transferNodesFromList 0.00 million, Block::splitBlock present: False
+n = 8000: all functions 1860.5 million, transferNodesFromList 0.00 million, Block::splitBlock present: False

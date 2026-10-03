@@ -1,0 +1,33 @@
+################ --mg-scf-to-cf-reverse
+  Total Execution Time: 62.8096 seconds
+    3.4562 (  5.2%)    3.4562 (  5.5%)  Parser
+    3.0524 (  4.6%)    3.0524 (  4.9%)  ConvertAffineToStandard
+    3.0916 (  4.7%)    3.0784 (  4.9%)  'func.func' Pipeline
+    3.0916 (  4.7%)    3.0784 (  4.9%)    {anonymous}::ScfToCfReversePass
+    6.5084 (  9.9%)    6.5084 ( 10.4%)  {anonymous}::MgAssertToStderrPass
+    2.4105 (  3.7%)    2.4105 (  3.8%)  ConvertMathToLLVMPass
+    5.8842 (  8.9%)    5.8842 (  9.4%)  ArithToLLVMConversionPass
+    8.6890 ( 13.2%)    8.6890 ( 13.8%)  FinalizeMemRefToLLVMConversionPass
+    0.2466 (  0.4%)    0.2466 (  0.4%)    (A) DataLayoutAnalysis
+    9.0285 ( 13.7%)    9.0285 ( 14.4%)  ConvertFuncToLLVMPass
+    0.4463 (  0.7%)    0.4463 (  0.7%)    (A) DataLayoutAnalysis
+    7.8416 ( 11.9%)    7.8416 ( 12.5%)  ReconcileUnrealizedCasts
+   10.9995 ( 16.7%)   10.9995 ( 17.5%)  Output
+    1.6416 (  2.5%)    1.6416 (  2.6%)  Rest
+   65.9013 (100.0%)   62.8096 (100.0%)  Total
+################ --convert-scf-to-cf
+  Total Execution Time: 2173.0708 seconds
+    3.2893 (  0.2%)  Parser
+    3.2489 (  0.1%)  ConvertAffineToStandard
+  2106.2219 ( 96.9%)  SCFToControlFlow
+    8.2455 (  0.4%)  {anonymous}::MgAssertToStderrPass
+    3.3522 (  0.2%)  ConvertMathToLLVMPass
+    6.2020 (  0.3%)  ArithToLLVMConversionPass
+    9.2687 (  0.4%)  FinalizeMemRefToLLVMConversionPass
+    0.2598 (  0.0%)    (A) DataLayoutAnalysis
+   10.1083 (  0.5%)  ConvertFuncToLLVMPass
+    0.4519 (  0.0%)    (A) DataLayoutAnalysis
+    8.8744 (  0.4%)  ReconcileUnrealizedCasts
+   12.3533 (  0.6%)  Output
+    1.9064 (  0.1%)  Rest
+  2173.0708 (100.0%)  Total

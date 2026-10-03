@@ -66,10 +66,11 @@ Each chapter's page starts with a "Compile and run" box (Chapters 1 to 9, 20 and
 | 35 | `part32/code/build.sh` | adds nothing to the compiler; `part35/code` has the programs, which run with Chapter 32's `mgc` |
 | 36 | `part32/code/build.sh` | adds nothing to the compiler; `part36/code` has the programs, which run with Chapter 32's `mgc` |
 | 37 | `part32/code/build.sh` | adds nothing to the compiler; `part37/code` has the scripts, which run with Chapter 32's `mgc` and LLVM's own `opt-18`, `clang-18` and `llvm-mca-18` |
-| 38 | `part38/code/build.sh` | adds the `--mg-outline-loops` pass (`mgc --outline`); the newest compiler, which `run_lit.sh` and CI use; `part38/code/mgc` is the driver |
+| 38 | `part38/code/build.sh` | adds the `--mg-outline-loops` pass (`mgc --outline`); `part38/code/mgc` is the driver |
 | 39 | `part38/code/build.sh` | adds nothing to the compiler; `part39/code` has the profiling scripts, which need `valgrind` |
 | 40 | none | plain Python 3: the GA-1 simulator in `part40/code` needs no compiler |
 | 41 | `part38/code/build.sh` | adds nothing to the compiler; `part41/code` is a Python back end that reads `mgc mlir` text and runs on Chapter 40's simulator |
+| 42 | `part42/code/build.sh` | adds the `--mg-scf-to-cf-reverse` pass (`mgc --reverse-loops`) and registers the `scf` dialect in `mg-opt`; the newest compiler, which `run_lit.sh` and CI use; `part42/code/mgc` is the driver |
 | the test suite (`part15/code/run_lit.sh`) | any build; it picks the newest that exists | the newest build runs every test |
 
 Every build needs `cmake`, `make`, `llvm-18-dev`, `libmlir-18-dev` and `mlir-18-tools` (see above), and takes a few minutes the first time. Every `run.sh` and `demo.sh` writes its intermediate files under `./work/` or `./show/`, which are git-ignored.

@@ -1,0 +1,20 @@
+NOTE: this script deliberately breaks the pass. 'caught' lines are EXPECTED: they show the checker can detect the mistake.
+baseline (nothing broken): checker passes (expected)
+the pass is replaced by MLIR's own --convert-scf-to-cf (CHK_REVERSE): caught by 1 failing check(s):
+      last to first: transferNodesFromList grows x3.97 and x3.98 per doubling (2 = linear)
+the statements are lowered first to last, not last to first: caught by 2 failing check(s):
+      last to first: transferNodesFromList grows x3.97 and x3.98 per doubling (2 = linear)
+      last to first costs at most 5% more in all at 2000 loops (one conversion per statement): 739 million instructions against 699 million
+the whole function is converted in one call (what --convert-scf-to-cf does): caught by 1 failing check(s):
+      last to first: transferNodesFromList grows x3.97 and x3.98 per doubling (2 = linear)
+a top-level scf.if is never lowered: caught by 1 failing check(s):
+      loop with result, scf.if, scf.while, nested loops: the same text from both lowerings
+a top-level scf.while is never lowered: caught by 1 failing check(s):
+      loop with result, scf.if, scf.while, nested loops: the same text from both lowerings
+only the first 2500 top-level statements are lowered: caught by 1 failing check(s):
+      one function of 3000 loops: byte-identical IR from both lowerings (1634222 bytes)
+nested loops are never lowered (only statements whose body has no loop: a loop with a loop inside is skipped): caught by 2 failing check(s):
+      2 programs lower to byte-identical IR with --mg-scf-to-cf-reverse and --convert-scf-to-cf, 105 differ (13 skipped: 400 lines or more, or rej
+      loop with result, scf.if, scf.while, nested loops: the same text from both lowerings
+
+restored: ScfToCfReverse.cpp is back to its original and mg-opt is rebuilt

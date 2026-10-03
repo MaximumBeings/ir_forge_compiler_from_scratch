@@ -1,0 +1,3 @@
+flags: --reverse-loops
+front end 1.1 s | mg->affine(+outline) 4.8 s | lower (lower-affine, scf->cf, LLVM dialect) 74.0 s | mlir-translate 45.3 s | clang -O0 26.4 s | run 2.6 s | total compile 151.7 s
+output: 76 lines, md5 of the output with addresses removed: cab50027c661

@@ -119,6 +119,7 @@ nav:
       - "39. Finding the Quadratic: a Differential Profile of the Lowering Pass": part39/39-finding-the-quadratic.md
       - "40. A Model of a Matrix Accelerator: Tiles, a Scratchpad, and What Loop Order Does There": part40/40-a-model-of-a-matrix-accelerator.md
       - "41. Compiling Mountain Goat to GA-1: Fusion, Tiling and Why Decoding Is Memory-Bound": part41/41-compiling-mountain-goat-to-ga-1.md
+      - "42. Lowering the Loops Last to First: Testing the Idea Chapter 39 Left Open": part42/42-lowering-loops-last-to-first.md
 
 extra:
   social: []

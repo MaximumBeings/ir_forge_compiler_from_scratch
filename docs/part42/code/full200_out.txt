@@ -1,0 +1,9 @@
+Chapter 36's recorded output (addresses and blank lines removed): md5 cab50027c661
+flags: --reverse-loops
+front end 0.7 s | mg->affine(+outline) 4.7 s | lower (lower-affine, scf->cf, LLVM dialect) 62.0 s | mlir-translate 38.4 s | clang -O0 22.8 s | run 3.6 s | total compile 128.6 s
+output: 76 lines, md5 of the output with addresses and blank lines removed: cab50027c661
+  -> output IDENTICAL to Chapter 36's recorded output (compiled without outlining and with the ordinary lowering)
+flags: --reverse-loops --outline
+front end 0.7 s | mg->affine(+outline) 6.1 s | lower (lower-affine, scf->cf, LLVM dialect) 14.0 s | mlir-translate 13.3 s | clang -O0 48.0 s | run 3.3 s | total compile 82.2 s
+output: 76 lines, md5 of the output with addresses and blank lines removed: cab50027c661
+  -> output IDENTICAL to Chapter 36's recorded output (compiled without outlining and with the ordinary lowering)

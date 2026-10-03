@@ -1,6 +1,6 @@
 # 39. Finding the Quadratic: a Differential Profile of the Lowering Pass
 
-<p style="text-align:center"><img src="../assets/goats/ch-39.svg" alt="Mountain goats on the mountain at night" style="max-width:100%;height:auto;border-radius:6px"></p>
+![Mountain goats on the mountain at night](../assets/goats/ch-39.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
 
 **What you will understand:** how to find *why* a program is slow when timing alone says only *that* it is, using a **differential profile**: run the same code at several sizes under a profiler that counts instructions and see which function's cost grows faster than the rest. Chapter 38 measured that MLIR's `SCFToControlFlow` pass is super-linear in the number of loops in one function and fixed it by outlining, but said "the mechanism inside MLIR was not identified". This chapter identifies it: one function, `ilist_traits<Operation>::transferNodesFromList`, called by `Block::splitBlock`, whose instruction count is **exactly quadratic** (×3.98, ×3.99, ×4.00 per doubling) while everything else is linear. There is **no compiler change** in this chapter.
 

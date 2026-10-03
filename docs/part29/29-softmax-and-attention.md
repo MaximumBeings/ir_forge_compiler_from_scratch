@@ -1,6 +1,6 @@
 # 29. Softmax and Attention
 
-<p style="text-align:center"><img src="../assets/goats/ch-29.svg" alt="Mountain goats on the mountain in a storm" style="max-width:100%;height:auto;border-radius:6px"></p>
+![Mountain goats on the mountain in a storm](../assets/goats/ch-29.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
 
 **What you will understand:** how a Mountain Goat program computes **softmax** (turning scores into probabilities) and **scaled dot-product attention**, the operation at the heart of a transformer. The one thing the language lacked was an exponential, so this chapter adds a single new operation, `exp`, and then writes everything else with what already existed: the matrix product, reductions, broadcasting, `transpose`. Along the way it shows a real numerical trap (the textbook softmax produces `nan` on large scores), the one-line fix, causal masking, and a complete self-attention block, each checked against an independent Python implementation.
 

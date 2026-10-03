@@ -1,6 +1,6 @@
 # 11. The GPU Host Side: Device Memory, Real Runtime Calls, and a Stub "Device"
 
-<p style="text-align:center"><img src="../assets/goats/ch-11.svg" alt="Mountain goats on the mountain at night" style="max-width:100%;height:auto;border-radius:6px"></p>
+![Mountain goats on the mountain at night](../assets/goats/ch-11.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
 
 **What you will understand:** what has to surround a GPU kernel on the host before it can run (allocating device memory, copying inputs in and the result out, loading the kernel module, launching it with a grid, and cleaning up) and how MLIR 18's real passes turn those steps into calls to a GPU runtime (`mgpuMemAlloc`, `mgpuModuleLoadJIT`, `mgpuLaunchKernel`, ...). This chapter closes the "what is still missing" list Chapter 10 ended with, as far as this sandbox allows, and it is explicit about the one thing it still cannot do: run the PTX. Every file, script and output below is embedded from the repository.
 

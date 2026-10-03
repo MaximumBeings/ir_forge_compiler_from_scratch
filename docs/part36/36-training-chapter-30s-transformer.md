@@ -1,6 +1,6 @@
 # 36. Training Chapter 30's Transformer: Two Heads, Two Blocks, and a Result That Is Not Better
 
-<p style="text-align:center"><img src="../assets/goats/ch-36.svg" alt="Mountain goats on the mountain at dawn" style="max-width:100%;height:auto;border-radius:6px"></p>
+![Mountain goats on the mountain at dawn](../assets/goats/ch-36.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
 
 **What you will understand:** how to train, in Mountain Goat, the *architecture* of Chapter 30's transformer: **two blocks**, each with **two attention heads** and a feed-forward network, pre-norm residual connections and a final layer norm, as a causal language model on Chapter 35's task. Chapter 35 stopped at one block and one head. The new backward-pass pieces are small, but they are the ones that were missing: gradients that **fan out to two heads and add**, and a gradient that is carried **back through two blocks**. The model has 1,216 weights in 36 matrices. All 36 gradient matrices are checked against an independent Python calculation and against finite differences, and the 200-step training run agrees with the reference at every checkpoint. Then the page reports what the experiment shows, which is **not** that the bigger model is better: it fits its 16 training sequences and **generalizes much worse than Chapter 35's smaller model** (a Python-only sweep measures how much, and what more data does to it).
 

@@ -1,6 +1,6 @@
 # 3. The Real Pass Infrastructure: Canonicalizing Mountain Goat
 
-<p style="text-align:center"><img src="../assets/goats/ch-03.svg" alt="Mountain goats on the mountain at sunset" style="max-width:100%;height:auto;border-radius:6px"></p>
+![Mountain goats on the mountain at sunset](../assets/goats/ch-03.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
 
 **What you will understand:** how MLIR's own real pattern-rewrite and constant-folding infrastructure actually transforms IR -- not a hand-wavy "optimizations happen," but two genuinely different, real mechanisms (`fold()` and `RewritePattern`), wired into Mountain Goat's own dialect, run by the real `--canonicalize` pass, with real before/after IR captured directly.
 

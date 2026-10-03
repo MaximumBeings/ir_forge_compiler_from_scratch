@@ -1,6 +1,6 @@
 # 37. Inside the LLVM Stage: Reading the IR, and Why a Loop Does or Does Not Vectorize
 
-<p style="text-align:center"><img src="../assets/goats/ch-37.svg" alt="Mountain goats on the mountain in autumn" style="max-width:100%;height:auto;border-radius:6px"></p>
+![Mountain goats on the mountain in autumn](../assets/goats/ch-37.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
 
 **What you will understand:** what happens to a Mountain Goat program after MLIR hands it to LLVM. Every chapter since Chapter 5 has ended with "lowered to LLVM IR, then clang makes the executable", and none has opened that stage. This chapter opens it. You will **read** the LLVM IR that `mgc` writes; watch LLVM's optimizer, `opt`, change a matrix product **pass by pass**; ask the loop vectorizer **why** it did or did not vectorize a loop (Chapter 23 counted vector instructions and Chapter 24 got a 3× to 11× speedup from a loop-order change, and neither said why); read the **assembly** of the two inner loops; and ask `llvm-mca`, a model of the CPU's pipeline, what it predicts. The chapter ends with two corrections to its own first experiments and one place where the model predicts a speedup that the measurement refuses to show.
 

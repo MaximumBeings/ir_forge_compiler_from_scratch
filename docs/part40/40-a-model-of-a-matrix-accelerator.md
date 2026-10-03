@@ -1,6 +1,6 @@
 # 40. A Model of a Matrix Accelerator: Tiles, a Scratchpad, and What Loop Order Does There
 
-<p style="text-align:center"><img src="../assets/goats/ch-40.svg" alt="Mountain goats on the mountain in winter snow" style="max-width:100%;height:auto;border-radius:6px"></p>
+![Mountain goats on the mountain in winter snow](../assets/goats/ch-40.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
 
 **What you will understand:** what decides the speed of a matrix accelerator, measured on a machine you can read in full. This chapter builds **GA-1**, a cycle-counting **model** (not a chip, and not a design for one) with the three things that matter: a **DMA engine** that moves tiles between off-chip memory and a small on-chip **scratchpad**, a **matrix unit** that multiplies two tiles and accumulates, and a vector unit (used from Chapter 41). Then it takes the loop-order and tiling ideas of Chapters 7, 24 and 37, which on a CPU were about caches and vector registers, and asks what they do **here**: which schedule moves the fewest tiles, when the machine is limited by its memory and when by its arithmetic, and what double buffering buys. Every number comes from running the simulator, a simple analytic model is checked against it, and a deliberately broken simulator is shown to be caught.
 

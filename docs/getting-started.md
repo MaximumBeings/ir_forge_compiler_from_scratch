@@ -1,6 +1,6 @@
 # Getting Started
 
-<p style="text-align:center"><img src="assets/goats/start.svg" alt="Mountain goats on the mountain at dawn" style="max-width:100%;height:auto;border-radius:6px"></p>
+![Mountain goats on the mountain at dawn](assets/goats/start.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
 
 This book builds a real MLIR dialect and lowers it, through real MLIR passes, down to real LLVM IR and genuine native machine code -- every pipeline stage in this book is run against a real, installed MLIR/LLVM toolchain, confirmed directly rather than assumed.
 

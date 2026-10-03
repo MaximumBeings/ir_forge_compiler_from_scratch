@@ -1,6 +1,6 @@
 # 21. More Operations: Subtract, Hadamard, Divide, Matrix Product, and Scalars
 
-<p style="text-align:center"><img src="../assets/goats/ch-21.svg" alt="Mountain goats on the mountain at sunset" style="max-width:100%;height:auto;border-radius:6px"></p>
+![Mountain goats on the mountain at sunset](../assets/goats/ch-21.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
 
 **What you will understand:** how to grow a dialect by four operations and one kind of operand, end to end: the operation definitions, their verifiers, their lowerings, the front end's syntax for them, and the tests that prove each one. You will also meet the three different things "multiply" can mean for matrices (elementwise, matrix product, and by a scalar), learn why division by zero is not an error, and read the PTX for a reduction.
 

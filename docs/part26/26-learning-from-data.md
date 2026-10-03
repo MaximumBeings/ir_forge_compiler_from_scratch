@@ -1,6 +1,6 @@
 # 26. Learning From Data: Gradient Descent in Mountain Goat
 
-<p style="text-align:center"><img src="../assets/goats/ch-26.svg" alt="Mountain goats on the mountain at sunset" style="max-width:100%;height:auto;border-radius:6px"></p>
+![Mountain goats on the mountain at sunset](../assets/goats/ch-26.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
 
 **What you will understand:** how a machine-learning model is trained, from the ground up, and how to do it with a language that has matrices but no loops. You will fit a straight line (a *linear regression*) to data by **gradient descent**: the repeated, small, downhill steps that train almost every neural network. The mathematics is written in Mountain Goat and compiled; a short C++ program supplies the loop, the data and the checks. The result is checked against a closed-form answer and against an independent C++ implementation, and the tests are tested by breaking the program seven ways.
 

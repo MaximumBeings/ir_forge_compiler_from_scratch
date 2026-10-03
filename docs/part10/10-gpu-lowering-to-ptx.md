@@ -1,6 +1,6 @@
 # 10. GPU Lowering: Mountain Goat to the `gpu` Dialect, NVVM, and Real PTX
 
-<p style="text-align:center"><img src="../assets/goats/ch-10.svg" alt="Mountain goats on the mountain in black and white at dusk" style="max-width:100%;height:auto;border-radius:6px"></p>
+![Mountain goats on the mountain in black and white at dusk](../assets/goats/ch-10.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
 
 **What you will understand:** how a real Mountain Goat program (`mg.add`) is carried from Chapter 4's own `affine` loops, through MLIR's own `gpu` dialect and its `nvvm` dialect, down to real PTX text emitted by LLVM's own NVPTX backend, and how that machine-generated PTX compares, instruction for instruction, against a hand-written CUDA-style kernel compiled by `clang-18`. This chapter also says plainly what it could **not** do: launch the kernel. This book's sandbox has no GPU. Every file and output on this page is embedded from the repository, so nothing is elided and nothing is paraphrased.
 

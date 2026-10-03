@@ -1,6 +1,6 @@
 # 9. MLIR's Own Real C++ `ExecutionEngine` API, Called In-Process
 
-<p style="text-align:center"><img src="../assets/goats/ch-09.svg" alt="Mountain goats on the mountain in spring" style="max-width:100%;height:auto;border-radius:6px"></p>
+![Mountain goats on the mountain in spring](../assets/goats/ch-09.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
 
 **What you will understand:** a third, genuinely different way to run a real Mountain Goat program -- not `mlir-cpu-runner-18`'s CLI (Chapters 5 through 7), not an ahead-of-time compiled, standalone executable (Chapter 8), but MLIR's own real C++ `mlir::ExecutionEngine` class, driven directly from a small, hand-written host program that JIT-compiles and invokes Mountain Goat code in-process. This chapter also recounts, honestly, a real multi-step debugging process -- two genuine, non-obvious calling-convention rules this book's own first attempts got wrong, each one found only by crashing, inspecting registers, and fixing it for real.
 

@@ -1,6 +1,6 @@
 # 19. A Better Abort: Reporting Assertion Failures on stderr
 
-<p style="text-align:center"><img src="../assets/goats/ch-19.svg" alt="Mountain goats on the mountain in autumn" style="max-width:100%;height:auto;border-radius:6px"></p>
+![Mountain goats on the mountain in autumn](../assets/goats/ch-19.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
 
 **What you will understand:** how to replace the lowering of MLIR's `cf.assert` with a small custom pass, so a failed runtime check reports its message on **standard error** and never loses it. Chapter 14 closed an out-of-bounds read with a runtime shape check, but found that its explanation vanished whenever stdout was a pipe or a file. This chapter fixes that, shows the fix working in three ways of capturing output, and then does what the earlier chapters' lessons demand: attacks it. Two real bugs surfaced while hardening the pass (an invalid-IR case and a symbol collision), each reproduced with its actual error text. All code, tests and outputs are embedded from the repository.
 

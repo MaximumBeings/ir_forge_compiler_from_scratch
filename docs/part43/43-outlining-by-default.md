@@ -1,6 +1,6 @@
 # 43. Outlining by Default: What the Calls Cost, and Which Defaults Changed
 
-<p style="text-align:center"><img src="../assets/goats/ch-43.svg" alt="Mountain goats on the mountain in sepia" style="max-width:100%;height:auto;border-radius:6px"></p>
+![Mountain goats on the mountain in sepia](../assets/goats/ch-43.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
 
 **What you will understand:** how to decide whether an optimization should be on by default, with the cost side measured instead of assumed. Chapter 38's outlining pass moves every loop nest of a big function into a shared, deduplicated function and replaces it with a call. That cut the compile time of the training programs, but the only run-time measurements were a few single runs (0.4 s against 0.5 s at 32 steps). This chapter measures what the calls cost at run time in the one way that does not wobble, **exact instruction counts**, and in the way that does (wall time), compares compile times too, and then changes `mgc` so that loops are lowered last to first (Chapter 42) and big functions are outlined **by default**, with switches to turn each off.
 

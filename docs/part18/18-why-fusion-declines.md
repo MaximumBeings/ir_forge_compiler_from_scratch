@@ -1,6 +1,6 @@
 # 18. Why Fusion Declines: Reading the Pass, and a Second Bug Found Along the Way
 
-<p style="text-align:center"><img src="../assets/goats/ch-18.svg" alt="Mountain goats on the mountain at dawn" style="max-width:100%;height:auto;border-radius:6px"></p>
+![Mountain goats on the mountain at dawn](../assets/goats/ch-18.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
 
 **What you will understand:** why `--affine-loop-fusion` does nothing on loops with dynamic bounds, which Chapter 17 measured but could not explain. The method is the one that works for any opaque compiler behavior: read the source, form a hypothesis, then design experiments that *discriminate* between hypotheses rather than merely agree with one. The result is a precise rule, established from the pass's own code and confirmed on six hand-written programs. Testing the obvious workaround then exposed a second, unrelated problem: the same pass produces **invalid IR** on tiled dynamic loops. Every source excerpt on this page is embedded from unmodified copies of the LLVM 18.1.3 files kept in the repository.
 

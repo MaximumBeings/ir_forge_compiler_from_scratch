@@ -1,6 +1,6 @@
 # 7. Real Loop Transforms: Fusion, Tiling, and Unrolling at the `affine` Level
 
-<p style="text-align:center"><img src="../assets/goats/ch-07.svg" alt="Mountain goats on the mountain above a desert" style="max-width:100%;height:auto;border-radius:6px"></p>
+![Mountain goats on the mountain above a desert](../assets/goats/ch-07.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
 
 **What you will understand:** the real, concrete payoff Chapter 1's own citation promised back in Part 0 -- that keeping a loop in its structured, `affine` form (rather than a bare CFG) is what makes loop fusion, tiling, and unrolling tractable at all. This chapter runs all three real, MLIR-shipped transforms on Mountain Goat's own lowered loops, with real before/after IR for each, and closes with the real reason canonicalization has to run again after every one of them.
 

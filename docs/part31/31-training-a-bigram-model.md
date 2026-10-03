@@ -1,6 +1,6 @@
 # 31. Training a Language Model: Gradient Descent on a Bigram
 
-<p style="text-align:center"><img src="../assets/goats/ch-31.svg" alt="Mountain goats on the mountain at midday" style="max-width:100%;height:auto;border-radius:6px"></p>
+![Mountain goats on the mountain at midday](../assets/goats/ch-31.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
 
 **What you will understand:** how a model *learns*, shown on the smallest language model there is, and how a Mountain Goat program trains it. The model reads one token and predicts the next. Training is gradient descent on the **cross-entropy loss**, with a gradient derived by hand, run for 400 steps, and every claim checked: the loss falls and cannot go below a bound that follows from the data, the model ends up predicting exactly the frequencies it saw, a token it never saw as input keeps exactly the weights it started with, and the hand-derived gradient agrees with a numerical estimate. Mountain Goat gets one new operation, `log`.
 

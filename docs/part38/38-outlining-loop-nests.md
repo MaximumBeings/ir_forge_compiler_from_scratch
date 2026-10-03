@@ -1,6 +1,6 @@
 # 38. Why Compile Time Was Quadratic, and a Pass That Outlines Loop Nests
 
-<p style="text-align:center"><img src="../assets/goats/ch-38.svg" alt="Mountain goats on the mountain in sepia" style="max-width:100%;height:auto;border-radius:6px"></p>
+![Mountain goats on the mountain in sepia](../assets/goats/ch-38.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
 
 **What you will understand:** why Chapter 36's training program took about 40 minutes to compile, found by measuring one stage at a time; how to isolate a cost like that with a synthetic experiment; and the compiler change that fixes it, **`--mg-outline-loops`**: a new MLIR pass, written for this book, that cuts a huge function into small shared ones. With it (`mgc --outline`) the same 29,552-line program compiles in **94 seconds** and prints exactly the numbers Chapter 36 recorded. This is the book's first compiler change since Chapter 32, and the first one whose reason is compile time.
 

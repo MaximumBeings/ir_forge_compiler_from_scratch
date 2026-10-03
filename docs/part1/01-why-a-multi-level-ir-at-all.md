@@ -1,6 +1,6 @@
 # 1. Why a Multi-Level IR at All
 
-<p style="text-align:center"><img src="../assets/goats/ch-01.svg" alt="Mountain goats on the mountain in autumn" style="max-width:100%;height:auto;border-radius:6px"></p>
+![Mountain goats on the mountain in autumn](../assets/goats/ch-01.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
 
 **What you will understand:** why MLIR represents a program at more than one level of abstraction at once, demonstrated concretely -- one small, real, structured loop is parsed, genuinely lowered through MLIR's own real passes, translated to real LLVM IR, compiled, and run, with the exact moment its own loop structure disappears captured directly in the tool's own output.
 

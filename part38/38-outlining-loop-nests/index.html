@@ -1,0 +1,2903 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A Toy Language Compiled Through a Real MLIR Dialect, Down to Real Native Machine Code">
+      
+      
+        <meta name="author" content="Oluwaseyi Awoga">
+      
+      
+      
+        <link rel="prev" href="../../part37/37-inside-the-llvm-stage/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>38. Why Compile Time Was Quadratic, and a Pass That Outlines Loop Nests - IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#38-why-compile-time-was-quadratic-and-a-pass-that-outlines-loop-nests" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-header__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              38. Why Compile Time Was Quadratic, and a Pass That Outlines Loop Nests
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-nav__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../background/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background (LLVM and MLIR in Twenty Minutes)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tour/language-tour/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Mountain Goat Language: A Short Tour
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part1/01-why-a-multi-level-ir-at-all/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1. Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part2/02-a-minimal-dialect-from-scratch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2. A Minimal Dialect From Scratch: Mountain Goat's Own mg Dialect
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part3/03-the-pass-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3. The Real Pass Infrastructure: Canonicalizing Mountain Goat
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 3 -- Progressive Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 3 -- Progressive Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part4/04-progressive-lowering-to-affine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4. Progressive Lowering: Mountain Goat to affine, Two Real Ways
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part5/05-affine-to-scf-to-llvm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5. Finishing Progressive Lowering: affine to scf to llvm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 4 -- Optimization Across Levels
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 4 -- Optimization Across Levels
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/06-real-bufferization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6. Real Bufferization: Closing Chapter 4's Own Honest Gap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part7/07-real-loop-transforms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    7. Real Loop Transforms: Fusion, Tiling, and Unrolling at the affine Level
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 5 -- Code Generation via LLVM
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 5 -- Code Generation via LLVM
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part8/08-a-standalone-native-executable/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    8. A Standalone Native Executable: Mountain Goat Without MLIR At Runtime
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part9/09-the-execution-engine-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    9. MLIR's Own Real C++ ExecutionEngine API, Called In-Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 6 -- GPU Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 6 -- GPU Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part10/10-gpu-lowering-to-ptx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10. GPU Lowering: Mountain Goat to the gpu Dialect, NVVM, and Real PTX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part11/11-the-gpu-host-side/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    11. The GPU Host Side: Device Memory, Real Runtime Calls, and a Stub Device
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 7 -- Case Studies
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 7 -- Case Studies
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part12/12-reading-the-production-pipelines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    12. Reading MLIR's Own Production Pipelines: What This Book's Compiler Is Missing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part13/13-dynamic-shapes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    13. Dynamic Shapes: Closing Chapter 12's Biggest Unknown
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part14/14-runtime-shape-checks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    14. A Runtime Shape Check: Closing Chapter 13's Memory-Safety Hole
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part15/15-a-real-test-suite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    15. A Real Test Suite: lit, FileCheck, and Proof That the Tests Can Fail
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part16/16-testing-the-gpu-path-and-loop-transforms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    16. Testing the GPU Path and the Loop Transforms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part17/17-loop-transforms-on-dynamic-bounds/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    17. Loop Transforms on Dynamic Bounds
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part18/18-why-fusion-declines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    18. Why Fusion Declines: Reading the Pass, and a Second Bug Found Along the Way
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part19/19-a-better-abort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    19. A Better Abort: Reporting Assertion Failures on stderr
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part20/20-the-mountain-goat-demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    20. The Mountain Goat Demo: A Surface Syntax, a Driver, and C++ Calling Compiled Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part21/21-more-operations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    21. More Operations: Subtract, Hadamard, Divide, Matrix Product, and Scalars
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part22/22-broadcasting-reductions-and-relu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    22. Broadcasting, Reductions and relu: Enough Operations for a Neural-Network Layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part23/23-measuring-performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    23. Measuring Performance: Does Any of It Make the Code Fast?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part24/24-closing-the-matmul-gap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    24. Closing the Gap: A Matrix Product That Walks Memory in a Better Order
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part25/25-keeping-it-working/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    25. Keeping It Working: Continuous Integration and the Tests the Early Chapters Never Had
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part26/26-learning-from-data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    26. Learning From Data: Gradient Descent in Mountain Goat
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part27/27-tensor-contractions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    27. Tensor Contractions as Matrix Products
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part28/28-contraction-in-mountain-goat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    28. Tensor Contractions in Mountain Goat Itself
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part29/29-softmax-and-attention/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    29. Softmax and Attention
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part30/30-a-small-transformer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    30. A Small Transformer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part31/31-training-a-bigram-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    31. Training a Language Model: Gradient Descent on a Bigram
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part32/32-does-it-generalize/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    32. Does It Generalize? Held-Out Data, Overfitting and Weight Decay
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part33/33-backpropagation-through-attention/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    33. Backpropagation Through Attention: Training a One-Head Classifier
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part34/34-why-a-block-has-a-feed-forward-network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    34. Why a Block Has a Feed-Forward Network: Backpropagation Through Layer Norm, ReLU and Residuals
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part35/35-training-a-transformer-language-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    35. Training a Transformer Language Model: Backpropagation Through Causal Attention and Embeddings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part36/36-training-chapter-30s-transformer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    36. Training Chapter 30's Transformer: Two Heads, Two Blocks, and a Result That Is Not Better
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part37/37-inside-the-llvm-stage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    37. Inside the LLVM Stage: Reading the IR, and Why a Loop Does or Does Not Vectorize
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    38. Why Compile Time Was Quadratic, and a Pass That Outlines Loop Nests
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    38. Why Compile Time Was Quadratic, and a Pass That Outlines Loop Nests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-problem-40-minutes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The problem: 40 minutes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#which-pass-the-compilers-own-timing-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which pass? The compiler's own timing report
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#isolating-the-cause-loops-per-function" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Isolating the cause: loops per function
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-fix-outline-each-nest-into-a-shared-function" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The fix: outline each nest into a shared function
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-it-does-to-the-ir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it does to the IR
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Examples
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#result" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Result
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#are-the-tests-good-enough-break-the-pass-eleven-ways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Are the tests good enough? Break the pass eleven ways.
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limits-and-what-is-not-established" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits and what is not established
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-problem-40-minutes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The problem: 40 minutes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#which-pass-the-compilers-own-timing-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which pass? The compiler's own timing report
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#isolating-the-cause-loops-per-function" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Isolating the cause: loops per function
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-fix-outline-each-nest-into-a-shared-function" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The fix: outline each nest into a shared function
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-it-does-to-the-ir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it does to the IR
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Examples
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#result" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Result
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#are-the-tests-good-enough-break-the-pass-eleven-ways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Are the tests good enough? Break the pass eleven ways.
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limits-and-what-is-not-established" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits and what is not established
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="38-why-compile-time-was-quadratic-and-a-pass-that-outlines-loop-nests">38. Why Compile Time Was Quadratic, and a Pass That Outlines Loop Nests<a class="headerlink" href="#38-why-compile-time-was-quadratic-and-a-pass-that-outlines-loop-nests" title="Permanent link">&para;</a></h1>
+<p><strong>What you will understand:</strong> why Chapter 36's training program took about 40 minutes to compile, found by measuring one stage at a time; how to isolate a cost like that with a synthetic experiment; and the compiler change that fixes it, <strong><code>--mg-outline-loops</code></strong>: a new MLIR pass, written for this book, that cuts a huge function into small shared ones. With it (<code>mgc --outline</code>) the same 29,552-line program compiles in <strong>94 seconds</strong> and prints exactly the numbers Chapter 36 recorded. This is the book's first compiler change since Chapter 32, and the first one whose reason is compile time.</p>
+<p><strong>What you need to know first:</strong> Chapter 36 (the training program whose compile time is the problem), Chapter 5 (the lowering from <code>affine</code> to <code>scf</code> to the LLVM dialect, where the time goes) and Chapter 37 (what the final stages look like). The pass is MLIR C++ (a <code>Pass</code>, a <code>func::FuncOp</code>, building and cloning operations); the page explains each step, but reading it is easier if you have seen Chapter 2's and Chapter 19's passes.</p>
+<div class="admonition tip">
+<p class="admonition-title">Compile and run</p>
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">cd</span><span class="w"> </span>docs/part38/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./build.sh<span class="w">                 </span><span class="c1"># builds mg-opt with the new pass (about a minute); this is now the newest compiler</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>python3<span class="w"> </span>make_examples.py<span class="w">                          </span><span class="c1"># (re)writes the four example programs</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>./run_examples.sh<span class="w"> </span>&gt;<span class="w"> </span>examples_out.txt<span class="w">              </span><span class="c1"># each example without and with --outline</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>./show_ir.sh<span class="w"> </span>&gt;<span class="w"> </span>show_ir_out.txt<span class="w">                    </span><span class="c1"># the IR before and after, for one example</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>./pass_timing.py<span class="w"> </span>&gt;<span class="w"> </span>pass_timing_out.txt<span class="w">            </span><span class="c1"># which pass is slow? (about 3 minutes)</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>./synthetic.py<span class="w"> </span>&gt;<span class="w"> </span>synthetic_out.txt<span class="w">                </span><span class="c1"># the cost isolated on synthetic loops (about 3 minutes)</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>./scaling.py<span class="w"> </span>&gt;<span class="w"> </span>scaling_out.txt<span class="w">                    </span><span class="c1"># every stage&#39;s time, with and without outlining, 1 to 32 steps (about 4 minutes)</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>./full200.sh<span class="w"> </span>&gt;<span class="w"> </span>full200_out.txt<span class="w">                    </span><span class="c1"># the full 200-step program with --outline, compared with Chapter 36&#39;s recorded output (under 2 minutes)</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>./mutation.sh<span class="w"> </span>&gt;<span class="w"> </span>mutation_out.txt<span class="w">                  </span><span class="c1"># 11 broken versions of the driver and the pass, each re-tested (about 12 minutes)</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="nb">cd</span><span class="w"> </span>../../part15/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_lit.sh<span class="w">              </span><span class="c1"># the whole test suite (now run with this chapter&#39;s mg-opt)</span>
+</code></pre></div>
+Every listing and output on this page comes from these commands. <code>mgc</code> in this directory is Chapter 32's with one new option, <code>--outline</code>.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Why this page shows a mutation run, and why 'caught' is the wanted result</p>
+<p>The mutation output breaks the pass on purpose, one way at a time, and expects the tests to fail. "Caught" is good; "NOT CAUGHT" would be a gap (there is none this time). Nothing on this page is a failing test.</p>
+</div>
+<h2 id="the-problem-40-minutes">The problem: 40 minutes<a class="headerlink" href="#the-problem-40-minutes" title="Permanent link">&para;</a></h2>
+<p>Chapter 36's 200-step training program compiled and ran in 39 minutes 35 seconds (<code>check_lm2.py --full</code>), and nearly all of that was compile time (the program itself runs for seconds). Chapter 36 said "why the cost grows faster than the size was not investigated". Here is the investigation. <code>mgc</code> is a chain of stages (Chapter 37), so time each one. The training program cut to <em>k</em> steps has <em>k</em> times the loop nests in <code>main</code>, and this is <code>scaling.py</code>'s output for the <strong>plain</strong> rows (the "outlined" rows are this chapter's fix, discussed below):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Chapter 36&#39;s training program (examples/04 of that chapter) cut to k steps; times in seconds, one run each, this machine
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>steps          loop nests outlined fns   front convert   lower translate  clang   run  compile total
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    1    plain       2745            0     0.1     0.3     2.0       1.0    0.5   0.1            3.8
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    1 outlined        312           75     0.1     0.4     1.2       0.8    0.8   0.1            3.3
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>      the program prints the same 458 words with and without outlining: True
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    2    plain       3682            0     0.1     0.3     2.4       1.0    0.5   0.1            4.2
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    2 outlined        312           75     0.1     0.4     1.3       0.9    0.8   0.1            3.4
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>      the program prints the same 458 words with and without outlining: True
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    4    plain       5556            0     0.1     0.3     3.7       1.4    0.6   0.1            6.1
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    4 outlined        312           75     0.1     0.4     1.3       0.9    1.2   0.1            3.9
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>      the program prints the same 458 words with and without outlining: True
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    8    plain       9304            0     0.1     0.4     7.6       2.0    1.0   0.1           11.1
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    8 outlined        312           75     0.1     0.5     1.6       1.1    1.5   0.1            4.9
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>      the program prints the same 458 words with and without outlining: True
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>   16    plain      16800            0     0.1     0.6    17.3       3.2    1.7   0.2           23.1
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>   16 outlined        312           75     0.1     0.7     2.0       1.6    2.8   0.3            7.1
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>      the program prints the same 458 words with and without outlining: True
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>   32    plain      31792            0     0.2     0.9    49.3       6.2    3.3   0.4           59.9
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>   32 outlined        312           75     0.2     1.3     3.2       2.9    6.1   0.5           13.6
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>      the program prints the same 458 words with and without outlining: True
+</code></pre></div>
+<p>Look at the plain rows. Every stage grows with the program, but the <strong><code>lower</code></strong> stage (the second <code>mg-opt</code> run: <code>--lower-affine --convert-scf-to-cf</code> and the conversions to the LLVM dialect) grows <em>faster</em> than the program: 7.6 → 17.3 → 49.3 seconds when the number of steps goes 8 → 16 → 32, while the front end, <code>translate</code> and <code>clang</code> each roughly double. At 32 steps <code>lower</code> is 82% of the compile time.</p>
+<h2 id="which-pass-the-compilers-own-timing-report">Which pass? The compiler's own timing report<a class="headerlink" href="#which-pass-the-compilers-own-timing-report" title="Permanent link">&para;</a></h2>
+<p><code>mg-opt --mlir-timing</code> prints where a pipeline spent its time, per pass. For the 16-step program (<code>pass_timing.py</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>mg-opt --mlir-timing on the lowering of the 16-step program (the passes of mgc&#39;s third stage):
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  Total Execution Time: 19.1028 seconds
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  ----Wall Time----  ----Name----
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    0.5251 (  2.7%)  Parser
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    0.4400 (  2.3%)  ConvertAffineToStandard
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>   12.3045 ( 64.4%)  SCFToControlFlow
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    0.7538 (  3.9%)  {anonymous}::MgAssertToStderrPass
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    0.3053 (  1.6%)  ConvertMathToLLVMPass
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    0.4735 (  2.5%)  ArithToLLVMConversionPass
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>    1.0300 (  5.4%)  FinalizeMemRefToLLVMConversionPass
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>    0.9704 (  5.1%)  ConvertFuncToLLVMPass
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>    0.8805 (  4.6%)  ReconcileUnrealizedCasts
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>    1.2407 (  6.5%)  Output
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>    0.1789 (  0.9%)  Rest
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>   19.1028 (100.0%)  Total
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>steps loop nests  SCFToControlFlow (s)  growth for each doubling of the number of steps
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>    1       2745                  0.25
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>    2       3682                  0.45  loops x1.34, time x1.83
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>    4       5556                  1.48  loops x1.51, time x3.27
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>    8       9304                  4.27  loops x1.67, time x2.89
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a>   16      16800                 13.00  loops x1.81, time x3.04
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a>   32      31792                 41.50  loops x1.89, time x3.19
+</code></pre></div>
+<p>One pass, <strong><code>SCFToControlFlow</code></strong> (it turns structured <code>scf.for</code> loops into basic blocks with branches), takes 64% of the lowering at 16 steps. The table underneath times it alone against the number of loop nests: each doubling of the steps multiplies the loop count by 1.34 to 1.89 (it approaches 2 as the constant part of the program, the weights and mask literals, becomes small) and the time by <strong>about 3</strong> (1.83, 3.27, 2.89, 3.04, 3.19). A cost that triples while the loop count grows by a factor of 1.8 to 1.9 grows like the loop count to the power of about 1.8: <strong>close to quadratic</strong> in the measured range. (Extrapolating to 200 steps would be a guess: this pass alone would take on the order of a quarter of an hour.)</p>
+<h2 id="isolating-the-cause-loops-per-function">Isolating the cause: loops per <em>function</em><a class="headerlink" href="#isolating-the-cause-loops-per-function" title="Permanent link">&para;</a></h2>
+<p>The unrolled training program puts every loop nest into <strong>one function</strong>, <code>main</code> (the <code>def</code>s are separate functions, but the training steps are <code>let</code>s in <code>main</code>). Is the cost about the number of loops in one function, or about the number of loops in the whole module? A synthetic experiment tells them apart: <em>n</em> tiny nests (each copies four numbers) written directly as MLIR, either all in one function or in functions of 500 nests each (<code>synthetic.py</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>SCFToControlFlow time in seconds, by number of loop nests n (each copies 4 numbers); one run each
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>      n  one function  500 per function  one function, outlined first  whole mg-opt run, outlined
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>   2000         0.059             0.021                         0.001                       0.067
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>   4000         0.534             0.040                         0.002                       0.125      one function grew 9.0x for 2x the loops
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>   8000         5.188             0.075                         0.004                       0.229      one function grew 9.7x for 2x the loops
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>  16000        24.763             0.230                         0.009                       0.456      one function grew 4.8x for 2x the loops
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>  32000        88.003             0.416                         0.015                       0.818      one function grew 3.6x for 2x the loops
+</code></pre></div>
+<ul>
+<li><strong>All in one function: super-linear, steeply.</strong> 2,000 nests: 0.06 s; 8,000: 5.2 s; 32,000: <strong>88 s</strong>. Doubling <em>n</em> multiplies the time by 9.0 and 9.7 at first and by 4.8 and 3.6 later, so it is not a clean power law (the later factors are smaller; why is not known).</li>
+<li><strong>The same loops in functions of 500: linear.</strong> 32,000 nests: <strong>0.42 s</strong>, 200 times faster, and each doubling roughly doubles the time (0.02, 0.04, 0.08, 0.23, 0.42).</li>
+<li>So the cost is a property of <strong>how many loops one function holds</strong>, not of how many the module holds. <strong>The mechanism inside MLIR was not identified.</strong> A natural guess is that lowering each loop splits the function's block and moves everything after it, which makes the total work grow with the square of the length; that would explain the shape but it was <strong>not tested</strong> (no profiler was run and the MLIR source was not read).</li>
+</ul>
+<p>That suggests the fix: <strong>do not put thousands of loops in one function.</strong></p>
+<h2 id="the-fix-outline-each-nest-into-a-shared-function">The fix: outline each nest into a shared function<a class="headerlink" href="#the-fix-outline-each-nest-into-a-shared-function" title="Permanent link">&para;</a></h2>
+<p><code>--mg-outline-loops</code> (new, <code>OutlineLoops.cpp</code>) walks every function that has at least 32 top-level <code>affine.for</code> nests (the threshold is an option, <code>min-loops</code>). For each nest it:</p>
+<ol>
+<li>finds the values the nest uses that are defined <strong>outside</strong> it;</li>
+<li><strong>clones</strong> the <code>arith.constant</code>s into the new function and turns <strong>everything else</strong> into an argument (a memref, or an index or float computed outside: the run-time sizes of a dynamic-shape program, for example);</li>
+<li>builds <code>func.func private @mg_outlined_N(args) { the nest; return }</code>, prints it, and <strong>if an identical function (same text, ignoring the name) already exists, uses that one and throws the new one away</strong>;</li>
+<li>replaces the nest with a <code>func.call</code>.</li>
+</ol>
+<p>Step 3 is what makes it more than a trick to dodge a quadratic: a program with 190,000 loop nests (the 200-step program, by extrapolation) has <strong>75 distinct ones</strong>, so the output has 75 small functions and <code>main</code> is a list of calls. The whole pass:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1">// --mg-outline-loops: move every top-level loop nest of a big function into a small shared function, and replace it with a call.</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="c1">//</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1">// Why (Chapter 38): MLIR&#39;s SCFToControlFlow takes time that grows roughly with the SQUARE of the number of loops in one function (measured: 16,000 loops in one function</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1">// 18.9 s; the same loops in functions of 500: 0.17 s). The unrolled training programs of Chapters 35 and 36 put tens of thousands of loop nests, one per matrix operation,</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="c1">// into `main`. This pass cuts `main` into pieces of one loop nest each, and then DEDUPLICATES the pieces: two nests that are the same loops over the same shapes become</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="c1">// one function called twice. A program with 190,000 loop nests has only a few dozen distinct ones.</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="c1">//</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="c1">// What it does, per function with at least `min-loops` top-level affine.for ops:</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="c1">//   1. for each top-level affine.for, find the values it uses that are defined outside it;</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="c1">//   2. arith.constant values are CLONED into the new function (so the same nest over different constants does not look different); every other outside value</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="c1">//      (a memref, an index or a float computed outside) becomes an ARGUMENT;</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="c1">//   3. build `func.func private @mg_outlined_N(args) { clone of the nest; return }`, print it, and if an identical function (same text, ignoring the name) exists, use that</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="c1">//      one and discard the new one;</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="c1">//   4. replace the nest with a func.call.</span>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="c1">// Loops nested inside other loops are untouched. The result computes exactly the same thing: the callee reads and writes the same memrefs.</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/Affine/IR/AffineOps.h&quot;</span>
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/Arith/IR/Arith.h&quot;</span>
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/Func/IR/FuncOps.h&quot;</span>
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/IR/Builders.h&quot;</span>
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/IR/BuiltinOps.h&quot;</span>
+<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/IR/IRMapping.h&quot;</span>
+<a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Pass/Pass.h&quot;</span>
+<a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Pass/PassRegistry.h&quot;</span>
+<a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;llvm/ADT/SetVector.h&quot;</span>
+<a id="__codelineno-4-25" name="__codelineno-4-25" href="#__codelineno-4-25"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;llvm/ADT/StringMap.h&quot;</span>
+<a id="__codelineno-4-26" name="__codelineno-4-26" href="#__codelineno-4-26"></a>
+<a id="__codelineno-4-27" name="__codelineno-4-27" href="#__codelineno-4-27"></a><span class="k">using</span><span class="w"> </span><span class="k">namespace</span><span class="w"> </span><span class="nn">mlir</span><span class="p">;</span>
+<a id="__codelineno-4-28" name="__codelineno-4-28" href="#__codelineno-4-28"></a>
+<a id="__codelineno-4-29" name="__codelineno-4-29" href="#__codelineno-4-29"></a><span class="k">namespace</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-30" name="__codelineno-4-30" href="#__codelineno-4-30"></a><span class="k">struct</span><span class="w"> </span><span class="nc">OutlineLoopsPass</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">PassWrapper</span><span class="o">&lt;</span><span class="n">OutlineLoopsPass</span><span class="p">,</span><span class="w"> </span><span class="n">OperationPass</span><span class="o">&lt;</span><span class="n">ModuleOp</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-31" name="__codelineno-4-31" href="#__codelineno-4-31"></a><span class="w">  </span><span class="n">MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID</span><span class="p">(</span><span class="n">OutlineLoopsPass</span><span class="p">)</span>
+<a id="__codelineno-4-32" name="__codelineno-4-32" href="#__codelineno-4-32"></a><span class="w">  </span><span class="n">OutlineLoopsPass</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">default</span><span class="p">;</span>
+<a id="__codelineno-4-33" name="__codelineno-4-33" href="#__codelineno-4-33"></a><span class="w">  </span><span class="n">OutlineLoopsPass</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">OutlineLoopsPass</span><span class="w"> </span><span class="o">&amp;</span><span class="n">other</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">PassWrapper</span><span class="p">(</span><span class="n">other</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span><span class="w">      </span><span class="c1">// the pass framework copies passes; an Option is not copyable</span>
+<a id="__codelineno-4-34" name="__codelineno-4-34" href="#__codelineno-4-34"></a><span class="w">  </span><span class="n">Option</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">minLoops</span><span class="p">{</span><span class="o">*</span><span class="k">this</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;min-loops&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">llvm</span><span class="o">::</span><span class="n">cl</span><span class="o">::</span><span class="n">desc</span><span class="p">(</span><span class="s">&quot;only functions with at least this many top-level loop nests are outlined&quot;</span><span class="p">),</span><span class="w"> </span><span class="n">llvm</span><span class="o">::</span><span class="n">cl</span><span class="o">::</span><span class="n">init</span><span class="p">(</span><span class="mi">32</span><span class="p">)};</span>
+<a id="__codelineno-4-35" name="__codelineno-4-35" href="#__codelineno-4-35"></a><span class="w">  </span><span class="n">StringRef</span><span class="w"> </span><span class="nf">getArgument</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">final</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;mg-outline-loops&quot;</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-4-36" name="__codelineno-4-36" href="#__codelineno-4-36"></a><span class="w">  </span><span class="n">StringRef</span><span class="w"> </span><span class="nf">getDescription</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">final</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;Outline top-level affine loop nests into deduplicated functions (cuts compile time of huge functions)&quot;</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-4-37" name="__codelineno-4-37" href="#__codelineno-4-37"></a><span class="w">  </span><span class="kt">void</span><span class="w"> </span><span class="nf">getDependentDialects</span><span class="p">(</span><span class="n">DialectRegistry</span><span class="w"> </span><span class="o">&amp;</span><span class="n">registry</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">registry</span><span class="p">.</span><span class="n">insert</span><span class="o">&lt;</span><span class="n">func</span><span class="o">::</span><span class="n">FuncDialect</span><span class="p">,</span><span class="w"> </span><span class="n">affine</span><span class="o">::</span><span class="n">AffineDialect</span><span class="p">,</span><span class="w"> </span><span class="n">arith</span><span class="o">::</span><span class="n">ArithDialect</span><span class="o">&gt;</span><span class="p">();</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-4-38" name="__codelineno-4-38" href="#__codelineno-4-38"></a>
+<a id="__codelineno-4-39" name="__codelineno-4-39" href="#__codelineno-4-39"></a><span class="w">  </span><span class="kt">void</span><span class="w"> </span><span class="nf">runOnOperation</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-40" name="__codelineno-4-40" href="#__codelineno-4-40"></a><span class="w">    </span><span class="n">ModuleOp</span><span class="w"> </span><span class="k">module</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getOperation</span><span class="p">();</span>
+<a id="__codelineno-4-41" name="__codelineno-4-41" href="#__codelineno-4-41"></a><span class="w">    </span><span class="n">MLIRContext</span><span class="w"> </span><span class="o">*</span><span class="n">ctx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">getContext</span><span class="p">();</span>
+<a id="__codelineno-4-42" name="__codelineno-4-42" href="#__codelineno-4-42"></a><span class="w">    </span><span class="n">llvm</span><span class="o">::</span><span class="n">StringMap</span><span class="o">&lt;</span><span class="n">func</span><span class="o">::</span><span class="n">FuncOp</span><span class="o">&gt;</span><span class="w"> </span><span class="n">known</span><span class="p">;</span><span class="w">        </span><span class="c1">// printed function text (with a fixed name) -&gt; the function that has it</span>
+<a id="__codelineno-4-43" name="__codelineno-4-43" href="#__codelineno-4-43"></a><span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">counter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-4-44" name="__codelineno-4-44" href="#__codelineno-4-44"></a><span class="w">    </span><span class="n">SmallVector</span><span class="o">&lt;</span><span class="n">func</span><span class="o">::</span><span class="n">FuncOp</span><span class="o">&gt;</span><span class="w"> </span><span class="n">funcs</span><span class="p">;</span>
+<a id="__codelineno-4-45" name="__codelineno-4-45" href="#__codelineno-4-45"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="n">f</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">module</span><span class="p">.</span><span class="n">getOps</span><span class="o">&lt;</span><span class="n">func</span><span class="o">::</span><span class="n">FuncOp</span><span class="o">&gt;</span><span class="p">())</span>
+<a id="__codelineno-4-46" name="__codelineno-4-46" href="#__codelineno-4-46"></a><span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">f</span><span class="p">.</span><span class="n">isExternal</span><span class="p">())</span><span class="w"> </span><span class="n">funcs</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">f</span><span class="p">);</span>
+<a id="__codelineno-4-47" name="__codelineno-4-47" href="#__codelineno-4-47"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">func</span><span class="o">::</span><span class="n">FuncOp</span><span class="w"> </span><span class="n">f</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">funcs</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-48" name="__codelineno-4-48" href="#__codelineno-4-48"></a><span class="w">      </span><span class="n">SmallVector</span><span class="o">&lt;</span><span class="n">affine</span><span class="o">::</span><span class="n">AffineForOp</span><span class="o">&gt;</span><span class="w"> </span><span class="n">nests</span><span class="p">;</span>
+<a id="__codelineno-4-49" name="__codelineno-4-49" href="#__codelineno-4-49"></a><span class="w">      </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">Operation</span><span class="w"> </span><span class="o">&amp;</span><span class="n">op</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">f</span><span class="p">.</span><span class="n">getBody</span><span class="p">().</span><span class="n">front</span><span class="p">())</span>
+<a id="__codelineno-4-50" name="__codelineno-4-50" href="#__codelineno-4-50"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="n">forOp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dyn_cast</span><span class="o">&lt;</span><span class="n">affine</span><span class="o">::</span><span class="n">AffineForOp</span><span class="o">&gt;</span><span class="p">(</span><span class="o">&amp;</span><span class="n">op</span><span class="p">))</span><span class="w"> </span><span class="n">nests</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">forOp</span><span class="p">);</span>
+<a id="__codelineno-4-51" name="__codelineno-4-51" href="#__codelineno-4-51"></a><span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">((</span><span class="kt">int</span><span class="p">)</span><span class="n">nests</span><span class="p">.</span><span class="n">size</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">minLoops</span><span class="p">)</span><span class="w"> </span><span class="k">continue</span><span class="p">;</span>
+<a id="__codelineno-4-52" name="__codelineno-4-52" href="#__codelineno-4-52"></a><span class="w">      </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">affine</span><span class="o">::</span><span class="n">AffineForOp</span><span class="w"> </span><span class="n">forOp</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">nests</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-53" name="__codelineno-4-53" href="#__codelineno-4-53"></a><span class="w">        </span><span class="k">auto</span><span class="w"> </span><span class="n">definedOutside</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="o">&amp;</span><span class="p">](</span><span class="n">Value</span><span class="w"> </span><span class="n">v</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-54" name="__codelineno-4-54" href="#__codelineno-4-54"></a><span class="w">          </span><span class="n">Operation</span><span class="w"> </span><span class="o">*</span><span class="n">owner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">v</span><span class="p">.</span><span class="n">getDefiningOp</span><span class="p">()</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">v</span><span class="p">.</span><span class="n">getDefiningOp</span><span class="p">()</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">v</span><span class="p">.</span><span class="n">getParentBlock</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">getParentOp</span><span class="p">();</span>
+<a id="__codelineno-4-55" name="__codelineno-4-55" href="#__codelineno-4-55"></a><span class="w">          </span><span class="k">return</span><span class="w"> </span><span class="o">!</span><span class="n">forOp</span><span class="o">-&gt;</span><span class="n">isAncestor</span><span class="p">(</span><span class="n">owner</span><span class="p">);</span>
+<a id="__codelineno-4-56" name="__codelineno-4-56" href="#__codelineno-4-56"></a><span class="w">        </span><span class="p">};</span>
+<a id="__codelineno-4-57" name="__codelineno-4-57" href="#__codelineno-4-57"></a><span class="w">        </span><span class="n">llvm</span><span class="o">::</span><span class="n">SetVector</span><span class="o">&lt;</span><span class="n">Value</span><span class="o">&gt;</span><span class="w"> </span><span class="n">args</span><span class="p">;</span>
+<a id="__codelineno-4-58" name="__codelineno-4-58" href="#__codelineno-4-58"></a><span class="w">        </span><span class="n">SmallVector</span><span class="o">&lt;</span><span class="n">arith</span><span class="o">::</span><span class="n">ConstantOp</span><span class="o">&gt;</span><span class="w"> </span><span class="n">consts</span><span class="p">;</span>
+<a id="__codelineno-4-59" name="__codelineno-4-59" href="#__codelineno-4-59"></a><span class="w">        </span><span class="n">forOp</span><span class="p">.</span><span class="n">walk</span><span class="p">([</span><span class="o">&amp;</span><span class="p">](</span><span class="n">Operation</span><span class="w"> </span><span class="o">*</span><span class="n">op</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-60" name="__codelineno-4-60" href="#__codelineno-4-60"></a><span class="w">          </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">Value</span><span class="w"> </span><span class="n">v</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">op</span><span class="o">-&gt;</span><span class="n">getOperands</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-61" name="__codelineno-4-61" href="#__codelineno-4-61"></a><span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">definedOutside</span><span class="p">(</span><span class="n">v</span><span class="p">))</span><span class="w"> </span><span class="k">continue</span><span class="p">;</span>
+<a id="__codelineno-4-62" name="__codelineno-4-62" href="#__codelineno-4-62"></a><span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">v</span><span class="p">.</span><span class="n">getDefiningOp</span><span class="o">&lt;</span><span class="n">arith</span><span class="o">::</span><span class="n">ConstantOp</span><span class="o">&gt;</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-63" name="__codelineno-4-63" href="#__codelineno-4-63"></a><span class="w">              </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">llvm</span><span class="o">::</span><span class="n">is_contained</span><span class="p">(</span><span class="n">consts</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="p">))</span><span class="w"> </span><span class="n">consts</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">c</span><span class="p">);</span>
+<a id="__codelineno-4-64" name="__codelineno-4-64" href="#__codelineno-4-64"></a><span class="w">            </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-65" name="__codelineno-4-65" href="#__codelineno-4-65"></a><span class="w">              </span><span class="n">args</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="n">v</span><span class="p">);</span>
+<a id="__codelineno-4-66" name="__codelineno-4-66" href="#__codelineno-4-66"></a><span class="w">            </span><span class="p">}</span>
+<a id="__codelineno-4-67" name="__codelineno-4-67" href="#__codelineno-4-67"></a><span class="w">          </span><span class="p">}</span>
+<a id="__codelineno-4-68" name="__codelineno-4-68" href="#__codelineno-4-68"></a><span class="w">        </span><span class="p">});</span>
+<a id="__codelineno-4-69" name="__codelineno-4-69" href="#__codelineno-4-69"></a><span class="w">        </span><span class="n">SmallVector</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;</span><span class="w"> </span><span class="n">argTypes</span><span class="p">;</span>
+<a id="__codelineno-4-70" name="__codelineno-4-70" href="#__codelineno-4-70"></a><span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">Value</span><span class="w"> </span><span class="n">v</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">args</span><span class="p">)</span><span class="w"> </span><span class="n">argTypes</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">v</span><span class="p">.</span><span class="n">getType</span><span class="p">());</span>
+<a id="__codelineno-4-71" name="__codelineno-4-71" href="#__codelineno-4-71"></a><span class="w">        </span><span class="n">Location</span><span class="w"> </span><span class="n">loc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">forOp</span><span class="p">.</span><span class="n">getLoc</span><span class="p">();</span>
+<a id="__codelineno-4-72" name="__codelineno-4-72" href="#__codelineno-4-72"></a><span class="w">        </span><span class="n">func</span><span class="o">::</span><span class="n">FuncOp</span><span class="w"> </span><span class="n">callee</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">func</span><span class="o">::</span><span class="n">FuncOp</span><span class="o">::</span><span class="n">create</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;mg_outlined_tmp&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">FunctionType</span><span class="o">::</span><span class="n">get</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span><span class="w"> </span><span class="n">argTypes</span><span class="p">,</span><span class="w"> </span><span class="p">{}));</span>
+<a id="__codelineno-4-73" name="__codelineno-4-73" href="#__codelineno-4-73"></a><span class="w">        </span><span class="n">callee</span><span class="p">.</span><span class="n">setPrivate</span><span class="p">();</span>
+<a id="__codelineno-4-74" name="__codelineno-4-74" href="#__codelineno-4-74"></a><span class="w">        </span><span class="n">Block</span><span class="w"> </span><span class="o">*</span><span class="n">entry</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">callee</span><span class="p">.</span><span class="n">addEntryBlock</span><span class="p">();</span>
+<a id="__codelineno-4-75" name="__codelineno-4-75" href="#__codelineno-4-75"></a><span class="w">        </span><span class="n">OpBuilder</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OpBuilder</span><span class="o">::</span><span class="n">atBlockBegin</span><span class="p">(</span><span class="n">entry</span><span class="p">);</span>
+<a id="__codelineno-4-76" name="__codelineno-4-76" href="#__codelineno-4-76"></a><span class="w">        </span><span class="n">IRMapping</span><span class="w"> </span><span class="n">map</span><span class="p">;</span>
+<a id="__codelineno-4-77" name="__codelineno-4-77" href="#__codelineno-4-77"></a><span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="p">[</span><span class="n">orig</span><span class="p">,</span><span class="w"> </span><span class="n">arg</span><span class="p">]</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">llvm</span><span class="o">::</span><span class="n">zip</span><span class="p">(</span><span class="n">args</span><span class="p">,</span><span class="w"> </span><span class="n">entry</span><span class="o">-&gt;</span><span class="n">getArguments</span><span class="p">()))</span><span class="w"> </span><span class="n">map</span><span class="p">.</span><span class="n">map</span><span class="p">(</span><span class="n">orig</span><span class="p">,</span><span class="w"> </span><span class="n">arg</span><span class="p">);</span>
+<a id="__codelineno-4-78" name="__codelineno-4-78" href="#__codelineno-4-78"></a><span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">arith</span><span class="o">::</span><span class="n">ConstantOp</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">consts</span><span class="p">)</span><span class="w"> </span><span class="n">b</span><span class="p">.</span><span class="n">clone</span><span class="p">(</span><span class="o">*</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">map</span><span class="p">);</span>
+<a id="__codelineno-4-79" name="__codelineno-4-79" href="#__codelineno-4-79"></a><span class="w">        </span><span class="n">b</span><span class="p">.</span><span class="n">clone</span><span class="p">(</span><span class="o">*</span><span class="n">forOp</span><span class="p">.</span><span class="n">getOperation</span><span class="p">(),</span><span class="w"> </span><span class="n">map</span><span class="p">);</span>
+<a id="__codelineno-4-80" name="__codelineno-4-80" href="#__codelineno-4-80"></a><span class="w">        </span><span class="n">b</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">func</span><span class="o">::</span><span class="n">ReturnOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">loc</span><span class="p">);</span>
+<a id="__codelineno-4-81" name="__codelineno-4-81" href="#__codelineno-4-81"></a><span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">key</span><span class="p">;</span>
+<a id="__codelineno-4-82" name="__codelineno-4-82" href="#__codelineno-4-82"></a><span class="w">        </span><span class="n">llvm</span><span class="o">::</span><span class="n">raw_string_ostream</span><span class="w"> </span><span class="n">os</span><span class="p">(</span><span class="n">key</span><span class="p">);</span>
+<a id="__codelineno-4-83" name="__codelineno-4-83" href="#__codelineno-4-83"></a><span class="w">        </span><span class="n">callee</span><span class="p">.</span><span class="n">print</span><span class="p">(</span><span class="n">os</span><span class="p">);</span>
+<a id="__codelineno-4-84" name="__codelineno-4-84" href="#__codelineno-4-84"></a><span class="w">        </span><span class="k">auto</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">known</span><span class="p">.</span><span class="n">find</span><span class="p">(</span><span class="n">key</span><span class="p">);</span>
+<a id="__codelineno-4-85" name="__codelineno-4-85" href="#__codelineno-4-85"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">it</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">known</span><span class="p">.</span><span class="n">end</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-86" name="__codelineno-4-86" href="#__codelineno-4-86"></a><span class="w">          </span><span class="n">callee</span><span class="o">-&gt;</span><span class="n">destroy</span><span class="p">();</span>
+<a id="__codelineno-4-87" name="__codelineno-4-87" href="#__codelineno-4-87"></a><span class="w">          </span><span class="n">callee</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">it</span><span class="o">-&gt;</span><span class="n">second</span><span class="p">;</span>
+<a id="__codelineno-4-88" name="__codelineno-4-88" href="#__codelineno-4-88"></a><span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-89" name="__codelineno-4-89" href="#__codelineno-4-89"></a><span class="w">          </span><span class="n">callee</span><span class="p">.</span><span class="n">setName</span><span class="p">(</span><span class="s">&quot;mg_outlined_&quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">to_string</span><span class="p">(</span><span class="n">counter</span><span class="o">++</span><span class="p">));</span>
+<a id="__codelineno-4-90" name="__codelineno-4-90" href="#__codelineno-4-90"></a><span class="w">          </span><span class="k">module</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">callee</span><span class="p">);</span>
+<a id="__codelineno-4-91" name="__codelineno-4-91" href="#__codelineno-4-91"></a><span class="w">          </span><span class="n">known</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">callee</span><span class="p">;</span>
+<a id="__codelineno-4-92" name="__codelineno-4-92" href="#__codelineno-4-92"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-4-93" name="__codelineno-4-93" href="#__codelineno-4-93"></a><span class="w">        </span><span class="n">OpBuilder</span><span class="w"> </span><span class="n">cb</span><span class="p">(</span><span class="n">forOp</span><span class="p">);</span>
+<a id="__codelineno-4-94" name="__codelineno-4-94" href="#__codelineno-4-94"></a><span class="w">        </span><span class="n">cb</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">func</span><span class="o">::</span><span class="n">CallOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span><span class="w"> </span><span class="n">callee</span><span class="p">,</span><span class="w"> </span><span class="n">args</span><span class="p">.</span><span class="n">getArrayRef</span><span class="p">());</span>
+<a id="__codelineno-4-95" name="__codelineno-4-95" href="#__codelineno-4-95"></a><span class="w">        </span><span class="n">forOp</span><span class="p">.</span><span class="n">erase</span><span class="p">();</span>
+<a id="__codelineno-4-96" name="__codelineno-4-96" href="#__codelineno-4-96"></a><span class="w">      </span><span class="p">}</span>
+<a id="__codelineno-4-97" name="__codelineno-4-97" href="#__codelineno-4-97"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-4-98" name="__codelineno-4-98" href="#__codelineno-4-98"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-4-99" name="__codelineno-4-99" href="#__codelineno-4-99"></a><span class="p">};</span>
+<a id="__codelineno-4-100" name="__codelineno-4-100" href="#__codelineno-4-100"></a><span class="p">}</span><span class="w">  </span><span class="c1">// namespace</span>
+<a id="__codelineno-4-101" name="__codelineno-4-101" href="#__codelineno-4-101"></a>
+<a id="__codelineno-4-102" name="__codelineno-4-102" href="#__codelineno-4-102"></a><span class="k">namespace</span><span class="w"> </span><span class="nn">mg</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-103" name="__codelineno-4-103" href="#__codelineno-4-103"></a><span class="kt">void</span><span class="w"> </span><span class="nf">registerOutlineLoopsPass</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">PassRegistration</span><span class="o">&lt;</span><span class="n">OutlineLoopsPass</span><span class="o">&gt;</span><span class="p">();</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-4-104" name="__codelineno-4-104" href="#__codelineno-4-104"></a><span class="p">}</span><span class="w">  </span><span class="c1">// namespace mg</span>
+</code></pre></div>
+<p>The three details worth reading: the <strong>copy constructor</strong> (MLIR's pass framework copies passes, and an <code>Option</code> member is not copyable, so the pass has to say how: the first build of this chapter failed to compile on exactly that), the <code>definedOutside</code> test (an operand is outside if the operation that defines it, or the operation owning the block it is an argument of, is not inside the nest), and the <strong>key</strong>: the function printed as text. Two nests are "the same" when they print the same, which is exactly when they are the same loops over memrefs of the same types, with the same arithmetic and the same constants. <code>a + a</code> (one input used twice) and <code>a + b</code> (two) print differently and so stay different functions, which Example 1 shows.</p>
+<h2 id="what-it-does-to-the-ir">What it does to the IR<a class="headerlink" href="#what-it-does-to-the-ir" title="Permanent link">&para;</a></h2>
+<p><code>show_ir.sh</code> keeps the affine IR of <code>examples/02_one_nest_forty_times.mg</code> (forty additions of 2 × 2 matrices) with and without the pass:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>---- before (plain): the first loop nest in main, written out in place (the zero-initialisation and constant stores that come first are omitted)
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    affine.for %arg0 = 0 to 2 {
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>      affine.for %arg1 = 0 to 2 {
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>        %0 = affine.load %alloc_9[%arg0, %arg1] : memref&lt;2x2xf64&gt;
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>        %1 = affine.load %alloc[%arg0, %arg1] : memref&lt;2x2xf64&gt;
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>        %2 = arith.addf %0, %1 : f64
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>        affine.store %2, %alloc_22[%arg0, %arg1] : memref&lt;2x2xf64&gt;
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>      }
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>    }
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>---- after (--outline): the outlined function
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>  func.func private @mg_outlined_0(%arg0: memref&lt;2x2xf64&gt;, %arg1: memref&lt;2x2xf64&gt;, %arg2: memref&lt;2x2xf64&gt;) {
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>    affine.for %arg3 = 0 to 2 {
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>      affine.for %arg4 = 0 to 2 {
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>        %0 = affine.load %arg0[%arg3, %arg4] : memref&lt;2x2xf64&gt;
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>        %1 = affine.load %arg1[%arg3, %arg4] : memref&lt;2x2xf64&gt;
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>        %2 = arith.addf %0, %1 : f64
+<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>        affine.store %2, %arg2[%arg3, %arg4] : memref&lt;2x2xf64&gt;
+<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>      }
+<a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a>    }
+<a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a>    return
+<a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a>  }
+<a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a>---- after (--outline): the first three and the last of the 39 calls in main
+<a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a>    call @mg_outlined_0(%alloc_9, %alloc, %alloc_22) : (memref&lt;2x2xf64&gt;, memref&lt;2x2xf64&gt;, memref&lt;2x2xf64&gt;) -&gt; ()
+<a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a>    call @mg_outlined_0(%alloc_22, %alloc, %alloc_23) : (memref&lt;2x2xf64&gt;, memref&lt;2x2xf64&gt;, memref&lt;2x2xf64&gt;) -&gt; ()
+<a id="__codelineno-5-25" name="__codelineno-5-25" href="#__codelineno-5-25"></a>    call @mg_outlined_0(%alloc_23, %alloc, %alloc_24) : (memref&lt;2x2xf64&gt;, memref&lt;2x2xf64&gt;, memref&lt;2x2xf64&gt;) -&gt; ()
+<a id="__codelineno-5-26" name="__codelineno-5-26" href="#__codelineno-5-26"></a>    call @mg_outlined_0(%alloc_59, %alloc, %alloc_60) : (memref&lt;2x2xf64&gt;, memref&lt;2x2xf64&gt;, memref&lt;2x2xf64&gt;) -&gt; ()
+</code></pre></div>
+<p>Before, <code>main</code> contains the nest, in place, forty times. After, there is one function and forty calls with different memrefs (the first three and the last are shown). The function is a copy of the nest with its three memrefs as arguments, and nothing else about the loop has changed.</p>
+<h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
+<p>Four small programs, each run without and with <code>--outline</code> (the printed memory address is replaced by <code>0x…</code>, since it changes from run to run). The last line of each block counts the <code>affine.for</code> in the kept IR:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>################ 01_four_distinct_nests.mg
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>  | # 35 loop nests in `main`: twelve rounds of three operations on two matrices (the very first add, `a + a`, adds a constant to itself and the compiler folds it into a
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>  | # constant, so it makes no loop). --outline turns the 35 nests into 35 calls of FOUR functions: a product of a 3 x 3 with ITSELF (the first q), an add on 2 x 2, a product
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>  | # of two 3 x 3 matrices, and a transpose of 3 x 3, however many rounds there are. (A function is outlined only when it has at least 32 top-level loop nests.)
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>  | let a = [[1, 2], [3, 4]]
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>  | let b = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>  | let p0 = a + a
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>  | let q0 = b * b
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>  | let r0 = transpose(b)
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>  | let p1 = p0 + a
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>  | let q1 = q0 * b
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>  | let r1 = transpose(r0)
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>  | let p2 = p1 + a
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>  | ... (44 lines in all)
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>  ----- mgc run 01_four_distinct_nests.mg
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>[[13,   26], 
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a> [39,   52]]
+<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [3, 3] strides = [3, 1] data = 
+<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a>[[1,   32,   243], 
+<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a> [1024,   3125,   7776], 
+<a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a> [16807,   32768,   59049]]
+<a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [3, 3] strides = [3, 1] data = 
+<a id="__codelineno-6-24" name="__codelineno-6-24" href="#__codelineno-6-24"></a>[[1,   2,   3], 
+<a id="__codelineno-6-25" name="__codelineno-6-25" href="#__codelineno-6-25"></a> [4,   5,   6], 
+<a id="__codelineno-6-26" name="__codelineno-6-26" href="#__codelineno-6-26"></a> [7,   8,   9]]
+<a id="__codelineno-6-27" name="__codelineno-6-27" href="#__codelineno-6-27"></a>  ----- mgc run 01_four_distinct_nests.mg --outline
+<a id="__codelineno-6-28" name="__codelineno-6-28" href="#__codelineno-6-28"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+<a id="__codelineno-6-29" name="__codelineno-6-29" href="#__codelineno-6-29"></a>[[13,   26], 
+<a id="__codelineno-6-30" name="__codelineno-6-30" href="#__codelineno-6-30"></a> [39,   52]]
+<a id="__codelineno-6-31" name="__codelineno-6-31" href="#__codelineno-6-31"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [3, 3] strides = [3, 1] data = 
+<a id="__codelineno-6-32" name="__codelineno-6-32" href="#__codelineno-6-32"></a>[[1,   32,   243], 
+<a id="__codelineno-6-33" name="__codelineno-6-33" href="#__codelineno-6-33"></a> [1024,   3125,   7776], 
+<a id="__codelineno-6-34" name="__codelineno-6-34" href="#__codelineno-6-34"></a> [16807,   32768,   59049]]
+<a id="__codelineno-6-35" name="__codelineno-6-35" href="#__codelineno-6-35"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [3, 3] strides = [3, 1] data = 
+<a id="__codelineno-6-36" name="__codelineno-6-36" href="#__codelineno-6-36"></a>[[1,   2,   3], 
+<a id="__codelineno-6-37" name="__codelineno-6-37" href="#__codelineno-6-37"></a> [4,   5,   6], 
+<a id="__codelineno-6-38" name="__codelineno-6-38" href="#__codelineno-6-38"></a> [7,   8,   9]]
+<a id="__codelineno-6-39" name="__codelineno-6-39" href="#__codelineno-6-39"></a>  ----- the kept affine IR: plain has 70 affine.for (35 at the top of a function body); with --outline: 4 outlined functions, 35 calls, 8 affine.for in all
+<a id="__codelineno-6-40" name="__codelineno-6-40" href="#__codelineno-6-40"></a>
+<a id="__codelineno-6-41" name="__codelineno-6-41" href="#__codelineno-6-41"></a>################ 02_one_nest_forty_times.mg
+<a id="__codelineno-6-42" name="__codelineno-6-42" href="#__codelineno-6-42"></a>  | # The same loop nest forty times: an add on 2 x 2 matrices. --outline turns the forty nests into forty calls of ONE function.
+<a id="__codelineno-6-43" name="__codelineno-6-43" href="#__codelineno-6-43"></a>  | let a = [[1, 2], [3, 4]]
+<a id="__codelineno-6-44" name="__codelineno-6-44" href="#__codelineno-6-44"></a>  | let s0 = a + a
+<a id="__codelineno-6-45" name="__codelineno-6-45" href="#__codelineno-6-45"></a>  | let s1 = s0 + a
+<a id="__codelineno-6-46" name="__codelineno-6-46" href="#__codelineno-6-46"></a>  | let s2 = s1 + a
+<a id="__codelineno-6-47" name="__codelineno-6-47" href="#__codelineno-6-47"></a>  | let s3 = s2 + a
+<a id="__codelineno-6-48" name="__codelineno-6-48" href="#__codelineno-6-48"></a>  | let s4 = s3 + a
+<a id="__codelineno-6-49" name="__codelineno-6-49" href="#__codelineno-6-49"></a>  | let s5 = s4 + a
+<a id="__codelineno-6-50" name="__codelineno-6-50" href="#__codelineno-6-50"></a>  | let s6 = s5 + a
+<a id="__codelineno-6-51" name="__codelineno-6-51" href="#__codelineno-6-51"></a>  | let s7 = s6 + a
+<a id="__codelineno-6-52" name="__codelineno-6-52" href="#__codelineno-6-52"></a>  | let s8 = s7 + a
+<a id="__codelineno-6-53" name="__codelineno-6-53" href="#__codelineno-6-53"></a>  | let s9 = s8 + a
+<a id="__codelineno-6-54" name="__codelineno-6-54" href="#__codelineno-6-54"></a>  | ... (43 lines in all)
+<a id="__codelineno-6-55" name="__codelineno-6-55" href="#__codelineno-6-55"></a>  ----- mgc run 02_one_nest_forty_times.mg
+<a id="__codelineno-6-56" name="__codelineno-6-56" href="#__codelineno-6-56"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+<a id="__codelineno-6-57" name="__codelineno-6-57" href="#__codelineno-6-57"></a>[[41,   82], 
+<a id="__codelineno-6-58" name="__codelineno-6-58" href="#__codelineno-6-58"></a> [123,   164]]
+<a id="__codelineno-6-59" name="__codelineno-6-59" href="#__codelineno-6-59"></a>  ----- mgc run 02_one_nest_forty_times.mg --outline
+<a id="__codelineno-6-60" name="__codelineno-6-60" href="#__codelineno-6-60"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+<a id="__codelineno-6-61" name="__codelineno-6-61" href="#__codelineno-6-61"></a>[[41,   82], 
+<a id="__codelineno-6-62" name="__codelineno-6-62" href="#__codelineno-6-62"></a> [123,   164]]
+<a id="__codelineno-6-63" name="__codelineno-6-63" href="#__codelineno-6-63"></a>  ----- the kept affine IR: plain has 78 affine.for (39 at the top of a function body); with --outline: 1 outlined functions, 39 calls, 2 affine.for in all
+<a id="__codelineno-6-64" name="__codelineno-6-64" href="#__codelineno-6-64"></a>
+<a id="__codelineno-6-65" name="__codelineno-6-65" href="#__codelineno-6-65"></a>################ 03_dynamic_shapes.mg
+<a id="__codelineno-6-66" name="__codelineno-6-66" href="#__codelineno-6-66"></a>  | # Dynamic shapes: a function over matrices of any size whose body has 39 loop nests (40 copies of `a`, added). The nests use the run-time sizes of `a` (values computed
+<a id="__codelineno-6-67" name="__codelineno-6-67" href="#__codelineno-6-67"></a>  | # outside the nest), so the outlined function must take them as ARGUMENTS and not as constants. Called with a 2 x 3 matrix.
+<a id="__codelineno-6-68" name="__codelineno-6-68" href="#__codelineno-6-68"></a>  | def forty(a: tensor[?x?]) = a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a
+<a id="__codelineno-6-69" name="__codelineno-6-69" href="#__codelineno-6-69"></a>  | let m = [[1, 2, 3], [4, 5, 6]]
+<a id="__codelineno-6-70" name="__codelineno-6-70" href="#__codelineno-6-70"></a>  | print forty(m)
+<a id="__codelineno-6-71" name="__codelineno-6-71" href="#__codelineno-6-71"></a>  ----- mgc run 03_dynamic_shapes.mg
+<a id="__codelineno-6-72" name="__codelineno-6-72" href="#__codelineno-6-72"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 3] strides = [3, 1] data = 
+<a id="__codelineno-6-73" name="__codelineno-6-73" href="#__codelineno-6-73"></a>[[40,   80,   120], 
+<a id="__codelineno-6-74" name="__codelineno-6-74" href="#__codelineno-6-74"></a> [160,   200,   240]]
+<a id="__codelineno-6-75" name="__codelineno-6-75" href="#__codelineno-6-75"></a>  ----- mgc run 03_dynamic_shapes.mg --outline
+<a id="__codelineno-6-76" name="__codelineno-6-76" href="#__codelineno-6-76"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 3] strides = [3, 1] data = 
+<a id="__codelineno-6-77" name="__codelineno-6-77" href="#__codelineno-6-77"></a>[[40,   80,   120], 
+<a id="__codelineno-6-78" name="__codelineno-6-78" href="#__codelineno-6-78"></a> [160,   200,   240]]
+<a id="__codelineno-6-79" name="__codelineno-6-79" href="#__codelineno-6-79"></a>  ----- the kept affine IR: plain has 78 affine.for (39 at the top of a function body); with --outline: 2 outlined functions, 39 calls, 4 affine.for in all
+<a id="__codelineno-6-80" name="__codelineno-6-80" href="#__codelineno-6-80"></a>
+<a id="__codelineno-6-81" name="__codelineno-6-81" href="#__codelineno-6-81"></a>################ 04_below_threshold.mg
+<a id="__codelineno-6-82" name="__codelineno-6-82" href="#__codelineno-6-82"></a>  | # Only two loop nests (a product and a transpose; an add of constants would be folded away at compile time and make none): below the threshold of 32, so --outline leaves the function
+<a id="__codelineno-6-83" name="__codelineno-6-83" href="#__codelineno-6-83"></a>  | # alone and no mg_outlined function appears.
+<a id="__codelineno-6-84" name="__codelineno-6-84" href="#__codelineno-6-84"></a>  | let a = [[1, 2], [3, 4]]
+<a id="__codelineno-6-85" name="__codelineno-6-85" href="#__codelineno-6-85"></a>  | let b = a * a
+<a id="__codelineno-6-86" name="__codelineno-6-86" href="#__codelineno-6-86"></a>  | let c = transpose(b)
+<a id="__codelineno-6-87" name="__codelineno-6-87" href="#__codelineno-6-87"></a>  | print c
+<a id="__codelineno-6-88" name="__codelineno-6-88" href="#__codelineno-6-88"></a>  ----- mgc run 04_below_threshold.mg
+<a id="__codelineno-6-89" name="__codelineno-6-89" href="#__codelineno-6-89"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+<a id="__codelineno-6-90" name="__codelineno-6-90" href="#__codelineno-6-90"></a>[[1,   9], 
+<a id="__codelineno-6-91" name="__codelineno-6-91" href="#__codelineno-6-91"></a> [4,   16]]
+<a id="__codelineno-6-92" name="__codelineno-6-92" href="#__codelineno-6-92"></a>  ----- mgc run 04_below_threshold.mg --outline
+<a id="__codelineno-6-93" name="__codelineno-6-93" href="#__codelineno-6-93"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+<a id="__codelineno-6-94" name="__codelineno-6-94" href="#__codelineno-6-94"></a>[[1,   9], 
+<a id="__codelineno-6-95" name="__codelineno-6-95" href="#__codelineno-6-95"></a> [4,   16]]
+<a id="__codelineno-6-96" name="__codelineno-6-96" href="#__codelineno-6-96"></a>  ----- the kept affine IR: plain has 4 affine.for (2 at the top of a function body); with --outline: 0 outlined functions, 0 calls, 4 affine.for in all
+</code></pre></div>
+<ol>
+<li><strong><code>01_four_distinct_nests.mg</code>:</strong> 35 nests (twelve rounds of an add on 2 × 2, a product on 3 × 3 and a transpose on 3 × 3; the very first add, <code>a + a</code>, adds a constant to itself and the compiler folds it into a constant, so the 36th nest does not exist) become 35 calls of <strong>four</strong> functions, not three: <code>b * b</code> (a matrix times <em>itself</em>) takes one input, every later product takes two, so they print differently. Plain: 70 <code>affine.for</code> (35 nests of two loops); outlined: 8 (four functions of one nest each).</li>
+<li><strong><code>02_one_nest_forty_times.mg</code>:</strong> 39 nests, <strong>one</strong> function.</li>
+<li><strong><code>03_dynamic_shapes.mg</code>:</strong> a function over matrices of any size, with 39 nests in its body. The nests use the run-time sizes; the outlined functions take them as <strong>arguments</strong> (<code>%arg3: index, %arg4: index</code>), and there are two (the first nest adds <code>a</code> to itself; the other 38 add two different matrices). The answer is the same.</li>
+<li><strong><code>04_below_threshold.mg</code>:</strong> two nests, below the threshold of 32: nothing is outlined.</li>
+</ol>
+<h2 id="result">Result<a class="headerlink" href="#result" title="Permanent link">&para;</a></h2>
+<p>The "outlined" rows of the scaling table above, side by side with the plain ones:</p>
+<table>
+<thead>
+<tr>
+<th>steps</th>
+<th>plain: compile total (s)</th>
+<th>outlined: compile total (s)</th>
+<th>plain <code>lower</code></th>
+<th>outlined <code>lower</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>3.8</td>
+<td>3.3</td>
+<td>2.0</td>
+<td>1.2</td>
+</tr>
+<tr>
+<td>4</td>
+<td>6.1</td>
+<td>3.9</td>
+<td>3.7</td>
+<td>1.3</td>
+</tr>
+<tr>
+<td>8</td>
+<td>11.1</td>
+<td>4.9</td>
+<td>7.6</td>
+<td>1.6</td>
+</tr>
+<tr>
+<td>16</td>
+<td>23.1</td>
+<td>7.1</td>
+<td>17.3</td>
+<td>2.0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>59.9</td>
+<td>13.6</td>
+<td>49.3</td>
+<td>3.2</td>
+</tr>
+</tbody>
+</table>
+<p>At 32 steps the compile time falls from 59.9 s to 13.6 s, and the <code>lower</code> stage from 49.3 s to 3.2 s. Every row prints exactly the same output with and without the pass (<code>scaling.py</code> compares the 458 words of each pair: all <code>True</code>). The number of distinct functions is 75 whatever the number of steps. What is left grows roughly linearly: <code>clang</code> (6.1 s at 32 steps) and <code>translate</code> (2.9 s) now dominate.</p>
+<p>And the program of Chapter 36, at its full 200 steps (<code>full200.sh</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>compile with --outline: 94 seconds (29,552-line program; Chapter 36 measured about 40 minutes for compile and run without it)
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>run: 4 seconds
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>output identical to Chapter 36&#39;s recorded output (76 lines: all 8 checkpoints, the held-out result, the chunk counts and the four attention patterns)
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>distinct outlined functions: 75
+</code></pre></div>
+<p><strong>94 seconds to compile and 4 to run, against about 40 minutes</strong>, and the output is <strong>identical</strong> to Chapter 36's recorded output, line for line: all eight checkpoints, the held-out result, the chunk counts and the four attention patterns. (This is the strongest check in the chapter, since that run was itself checked digit for digit against the Python reference in Chapter 36.) The 40-minute figure is Chapter 36's, measured with other jobs sharing the machine for part of it; the 94 seconds is one run.</p>
+<p>Does calling a function per nest cost run time? Not visibly here: the 32-step program runs in 0.4 s plain and 0.5 s outlined (one run each, not a benchmark), and the full program's 4 seconds includes everything. The calls pass memref descriptors, which are cheap beside a loop of 112 × 112 element operations. This was not measured carefully.</p>
+<h2 id="tests">Tests<a class="headerlink" href="#tests" title="Permanent link">&para;</a></h2>
+<p>Three new <code>lit</code> files in <code>test/outline38/</code> (the suite is now 149 tests):</p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>What it checks</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pass</code></td>
+<td>the pass on hand-written IR: two identical nests become one function called twice (with the constant cloned in, not passed), a nest of a different shape becomes another function, a scalar defined outside becomes an argument, a nested 2-deep nest is outlined whole, call order is kept, and with the <strong>default</strong> threshold none of these small functions is touched</td>
+</tr>
+<tr>
+<td><code>structure</code></td>
+<td>the IR <code>mgc --outline</code> keeps, for the four examples: the exact number of outlined functions, calls and remaining loops (35 calls of 4 functions with 8 loops left; 39 calls of 1 function; 39 calls of 2 dynamic-shape functions whose signature is checked; nothing for the program below the threshold)</td>
+</tr>
+<tr>
+<td><code>results</code></td>
+<td>each example run with and without <code>--outline</code> gives byte-identical output (address removed), and the values themselves are pinned</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The test suite now runs with this chapter's <code>mg-opt</code></strong> (<code>run_lit.sh</code> prefers the newest build, which is now Chapter 38's; it is Chapter 32's plus the pass), so all 146 earlier tests also pass on the new compiler: 149 pass. The continuous-integration script and workflow now build <code>docs/part38/code</code>, and the build cache is keyed on this chapter's sources as well as Chapter 32's.</p>
+<h3 id="are-the-tests-good-enough-break-the-pass-eleven-ways">Are the tests good enough? Break the pass eleven ways.<a class="headerlink" href="#are-the-tests-good-enough-break-the-pass-eleven-ways" title="Permanent link">&para;</a></h3>
+<p><code>mutation.sh</code> breaks the driver twice and the pass nine times (each pass mutation is a full rebuild of <code>mg-opt</code>, about a minute) and re-runs the three tests:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>NOTE: this script deliberately breaks the compiler code. &#39;caught&#39; lines are EXPECTED: they show the tests can detect the mistake.
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>baseline (nothing broken): tests pass (expected)
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>== Part 1: the driver
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>--outline is accepted but does nothing: caught by outline38/structure.mlir 
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>--outline runs the pass BEFORE the loops exist (ahead of --convert-mg-to-affine): caught by outline38/structure.mlir 
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>== Part 2: the pass (a full rebuild per mutation)
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>the original loop nest is not erased (every nest would run twice): caught by outline38/pass.mlir outline38/structure.mlir 
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>the call passes its arguments in reverse order: caught by outline38/pass.mlir outline38/results.mlir outline38/structure.mlir 
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>deduplication is switched off (every nest gets its own function): caught by outline38/pass.mlir outline38/structure.mlir 
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>every nest hashes to the same key (all nests share the first function): caught by outline38/pass.mlir outline38/structure.mlir outline38/results.mlir 
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>the min-loops threshold is ignored: caught by outline38/pass.mlir outline38/structure.mlir 
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>the threshold is off by one (a function with exactly min-loops nests is skipped): caught by outline38/pass.mlir 
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>constants are not cloned into the outlined function: caught by outline38/pass.mlir outline38/structure.mlir outline38/results.mlir 
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a>block arguments (function arguments, run-time sizes) count as defined inside: caught by outline38/pass.mlir outline38/structure.mlir outline38/results.mlir 
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a>outlined functions are public, not private: caught by outline38/pass.mlir outline38/structure.mlir 
+<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a>
+<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a>restored: mgc is back to its original
+</code></pre></div>
+<p>All eleven are caught. Two lines are worth reading:</p>
+<ul>
+<li><strong>"The original loop nest is not erased"</strong> would make every nest run twice. For these programs that is <em>harmless</em> (a copy of an elementwise result is idempotent), so the <code>results</code> test <strong>cannot</strong> see it: the output is unchanged. It is caught by <code>structure</code> (which counts the loops left in <code>main</code>) and by <code>pass</code> (which checks the IR). This is why the chapter has IR-level tests and not only output comparisons.</li>
+<li><strong>"The threshold is off by one"</strong> is caught <strong>only</strong> by <code>pass</code>, which has a function with exactly one nest and runs with <code>min-loops=1</code>. The example programs have 35 and 39 nests against a threshold of 32, so nothing in them sits at the boundary.</li>
+</ul>
+<h2 id="limits-and-what-is-not-established">Limits and what is not established<a class="headerlink" href="#limits-and-what-is-not-established" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>The mechanism is not identified.</strong> The measurements show the cost of <code>SCFToControlFlow</code> depends on the number of loops in one function and not in the module, and that splitting the function removes it. Why (block splitting, an analysis that is recomputed, memory behaviour) was not found. The doubling factors were not a clean power law (9.0, 9.7, 4.8, 3.6 in the synthetic experiment), and the extrapolation to 200 steps is not a prediction.</li>
+<li><strong>Only top-level <code>affine.for</code> nests are outlined,</strong> in functions with at least 32 of them. The straight-line <code>affine.store</code>s that initialize the 112 × 112 mask and the other literals in <code>main</code> (21,714 of them directly in <code>main</code> in the 1-step program) are untouched; whether they cost anything was not measured. The threshold of 32 was chosen by hand and not tuned.</li>
+<li><strong>Deduplication is by printed text,</strong> so it finds nests that are identical, not nests that are equivalent: <code>a + a</code> and <code>a + b</code> stay different (Example 1), a nest with its two loops in the other order is another function.</li>
+<li><strong>The pass is off by default</strong> (<code>--outline</code> or <code>--mg-outline-loops</code>). Making it the default would change the IR of every program with 32 or more top-level nests (the earlier chapters' tests would need new expectations), and was not done.</li>
+<li><strong>Interaction with other options is only partly tested.</strong> <code>--outline</code> runs after <code>--passes</code>, so tiling or unrolling inside a nest happens first; the combination was not tested. The GPU path (<code>mgc ptx</code>) is unchanged and the pass is not run there.</li>
+<li><strong>Run time was not benchmarked.</strong> The calls cost something; the measurements above (0.4 s against 0.5 s at 32 steps, 4 s for 200 steps) are single runs.</li>
+<li><strong>One machine, one run each</strong> for every timing here; Chapter 36's 40 minutes were measured with other jobs running on the same machine.</li>
+<li><strong>Compile time is still linear in the program,</strong> and <code>clang</code> at <code>-O0</code> and <code>mlir-translate</code> are what is left; no attempt was made to reduce them.</li>
+<li><strong>Platform:</strong> x86-64 Linux, LLVM/MLIR 18.1.3.</li>
+</ul>
+<h2 id="reproducing">Reproducing<a class="headerlink" href="#reproducing" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nb">cd</span><span class="w"> </span>docs/part38/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./build.sh
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>python3<span class="w"> </span>make_examples.py<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_examples.sh<span class="w"> </span>&gt;<span class="w"> </span>examples_out.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./show_ir.sh<span class="w"> </span>&gt;<span class="w"> </span>show_ir_out.txt
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>./pass_timing.py<span class="w"> </span>&gt;<span class="w"> </span>pass_timing_out.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./synthetic.py<span class="w"> </span>&gt;<span class="w"> </span>synthetic_out.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./scaling.py<span class="w"> </span>&gt;<span class="w"> </span>scaling_out.txt
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>./full200.sh<span class="w"> </span>&gt;<span class="w"> </span>full200_out.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./mutation.sh<span class="w"> </span>&gt;<span class="w"> </span>mutation_out.txt
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="nb">cd</span><span class="w"> </span>../../part15/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_lit.sh<span class="w">          </span><span class="c1"># 149 tests</span>
+</code></pre></div>
+<h2 id="chapter-summary">Chapter summary<a class="headerlink" href="#chapter-summary" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Chapter 36's 40-minute compile was one MLIR pass, <code>SCFToControlFlow</code>, whose time grows much faster than the number of loops in <strong>one function</strong> (about 3× for every doubling of the steps; 88 s for 32,000 synthetic loops in one function against 0.4 s for the same loops in functions of 500).</li>
+<li><strong><code>--mg-outline-loops</code></strong> moves each top-level loop nest into a small private function, clones constants in, passes everything else as arguments, and <strong>deduplicates</strong> identical functions: the 200-step program has 75 distinct nests. <code>mgc --outline</code> turns it on.</li>
+<li>With it the 200-step training program compiles in <strong>94 s and runs in 4 s</strong>, and prints exactly what Chapter 36 recorded; at 32 steps the compile falls from 59.9 s to 13.6 s.</li>
+<li>The mechanism inside MLIR was not found; the evidence is a synthetic experiment that isolates the number of loops per function.</li>
+<li>Eleven deliberate breakages of the driver and the pass were all caught; one (not erasing the original loop) is invisible to an output comparison and is caught only by IR-level tests.</li>
+<li>The test suite and the CI now use this chapter's <code>mg-opt</code>; the pass is opt-in.</li>
+</ul>
+<h2 id="self-check-questions">Self-check questions<a class="headerlink" href="#self-check-questions" title="Permanent link">&para;</a></h2>
+<p>Each answer is collapsed; try the question first.</p>
+<ol>
+<li>
+<p>How did the chapter find which stage and which pass made the compile slow?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>It timed each <code>mgc</code> stage separately at several program sizes (the <code>lower</code> stage grew faster than the rest), then used <code>mg-opt --mlir-timing</code>, which reports time per pass (one pass, <code>SCFToControlFlow</code>, took 64% of the lowering), then timed that pass alone against the number of loops.</p>
+</details>
+</li>
+<li>
+<p>What does the synthetic experiment show, and what does it not show?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>It shows the cost depends on how many loops one function holds: the same 32,000 loop nests take 88 s in one function and 0.4 s in functions of 500. It does not show why: the cause inside MLIR (for instance repeated block splitting) was not identified, and the growth was not a clean power law.</p>
+</details>
+</li>
+<li>
+<p>Why does the pass clone <code>arith.constant</code> operations into the outlined function instead of passing them as arguments?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>So that two nests that differ only in where their constants were defined still print the same and are deduplicated into one function. A constant passed as an argument would also work, but every nest would then have its own argument list and the calls would carry values that never change. Cloning also keeps constants such as <code>2.0</code> visible inside the loop body, where later passes can fold them.</p>
+</details>
+</li>
+<li>
+<p><code>a + a</code> and <code>a + b</code> on the same shapes become two different outlined functions. Why, and is that a bug?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>The key is the printed function. <code>a + a</code> uses one input twice, so its function has one input plus the output; <code>a + b</code> has two inputs. They print differently, so they are different functions. It is not incorrect (each computes the right thing); it only means two functions where one might do. Matching by structure rather than by text would merge them, at the cost of a more complicated pass.</p>
+</details>
+</li>
+<li>
+<p>One mutation, "the original loop nest is not erased", passed the output comparison. Why, and what caught it?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>Leaving the original nest in <code>main</code> runs each computation twice, writing the same values to the same memref, so the printed result is unchanged for these elementwise programs. The structural test counts the <code>affine.for</code> left after outlining (8 for Example 1, not 78), and the pass test checks the IR, so both see the leftover loops. An output comparison alone could not.</p>
+</details>
+</li>
+<li>
+<p>Why is the pass off by default?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>Turning it on would change the IR of every program with at least 32 top-level loop nests, and the earlier chapters' tests and recorded outputs were written against the old IR. Its benefit appears only for very large programs such as the unrolled training steps, so <code>--outline</code> is an opt-in; a default would be a separate, deliberate change.</p>
+</details>
+</li>
+<li>
+<p>The timings here come from single runs. How does that limit what the chapter can say?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>Differences of a few percent (such as the 0.4 s against 0.5 s run time at 32 steps) are not evidence of anything. The large effects (88 s against 0.4 s; 60 s against 14 s; about 40 minutes against 94 s) are far outside run-to-run noise, so the conclusions drawn from them stand; the claim that outlining costs "nothing visible" at run time rests on a single small measurement and is only suggestive.</p>
+</details>
+</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../../part37/37-inside-the-llvm-stage/" class="md-footer__link md-footer__link--prev" aria-label="Previous: 37. Inside the LLVM Stage: Reading the IR, and Why a Loop Does or Does Not Vectorize">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                37. Inside the LLVM Stage: Reading the IR, and Why a Loop Does or Does Not Vectorize
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 Oluwaseyi Awoga
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

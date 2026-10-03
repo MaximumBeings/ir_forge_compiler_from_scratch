@@ -1960,6 +1960,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part38/38-outlining-loop-nests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    38. Why Compile Time Was Quadratic, and a Pass That Outlines Loop Nests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2198,7 +2226,7 @@
 <tr>
 <td>32</td>
 <td><code>part32/code/build.sh</code></td>
-<td>adds <code>mg.ge</code>; the newest compiler, which <code>run_lit.sh</code> and CI use; <code>part32/code/mgc</code> runs the experiments</td>
+<td>adds <code>mg.ge</code>; the compiler from Chapter 32 to 37; <code>part32/code/mgc</code> runs the experiments</td>
 </tr>
 <tr>
 <td>33</td>
@@ -2224,6 +2252,11 @@
 <td>37</td>
 <td><code>part32/code/build.sh</code></td>
 <td>adds nothing to the compiler; <code>part37/code</code> has the scripts, which run with Chapter 32's <code>mgc</code> and LLVM's own <code>opt-18</code>, <code>clang-18</code> and <code>llvm-mca-18</code></td>
+</tr>
+<tr>
+<td>38</td>
+<td><code>part38/code/build.sh</code></td>
+<td>adds the <code>--mg-outline-loops</code> pass (<code>mgc --outline</code>); the newest compiler, which <code>run_lit.sh</code> and CI use; <code>part38/code/mgc</code> is the driver</td>
 </tr>
 <tr>
 <td>the test suite (<code>part15/code/run_lit.sh</code>)</td>

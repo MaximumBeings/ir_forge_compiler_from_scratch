@@ -1,0 +1,19 @@
+NOTE: this script deliberately breaks the compiler code. 'caught' lines are EXPECTED: they show the tests can detect the mistake.
+baseline (nothing broken): tests pass (expected)
+
+== Part 1: the driver
+--outline is accepted but does nothing: caught by outline38/structure.mlir 
+--outline runs the pass BEFORE the loops exist (ahead of --convert-mg-to-affine): caught by outline38/structure.mlir 
+
+== Part 2: the pass (a full rebuild per mutation)
+the original loop nest is not erased (every nest would run twice): caught by outline38/pass.mlir outline38/structure.mlir 
+the call passes its arguments in reverse order: caught by outline38/pass.mlir outline38/results.mlir outline38/structure.mlir 
+deduplication is switched off (every nest gets its own function): caught by outline38/pass.mlir outline38/structure.mlir 
+every nest hashes to the same key (all nests share the first function): caught by outline38/pass.mlir outline38/structure.mlir outline38/results.mlir 
+the min-loops threshold is ignored: caught by outline38/pass.mlir outline38/structure.mlir 
+the threshold is off by one (a function with exactly min-loops nests is skipped): caught by outline38/pass.mlir 
+constants are not cloned into the outlined function: caught by outline38/pass.mlir outline38/structure.mlir outline38/results.mlir 
+block arguments (function arguments, run-time sizes) count as defined inside: caught by outline38/pass.mlir outline38/structure.mlir outline38/results.mlir 
+outlined functions are public, not private: caught by outline38/pass.mlir outline38/structure.mlir 
+
+restored: mgc is back to its original

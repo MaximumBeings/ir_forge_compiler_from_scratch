@@ -1,0 +1,4 @@
+compile with --outline: 94 seconds (29,552-line program; Chapter 36 measured about 40 minutes for compile and run without it)
+run: 4 seconds
+output identical to Chapter 36's recorded output (76 lines: all 8 checkpoints, the held-out result, the chunk counts and the four attention patterns)
+distinct outlined functions: 75

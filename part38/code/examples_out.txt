@@ -1,0 +1,97 @@
+################ 01_four_distinct_nests.mg
+  | # 35 loop nests in `main`: twelve rounds of three operations on two matrices (the very first add, `a + a`, adds a constant to itself and the compiler folds it into a
+  | # constant, so it makes no loop). --outline turns the 35 nests into 35 calls of FOUR functions: a product of a 3 x 3 with ITSELF (the first q), an add on 2 x 2, a product
+  | # of two 3 x 3 matrices, and a transpose of 3 x 3, however many rounds there are. (A function is outlined only when it has at least 32 top-level loop nests.)
+  | let a = [[1, 2], [3, 4]]
+  | let b = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+  | let p0 = a + a
+  | let q0 = b * b
+  | let r0 = transpose(b)
+  | let p1 = p0 + a
+  | let q1 = q0 * b
+  | let r1 = transpose(r0)
+  | let p2 = p1 + a
+  | ... (44 lines in all)
+  ----- mgc run 01_four_distinct_nests.mg
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[13,   26], 
+ [39,   52]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [3, 3] strides = [3, 1] data = 
+[[1,   32,   243], 
+ [1024,   3125,   7776], 
+ [16807,   32768,   59049]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [3, 3] strides = [3, 1] data = 
+[[1,   2,   3], 
+ [4,   5,   6], 
+ [7,   8,   9]]
+  ----- mgc run 01_four_distinct_nests.mg --outline
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[13,   26], 
+ [39,   52]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [3, 3] strides = [3, 1] data = 
+[[1,   32,   243], 
+ [1024,   3125,   7776], 
+ [16807,   32768,   59049]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [3, 3] strides = [3, 1] data = 
+[[1,   2,   3], 
+ [4,   5,   6], 
+ [7,   8,   9]]
+  ----- the kept affine IR: plain has 70 affine.for (35 at the top of a function body); with --outline: 4 outlined functions, 35 calls, 8 affine.for in all
+
+################ 02_one_nest_forty_times.mg
+  | # The same loop nest forty times: an add on 2 x 2 matrices. --outline turns the forty nests into forty calls of ONE function.
+  | let a = [[1, 2], [3, 4]]
+  | let s0 = a + a
+  | let s1 = s0 + a
+  | let s2 = s1 + a
+  | let s3 = s2 + a
+  | let s4 = s3 + a
+  | let s5 = s4 + a
+  | let s6 = s5 + a
+  | let s7 = s6 + a
+  | let s8 = s7 + a
+  | let s9 = s8 + a
+  | ... (43 lines in all)
+  ----- mgc run 02_one_nest_forty_times.mg
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[41,   82], 
+ [123,   164]]
+  ----- mgc run 02_one_nest_forty_times.mg --outline
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[41,   82], 
+ [123,   164]]
+  ----- the kept affine IR: plain has 78 affine.for (39 at the top of a function body); with --outline: 1 outlined functions, 39 calls, 2 affine.for in all
+
+################ 03_dynamic_shapes.mg
+  | # Dynamic shapes: a function over matrices of any size whose body has 39 loop nests (40 copies of `a`, added). The nests use the run-time sizes of `a` (values computed
+  | # outside the nest), so the outlined function must take them as ARGUMENTS and not as constants. Called with a 2 x 3 matrix.
+  | def forty(a: tensor[?x?]) = a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a
+  | let m = [[1, 2, 3], [4, 5, 6]]
+  | print forty(m)
+  ----- mgc run 03_dynamic_shapes.mg
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 3] strides = [3, 1] data = 
+[[40,   80,   120], 
+ [160,   200,   240]]
+  ----- mgc run 03_dynamic_shapes.mg --outline
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 3] strides = [3, 1] data = 
+[[40,   80,   120], 
+ [160,   200,   240]]
+  ----- the kept affine IR: plain has 78 affine.for (39 at the top of a function body); with --outline: 2 outlined functions, 39 calls, 4 affine.for in all
+
+################ 04_below_threshold.mg
+  | # Only two loop nests (a product and a transpose; an add of constants would be folded away at compile time and make none): below the threshold of 32, so --outline leaves the function
+  | # alone and no mg_outlined function appears.
+  | let a = [[1, 2], [3, 4]]
+  | let b = a * a
+  | let c = transpose(b)
+  | print c
+  ----- mgc run 04_below_threshold.mg
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[1,   9], 
+ [4,   16]]
+  ----- mgc run 04_below_threshold.mg --outline
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[1,   9], 
+ [4,   16]]
+  ----- the kept affine IR: plain has 4 affine.for (2 at the top of a function body); with --outline: 0 outlined functions, 0 calls, 4 affine.for in all
+

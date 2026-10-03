@@ -1,0 +1,37 @@
+scratchpad of 64 tile slots (4096 words); matrix unit alone needs 32768 cycles, DMA alone (each tile moved once) 15360 cycles
+schedule                           tiles moved   cycles  MXU util  DMA busy  vs best  model, 2 buf
+blocked 1x1 (i,j,k), 1 buf                8448   203776      16%       83%    5.44x
+blocked 1x1 (i,j,k), 2 buf                8448   173056      19%       98%    4.62x   179200 (1.04)
+blocked 1x16 (row: i,k,j), 1 buf          4608    94080      35%       98%    2.51x
+blocked 1x16 (row: i,k,j), 2 buf          4608    92160      36%      100%    2.46x    97600 (1.06)
+blocked 2x2, 1 buf                        4352    94720      35%       92%    2.53x
+blocked 2x2, 2 buf                        4352    87040      38%      100%    2.32x    92160 (1.06)
+blocked 2x4, 1 buf                        3328    76160      43%       87%    2.03x
+blocked 2x4, 2 buf                        3328    66560      49%      100%    1.78x    70400 (1.06)
+blocked 2x8, 1 buf                        2816    68800      48%       82%    1.84x
+blocked 2x8, 2 buf                        2816    56320      58%      100%    1.50x    59520 (1.06)
+blocked 4x4, 1 buf                        2304    56640      58%       81%    1.51x
+blocked 4x4, 2 buf                        2304    46080      71%      100%    1.23x    48640 (1.06)
+blocked 4x8, 1 buf                        1792    52640      62%       68%    1.41x
+blocked 4x8, 2 buf                        1792    37440      88%       96%    1.00x    39808 (1.06)
+k outermost (k,i,j), 1 buf               16128   388096       8%       83%   10.37x
+k outermost (k,i,j), 2 buf               16128   388096       8%       83%   10.37x
+
+scratchpad of 16 tile slots (1024 words); matrix unit alone needs 32768 cycles, DMA alone (each tile moved once) 15360 cycles
+schedule                           tiles moved   cycles  MXU util  DMA busy  vs best  model, 2 buf
+blocked 1x1 (i,j,k), 1 buf                8448   203776      16%       83%    2.68x
+blocked 1x1 (i,j,k), 2 buf                8448   173056      19%       98%    2.27x   179200 (1.04)
+blocked 1x16 (row: i,k,j), single buffered           does not fit in the scratchpad
+blocked 1x16 (row: i,k,j), double buffered           does not fit in the scratchpad
+blocked 2x2, 1 buf                        4352    94720      35%       92%    1.24x
+blocked 2x2, 2 buf                        4352    87040      38%      100%    1.14x    92160 (1.06)
+blocked 2x4, 1 buf                        3328    76160      43%       87%    1.00x
+blocked 2x4, double buffered                 does not fit in the scratchpad
+blocked 2x8, single buffered                 does not fit in the scratchpad
+blocked 2x8, double buffered                 does not fit in the scratchpad
+blocked 4x4, single buffered                 does not fit in the scratchpad
+blocked 4x4, double buffered                 does not fit in the scratchpad
+blocked 4x8, single buffered                 does not fit in the scratchpad
+blocked 4x8, double buffered                 does not fit in the scratchpad
+k outermost (k,i,j), 1 buf               16128   388096       8%       83%    5.10x
+k outermost (k,i,j), 2 buf               16128   388096       8%       83%    5.10x

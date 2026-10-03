@@ -1,0 +1,10 @@
+128 x 128 x 128, double buffered, 64 tile slots; cycles (matrix-unit utilization); the matrix unit alone needs 32768 cycles
+DMA words/cycle, setup   tile cycles                1x1                2x4                4x8   1x1 / 4x8
+       8 words, setup 16              24       206848 (16%)        79872 (41%)        43008 (76%)       4.81x
+      16 words, setup 16              20       173056 (19%)        66560 (49%)        37440 (88%)       4.62x
+      32 words, setup 16              18       156160 (21%)        59904 (55%)        36736 (89%)       4.25x
+      64 words, setup 16              17       147712 (22%)        56576 (58%)        36384 (90%)       4.06x
+       8 words, setup 4               12       105472 (31%)        39936 (82%)        34624 (95%)       3.05x
+      16 words, setup 4                8        71680 (46%)        34048 (96%)        33216 (99%)       2.16x
+      32 words, setup 4                6        54784 (60%)        33792 (97%)        33120 (99%)       1.65x
+      64 words, setup 4                5        46336 (71%)        33664 (97%)        33072 (99%)       1.40x

@@ -1,0 +1,14 @@
+-- 1. results
+  ok   all 70 schedule/shape/buffering combinations give exactly the triple loop's result
+-- 2. traffic
+  ok   tiles loaded and stored equal the formula in all 70 runs
+-- 3. timing
+  ok   a six-instruction program takes 84 cycles (2 loads of 20 = 40, two chained products = 16, fill 8, store 20: 40 + 8 + 8 + 8 + 20)
+  ok   4x4 double buffered on 64x64x64 is DMA-bound: 6400 cycles = 320 tiles x 20
+  ok   no schedule beats the matrix-unit bound (4096) or its own DMA bound
+  ok   more reuse moves fewer tiles: loads fall at every step from 1x1 to 1x2, 2x2, 2x4, 4x4: 1024 > 768 > 512 > 384 > 256
+  ok   double buffering makes 1x1 and 4x4 faster
+  ok   the simple model (a step takes the longer of its loads and its products; first loads and stores do not overlap) is always a little ABOVE the simulator and within 12% for the double-buffered cycles: 1x1: 1.07, 1x8: 1.11, 2x2: 1.11, 2x4: 1.11, 4x4: 1.10, 2x8: 1.10
+-- 4. hazards (independent replay of the trace)
+  ok   no read-before-write or write-before-read hazard in the traces of all 70 runs
+all checks pass

@@ -76,6 +76,7 @@ Each chapter's page starts with a "Compile and run" box (Chapters 1 to 9, 20 and
 | 43 | `part42/code/build.sh` | no compiler change; `part43/code/mgc` is the newest driver (loops lowered last to first and big functions outlined by default; `--no-outline`, `--no-reverse-loops` turn them off) |
 | 44 | `part44/code/build.sh` | adds the `--mg-set-fastmath` pass (`mgc --fast-math[=flags]`, off by default); the newest compiler build, which `run_lit.sh` and CI use; `part44/code/mgc` is the driver |
 | 45 | `part44/code/build.sh` | no compiler change; `part45/code/autograd.py` is a Python program that writes Mountain Goat programs (reverse-mode automatic differentiation), run with `part45/code/mgc` |
+| 46 | `part44/code/build.sh` | no compiler change; `part46/code/hvp.py` (Hessian-vector products) and `curvature.py` run `part45/code/autograd.py` twice, with `part46/code/mgc` |
 | the test suite (`part15/code/run_lit.sh`) | any build; it picks the newest that exists | the newest build runs every test |
 
 Every build needs `cmake`, `make`, `llvm-18-dev`, `libmlir-18-dev` and `mlir-18-tools` (see above), and takes a few minutes the first time. Every `run.sh` and `demo.sh` writes its intermediate files under `./work/` or `./show/`, which are git-ignored.

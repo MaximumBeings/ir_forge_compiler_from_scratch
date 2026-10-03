@@ -123,6 +123,7 @@ nav:
       - "43. Outlining by Default: What the Calls Cost, and Which Defaults Changed": part43/43-outlining-by-default.md
       - "44. Fast-Math Flags from the Compiler: What Reordering Is Allowed to Buy, and What It Did": part44/44-fast-math-flags.md
       - "45. Automatic Differentiation: Letting the Compiler Write the Backward Pass": part45/45-automatic-differentiation.md
+      - "46. Second Derivatives: Differentiating the Backward Pass Again": part46/46-second-derivatives.md
 
 extra:
   social: []

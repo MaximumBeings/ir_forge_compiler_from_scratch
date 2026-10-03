@@ -1,2 +1,0 @@
-/usr/bin/ar Dqc libMgOutlineLoops.a CMakeFiles/MgOutlineLoops.dir/lib/OutlineLoops.cpp.o
-/usr/bin/ranlib -D libMgOutlineLoops.a

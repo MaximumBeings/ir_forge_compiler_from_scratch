@@ -1,2 +1,0 @@
-/usr/bin/ar Dqc libMgSetFastMath.a CMakeFiles/MgSetFastMath.dir/lib/SetFastMath.cpp.o
-/usr/bin/ranlib -D libMgSetFastMath.a

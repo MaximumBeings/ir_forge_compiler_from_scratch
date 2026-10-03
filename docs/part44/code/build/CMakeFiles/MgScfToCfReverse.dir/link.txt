@@ -1,2 +1,0 @@
-/usr/bin/ar Dqc libMgScfToCfReverse.a CMakeFiles/MgScfToCfReverse.dir/lib/ScfToCfReverse.cpp.o
-/usr/bin/ranlib -D libMgScfToCfReverse.a

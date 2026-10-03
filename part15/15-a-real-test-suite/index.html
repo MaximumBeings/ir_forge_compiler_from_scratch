@@ -2261,6 +2261,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part43/43-outlining-by-default/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    43. Outlining by Default: What the Calls Cost, and Which Defaults Changed
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2716,6 +2744,9 @@
 <a id="__codelineno-0-167" name="__codelineno-0-167" href="#__codelineno-0-167"></a><span class="c1"># Chapter 42: lowering scf to cf last to first (--mg-scf-to-cf-reverse, mgc --reverse-loops); mg-opt of this chapter is the newest build.</span>
 <a id="__codelineno-0-168" name="__codelineno-0-168" href="#__codelineno-0-168"></a><span class="n">ch42</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">test_source_root</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;part42&quot;</span><span class="p">,</span> <span class="s2">&quot;code&quot;</span><span class="p">)</span>
 <a id="__codelineno-0-169" name="__codelineno-0-169" href="#__codelineno-0-169"></a><span class="n">config</span><span class="o">.</span><span class="n">substitutions</span> <span class="o">+=</span> <span class="p">[(</span><span class="s2">&quot;</span><span class="si">%c</span><span class="s2">h42&quot;</span><span class="p">,</span> <span class="n">ch42</span><span class="p">)]</span>
+<a id="__codelineno-0-170" name="__codelineno-0-170" href="#__codelineno-0-170"></a><span class="c1"># Chapter 43: mgc&#39;s defaults changed (loops lowered last to first, big functions outlined); the driver is part43/code/mgc, its mg-opt is Chapter 42&#39;s.</span>
+<a id="__codelineno-0-171" name="__codelineno-0-171" href="#__codelineno-0-171"></a><span class="n">ch43</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">test_source_root</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;part43&quot;</span><span class="p">,</span> <span class="s2">&quot;code&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-172" name="__codelineno-0-172" href="#__codelineno-0-172"></a><span class="n">config</span><span class="o">.</span><span class="n">substitutions</span> <span class="o">+=</span> <span class="p">[(</span><span class="s2">&quot;</span><span class="si">%c</span><span class="s2">h43&quot;</span><span class="p">,</span> <span class="n">ch43</span><span class="p">)]</span>
 </code></pre></div>
 <p>The one design decision worth noticing is <code>MG_OPT</code>: <strong>which <code>mg-opt</code> binary is tested is an environment variable</strong>, not a constant. That is what lets the same suite be pointed at older builds later in this chapter to show the tests can fail. Each test gets its own scratch name (<code>%t</code>), so tests cannot read each other's files.</p>
 <p>The launcher script is three lines of real logic:</p>

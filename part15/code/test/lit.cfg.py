@@ -167,3 +167,6 @@ config.substitutions += [("%ch41", ch41)]
 # Chapter 42: lowering scf to cf last to first (--mg-scf-to-cf-reverse, mgc --reverse-loops); mg-opt of this chapter is the newest build.
 ch42 = os.path.join(config.test_source_root, "..", "..", "..", "part42", "code")
 config.substitutions += [("%ch42", ch42)]
+# Chapter 43: mgc's defaults changed (loops lowered last to first, big functions outlined); the driver is part43/code/mgc, its mg-opt is Chapter 42's.
+ch43 = os.path.join(config.test_source_root, "..", "..", "..", "part43", "code")
+config.substitutions += [("%ch43", ch43)]

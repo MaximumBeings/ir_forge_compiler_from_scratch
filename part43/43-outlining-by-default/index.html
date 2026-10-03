@@ -1,0 +1,2724 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A Toy Language Compiled Through a Real MLIR Dialect, Down to Real Native Machine Code">
+      
+      
+        <meta name="author" content="Oluwaseyi Awoga">
+      
+      
+      
+        <link rel="prev" href="../../part42/42-lowering-loops-last-to-first/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>43. Outlining by Default: What the Calls Cost, and Which Defaults Changed - IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#43-outlining-by-default-what-the-calls-cost-and-which-defaults-changed" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-header__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              43. Outlining by Default: What the Calls Cost, and Which Defaults Changed
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-nav__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../background/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background (LLVM and MLIR in Twenty Minutes)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tour/language-tour/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Mountain Goat Language: A Short Tour
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part1/01-why-a-multi-level-ir-at-all/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1. Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part2/02-a-minimal-dialect-from-scratch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2. A Minimal Dialect From Scratch: Mountain Goat's Own mg Dialect
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part3/03-the-pass-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3. The Real Pass Infrastructure: Canonicalizing Mountain Goat
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 3 -- Progressive Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 3 -- Progressive Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part4/04-progressive-lowering-to-affine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4. Progressive Lowering: Mountain Goat to affine, Two Real Ways
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part5/05-affine-to-scf-to-llvm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5. Finishing Progressive Lowering: affine to scf to llvm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 4 -- Optimization Across Levels
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 4 -- Optimization Across Levels
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/06-real-bufferization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6. Real Bufferization: Closing Chapter 4's Own Honest Gap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part7/07-real-loop-transforms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    7. Real Loop Transforms: Fusion, Tiling, and Unrolling at the affine Level
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 5 -- Code Generation via LLVM
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 5 -- Code Generation via LLVM
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part8/08-a-standalone-native-executable/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    8. A Standalone Native Executable: Mountain Goat Without MLIR At Runtime
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part9/09-the-execution-engine-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    9. MLIR's Own Real C++ ExecutionEngine API, Called In-Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 6 -- GPU Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 6 -- GPU Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part10/10-gpu-lowering-to-ptx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10. GPU Lowering: Mountain Goat to the gpu Dialect, NVVM, and Real PTX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part11/11-the-gpu-host-side/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    11. The GPU Host Side: Device Memory, Real Runtime Calls, and a Stub Device
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 7 -- Case Studies
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 7 -- Case Studies
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part12/12-reading-the-production-pipelines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    12. Reading MLIR's Own Production Pipelines: What This Book's Compiler Is Missing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part13/13-dynamic-shapes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    13. Dynamic Shapes: Closing Chapter 12's Biggest Unknown
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part14/14-runtime-shape-checks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    14. A Runtime Shape Check: Closing Chapter 13's Memory-Safety Hole
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part15/15-a-real-test-suite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    15. A Real Test Suite: lit, FileCheck, and Proof That the Tests Can Fail
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part16/16-testing-the-gpu-path-and-loop-transforms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    16. Testing the GPU Path and the Loop Transforms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part17/17-loop-transforms-on-dynamic-bounds/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    17. Loop Transforms on Dynamic Bounds
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part18/18-why-fusion-declines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    18. Why Fusion Declines: Reading the Pass, and a Second Bug Found Along the Way
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part19/19-a-better-abort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    19. A Better Abort: Reporting Assertion Failures on stderr
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part20/20-the-mountain-goat-demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    20. The Mountain Goat Demo: A Surface Syntax, a Driver, and C++ Calling Compiled Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part21/21-more-operations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    21. More Operations: Subtract, Hadamard, Divide, Matrix Product, and Scalars
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part22/22-broadcasting-reductions-and-relu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    22. Broadcasting, Reductions and relu: Enough Operations for a Neural-Network Layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part23/23-measuring-performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    23. Measuring Performance: Does Any of It Make the Code Fast?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part24/24-closing-the-matmul-gap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    24. Closing the Gap: A Matrix Product That Walks Memory in a Better Order
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part25/25-keeping-it-working/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    25. Keeping It Working: Continuous Integration and the Tests the Early Chapters Never Had
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part26/26-learning-from-data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    26. Learning From Data: Gradient Descent in Mountain Goat
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part27/27-tensor-contractions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    27. Tensor Contractions as Matrix Products
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part28/28-contraction-in-mountain-goat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    28. Tensor Contractions in Mountain Goat Itself
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part29/29-softmax-and-attention/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    29. Softmax and Attention
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part30/30-a-small-transformer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    30. A Small Transformer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part31/31-training-a-bigram-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    31. Training a Language Model: Gradient Descent on a Bigram
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part32/32-does-it-generalize/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    32. Does It Generalize? Held-Out Data, Overfitting and Weight Decay
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part33/33-backpropagation-through-attention/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    33. Backpropagation Through Attention: Training a One-Head Classifier
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part34/34-why-a-block-has-a-feed-forward-network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    34. Why a Block Has a Feed-Forward Network: Backpropagation Through Layer Norm, ReLU and Residuals
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part35/35-training-a-transformer-language-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    35. Training a Transformer Language Model: Backpropagation Through Causal Attention and Embeddings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part36/36-training-chapter-30s-transformer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    36. Training Chapter 30's Transformer: Two Heads, Two Blocks, and a Result That Is Not Better
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part37/37-inside-the-llvm-stage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    37. Inside the LLVM Stage: Reading the IR, and Why a Loop Does or Does Not Vectorize
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part38/38-outlining-loop-nests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    38. Why Compile Time Was Quadratic, and a Pass That Outlines Loop Nests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part39/39-finding-the-quadratic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    39. Finding the Quadratic: a Differential Profile of the Lowering Pass
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part40/40-a-model-of-a-matrix-accelerator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    40. A Model of a Matrix Accelerator: Tiles, a Scratchpad, and What Loop Order Does There
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part41/41-compiling-mountain-goat-to-ga-1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    41. Compiling Mountain Goat to GA-1: Fusion, Tiling and Why Decoding Is Memory-Bound
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part42/42-lowering-loops-last-to-first/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    42. Lowering the Loops Last to First: Testing the Idea Chapter 39 Left Open
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    43. Outlining by Default: What the Calls Cost, and Which Defaults Changed
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    43. Outlining by Default: What the Calls Cost, and Which Defaults Changed
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-an-outlined-call-costs-exact-instructions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What an outlined call costs: exact instructions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-it-costs-in-wall-clock-time-noise" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it costs in wall-clock time: noise
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-it-buys-compile-time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it buys: compile time
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-decision-and-what-changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The decision, and what changed
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#are-the-checks-good-enough-seven-wrong-drivers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Are the checks good enough? Seven wrong drivers.
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limits-and-what-is-not-established" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits and what is not established
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-an-outlined-call-costs-exact-instructions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What an outlined call costs: exact instructions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-it-costs-in-wall-clock-time-noise" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it costs in wall-clock time: noise
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-it-buys-compile-time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it buys: compile time
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-decision-and-what-changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The decision, and what changed
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#are-the-checks-good-enough-seven-wrong-drivers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Are the checks good enough? Seven wrong drivers.
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limits-and-what-is-not-established" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits and what is not established
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="43-outlining-by-default-what-the-calls-cost-and-which-defaults-changed">43. Outlining by Default: What the Calls Cost, and Which Defaults Changed<a class="headerlink" href="#43-outlining-by-default-what-the-calls-cost-and-which-defaults-changed" title="Permanent link">&para;</a></h1>
+<p><strong>What you will understand:</strong> how to decide whether an optimization should be on by default, with the cost side measured instead of assumed. Chapter 38's outlining pass moves every loop nest of a big function into a shared, deduplicated function and replaces it with a call. That cut the compile time of the training programs, but the only run-time measurements were a few single runs (0.4 s against 0.5 s at 32 steps). This chapter measures what the calls cost at run time in the one way that does not wobble, <strong>exact instruction counts</strong>, and in the way that does (wall time), compares compile times too, and then changes <code>mgc</code> so that loops are lowered last to first (Chapter 42) and big functions are outlined <strong>by default</strong>, with switches to turn each off.</p>
+<p><strong>What you need to know first:</strong> Chapters 38 (outlining) and 42 (the last-to-first lowering). No compiler pass changes in this chapter; the new <code>mgc</code> driver lives in <code>docs/part43/code/mgc</code>.</p>
+<div class="admonition tip">
+<p class="admonition-title">Compile and run</p>
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">cd</span><span class="w"> </span>docs/part43/code<span class="w">                                  </span><span class="c1"># needs Chapter 42&#39;s build: ../../part42/code/build.sh</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>./bench_runtime.py<span class="w"> </span>&gt;<span class="w"> </span>bench_runtime_out.txt<span class="w">           </span><span class="c1"># run time, 7 runs each (about 25 minutes: the -O2 builds without outlining are slow)</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>./count_instructions.py<span class="w"> </span>&gt;<span class="w"> </span>count_instructions_out.txt<span class="w"> </span><span class="c1"># exact instructions under callgrind (about 15 minutes)</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>./bench_interleaved.py<span class="w"> </span>&gt;<span class="w"> </span>bench_interleaved_out.txt<span class="w">   </span><span class="c1"># the 200-step program, plain and outlined run alternately (about 10 minutes)</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>./check_defaults.py<span class="w"> </span>&gt;<span class="w"> </span>check_defaults_out.txt<span class="w">         </span><span class="c1"># the checks of this page (about 40 seconds; needs valgrind)</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>./mutation.py<span class="w"> </span>&gt;<span class="w"> </span>mutation_out.txt<span class="w">                     </span><span class="c1"># 7 WRONG drivers the checker must catch (about 5 minutes)</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="nb">cd</span><span class="w"> </span>../../part15/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_lit.sh<span class="w">                 </span><span class="c1"># the whole test suite</span>
+</code></pre></div>
+Every listing and output on this page comes from these commands. Times are from one 4-core machine and are not repeatable to the second.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Why this page shows a mutation run, and why 'caught' is the wanted result</p>
+<p><code>mutation.py</code> writes broken copies of the driver and expects the checker to fail on each. "Caught" is good; "NOT CAUGHT" would be a gap. Nothing on this page is a failing test.</p>
+</div>
+<h2 id="what-an-outlined-call-costs-exact-instructions">What an outlined call costs: exact instructions<a class="headerlink" href="#what-an-outlined-call-costs-exact-instructions" title="Permanent link">&para;</a></h2>
+<p><code>valgrind --tool=callgrind</code> counts every instruction an executable runs, and the count does not change from run to run. Each program is built twice (loops lowered last to first; with and without <code>--outline</code>) and run under it. "Calls" is the number of calls to outlined functions in the program (its <code>main</code> is straight-line, so each runs once):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>program          clang   plain instructions  outlined instructions        extra   ratio   calls  extra per call
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>ch35 10 steps      -O0          488,922,880            488,988,930       66,050   1.000   1,928            34.3
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>ch35 10 steps      -O2           91,858,303             99,373,277    7,514,974   1.082   1,928          3897.8
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>ch36 10 steps      -O0        1,196,023,493          1,196,229,994      206,501   1.000   5,064            40.8
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>ch36 200 steps     -O0       17,793,954,904         17,797,803,621    3,848,717   1.000  86,144            44.7
+</code></pre></div>
+<p>At <code>clang -O0</code>, the three programs execute <strong>0.01% to 0.02% more instructions</strong> when outlined: about 34 to 45 instructions per call (a call, the memref arguments, the return), against several hundred thousand instructions of work per loop nest. Even for the 200-step program with 86,144 calls the extra is 3.8 million instructions of 17.8 billion.</p>
+<p>At <code>-O2</code>, Chapter 35's program runs <strong>8.2% more</strong>: 7.5 million instructions, about 3,900 per call. That is not a call overhead. I looked a little:</p>
+<ul>
+<li>The extra instructions are all in the program's own code (56.0 million instructions in the plain executable's eight functions against 63.5 million in the outlined one's sixteen); the library functions (<code>exp</code>, <code>memset</code>, <code>malloc</code>) execute the same counts in both.</li>
+<li>It is not that the outlined loops fail to vectorize: LLVM's vectorizer reports 1,390 vectorized loops for the plain file and 1,396 for the outlined one.</li>
+</ul>
+<p>I did not find the cause. A candidate that I did <strong>not</strong> test is that clang, seeing everything in one function, optimizes across neighbouring loop nests (forwarding stored values, merging allocations) and cannot across a call. So the honest statement is: <strong>at <code>-O2</code> outlining costs about 8% more instructions on the one program measured, for a reason not established.</strong></p>
+<h2 id="what-it-costs-in-wall-clock-time-noise">What it costs in wall-clock time: noise<a class="headerlink" href="#what-it-costs-in-wall-clock-time-noise" title="Permanent link">&para;</a></h2>
+<p>Run time in seconds, 7 runs each, pinned to one core; compile times of those executables are on the right:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>run time in seconds, 7 runs each, pinned to one core; compile time of that executable in brackets
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>program                          clang  plain min  median  outlined min  median  min ratio  median ratio  same output
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>ch35 10 steps (785 lines)          -O0      0.061   0.063         0.061   0.069       1.00          1.10  True   (compile 8 s plain, 4 s outlined)
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>ch35 10 steps (785 lines)          -O2      0.031   0.037         0.035   0.043       1.14          1.17  True   (compile 97 s plain, 22 s outlined)
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>ch36 10 steps (1,817 lines)        -O0      0.144   0.169         0.171   0.181       1.19          1.08  True   (compile 8 s plain, 6 s outlined)
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>ch36 10 steps (1,817 lines)        -O2      0.092   0.111         0.089   0.103       0.97          0.92  True   (compile 728 s plain, 95 s outlined)
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>ch36 200 steps (29,552 lines)      -O0      3.372   3.616         3.696   3.864       1.10          1.07  True   (compile 149 s plain, 91 s outlined)
+</code></pre></div>
+<p>The ratios of outlined to plain run time wander between 0.92 and 1.19, in both directions (the 200-step program, 1.10 at the minimum and 1.07 at the median). The 10-step programs run for 0.03 to 0.17 seconds, which is too short to resolve a 1% difference, and the 200-step one ran 10% slower outlined. So I repeated the 200-step program with the two executables run <strong>alternately</strong>, so that drift in the machine's speed hits both the same way:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>plain     3.086 4.271 4.046 3.700 4.012 3.804 3.874 3.753 3.929   min 3.086  median 3.874
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>outlined  2.818 3.006 2.903 3.106 3.205 3.211 3.043 3.118 3.029   min 2.818  median 3.043
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>outlined / plain: minima 0.913, medians 0.786
+</code></pre></div>
+<p>Now the outlined one is <em>faster</em>, by 9% at the minimum and 21% at the median. The plain executable's own nine runs range from 3.1 to 4.3 seconds, a 40% spread that is larger than any effect being looked for. Both runs are real measurements, and together they say that <strong>on this machine wall-clock time cannot resolve a difference of under about 20% for these runs</strong>. The instruction counts (0.02% at <code>-O0</code>) are the usable evidence, and they are consistent with "no measurable difference at <code>-O0</code>"; they say nothing about cache and memory effects, which the instruction count cannot see and which I did not measure.</p>
+<h2 id="what-it-buys-compile-time">What it buys: compile time<a class="headerlink" href="#what-it-buys-compile-time" title="Permanent link">&para;</a></h2>
+<p>The compile-time column of the table above (whole <code>mgc build</code>, one run, loops lowered last to first in both):</p>
+<table>
+<thead>
+<tr>
+<th>program</th>
+<th>clang</th>
+<th>plain</th>
+<th>outlined</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Chapter 35, 10 steps (785 lines)</td>
+<td>-O0</td>
+<td>8 s</td>
+<td>4 s</td>
+</tr>
+<tr>
+<td>Chapter 35, 10 steps</td>
+<td>-O2</td>
+<td>97 s</td>
+<td>22 s</td>
+</tr>
+<tr>
+<td>Chapter 36, 10 steps (1,817 lines)</td>
+<td>-O0</td>
+<td>8 s</td>
+<td>6 s</td>
+</tr>
+<tr>
+<td>Chapter 36, 10 steps</td>
+<td>-O2</td>
+<td><strong>728 s</strong></td>
+<td>95 s</td>
+</tr>
+<tr>
+<td>Chapter 36, 200 steps (29,552 lines)</td>
+<td>-O0</td>
+<td>149 s</td>
+<td>91 s</td>
+</tr>
+</tbody>
+</table>
+<p>The last-to-first lowering of Chapter 42 removed the quadratic from the MLIR stage, but it does not touch <code>clang</code>: compiling the 10-step program at <code>-O2</code> takes <strong>12 minutes</strong> without outlining and 95 seconds with it (7.7×), and Chapter 35's 4.4×. That is a reason for outlining to stay even after Chapter 42: it deduplicates the code that <code>clang</code> has to optimize (Chapter 35's program, for example, becomes 80 outlined functions called 1,928 times). I did not measure why <code>clang -O2</code> is so slow on the one big function.</p>
+<h2 id="the-decision-and-what-changed">The decision, and what changed<a class="headerlink" href="#the-decision-and-what-changed" title="Permanent link">&para;</a></h2>
+<p>On this evidence: outlining costs <strong>a handful of instructions per call at <code>-O0</code></strong>, perhaps 8% more instructions at <code>-O2</code> on one program (unexplained), and an unresolved amount of wall time; it saves <strong>minutes</strong> of compile time at <code>-O2</code> and cuts it by a quarter to a half at <code>-O0</code> for the big programs. The last-to-first lowering costs nothing visible (identical output, Chapter 42). So both become defaults. The new driver:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="ch">#!/bin/sh</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="c1"># mgc: the Mountain Goat compiler driver. Every stage is a real tool; nothing is hidden.</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1">#   mgc run   prog.mg            compile to a native executable and run it</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1">#   mgc build prog.mg [-o exe]   compile to a native executable</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="c1">#   mgc lib   prog.mg [-o dir]   compile the &#39;def&#39;s to prog.o plus a C++ header prog.h (no main), for linking into your own program</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="c1">#   mgc mlir  prog.mg            print the mg-dialect MLIR the front end produces</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="c1">#   mgc ptx   prog.mg            compile to PTX (no launch: this machine has no GPU) and print the PTX</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="c1"># Options (Chapter 23): -O0|-O1|-O2|-O3        optimization level for the final clang step (default -O0, as in every earlier chapter)</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="c1">#   --passes &quot;--affine-loop-tile=tile-size=32&quot;  extra mg-opt passes run on the affine IR, before lowering (quote as one argument)</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="c1">#   --matmul-order ikj|ijk                      (Chapter 24) the loop order mg.matmul is lowered to (default ijk)</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="c1">#   --no-reverse-loops                          (Chapter 42, ON by default since Chapter 43) lower scf to cf with MLIR&#39;s own --convert-scf-to-cf instead of one top-level statement at a time, last to first</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="c1">#   --no-outline                                (Chapter 38, ON by default since Chapter 43) do not move each top-level loop nest into a shared, deduplicated function (only functions with 32 or more nests are touched)</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="c1">#                                               --outline and --reverse-loops are still accepted and mean what they say (they are the defaults)</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="c1"># Env: MG_OPT (default: Chapter 42&#39;s build), MGC_KEEP=dir (keep every intermediate file there), MGC_CFLAGS (extra flags for clang, e.g. -march=native),</span>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="c1">#      MGC_CLANG (the clang to call; tests set it to `echo` to see exactly which flags mgc passes).</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="nb">set</span><span class="w"> </span>-e
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="nv">HERE</span><span class="o">=</span><span class="k">$(</span><span class="nb">cd</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>dirname<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$0</span><span class="s2">&quot;</span><span class="k">)</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">pwd</span><span class="k">)</span>
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="nv">MG_OPT</span><span class="o">=</span><span class="si">${</span><span class="nv">MG_OPT</span><span class="k">:-</span><span class="nv">$HERE</span><span class="p">/../../part42/code/build/mg-opt</span><span class="si">}</span>
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="nv">LIBDIR</span><span class="o">=</span><span class="si">${</span><span class="nv">MLIR_LIBDIR</span><span class="k">:-</span><span class="p">/usr/lib/llvm-18/lib</span><span class="si">}</span>
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>usage<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;usage: mgc run|build|lib|mlir|ptx prog.mg [-o exe] [-O0..-O3] [--passes \&quot;...\&quot;] [--matmul-order ikj|ijk] [--no-outline] [--no-reverse-loops]&quot;</span><span class="w"> </span>&gt;<span class="p">&amp;</span><span class="m">2</span><span class="p">;</span><span class="w"> </span><span class="nb">exit</span><span class="w"> </span><span class="m">2</span><span class="p">;</span><span class="w"> </span><span class="o">}</span>
+<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="o">[</span><span class="w"> </span><span class="nv">$#</span><span class="w"> </span>-ge<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">||</span><span class="w"> </span>usage
+<a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a><span class="nv">cmd</span><span class="o">=</span><span class="nv">$1</span><span class="p">;</span><span class="w"> </span><span class="nv">src</span><span class="o">=</span><span class="nv">$2</span><span class="p">;</span><span class="w"> </span><span class="nb">shift</span><span class="w"> </span><span class="m">2</span><span class="p">;</span><span class="w"> </span><span class="nv">out</span><span class="o">=</span><span class="p">;</span><span class="w"> </span><span class="nv">OPT</span><span class="o">=</span><span class="p">;</span><span class="w"> </span><span class="nv">PASSES</span><span class="o">=</span><span class="p">;</span><span class="w"> </span><span class="nv">CONVOPT</span><span class="o">=</span><span class="p">;</span><span class="w"> </span><span class="nv">OUTLINE</span><span class="o">=</span>--mg-outline-loops<span class="p">;</span><span class="w"> </span><span class="nv">SCF</span><span class="o">=</span>--mg-scf-to-cf-reverse
+<a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a><span class="k">while</span><span class="w"> </span><span class="o">[</span><span class="w"> </span><span class="nv">$#</span><span class="w"> </span>-gt<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="k">case</span><span class="w"> </span><span class="nv">$1</span><span class="w"> </span><span class="k">in</span><span class="w"> </span>-o<span class="o">)</span><span class="w"> </span><span class="nv">out</span><span class="o">=</span><span class="nv">$2</span><span class="p">;</span><span class="w"> </span><span class="nb">shift</span><span class="w"> </span><span class="m">2</span><span class="p">;;</span><span class="w"> </span>-O0<span class="p">|</span>-O1<span class="p">|</span>-O2<span class="p">|</span>-O3<span class="o">)</span><span class="w"> </span><span class="nv">OPT</span><span class="o">=</span><span class="nv">$1</span><span class="p">;</span><span class="w"> </span>shift<span class="p">;;</span><span class="w"> </span>--passes<span class="o">)</span><span class="w"> </span><span class="nv">PASSES</span><span class="o">=</span><span class="nv">$2</span><span class="p">;</span><span class="w"> </span><span class="nb">shift</span><span class="w"> </span><span class="m">2</span><span class="p">;;</span><span class="w"> </span>--matmul-order<span class="o">)</span><span class="w"> </span><span class="nv">CONVOPT</span><span class="o">=</span><span class="s2">&quot;=matmul-order=</span><span class="nv">$2</span><span class="s2">&quot;</span><span class="p">;</span><span class="w"> </span><span class="nb">shift</span><span class="w"> </span><span class="m">2</span><span class="p">;;</span><span class="w"> </span>--outline<span class="o">)</span><span class="w"> </span><span class="nv">OUTLINE</span><span class="o">=</span>--mg-outline-loops<span class="p">;</span><span class="w"> </span>shift<span class="p">;;</span><span class="w"> </span>--no-outline<span class="o">)</span><span class="w"> </span><span class="nv">OUTLINE</span><span class="o">=</span><span class="p">;</span><span class="w"> </span>shift<span class="p">;;</span><span class="w"> </span>--reverse-loops<span class="o">)</span><span class="w"> </span><span class="nv">SCF</span><span class="o">=</span>--mg-scf-to-cf-reverse<span class="p">;</span><span class="w"> </span>shift<span class="p">;;</span><span class="w"> </span>--no-reverse-loops<span class="o">)</span><span class="w"> </span><span class="nv">SCF</span><span class="o">=</span>--convert-scf-to-cf<span class="p">;</span><span class="w"> </span>shift<span class="p">;;</span><span class="w"> </span>*<span class="o">)</span><span class="w"> </span>usage<span class="p">;;</span><span class="w"> </span><span class="k">esac</span><span class="p">;</span><span class="w"> </span><span class="k">done</span>
+<a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a><span class="o">[</span><span class="w"> </span>-f<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$src</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;mgc: no such file: </span><span class="nv">$src</span><span class="s2">&quot;</span><span class="w"> </span>&gt;<span class="p">&amp;</span><span class="m">2</span><span class="p">;</span><span class="w"> </span><span class="nb">exit</span><span class="w"> </span><span class="m">2</span><span class="p">;</span><span class="w"> </span><span class="o">}</span>
+<a id="__codelineno-4-25" name="__codelineno-4-25" href="#__codelineno-4-25"></a><span class="nv">W</span><span class="o">=</span><span class="si">${</span><span class="nv">MGC_KEEP</span><span class="k">:-$(</span>mktemp<span class="w"> </span>-d<span class="k">)</span><span class="si">}</span><span class="p">;</span><span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">&quot;</span>
+<a id="__codelineno-4-26" name="__codelineno-4-26" href="#__codelineno-4-26"></a><span class="nv">base</span><span class="o">=</span><span class="k">$(</span>basename<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$src</span><span class="s2">&quot;</span><span class="w"> </span>.mg<span class="k">)</span>
+<a id="__codelineno-4-27" name="__codelineno-4-27" href="#__codelineno-4-27"></a><span class="nv">LIBFLAG</span><span class="o">=</span><span class="p">;</span><span class="w"> </span><span class="o">[</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$cmd</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>lib<span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nv">LIBFLAG</span><span class="o">=</span>--lib
+<a id="__codelineno-4-28" name="__codelineno-4-28" href="#__codelineno-4-28"></a>python3<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$HERE</span><span class="s2">/mgfront.py&quot;</span><span class="w"> </span><span class="nv">$LIBFLAG</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$src</span><span class="s2">&quot;</span><span class="w"> </span>&gt;<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">/</span><span class="nv">$base</span><span class="s2">.mlir&quot;</span><span class="w">          </span><span class="c1"># 1. surface syntax -&gt; mg dialect (exit 1 + message on a syntax/shape error)</span>
+<a id="__codelineno-4-29" name="__codelineno-4-29" href="#__codelineno-4-29"></a><span class="o">[</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$cmd</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>mlir<span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="o">{</span><span class="w"> </span>cat<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">/</span><span class="nv">$base</span><span class="s2">.mlir&quot;</span><span class="p">;</span><span class="w"> </span><span class="nb">exit</span><span class="w"> </span><span class="m">0</span><span class="p">;</span><span class="w"> </span><span class="o">}</span>
+<a id="__codelineno-4-30" name="__codelineno-4-30" href="#__codelineno-4-30"></a><span class="o">[</span><span class="w"> </span>-x<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$MG_OPT</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;mgc: no mg-opt at </span><span class="nv">$MG_OPT</span><span class="s2"> (run part32/code/build.sh)&quot;</span><span class="w"> </span>&gt;<span class="p">&amp;</span><span class="m">2</span><span class="p">;</span><span class="w"> </span><span class="nb">exit</span><span class="w"> </span><span class="m">2</span><span class="p">;</span><span class="w"> </span><span class="o">}</span>
+<a id="__codelineno-4-31" name="__codelineno-4-31" href="#__codelineno-4-31"></a><span class="k">case</span><span class="w"> </span><span class="nv">$cmd</span><span class="w"> </span><span class="k">in</span>
+<a id="__codelineno-4-32" name="__codelineno-4-32" href="#__codelineno-4-32"></a><span class="w">  </span>build<span class="p">|</span>run<span class="p">|</span>lib<span class="o">)</span>
+<a id="__codelineno-4-33" name="__codelineno-4-33" href="#__codelineno-4-33"></a><span class="w">    </span><span class="nv">LOWER</span><span class="o">=</span><span class="s2">&quot;--lower-affine </span><span class="nv">$SCF</span><span class="s2"> --mg-lower-assert-to-stderr --convert-math-to-llvm --convert-arith-to-llvm --finalize-memref-to-llvm --convert-func-to-llvm --reconcile-unrealized-casts&quot;</span>
+<a id="__codelineno-4-34" name="__codelineno-4-34" href="#__codelineno-4-34"></a><span class="w">    </span><span class="nv">$MG_OPT</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">/</span><span class="nv">$base</span><span class="s2">.mlir&quot;</span><span class="w"> </span>--convert-mg-to-affine<span class="nv">$CONVOPT</span><span class="w"> </span><span class="nv">$PASSES</span><span class="w"> </span><span class="nv">$OUTLINE</span><span class="w"> </span>-o<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">/</span><span class="nv">$base</span><span class="s2">.affine.mlir&quot;</span><span class="w">   </span><span class="c1"># 2. mg -&gt; affine/memref/arith (+ runtime shape checks)</span>
+<a id="__codelineno-4-35" name="__codelineno-4-35" href="#__codelineno-4-35"></a><span class="w">    </span><span class="nv">$MG_OPT</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">/</span><span class="nv">$base</span><span class="s2">.affine.mlir&quot;</span><span class="w"> </span><span class="nv">$LOWER</span><span class="w"> </span>-o<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">/</span><span class="nv">$base</span><span class="s2">.llvm.mlir&quot;</span><span class="w">               </span><span class="c1"># 3. -&gt; LLVM dialect, assertions -&gt; write(2,..)+abort</span>
+<a id="__codelineno-4-36" name="__codelineno-4-36" href="#__codelineno-4-36"></a><span class="w">    </span>mlir-translate-18<span class="w"> </span>--mlir-to-llvmir<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">/</span><span class="nv">$base</span><span class="s2">.llvm.mlir&quot;</span><span class="w"> </span>-o<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">/</span><span class="nv">$base</span><span class="s2">.ll&quot;</span><span class="w">    </span><span class="c1"># 4. -&gt; LLVM IR</span>
+<a id="__codelineno-4-37" name="__codelineno-4-37" href="#__codelineno-4-37"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$cmd</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>lib<span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span><span class="w">   </span><span class="c1"># object + header; the object is linked by the caller</span>
+<a id="__codelineno-4-38" name="__codelineno-4-38" href="#__codelineno-4-38"></a><span class="w">      </span><span class="nv">dir</span><span class="o">=</span><span class="si">${</span><span class="nv">out</span><span class="k">:-</span><span class="nv">$W</span><span class="si">}</span><span class="p">;</span><span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$dir</span><span class="s2">&quot;</span>
+<a id="__codelineno-4-39" name="__codelineno-4-39" href="#__codelineno-4-39"></a><span class="w">      </span><span class="si">${</span><span class="nv">MGC_CLANG</span><span class="k">:-</span><span class="nv">clang</span><span class="p">-18</span><span class="si">}</span><span class="w"> </span><span class="nv">$OPT</span><span class="w"> </span><span class="nv">$MGC_CFLAGS</span><span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">/</span><span class="nv">$base</span><span class="s2">.ll&quot;</span><span class="w"> </span>-o<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$dir</span><span class="s2">/</span><span class="nv">$base</span><span class="s2">.o&quot;</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null
+<a id="__codelineno-4-40" name="__codelineno-4-40" href="#__codelineno-4-40"></a><span class="w">      </span>python3<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$HERE</span><span class="s2">/mgfront.py&quot;</span><span class="w"> </span>--header<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$src</span><span class="s2">&quot;</span><span class="w"> </span>&gt;<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$dir</span><span class="s2">/</span><span class="nv">$base</span><span class="s2">.h&quot;</span>
+<a id="__codelineno-4-41" name="__codelineno-4-41" href="#__codelineno-4-41"></a><span class="w">      </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;wrote </span><span class="nv">$dir</span><span class="s2">/</span><span class="nv">$base</span><span class="s2">.o and </span><span class="nv">$dir</span><span class="s2">/</span><span class="nv">$base</span><span class="s2">.h&quot;</span><span class="p">;</span><span class="w"> </span><span class="nb">exit</span><span class="w"> </span><span class="m">0</span>
+<a id="__codelineno-4-42" name="__codelineno-4-42" href="#__codelineno-4-42"></a><span class="w">    </span><span class="k">fi</span>
+<a id="__codelineno-4-43" name="__codelineno-4-43" href="#__codelineno-4-43"></a><span class="w">    </span><span class="nv">exe</span><span class="o">=</span><span class="si">${</span><span class="nv">out</span><span class="k">:-</span><span class="nv">$W</span><span class="p">/</span><span class="nv">$base</span><span class="p">.exe</span><span class="si">}</span>
+<a id="__codelineno-4-44" name="__codelineno-4-44" href="#__codelineno-4-44"></a><span class="w">    </span><span class="si">${</span><span class="nv">MGC_CLANG</span><span class="k">:-</span><span class="nv">clang</span><span class="p">-18</span><span class="si">}</span><span class="w"> </span><span class="nv">$OPT</span><span class="w"> </span><span class="nv">$MGC_CFLAGS</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">/</span><span class="nv">$base</span><span class="s2">.ll&quot;</span><span class="w"> </span>-o<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$exe</span><span class="s2">&quot;</span><span class="w"> </span>-L<span class="s2">&quot;</span><span class="nv">$LIBDIR</span><span class="s2">&quot;</span><span class="w"> </span>-lmlir_runner_utils<span class="w"> </span>-lm<span class="w"> </span>-Wl,-rpath,<span class="s2">&quot;</span><span class="nv">$LIBDIR</span><span class="s2">&quot;</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w">   </span><span class="c1"># 5. -&gt; native executable</span>
+<a id="__codelineno-4-45" name="__codelineno-4-45" href="#__codelineno-4-45"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$cmd</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>run<span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="nb">exec</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$exe</span><span class="s2">&quot;</span><span class="p">;</span><span class="w"> </span><span class="k">fi</span><span class="w">   </span><span class="c1"># (Chapter 23: this used to be `[ ... ] &amp;&amp; exec`, which made `mgc build` exit with status 1 on success)</span>
+<a id="__codelineno-4-46" name="__codelineno-4-46" href="#__codelineno-4-46"></a><span class="w">    </span><span class="p">;;</span>
+<a id="__codelineno-4-47" name="__codelineno-4-47" href="#__codelineno-4-47"></a><span class="w">  </span>ptx<span class="o">)</span>
+<a id="__codelineno-4-48" name="__codelineno-4-48" href="#__codelineno-4-48"></a><span class="w">    </span><span class="nv">$MG_OPT</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">/</span><span class="nv">$base</span><span class="s2">.mlir&quot;</span><span class="w"> </span>--convert-mg-to-affine<span class="w"> </span>-o<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">/</span><span class="nv">$base</span><span class="s2">.affine.mlir&quot;</span>
+<a id="__codelineno-4-49" name="__codelineno-4-49" href="#__codelineno-4-49"></a><span class="w">    </span>mlir-opt-18<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">/</span><span class="nv">$base</span><span class="s2">.affine.mlir&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-50" name="__codelineno-4-50" href="#__codelineno-4-50"></a><span class="w">      </span>--pass-pipeline<span class="o">=</span><span class="s1">&#39;builtin.module(func.func(affine-parallelize,lower-affine,gpu-map-parallel-loops,convert-parallel-loops-to-gpu),gpu-kernel-outlining)&#39;</span><span class="w"> </span>-o<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">/</span><span class="nv">$base</span><span class="s2">.gpu.mlir&quot;</span>
+<a id="__codelineno-4-51" name="__codelineno-4-51" href="#__codelineno-4-51"></a><span class="w">    </span>mlir-opt-18<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">/</span><span class="nv">$base</span><span class="s2">.gpu.mlir&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-52" name="__codelineno-4-52" href="#__codelineno-4-52"></a><span class="w">      </span>--pass-pipeline<span class="o">=</span><span class="s1">&#39;builtin.module(lower-affine,nvvm-attach-target{chip=sm_70 features=+ptx60},gpu.module(convert-scf-to-cf,convert-gpu-to-nvvm{index-bitwidth=64},reconcile-unrealized-casts),gpu-module-to-binary{format=isa})&#39;</span><span class="w"> </span>-o<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">/</span><span class="nv">$base</span><span class="s2">.bin.mlir&quot;</span>
+<a id="__codelineno-4-53" name="__codelineno-4-53" href="#__codelineno-4-53"></a><span class="w">    </span>python3<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$HERE</span><span class="s2">/decode_ptx.py&quot;</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$W</span><span class="s2">/</span><span class="nv">$base</span><span class="s2">.bin.mlir&quot;</span>
+<a id="__codelineno-4-54" name="__codelineno-4-54" href="#__codelineno-4-54"></a><span class="w">    </span><span class="p">;;</span>
+<a id="__codelineno-4-55" name="__codelineno-4-55" href="#__codelineno-4-55"></a><span class="w">  </span>*<span class="o">)</span><span class="w"> </span>usage<span class="p">;;</span>
+<a id="__codelineno-4-56" name="__codelineno-4-56" href="#__codelineno-4-56"></a><span class="k">esac</span>
+</code></pre></div>
+<ul>
+<li><code>mgc</code> lowers loops last to first and outlines unless told otherwise: <strong><code>--no-reverse-loops</code></strong> and <strong><code>--no-outline</code></strong> turn each off. The old spellings <code>--outline</code> and <code>--reverse-loops</code> still work and mean what they say.</li>
+<li>Outlining touches only functions with <strong>32 or more top-level loop nests</strong> (the pass's <code>min-loops</code> default), so every small program compiles to exactly what it did before. The checker builds the self-attention example and finds no outlined function in it.</li>
+<li><strong>Older chapters keep their own drivers</strong>, as always in this book: each chapter's tests run that chapter's own <code>mgc</code>, so nothing recorded earlier changes. The new default is only in <code>part43/code/mgc</code>, which uses Chapter 42's <code>mg-opt</code>.</li>
+</ul>
+<h2 id="tests">Tests<a class="headerlink" href="#tests" title="Permanent link">&para;</a></h2>
+<p>One new <code>lit</code> file <code>test/defaults43/check.mlir</code> (the suite is now 155 tests). The checker:</p>
+<ol>
+<li><strong>Which passes:</strong> a stand-in for <code>mg-opt</code> records its arguments; the default asks for <code>--mg-outline-loops</code> and <code>--mg-scf-to-cf-reverse</code> and not <code>--convert-scf-to-cf</code>; each <code>--no-...</code> switch removes exactly what it names; the old spellings equal the default.</li>
+<li><strong>Same output:</strong> on every third book example (36 programs, each under 400 lines and accepted by the front end), <code>mgc run</code> with the defaults prints what <code>--no-outline --no-reverse-loops</code> prints.</li>
+<li><strong>Small programs untouched:</strong> the self-attention example has no outlined function.</li>
+<li><strong>Big programs outlined:</strong> Chapter 35's 10-step program has 80 outlined functions by default, none with <code>--no-outline</code>, and the same output.</li>
+<li><strong>Run-time cost, in instructions:</strong> under 0.1% more at <code>-O0</code>, 20 to 60 instructions per call.</li>
+</ol>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>-- 1. which passes mgc asks for
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>  ok   default: outline + reverse; --no-outline, --no-reverse-loops, both, and the old spellings behave as named
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>-- 2. same output as Chapter 38&#39;s driver on the book&#39;s examples
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>  ok   36 programs print the same with the defaults and with --no-outline --no-reverse-loops, 0 differ
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>-- 3. small programs are untouched
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>  ok   the self-attention example (under 32 nests per function) has no outlined function with the defaults
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>-- 4. big programs are outlined, and run the same
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>  ok   Chapter 35&#39;s 10-step training program: 80 outlined functions by default, 0 with --no-outline
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>  ok   and it prints the same 1842 characters either way
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>-- 5. what outlining costs at run time, in exact instructions (callgrind, clang -O0)
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>  ok   Chapter 35&#39;s 10-step program: 488,922,861 instructions plain, 488,988,883 outlined: 0.0135% more
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>  ok   the 1,928 calls cost 34 extra instructions each (a call, the arguments, the return)
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>all checks pass
+</code></pre></div>
+<h3 id="are-the-checks-good-enough-seven-wrong-drivers">Are the checks good enough? Seven wrong drivers.<a class="headerlink" href="#are-the-checks-good-enough-seven-wrong-drivers" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>NOTE: this script deliberately breaks the driver. &#39;caught&#39; lines are EXPECTED: they show the checker can detect the mistake.
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>baseline (nothing broken): checker passes (expected)
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>outlining is off by default: caught by 2 failing check(s):
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>      default: outline + reverse; --no-outline, --no-reverse-loops, both, and the old spellings behave as named
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>      Chapter 35&#39;s 10-step training program: 0 outlined functions by default, 0 with --no-outline
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>lowering last to first is off by default: caught by 1 failing check(s):
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>      default: outline + reverse; --no-outline, --no-reverse-loops, both, and the old spellings behave as named
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>--no-outline is accepted but does nothing: caught by 3 failing check(s):
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>      default: outline + reverse; --no-outline, --no-reverse-loops, both, and the old spellings behave as named
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>      Chapter 35&#39;s 10-step training program: 80 outlined functions by default, 80 with --no-outline
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>      the 1,928 calls cost 0 extra instructions each (a call, the arguments, the return)
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>--no-reverse-loops is accepted but does nothing: caught by 1 failing check(s):
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>      default: outline + reverse; --no-outline, --no-reverse-loops, both, and the old spellings behave as named
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>--no-reverse-loops asks for the wrong pass (canonicalize): caught by 2 failing check(s):
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>      default: outline + reverse; --no-outline, --no-reverse-loops, both, and the old spellings behave as named
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>      1 programs print the same with the defaults and with --no-outline --no-reverse-loops, 35 differ
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>the lowering pass is dropped from the pipeline (loops are never lowered): caught by 2 failing check(s):
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a>      default: outline + reverse; --no-outline, --no-reverse-loops, both, and the old spellings behave as named
+<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a>      35 programs print the same with the defaults and with --no-outline --no-reverse-loops, 1 differ
+<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a>outlining runs on the already-lowered IR (after the lowering stage) so it finds nothing: caught by 2 failing check(s):
+<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a>      default: outline + reverse; --no-outline, --no-reverse-loops, both, and the old spellings behave as named
+<a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a>      Chapter 35&#39;s 10-step training program: 0 outlined functions by default, 0 with --no-outline
+<a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a>
+<a id="__codelineno-6-24" name="__codelineno-6-24" href="#__codelineno-6-24"></a>done (the real mgc was never edited; the broken copies live in work/)
+</code></pre></div>
+<p>All seven are caught. The two switches that are "accepted but do nothing" and the default that is flipped back are caught by the plumbing check, <strong>not</strong> by any output comparison; that is expected, because lowering last to first and outlining do not change what a program prints (Chapters 38 and 42). A driver that quietly lost the speed-up would print the same answers, so the check of which passes are requested is the only thing that can notice, and an executable-level check would need a timing, which Chapter 38's tests avoid.</p>
+<h2 id="limits-and-what-is-not-established">Limits and what is not established<a class="headerlink" href="#limits-and-what-is-not-established" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>The 8% at <code>-O2</code> is unexplained,</strong> and was measured by instructions on <strong>one</strong> program; <code>-O3</code> was not measured at all, and the <code>-O2</code> instruction count was not measured for the 200-step program (its <code>-O2</code> build was not attempted).</li>
+<li><strong>Wall-clock run time was not resolved.</strong> The two measurements disagree in sign and the machine's own spread exceeds the effect. Memory and cache behaviour, which instruction counts do not capture, are untested.</li>
+<li><strong>Compile times are single runs</strong> on one machine; the 728-second figure is one build.</li>
+<li><strong>The default changes for big functions only.</strong> Whoever wants the old IR (for reading it, as Chapter 37 does) must pass <code>--no-outline</code>; the book's earlier chapters are not affected because they use their own frozen drivers.</li>
+<li><strong>The 36 examples of the check are every third example,</strong> not all: the examples of 400 lines or more and the ones the front end rejects are excluded.</li>
+<li><strong>Debuggability was not studied:</strong> outlined functions have generated names (<code>mg_outlined_N</code>), and a backtrace would show them.</li>
+</ul>
+<h2 id="reproducing">Reproducing<a class="headerlink" href="#reproducing" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nb">cd</span><span class="w"> </span>docs/part43/code
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>./bench_runtime.py<span class="w"> </span>&gt;<span class="w"> </span>bench_runtime_out.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./count_instructions.py<span class="w"> </span>&gt;<span class="w"> </span>count_instructions_out.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./bench_interleaved.py<span class="w"> </span>&gt;<span class="w"> </span>bench_interleaved_out.txt
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>./check_defaults.py<span class="w"> </span>&gt;<span class="w"> </span>check_defaults_out.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./mutation.py<span class="w"> </span>&gt;<span class="w"> </span>mutation_out.txt
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="nb">cd</span><span class="w"> </span>../../part15/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_lit.sh<span class="w">          </span><span class="c1"># 155 tests</span>
+</code></pre></div>
+<h2 id="chapter-summary">Chapter summary<a class="headerlink" href="#chapter-summary" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Outlining's run-time cost at <code>-O0</code> is <strong>34 to 45 instructions per call</strong>, 0.01% to 0.02% of the program's instructions, measured exactly on three programs including the 200-step one (86,144 calls).</li>
+<li>At <code>-O2</code> it was <strong>8.2% more instructions</strong> on Chapter 35's program, for a reason not established (not vectorization: 1,390 against 1,396 vectorized loops).</li>
+<li>Wall-clock time could not resolve the difference: ratios between 0.79 and 1.19 in different runs.</li>
+<li>Outlining cut <code>clang -O2</code> compile time from 728 to 95 seconds (Chapter 36's 10 steps) and from 97 to 22 seconds (Chapter 35's), and <code>-O0</code> compile time of the 200-step program from 149 to 91 seconds.</li>
+<li><code>mgc</code> now lowers loops last to first and outlines big functions by default; <code>--no-outline</code> and <code>--no-reverse-loops</code> turn them off; small programs are unchanged; seven wrong drivers are caught.</li>
+</ul>
+<h2 id="self-check-questions">Self-check questions<a class="headerlink" href="#self-check-questions" title="Permanent link">&para;</a></h2>
+<p>Each answer is collapsed; try the question first.</p>
+<ol>
+<li>
+<p>Why does the chapter rely on instruction counts and not on wall-clock time for the cost of the calls?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>Instruction counts under callgrind are exact and repeatable; wall-clock time here varied by 40% between runs of the same executable (3.1 to 4.3 seconds), more than any effect being measured, and two measurements of the same comparison disagreed in sign (1.10 and 0.91).</p>
+</details>
+</li>
+<li>
+<p>What does 34 extra instructions per call mean for a loop nest that does hundreds of thousands of instructions of work?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>Nothing measurable: 34 instructions are the call itself, passing the memref descriptors as arguments, and the return, against a body that runs hundreds of thousands. Over 1,928 calls it is 66,050 extra instructions in a program of 489 million (0.0135%).</p>
+</details>
+</li>
+<li>
+<p>The <code>-O2</code> build executes 8.2% more instructions when outlined. What was ruled out and what was not tested?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>Ruled out as the explanation: a loss of vectorization (1,390 against 1,396 vectorized loops) and the library calls (identical counts). Not tested: that clang optimizes across neighbouring loop nests in one big function (forwarding stores, merging allocations) and cannot across a call. The cause is not established.</p>
+</details>
+</li>
+<li>
+<p>Why did the new defaults not require changing any earlier chapter's tests?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>Each chapter's tests run that chapter's own copy of the <code>mgc</code> driver, and Chapter 43's new defaults are only in <code>part43/code/mgc</code>. The older drivers still behave as they did, so everything recorded earlier reproduces.</p>
+</details>
+</li>
+<li>
+<p>Why is "the default lowering order is flipped back" caught only by the check of which passes are asked for?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>Because the lowering order does not change the printed output (Chapter 42 showed byte-identical IR), so no output comparison can see it. Only a check on the arguments passed to <code>mg-opt</code>, or a measurement of cost, can notice the speed-up has gone.</p>
+</details>
+</li>
+<li>
+<p>Name three limits of the claims of this chapter.</p>
+<details class="note">
+<summary>Answer</summary>
+<p>Any of: the 8% at <code>-O2</code> is unexplained and measured on one program; <code>-O3</code> and the 200-step program at <code>-O2</code> were not measured; wall-clock time was not resolved; compile times are single runs on one machine; the default check covers every third example, not all; debuggability of the generated function names was not studied.</p>
+</details>
+</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../../part42/42-lowering-loops-last-to-first/" class="md-footer__link md-footer__link--prev" aria-label="Previous: 42. Lowering the Loops Last to First: Testing the Idea Chapter 39 Left Open">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                42. Lowering the Loops Last to First: Testing the Idea Chapter 39 Left Open
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 Oluwaseyi Awoga
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

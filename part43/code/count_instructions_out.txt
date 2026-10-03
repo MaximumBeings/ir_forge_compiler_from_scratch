@@ -1,0 +1,5 @@
+program          clang   plain instructions  outlined instructions        extra   ratio   calls  extra per call
+ch35 10 steps      -O0          488,922,880            488,988,930       66,050   1.000   1,928            34.3
+ch35 10 steps      -O2           91,858,303             99,373,277    7,514,974   1.082   1,928          3897.8
+ch36 10 steps      -O0        1,196,023,493          1,196,229,994      206,501   1.000   5,064            40.8
+ch36 200 steps     -O0       17,793,954,904         17,797,803,621    3,848,717   1.000  86,144            44.7

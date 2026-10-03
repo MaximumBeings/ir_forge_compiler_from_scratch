@@ -38,6 +38,12 @@ config.substitutions += [
 ]
 # The language tour (docs/tour): its examples are run in place, like the chapters' examples.
 config.substitutions += [("%tour", os.path.join(config.test_source_root, "..", "..", "..", "tour", "code"))]
+# Chapter 35: a one-block causal transformer language model trained with a hand-derived backward pass. No new compiler operation ('%mgc32' runs the examples).
+ch35 = os.path.join(config.test_source_root, "..", "..", "..", "part35", "code")
+config.substitutions += [
+    ("%ex35", os.path.join(ch35, "examples")),
+    ("%ch35", ch35),
+]
 # Chapter 34: why a block has a feed-forward network (backward through layer norm, relu and residuals). No new compiler operation ('%mgc32' runs the examples).
 ch34 = os.path.join(config.test_source_root, "..", "..", "..", "part34", "code")
 config.substitutions += [

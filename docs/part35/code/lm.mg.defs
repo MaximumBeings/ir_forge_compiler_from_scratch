@@ -1,0 +1,80 @@
+# A one-block, one-head, causal transformer language model and its hand-derived backward pass. B = 16 sequences of 7 tokens are stacked into one
+# matrix of 112 rows; attention is over all 112 rows with a mask that allows a position to see only earlier positions of its OWN sequence.
+# (This listing is one training step with every step's suffix removed: the parameters are named after their matrices, e.g. e is the embedding. In the training
+# programs each step's lets carry a suffix such as _s7, and the parameters are numbered per step, e0 .. e200.)
+
+def softmax_rows(m: tensor[112x112]) = exp(m - row_max(m)) / row_sum(exp(m - row_max(m)))
+def ln_sigma(h: tensor[112x8]) = sqrt(row_mean((h - row_mean(h)) * (h - row_mean(h))) + 1e-05)
+def ln_hat(h: tensor[112x8]) = (h - row_mean(h)) / ln_sigma(h)
+def ln_out(h: tensor[112x8], g: tensor[1x8], t: tensor[1x8]) = ln_hat(h) * g + t
+def ln_back(d: tensor[112x8], h: tensor[112x8], g: tensor[1x8]) = ((d * g) - row_mean(d * g) - ln_hat(h) * row_mean((d * g) * ln_hat(h))) / ln_sigma(h)
+def log_softmax(z: tensor[112x4]) = z - row_max(z) - log(row_sum(exp(z - row_max(z))))
+
+# ---- the forward pass, one let per step
+let x0_ = x @ e + ps
+let u1_ = ln_out(x0_, g1, n1)
+let q_ = u1_ @ wq
+let k_ = u1_ @ wk
+let v_ = u1_ @ wv
+let a_ = softmax_rows(q_ @ transpose(k_) * 0.35355339059327373 + mk)
+let o_ = a_ @ v_
+let x1_ = x0_ + o_ @ wo
+let u2_ = ln_out(x1_, g2, n2)
+let pre_ = u2_ @ w1 + c1
+let r_ = relu(pre_)
+let x2_ = x1_ + (r_ @ w2 + c2)
+let uf_ = ln_out(x2_, gf, nf)
+let lg_ = uf_ @ wu
+# ---- the loss, and the number of correct predictions
+# loss    = col_sum(row_sum(y * log_softmax(lg_))) * -0.015625
+# correct = col_sum(row_sum(ge(lg_, row_max(lg_)) * y))
+
+# ---- the backward pass, one let per step, working backwards from the loss
+let dl_ = (exp(log_softmax(lg_)) * mr - y) * 0.015625
+let Gwu_ = transpose(uf_) @ dl_
+let duf_ = dl_ @ transpose(wu)
+let Gnf_ = col_sum(duf_)
+let Ggf_ = col_sum(duf_ * ln_hat(x2_))
+let dx2_ = ln_back(duf_, x2_, gf)
+let Gc2_ = col_sum(dx2_)
+let Gw2_ = transpose(r_) @ dx2_
+let dpre_ = (dx2_ @ transpose(w2)) * ge(pre_, [[0]])
+let Gc1_ = col_sum(dpre_)
+let Gw1_ = transpose(u2_) @ dpre_
+let du2_ = dpre_ @ transpose(w1)
+let Gn2_ = col_sum(du2_)
+let Gg2_ = col_sum(du2_ * ln_hat(x1_))
+let dx1_ = dx2_ + ln_back(du2_, x1_, g2)
+let Gwo_ = transpose(o_) @ dx1_
+let do_ = dx1_ @ transpose(wo)
+let dv_ = transpose(a_) @ do_
+let da_ = do_ @ transpose(v_)
+let ds_ = a_ * (da_ - row_sum(a_ * da_))
+let dq_ = ds_ @ k_ * 0.35355339059327373
+let dk_ = transpose(ds_) @ q_ * 0.35355339059327373
+let Gwq_ = transpose(u1_) @ dq_
+let Gwk_ = transpose(u1_) @ dk_
+let Gwv_ = transpose(u1_) @ dv_
+let du1_ = dq_ @ transpose(wq) + dk_ @ transpose(wk) + dv_ @ transpose(wv)
+let Gn1_ = col_sum(du1_)
+let Gg1_ = col_sum(du1_ * ln_hat(x0_))
+let dx0_ = dx1_ + ln_back(du1_, x0_, g1)
+let Ge_ = transpose(x) @ dx0_
+
+# ---- the update, one per matrix (lr = 1.0)
+let e_new = e - Ge_ * 1.0
+let g1_new = g1 - Gg1_ * 1.0
+let n1_new = n1 - Gn1_ * 1.0
+let wq_new = wq - Gwq_ * 1.0
+let wk_new = wk - Gwk_ * 1.0
+let wv_new = wv - Gwv_ * 1.0
+let wo_new = wo - Gwo_ * 1.0
+let g2_new = g2 - Gg2_ * 1.0
+let n2_new = n2 - Gn2_ * 1.0
+let w1_new = w1 - Gw1_ * 1.0
+let c1_new = c1 - Gc1_ * 1.0
+let w2_new = w2 - Gw2_ * 1.0
+let c2_new = c2 - Gc2_ * 1.0
+let gf_new = gf - Ggf_ * 1.0
+let nf_new = nf - Gnf_ * 1.0
+let wu_new = wu - Gwu_ * 1.0

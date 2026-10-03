@@ -6,6 +6,7 @@
 # Method: Chapter 24's bench.cpp (its result check against a reference is part of every line), pinned to one core, THREE passes. Output: variants_out.txt
 HERE=$(cd "$(dirname "$0")" && pwd); W=$HERE/work/variants; mkdir -p $W
 MGC=$HERE/../../part32/code/mgc; SRC=$HERE/../../part24/code/bench/matmul.mg; H=$HERE/../../part24/code/bench/bench.cpp
+export MG_OPT=${MG_OPT:-$(ls $HERE/../../part38/code/build/mg-opt 2>/dev/null || echo $HERE/../../part32/code/build/mg-opt)}
 CORE=; command -v taskset >/dev/null && CORE="taskset -c 3"
 build() {  # name  order  flag(0 none | 1 reassoc on fadd | 2 contract on fmul and fadd)
   name=$1; order=$2; re=$3; mkdir -p $W/$name

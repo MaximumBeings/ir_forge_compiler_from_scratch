@@ -5,6 +5,8 @@ by the number of multiply-adds in one iteration. llvm-mca assumes every load hit
 Usage: mca.py [--loops]   Output: mca_out.txt (with --loops: loops_out.txt, the assembly of the ijk and ikj hot loops)"""
 import os, re, subprocess, sys, tempfile
 here = os.path.dirname(os.path.abspath(__file__)); mgc = os.path.join(here, "..", "..", "part32", "code", "mgc")
+_newest = [os.path.join(here, "..", "..", p, "code", "build", "mg-opt") for p in ("part38", "part32")]      # the newest compiler build that exists (CI builds only Chapter 38's)
+os.environ.setdefault("MG_OPT", next((p for p in _newest if os.path.exists(p)), _newest[-1]))
 CPU = os.environ.get("MCA_CPU", "sapphirerapids")      # pinned: the result must not depend on the machine running the script
 work = os.path.join(here, "work", "mca"); os.makedirs(work, exist_ok=True)
 SRC = os.path.join(here, "examples", "03_matmul_dynamic.mg")

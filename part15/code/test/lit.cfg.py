@@ -176,3 +176,6 @@ config.substitutions += [("%ch44", ch44)]
 # Chapter 45: automatic differentiation (autograd.py, a source-to-source transformation; it runs programs with mgc and needs mg-opt of Chapter 44's build).
 ch45 = os.path.join(config.test_source_root, "..", "..", "..", "part45", "code")
 config.substitutions += [("%ch45", ch45)]
+# Chapter 46: Hessian-vector products (hvp.py differentiates the generated backward pass again).
+ch46 = os.path.join(config.test_source_root, "..", "..", "..", "part46", "code")
+config.substitutions += [("%ch46", ch46)]

@@ -2345,6 +2345,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part46/46-second-derivatives/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    46. Second Derivatives: Differentiating the Backward Pass Again
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2810,6 +2838,9 @@
 <a id="__codelineno-0-176" name="__codelineno-0-176" href="#__codelineno-0-176"></a><span class="c1"># Chapter 45: automatic differentiation (autograd.py, a source-to-source transformation; it runs programs with mgc and needs mg-opt of Chapter 44&#39;s build).</span>
 <a id="__codelineno-0-177" name="__codelineno-0-177" href="#__codelineno-0-177"></a><span class="n">ch45</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">test_source_root</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;part45&quot;</span><span class="p">,</span> <span class="s2">&quot;code&quot;</span><span class="p">)</span>
 <a id="__codelineno-0-178" name="__codelineno-0-178" href="#__codelineno-0-178"></a><span class="n">config</span><span class="o">.</span><span class="n">substitutions</span> <span class="o">+=</span> <span class="p">[(</span><span class="s2">&quot;</span><span class="si">%c</span><span class="s2">h45&quot;</span><span class="p">,</span> <span class="n">ch45</span><span class="p">)]</span>
+<a id="__codelineno-0-179" name="__codelineno-0-179" href="#__codelineno-0-179"></a><span class="c1"># Chapter 46: Hessian-vector products (hvp.py differentiates the generated backward pass again).</span>
+<a id="__codelineno-0-180" name="__codelineno-0-180" href="#__codelineno-0-180"></a><span class="n">ch46</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">test_source_root</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;part46&quot;</span><span class="p">,</span> <span class="s2">&quot;code&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-181" name="__codelineno-0-181" href="#__codelineno-0-181"></a><span class="n">config</span><span class="o">.</span><span class="n">substitutions</span> <span class="o">+=</span> <span class="p">[(</span><span class="s2">&quot;</span><span class="si">%c</span><span class="s2">h46&quot;</span><span class="p">,</span> <span class="n">ch46</span><span class="p">)]</span>
 </code></pre></div>
 <p>The one design decision worth noticing is <code>MG_OPT</code>: <strong>which <code>mg-opt</code> binary is tested is an environment variable</strong>, not a constant. That is what lets the same suite be pointed at older builds later in this chapter to show the tests can fail. Each test gets its own scratch name (<code>%t</code>), so tests cannot read each other's files.</p>
 <p>The launcher script is three lines of real logic:</p>

@@ -1,0 +1,2738 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A Toy Language Compiled Through a Real MLIR Dialect, Down to Real Native Machine Code">
+      
+      
+        <meta name="author" content="Oluwaseyi Awoga">
+      
+      
+      
+        <link rel="prev" href="../../part45/45-automatic-differentiation/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>46. Second Derivatives: Differentiating the Backward Pass Again - IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#46-second-derivatives-differentiating-the-backward-pass-again" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-header__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              46. Second Derivatives: Differentiating the Backward Pass Again
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-nav__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../background/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background (LLVM and MLIR in Twenty Minutes)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tour/language-tour/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Mountain Goat Language: A Short Tour
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part1/01-why-a-multi-level-ir-at-all/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1. Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part2/02-a-minimal-dialect-from-scratch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2. A Minimal Dialect From Scratch: Mountain Goat's Own mg Dialect
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part3/03-the-pass-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3. The Real Pass Infrastructure: Canonicalizing Mountain Goat
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 3 -- Progressive Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 3 -- Progressive Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part4/04-progressive-lowering-to-affine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4. Progressive Lowering: Mountain Goat to affine, Two Real Ways
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part5/05-affine-to-scf-to-llvm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5. Finishing Progressive Lowering: affine to scf to llvm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 4 -- Optimization Across Levels
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 4 -- Optimization Across Levels
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/06-real-bufferization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6. Real Bufferization: Closing Chapter 4's Own Honest Gap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part7/07-real-loop-transforms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    7. Real Loop Transforms: Fusion, Tiling, and Unrolling at the affine Level
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 5 -- Code Generation via LLVM
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 5 -- Code Generation via LLVM
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part8/08-a-standalone-native-executable/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    8. A Standalone Native Executable: Mountain Goat Without MLIR At Runtime
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part9/09-the-execution-engine-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    9. MLIR's Own Real C++ ExecutionEngine API, Called In-Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 6 -- GPU Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 6 -- GPU Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part10/10-gpu-lowering-to-ptx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10. GPU Lowering: Mountain Goat to the gpu Dialect, NVVM, and Real PTX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part11/11-the-gpu-host-side/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    11. The GPU Host Side: Device Memory, Real Runtime Calls, and a Stub Device
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 7 -- Case Studies
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 7 -- Case Studies
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part12/12-reading-the-production-pipelines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    12. Reading MLIR's Own Production Pipelines: What This Book's Compiler Is Missing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part13/13-dynamic-shapes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    13. Dynamic Shapes: Closing Chapter 12's Biggest Unknown
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part14/14-runtime-shape-checks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    14. A Runtime Shape Check: Closing Chapter 13's Memory-Safety Hole
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part15/15-a-real-test-suite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    15. A Real Test Suite: lit, FileCheck, and Proof That the Tests Can Fail
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part16/16-testing-the-gpu-path-and-loop-transforms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    16. Testing the GPU Path and the Loop Transforms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part17/17-loop-transforms-on-dynamic-bounds/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    17. Loop Transforms on Dynamic Bounds
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part18/18-why-fusion-declines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    18. Why Fusion Declines: Reading the Pass, and a Second Bug Found Along the Way
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part19/19-a-better-abort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    19. A Better Abort: Reporting Assertion Failures on stderr
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part20/20-the-mountain-goat-demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    20. The Mountain Goat Demo: A Surface Syntax, a Driver, and C++ Calling Compiled Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part21/21-more-operations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    21. More Operations: Subtract, Hadamard, Divide, Matrix Product, and Scalars
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part22/22-broadcasting-reductions-and-relu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    22. Broadcasting, Reductions and relu: Enough Operations for a Neural-Network Layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part23/23-measuring-performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    23. Measuring Performance: Does Any of It Make the Code Fast?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part24/24-closing-the-matmul-gap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    24. Closing the Gap: A Matrix Product That Walks Memory in a Better Order
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part25/25-keeping-it-working/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    25. Keeping It Working: Continuous Integration and the Tests the Early Chapters Never Had
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part26/26-learning-from-data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    26. Learning From Data: Gradient Descent in Mountain Goat
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part27/27-tensor-contractions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    27. Tensor Contractions as Matrix Products
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part28/28-contraction-in-mountain-goat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    28. Tensor Contractions in Mountain Goat Itself
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part29/29-softmax-and-attention/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    29. Softmax and Attention
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part30/30-a-small-transformer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    30. A Small Transformer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part31/31-training-a-bigram-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    31. Training a Language Model: Gradient Descent on a Bigram
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part32/32-does-it-generalize/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    32. Does It Generalize? Held-Out Data, Overfitting and Weight Decay
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part33/33-backpropagation-through-attention/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    33. Backpropagation Through Attention: Training a One-Head Classifier
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part34/34-why-a-block-has-a-feed-forward-network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    34. Why a Block Has a Feed-Forward Network: Backpropagation Through Layer Norm, ReLU and Residuals
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part35/35-training-a-transformer-language-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    35. Training a Transformer Language Model: Backpropagation Through Causal Attention and Embeddings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part36/36-training-chapter-30s-transformer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    36. Training Chapter 30's Transformer: Two Heads, Two Blocks, and a Result That Is Not Better
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part37/37-inside-the-llvm-stage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    37. Inside the LLVM Stage: Reading the IR, and Why a Loop Does or Does Not Vectorize
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part38/38-outlining-loop-nests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    38. Why Compile Time Was Quadratic, and a Pass That Outlines Loop Nests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part39/39-finding-the-quadratic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    39. Finding the Quadratic: a Differential Profile of the Lowering Pass
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part40/40-a-model-of-a-matrix-accelerator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    40. A Model of a Matrix Accelerator: Tiles, a Scratchpad, and What Loop Order Does There
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part41/41-compiling-mountain-goat-to-ga-1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    41. Compiling Mountain Goat to GA-1: Fusion, Tiling and Why Decoding Is Memory-Bound
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part42/42-lowering-loops-last-to-first/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    42. Lowering the Loops Last to First: Testing the Idea Chapter 39 Left Open
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part43/43-outlining-by-default/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    43. Outlining by Default: What the Calls Cost, and Which Defaults Changed
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part44/44-fast-math-flags/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    44. Fast-Math Flags from the Compiler: What Reordering Is Allowed to Buy, and What It Did
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part45/45-automatic-differentiation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    45. Automatic Differentiation: Letting the Compiler Write the Backward Pass
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    46. Second Derivatives: Differentiating the Backward Pass Again
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    46. Second Derivatives: Differentiating the Backward Pass Again
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-idea" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The idea
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#does-it-give-the-right-hessian-products" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Does it give the right Hessian products?
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Does it give the right Hessian products?">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#are-the-checks-good-enough-eleven-wrong-versions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Are the checks good enough? Eleven wrong versions.
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-it-is-good-for-how-sharp-is-the-loss" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it is good for: how sharp is the loss?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tests
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limits-and-what-is-not-established" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits and what is not established
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-idea" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The idea
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#does-it-give-the-right-hessian-products" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Does it give the right Hessian products?
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Does it give the right Hessian products?">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#are-the-checks-good-enough-eleven-wrong-versions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Are the checks good enough? Eleven wrong versions.
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-it-is-good-for-how-sharp-is-the-loss" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it is good for: how sharp is the loss?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tests
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limits-and-what-is-not-established" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits and what is not established
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="46-second-derivatives-differentiating-the-backward-pass-again">46. Second Derivatives: Differentiating the Backward Pass Again<a class="headerlink" href="#46-second-derivatives-differentiating-the-backward-pass-again" title="Permanent link">&para;</a></h1>
+<p><img alt="Mountain goats in space helmets on Triton, a moon of Neptune" src="../../assets/goats/ch-46.svg" style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" /></p>
+<p><strong>What you will understand:</strong> why the gradient program that Chapter 45 generates can be fed back into the same tool, what comes out (a <strong>Hessian-vector product</strong>: how the gradient itself changes when the parameters move in a chosen direction), how to check it against an independent reference, and one thing it is good for: measuring how sharply the loss curves, which bounds how large a learning rate can be. The compiler is unchanged. The only new code is <code>hvp.py</code> (about 20 lines, a wrapper around Chapter 45's <code>autograd.py</code>) and a measurement script.</p>
+<p><strong>What you need to know first:</strong> Chapter 45 (reverse-mode differentiation as a transformation from a Mountain Goat program to another Mountain Goat program). Chapter 26 (gradient descent and the learning rate).</p>
+<div class="admonition tip">
+<p class="admonition-title">Compile and run</p>
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">cd</span><span class="w"> </span>docs/part46/code<span class="w">                                  </span><span class="c1"># plain Python 3; needs the Chapter 44 build (../../part44/code/build.sh) for mgc</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>./hvp.py<span class="w"> </span>examples/s01_cubic.mg<span class="w"> </span>--wrt<span class="w"> </span>x<span class="w"> </span>--vec<span class="w"> </span><span class="s2">&quot;[[1,0,0],[0,0,0]]&quot;</span><span class="w"> </span>&gt;<span class="w"> </span>hvp_example_generated.mg<span class="w">   </span><span class="c1"># differentiate the backward pass</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>./mgc<span class="w"> </span>run<span class="w"> </span>hvp_example_generated.mg<span class="w">                   </span><span class="c1"># run it</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>./check_hvp.py<span class="w"> </span>&gt;<span class="w"> </span>check_hvp_out.txt<span class="w">                   </span><span class="c1"># the checks of this page (about 20 seconds)</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>./curvature.py<span class="w"> </span>&gt;<span class="w"> </span>curvature_out.txt<span class="w">                   </span><span class="c1"># power iteration and the learning-rate table (about 3 minutes)</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>./mutation.py<span class="w"> </span>&gt;<span class="w"> </span>mutation_out.txt<span class="w">                     </span><span class="c1"># 11 WRONG versions of autograd.py the checker must catch (about 4 minutes)</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="nb">cd</span><span class="w"> </span>../../part15/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_lit.sh<span class="w">                 </span><span class="c1"># the whole test suite</span>
+</code></pre></div>
+Every listing and output on this page comes from these commands.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Why this page shows a mutation run, and why 'caught' is the wanted result</p>
+<p><code>mutation.py</code> writes broken versions of <code>autograd.py</code> and expects the checker to fail on each. "Caught" is good; "NOT CAUGHT" would be a gap. One mutant is not caught, and the page says why.</p>
+</div>
+<h2 id="the-idea">The idea<a class="headerlink" href="#the-idea" title="Permanent link">&para;</a></h2>
+<p>Chapter 45's output is an ordinary Mountain Goat program that prints the loss <code>L(p)</code> and its gradient <code>g(p)</code> for a matrix of parameters <code>p</code>. Because it is an ordinary program made of the same operations, it can be differentiated again. A gradient is a matrix, not a number, and <code>autograd.py</code> needs a scalar loss, so fix a direction <code>v</code> (a matrix of the same shape as <code>p</code>) and ask for the derivative of the <strong>scalar</strong></p>
+<p><code>sum(g(p) * v)</code></p>
+<p>with respect to <code>p</code>. By the chain rule that derivative is <code>H(p) v</code>, where <code>H</code> is the <strong>Hessian</strong>, the matrix of second derivatives of <code>L</code>. So the compiled program prints <code>H v</code> without ever forming <code>H</code> (for 15 parameters <code>H</code> is 15 × 15; for a real model it would not fit in memory, and <code>H v</code> is all that is needed for many purposes).</p>
+<p><code>hvp.py</code> does exactly this, in three steps:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="ch">#!/usr/bin/env python3</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="sd">&quot;&quot;&quot;Hessian-vector products by differentiating the generated backward pass: hvp.py prog.mg --wrt NAME --vec &quot;[[...]]&quot;  &gt; hvp.mg</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="sd">Step 1: autograd.py writes the program that computes the loss and the gradient g of NAME. Step 2: this script rewrites its last print so the program&#39;s loss is  sum(g * v)  for the fixed matrix v</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="sd">(v is a `let`), and step 3: autograd.py differentiates THAT program with respect to NAME. By the chain rule, d/dp sum(g(p) * v) = H(p) v, the Hessian of the original loss times v. Prints H v.&quot;&quot;&quot;</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="kn">import</span> <span class="nn">argparse</span><span class="o">,</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">re</span><span class="o">,</span> <span class="nn">subprocess</span><span class="o">,</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">tempfile</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">here</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">));</span> <span class="n">AG</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;CH46_AUTOGRAD&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">here</span><span class="p">,</span> <span class="s2">&quot;autograd.py&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="n">r</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="n">sys</span><span class="o">.</span><span class="n">executable</span><span class="p">,</span> <span class="n">AG</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">],</span> <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">returncode</span><span class="p">:</span> <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="k">return</span> <span class="n">r</span><span class="o">.</span><span class="n">stdout</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">argv</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="n">ap</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">();</span> <span class="n">ap</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;program&quot;</span><span class="p">);</span> <span class="n">ap</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--wrt&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">);</span> <span class="n">ap</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--vec&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;the direction v, as a literal matrix with the shape of the --wrt matrix&quot;</span><span class="p">);</span> <span class="n">a</span> <span class="o">=</span> <span class="n">ap</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">argv</span><span class="p">)</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    <span class="n">g1</span> <span class="o">=</span> <span class="n">run</span><span class="p">([</span><span class="n">a</span><span class="o">.</span><span class="n">program</span><span class="p">,</span> <span class="s2">&quot;--wrt&quot;</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">wrt</span><span class="p">])</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>    <span class="n">prints</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">g1</span><span class="p">)</span> <span class="k">if</span> <span class="n">l</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;print &quot;</span><span class="p">)]</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>    <span class="n">grad_var</span> <span class="o">=</span> <span class="n">g1</span><span class="p">[</span><span class="n">prints</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>                                   <span class="c1"># the second print is the gradient</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>    <span class="n">body</span> <span class="o">=</span> <span class="n">g1</span><span class="p">[:</span><span class="n">prints</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;let vdir = </span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">vec</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;let hv_loss = col_sum(row_sum(</span><span class="si">{</span><span class="n">grad_var</span><span class="si">}</span><span class="s2"> * vdir))&quot;</span><span class="p">,</span> <span class="s2">&quot;print hv_loss&quot;</span><span class="p">]</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>    <span class="n">tmp</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">(</span><span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">suffix</span><span class="o">=</span><span class="s2">&quot;.mg&quot;</span><span class="p">,</span> <span class="n">delete</span><span class="o">=</span><span class="kc">False</span><span class="p">);</span> <span class="n">tmp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">body</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">);</span> <span class="n">tmp</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>    <span class="n">out</span> <span class="o">=</span> <span class="n">run</span><span class="p">([</span><span class="n">tmp</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;--wrt&quot;</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">wrt</span><span class="p">]);</span> <span class="n">os</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">tmp</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>    <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;prints, in order: loss, grad &quot;</span> <span class="o">+</span> <span class="n">a</span><span class="o">.</span><span class="n">wrt</span><span class="p">,</span> <span class="s2">&quot;prints, in order: sum(g*v), H*v&quot;</span><span class="p">))</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span> <span class="n">main</span><span class="p">()</span>
+</code></pre></div>
+<ol>
+<li><code>autograd.py</code> writes the program computing the loss and the gradient.</li>
+<li><code>hvp.py</code> replaces the program's result by <code>let vdir = ...</code> and <code>print col_sum(row_sum(g * vdir))</code>.</li>
+<li><code>autograd.py</code> differentiates <em>that</em> program.</li>
+</ol>
+<p>An example (<code>examples/s01_cubic.mg</code>): <code>loss = sum of x*x*x + exp(x) * 0.5</code>, so the gradient is <code>3x² + eˣ/2</code> and the second derivative <code>6x + eˣ/2</code> at each entry.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a># loss = sum of x*x*x + exp(x) * 0.5: gradient 3x^2 + exp(x)/2, second derivative (diagonal of the Hessian) 6x + exp(x)/2
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>let x = [[0.7, -1.3, 2.1], [1.4, 0.2, -0.6]]
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>print col_sum(row_sum(x * x * x + exp(x) * 0.5))
+</code></pre></div>
+<p>With <code>v</code> equal to 1 in the first entry and 0 elsewhere, <code>H v</code> is the first column of the Hessian. Running the 62-line generated program:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>[[2.47688]]
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 3] strides = [3, 1] data = 
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>[[5.20688,   0,   0], 
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a> [0,   0,   0]]
+</code></pre></div>
+<p>The first matrix is <code>sum(g * v)</code>, which is the gradient's first entry <code>3 · 0.7² + e^0.7 / 2 = 2.47688</code>. The second is <code>H v</code>: its first entry is <code>6 · 0.7 + e^0.7 / 2 = 5.20688</code>, and the rest are zero because this loss treats entries independently, so its Hessian is diagonal. Both match the hand calculation.</p>
+<p>Nothing in <code>autograd.py</code> had to change for this. The backward pass it writes uses <code>ones * g</code>, <code>ge(x, 0)</code>, <code>transpose</code>, products and quotients, and every one of those has a rule. One rule matters more here than in Chapter 45: <strong><code>ge</code> has gradient zero</strong>. The relu mask <code>ge(x, 0)</code> in a backward pass is flat almost everywhere, so differentiating through it correctly contributes nothing, and the second derivative of <code>relu(x)²</code> comes out as <code>2</code> where <code>x &gt; 0</code> and <code>0</code> where <code>x &lt; 0</code> (the checker tests this).</p>
+<h2 id="does-it-give-the-right-hessian-products">Does it give the right Hessian products?<a class="headerlink" href="#does-it-give-the-right-hessian-products" title="Permanent link">&para;</a></h2>
+<p><code>check_hvp.py</code> runs four groups of checks. The reference for the first group is not <code>autograd.py</code> at all: it is the <strong>full Hessian from four-point central differences</strong> of the loss, evaluated by <code>reference.py</code>'s plain-Python evaluator (step 10⁻⁴), multiplied by <code>v</code>.</p>
+<ol>
+<li><strong>Eight small programs, three random directions each.</strong> <code>s01</code> cubic and exp; <code>s02</code> a matrix product squared; <code>s03</code> softmax cross-entropy (<code>log</code>, <code>exp</code>, <code>row_max</code>); <code>s04</code> layer normalisation (<code>sqrt</code>, division, means); <code>s05</code> division, log and sqrt; <code>s06</code> relu squared; <code>s07</code> relu times exp (here the relu mask matters at both orders); <code>s08</code> a reshaped product squared. <code>H v</code> from the compiled double-differentiated program must match in every element.</li>
+<li><strong>Symmetry.</strong> A Hessian is symmetric: <code>wᵀ(H v) = vᵀ(H w)</code>. Two different compiled programs compute the two sides; a wrong rule typically breaks this.</li>
+<li><strong>The first print.</strong> The program's first print is <code>sum(g * v)</code>; it must equal the directional derivative of the loss along <code>v</code>, computed by a finite difference of the loss.</li>
+<li><strong>Chapter 33's classifier</strong>, with respect to its 15 output weights <code>wo0</code> (a 3 × 5 matrix), against the 15 × 15 finite-difference Hessian times a direction.</li>
+</ol>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>-- 1-3. six small programs: H v, symmetry and the directional derivative
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>  ok   all 6 programs x 3 directions: H v from the compiled double-differentiated program equals H (four-point finite differences) times v, in every one of 114 elements
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>  ok   symmetry: w&#39; (H v) = v&#39; (H w) for every program (computed with two compiled programs)
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>  ok   the program&#39;s first print, sum(g * v), equals the finite-difference directional derivative of the loss along v
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>-- 4. Chapter 33&#39;s classifier, output matrix wo0 (15 parameters)
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>  ok   H v for Chapter 33&#39;s wo0 (3x5) equals the finite-difference Hessian times v to 1e-4 (step 1e-3 limits that reference)
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>all checks pass
+</code></pre></div>
+<p>The comparisons are at 10⁻⁵ relative (10⁻⁴ for Chapter 33, whose reference uses a larger step) because the compiled programs print six digits. The symmetry comparison scales its tolerance with the size of the terms for the same reason: an early version used a plain relative tolerance and failed on <code>s07</code>, where each printed entry of <code>H v</code> carries about 5 × 10⁻⁶ of rounding and the sum of six of them differed by 5 × 10⁻⁵ out of 4.3. The cause was the printing, not the tool, and the tolerance now says so.</p>
+<h3 id="are-the-checks-good-enough-eleven-wrong-versions">Are the checks good enough? Eleven wrong versions.<a class="headerlink" href="#are-the-checks-good-enough-eleven-wrong-versions" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>NOTE: this script deliberately breaks autograd.py. &#39;caught&#39; lines are EXPECTED: they show the checker can detect the mistake.
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>baseline (nothing broken): checker passes (expected)
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>ge: the gradient flows through a comparison (second-order only: the first-order gradient of relu is unchanged): caught by 1 failing check(s):
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>      all 8 programs x 3 directions: H v from the compiled double-differentiated program equals H (four-point finite differences) times 
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>relu: the mask is applied with ge against the input itself instead of zero: caught by 2 failing check(s):
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>      all 8 programs x 3 directions: H v from the compiled double-differentiated program equals H (four-point finite differences) times 
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>      the program&#39;s first print, sum(g * v), equals the finite-difference directional derivative of the loss along v
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>mul: each operand&#39;s gradient uses its own value: caught by 4 failing check(s):
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>      all 8 programs x 3 directions: H v from the compiled double-differentiated program equals H (four-point finite differences) times 
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>      symmetry: w&#39; (H v) = v&#39; (H w) for every program (computed with two compiled programs)
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>      the program&#39;s first print, sum(g * v), equals the finite-difference directional derivative of the loss along v
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>      H v for Chapter 33&#39;s wo0 (3x5) equals the finite-difference Hessian times v to 1e-4 (step 1e-3 limits that reference)
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>div: the denominator&#39;s gradient divides by b, not by b squared: caught by 3 failing check(s):
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>      all 8 programs x 3 directions: H v from the compiled double-differentiated program equals H (four-point finite differences) times 
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>      the program&#39;s first print, sum(g * v), equals the finite-difference directional derivative of the loss along v
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>      H v for Chapter 33&#39;s wo0 (3x5) equals the finite-difference Hessian times v to 1e-4 (step 1e-3 limits that reference)
+<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>exp: the gradient uses the input, not the output: caught by 3 failing check(s):
+<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>      all 8 programs x 3 directions: H v from the compiled double-differentiated program equals H (four-point finite differences) times 
+<a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a>      the program&#39;s first print, sum(g * v), equals the finite-difference directional derivative of the loss along v
+<a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a>      H v for Chapter 33&#39;s wo0 (3x5) equals the finite-difference Hessian times v to 1e-4 (step 1e-3 limits that reference)
+<a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a>log: the gradient multiplies by x instead of dividing: caught by 3 failing check(s):
+<a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a>      all 8 programs x 3 directions: H v from the compiled double-differentiated program equals H (four-point finite differences) times 
+<a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a>      the program&#39;s first print, sum(g * v), equals the finite-difference directional derivative of the loss along v
+<a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a>      H v for Chapter 33&#39;s wo0 (3x5) equals the finite-difference Hessian times v to 1e-4 (step 1e-3 limits that reference)
+<a id="__codelineno-5-25" name="__codelineno-5-25" href="#__codelineno-5-25"></a>sqrt: the factor 2 is forgotten: caught by 2 failing check(s):
+<a id="__codelineno-5-26" name="__codelineno-5-26" href="#__codelineno-5-26"></a>      all 8 programs x 3 directions: H v from the compiled double-differentiated program equals H (four-point finite differences) times 
+<a id="__codelineno-5-27" name="__codelineno-5-27" href="#__codelineno-5-27"></a>      the program&#39;s first print, sum(g * v), equals the finite-difference directional derivative of the loss along v
+<a id="__codelineno-5-28" name="__codelineno-5-28" href="#__codelineno-5-28"></a>matmul: the left gradient does not transpose b: caught (the checker did not finish: RuntimeError: /tmp/tmp5r6k5jxo.mg:18: error: cannot multiply (matmul) shapes 2x2 and 3x2: inner dimensions dif)
+<a id="__codelineno-5-29" name="__codelineno-5-29" href="#__codelineno-5-29"></a>a value used twice: the second contribution replaces the first: caught (the checker did not finish: RuntimeError: autograd: the loss does not depend on z)
+<a id="__codelineno-5-30" name="__codelineno-5-30" href="#__codelineno-5-30"></a>sum: the gradient is not broadcast over the reduced axis: NOT CAUGHT
+<a id="__codelineno-5-31" name="__codelineno-5-31" href="#__codelineno-5-31"></a>broadcast: the gradient of a column vector is summed over the wrong axis: caught by 3 failing check(s):
+<a id="__codelineno-5-32" name="__codelineno-5-32" href="#__codelineno-5-32"></a>      all 8 programs x 3 directions: H v from the compiled double-differentiated program equals H (four-point finite differences) times 
+<a id="__codelineno-5-33" name="__codelineno-5-33" href="#__codelineno-5-33"></a>      symmetry: w&#39; (H v) = v&#39; (H w) for every program (computed with two compiled programs)
+<a id="__codelineno-5-34" name="__codelineno-5-34" href="#__codelineno-5-34"></a>      the program&#39;s first print, sum(g * v), equals the finite-difference directional derivative of the loss along v
+<a id="__codelineno-5-35" name="__codelineno-5-35" href="#__codelineno-5-35"></a>
+<a id="__codelineno-5-36" name="__codelineno-5-36" href="#__codelineno-5-36"></a>done (autograd.py itself was never edited; the broken copy is removed)
+</code></pre></div>
+<p>Ten are caught and one is <strong>not</strong>:</p>
+<ul>
+<li><strong>The two second-order-only mutants.</strong> A mutant that lets the gradient flow through <code>ge</code> leaves every first-order gradient of Chapter 45 unchanged (a first-order backward pass contains no <code>ge</code> to differentiate) and is caught only here, by the relu programs. The same is true of a relu mask built as <code>ge(x, x)</code> (always 1): in <code>relu(x)²</code> the relu output is already zero where the mask matters, so the first version of this test <strong>did not catch it</strong>; adding <code>s07</code> (relu times exp) did. A test function has to be sensitive to the thing under test.</li>
+<li><strong>Not caught: the sum rule that forgets to spread the gradient over the summed axis</strong> (<code>add_adj(x, g)</code> instead of <code>ones * g</code>). It is caught by Chapter 45's checker (a reshape program fails to compile because the adjoint has the wrong shape), but at second order it is <strong>equivalent</strong> for every program here: Mountain Goat broadcasts a 1 × 1 or N × 1 adjoint when it meets a product or quotient, and every backward pass of a sum in these programs meets one. <code>s08</code> was added to try to expose it and does not. This checker therefore does not cover that rule, and the chapter does not claim it does.</li>
+<li>Two mutants are caught because the generated program fails to compile or fails the dependence test, rather than by a wrong number.</li>
+</ul>
+<h2 id="what-it-is-good-for-how-sharp-is-the-loss">What it is good for: how sharp is the loss?<a class="headerlink" href="#what-it-is-good-for-how-sharp-is-the-loss" title="Permanent link">&para;</a></h2>
+<p>The largest eigenvalue <code>λ</code> of the Hessian says how fast the gradient can change along the worst direction. For a <strong>quadratic</strong> loss, gradient descent with learning rate <code>lr</code> converges when <code>lr &lt; 2/λ</code> and diverges when it exceeds it. A matrix-vector product is all that <strong>power iteration</strong> needs: start from any <code>v</code>, repeat <code>v ← H v / |H v|</code>, and <code>vᵀ H v</code> converges to the largest eigenvalue in magnitude.</p>
+<p><code>curvature.py</code> does that for Chapter 33's classifier with respect to <code>wo0</code>, each iteration being one compiled program run, then runs 30 real gradient-descent steps (<code>--descend 30</code> of Chapter 45, on <code>wo0</code> only, the other weights fixed) at several multiples of <code>2/λ</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>power iteration: lambda_k = v . (H v) with v normalised after every step
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>  iteration  1: lambda = 0.000103
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>  iteration  2: lambda = 0.019017
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>  iteration  3: lambda = 0.019734
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>  iteration  5: lambda = 0.020322
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>  iteration 10: lambda = 0.020905
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>  iteration 20: lambda = 0.021089
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>  iteration 40: lambda = 0.021149
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>  iteration 60: lambda = 0.021162
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>  iteration 80: lambda = 0.021165
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>(the run stopped at convergence if a line says so above; otherwise it hit the 80-iteration cap and lambda_max is a lower estimate)
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>largest curvature of the loss along the 15 output weights at the initial point: lambda_max = 0.021165   (2 / lambda_max = 94.4958)
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>gradient descent on wo0 only (the other weights fixed), 30 steps, from the initial point; lr as a multiple of 2/lambda_max:
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a> multiple       lr  loss at step 0     step 1    step 10    step 30  loss rose at some step?
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>     0.25   23.624         1.60134     1.2626   0.880497   0.759974  no
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>      0.5   47.248         1.60134    1.07664   0.799548   0.692895  no
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a>      0.9   85.046         1.60134    1.01489    1.04803   0.750593  yes
+<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a>      1.1  103.945         1.60134    1.05035    1.30967   0.888051  yes
+<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a>      2.0  188.992         1.60134    1.41343    2.42612    1.50375  yes
+<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a>      5.0  472.479         1.60134    3.04906    5.43126    3.22149  yes
+</code></pre></div>
+<p>Reading it:</p>
+<ul>
+<li><strong>The estimate has not converged.</strong> After the cap of 80 iterations the value is still creeping up (0.020905 at iteration 10, 0.021089 at 20, 0.021149 at 40, 0.021162 at 60, 0.021165 at 80). It is a <strong>lower bound</strong> for the largest eigenvalue near 0.0212, and <code>2/λ</code> is therefore an upper bound near 94.5. I did not compute the 15 × 15 eigenvalue by another method, so this value is not independently confirmed (the Hessian-vector products it is built from are, by the checks above).</li>
+<li><strong>Well below <code>2/λ</code> the loss falls at every step</strong> (multiples 0.25 and 0.5: no step increased the loss).</li>
+<li><strong>Near and above <code>2/λ</code> the loss rises at some step</strong> (0.9, 1.1, 2 and 5 times): at 0.9, one step <em>below</em> the quadratic threshold, the loss already rose (1.015 after one step, 1.048 after ten) before falling to 0.751 by step 30; at 5 times it ends at 3.22, above its starting value 1.60. The classifier's loss is not quadratic, and the curvature at the starting point is only a local guide, so a prediction that is exact for quadratics held here only loosely: the rise began a little before the threshold.</li>
+<li><strong>A large learning rate is not necessarily a bad one for the final loss.</strong> At 0.9 and 1.1 times <code>2/λ</code> the loss after 30 steps (0.751 and 0.888) was lower than at 0.25 times (0.760), though not lower than at 0.5 times (0.693), and the path to it was not monotone. This table is about what happened in this one run from this one starting point; it is not a recommendation.</li>
+<li><strong>This is <code>wo0</code> alone.</strong> Chapter 33 trained all four weight matrices together at learning rate 3.0; the curvature of the combined problem was not measured. <code>hvp.py</code> differentiates with respect to one named matrix; a joint product would need a small extension.</li>
+</ul>
+<h2 id="tests">Tests<a class="headerlink" href="#tests" title="Permanent link">&para;</a></h2>
+<p>One new <code>lit</code> file <code>test/hvp46/check.mlir</code> (the suite is now 158 tests) runs <code>check_hvp.py</code>; the output shown above is what it checks.</p>
+<h2 id="limits-and-what-is-not-established">Limits and what is not established<a class="headerlink" href="#limits-and-what-is-not-established" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>One matrix at a time.</strong> <code>hvp.py --wrt</code> takes one name. The Hessian blocks between different matrices are not computed.</li>
+<li><strong>Hessian-vector products, not the Hessian.</strong> The full matrix could be built from <code>n</code> products with unit vectors; I did not do that, and <code>check_hvp.py</code> uses the finite-difference Hessian only as a reference.</li>
+<li><strong>The reference is finite differences at a moderate step</strong> (10⁻⁴ for the small programs, 10⁻³ for Chapter 33) and the compiled programs print six digits, so agreement is to about 10⁻⁵ to 10⁻⁴, not to the last bit.</li>
+<li><strong>Kinks.</strong> <code>relu</code> and <code>row_max</code> have no second derivative at their kinks. The test inputs are away from them; behaviour exactly at a kink is whatever the rules give (zero for relu's mask) and is not claimed to be meaningful.</li>
+<li><strong>The learning-rate experiment is one run</strong> from one starting point, with the largest eigenvalue not converged. It is an illustration of how a Hessian-vector product is used, not a study of learning rates.</li>
+<li><strong>Cost and size.</strong> The generated double-differentiated program for Chapter 33's classifier is much larger than the first-order one; I measured correctness, not its cost. Third derivatives were not tried.</li>
+<li><strong>The sum-spread rule is not covered by this checker</strong> (see the mutation run); Chapter 45's checker covers it.</li>
+</ul>
+<h2 id="reproducing">Reproducing<a class="headerlink" href="#reproducing" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nb">cd</span><span class="w"> </span>docs/part46/code
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>./hvp.py<span class="w"> </span>examples/s01_cubic.mg<span class="w"> </span>--wrt<span class="w"> </span>x<span class="w"> </span>--vec<span class="w"> </span><span class="s2">&quot;[[1,0,0],[0,0,0]]&quot;</span><span class="w"> </span>&gt;<span class="w"> </span>hvp_example_generated.mg<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./mgc<span class="w"> </span>run<span class="w"> </span>hvp_example_generated.mg
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>./check_hvp.py<span class="w"> </span>&gt;<span class="w"> </span>check_hvp_out.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./curvature.py<span class="w"> </span>&gt;<span class="w"> </span>curvature_out.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./mutation.py<span class="w"> </span>&gt;<span class="w"> </span>mutation_out.txt
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="nb">cd</span><span class="w"> </span>../../part15/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_lit.sh<span class="w">          </span><span class="c1"># 158 tests</span>
+</code></pre></div>
+<h2 id="chapter-summary">Chapter summary<a class="headerlink" href="#chapter-summary" title="Permanent link">&para;</a></h2>
+<ul>
+<li>The program Chapter 45 generates is an ordinary Mountain Goat program, so it can be differentiated again. Differentiating the scalar <code>sum(g * v)</code> gives the <strong>Hessian-vector product</strong> <code>H v</code> without forming the Hessian. <code>hvp.py</code> is a three-step wrapper around the unchanged <code>autograd.py</code>.</li>
+<li>It matches the full finite-difference Hessian times <code>v</code> in all 156 elements of eight small programs (three directions each), is symmetric, reproduces the directional derivative of the loss, and agrees on Chapter 33's 15 output weights.</li>
+<li>Ten of eleven wrong versions are caught, including two that first-order checks cannot see. One is not caught, because for the programs tested it makes no difference; the page says so.</li>
+<li>Power iteration on Hessian-vector products estimates the sharpest curvature of Chapter 33's loss along its output weights (at least 0.0212, not converged), and real descent runs rise above the loss only near and beyond the <code>2/λ</code> guide: a quadratic rule of thumb that held loosely for this non-quadratic loss.</li>
+</ul>
+<h2 id="self-check-questions">Self-check questions<a class="headerlink" href="#self-check-questions" title="Permanent link">&para;</a></h2>
+<p>Each answer is collapsed; try the question first.</p>
+<ol>
+<li>
+<p>Why differentiate <code>sum(g * v)</code> and not <code>g</code> itself?</p>
+<details class="note">
+<summary>Answer</summary>
+<p><code>autograd.py</code> differentiates a <strong>scalar</strong> loss. The gradient <code>g</code> is a matrix, so its derivative with respect to <code>p</code> is a whole Jacobian (the Hessian). Taking the dot product with a fixed direction <code>v</code> turns it into a scalar whose gradient is <code>H v</code>, one matrix-vector product's worth of information, which is all many algorithms need.</p>
+</details>
+</li>
+<li>
+<p>A first-order checker passes a mutant that lets gradients flow through <code>ge</code>. Why, and why does the second-order checker catch it?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>A first-order backward pass only <em>contains</em> <code>ge</code> (as the relu mask); nothing differentiates through it, so the mutant's wrong rule is never used. In the second pass the mask is part of the program being differentiated, so the rule is used and the mutant produces a nonzero contribution where the correct answer is zero.</p>
+</details>
+</li>
+<li>
+<p>The first version of the test did not catch a relu mask that is always 1. What was wrong with the test, and how was it fixed?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>It used <code>relu(x)²</code>, in which the relu output is already zero wherever the mask would have mattered, so the mask was invisible. Adding <code>relu(x) * exp(x)</code>, whose gradient involves the mask directly, makes the wrong mask change the answer.</p>
+</details>
+</li>
+<li>
+<p>Why is the sum-rule mutant not caught at second order?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>For the programs here, the un-spread adjoint (1 × 1 or N × 1) is always combined with a product or quotient, and Mountain Goat broadcasts it there, so the result is the same as with the spread. It only fails where the adjoint is used alone (as in Chapter 45's reshape program). So the check must be done by Chapter 45's checker; this one does not cover it.</p>
+</details>
+</li>
+<li>
+<p>What does a Hessian's largest eigenvalue tell you about the learning rate, and how well did that hold here?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>For a quadratic loss, gradient descent converges iff <code>lr &lt; 2/λ</code>. For Chapter 33's non-quadratic loss with respect to <code>wo0</code>, the loss never rose at 0.25 and 0.5 times <code>2/λ</code>, but rose at some step already at 0.9 times, and ended above its start at 5 times. The rule held loosely, as a local guide; λ was also not fully converged (a lower bound), so <code>2/λ</code> is an upper bound on that estimate.</p>
+</details>
+</li>
+<li>
+<p>Name three things this chapter does not establish.</p>
+<details class="note">
+<summary>Answer</summary>
+<p>Any of: the full 15 × 15 Hessian or its eigenvalues by another method; the curvature of all of Chapter 33's weights together; third derivatives; the cost of the double-differentiated program; behaviour exactly at a kink; coverage of the sum-spread rule by this checker; learning-rate behaviour beyond one run from one starting point.</p>
+</details>
+</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../../part45/45-automatic-differentiation/" class="md-footer__link md-footer__link--prev" aria-label="Previous: 45. Automatic Differentiation: Letting the Compiler Write the Backward Pass">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                45. Automatic Differentiation: Letting the Compiler Write the Backward Pass
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 Oluwaseyi Awoga
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

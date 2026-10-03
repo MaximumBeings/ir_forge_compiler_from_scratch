@@ -1,0 +1,7 @@
+-- 1-3. six small programs: H v, symmetry and the directional derivative
+  ok   all 6 programs x 3 directions: H v from the compiled double-differentiated program equals H (four-point finite differences) times v, in every one of 114 elements
+  ok   symmetry: w' (H v) = v' (H w) for every program (computed with two compiled programs)
+  ok   the program's first print, sum(g * v), equals the finite-difference directional derivative of the loss along v
+-- 4. Chapter 33's classifier, output matrix wo0 (15 parameters)
+  ok   H v for Chapter 33's wo0 (3x5) equals the finite-difference Hessian times v to 1e-4 (step 1e-3 limits that reference)
+all checks pass

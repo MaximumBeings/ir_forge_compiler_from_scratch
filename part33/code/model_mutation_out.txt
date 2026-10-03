@@ -1,0 +1,14 @@
+NOTE: this script deliberately runs wrong backward passes. 'caught' lines are EXPECTED: they show the checker can detect the mistake.
+baseline (nothing broken): checker passes (expected)
+the softmax backward forgets its second term (treats the softmax as elementwise): caught by 25 failing checks (the reference, finite differences, learning, other, every sequence, attention scores)
+grad_q forgets the 1/sqrt(d) scale: caught by 13 failing checks (the reference, finite differences)
+grad_wk forgets the 1/sqrt(d) scale: caught by 14 failing checks (the reference, finite differences)
+grad_wv does not weight by the attention (uses the unweighted upstream): caught by 16 failing checks (the reference, finite differences)
+d_logits has the wrong sign (y minus p): caught by 25 failing checks (the reference, finite differences, learning, other, every sequence, attention scores)
+d_logits is not averaged over the 24 sequences: caught by 26 failing checks (the reference, finite differences, other, learning, every sequence, attention scores)
+grad_wo uses the values instead of the attended context: caught by 16 failing checks (the reference, finite differences)
+the attention scores are not scaled by 1/sqrt(d) in the forward pass (the gradient no longer matches): caught by 19 failing checks (the reference, finite differences, learning, every sequence)
+d_attn_matrix uses the keys instead of the values: caught by 21 failing checks (the reference, finite differences, other, learning, every sequence, attention scores)
+the naive softmax in the attention (no row maximum subtracted): NOT CAUGHT
+(The last one is expected to be NOT CAUGHT: the attention scores here stay below about 4 in size, where exp cannot overflow, so the naive formula gives the
+ same numbers. Chapters 29 to 32 showed the overflow regime; this chapter's checks do not enter it.)

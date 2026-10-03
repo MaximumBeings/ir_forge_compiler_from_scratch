@@ -1,0 +1,3056 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A Toy Language Compiled Through a Real MLIR Dialect, Down to Real Native Machine Code">
+      
+      
+        <meta name="author" content="Oluwaseyi Awoga">
+      
+      
+      
+        <link rel="prev" href="../../part32/32-does-it-generalize/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>33. Backpropagation Through Attention: Training a One-Head Classifier - IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#33-backpropagation-through-attention-training-a-one-head-classifier" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-header__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              33. Backpropagation Through Attention: Training a One-Head Classifier
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-nav__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../background/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background (LLVM and MLIR in Twenty Minutes)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tour/language-tour/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Mountain Goat Language: A Short Tour
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part1/01-why-a-multi-level-ir-at-all/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1. Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part2/02-a-minimal-dialect-from-scratch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2. A Minimal Dialect From Scratch: Mountain Goat's Own mg Dialect
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part3/03-the-pass-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3. The Real Pass Infrastructure: Canonicalizing Mountain Goat
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 3 -- Progressive Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 3 -- Progressive Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part4/04-progressive-lowering-to-affine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4. Progressive Lowering: Mountain Goat to affine, Two Real Ways
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part5/05-affine-to-scf-to-llvm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5. Finishing Progressive Lowering: affine to scf to llvm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 4 -- Optimization Across Levels
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 4 -- Optimization Across Levels
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/06-real-bufferization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6. Real Bufferization: Closing Chapter 4's Own Honest Gap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part7/07-real-loop-transforms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    7. Real Loop Transforms: Fusion, Tiling, and Unrolling at the affine Level
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 5 -- Code Generation via LLVM
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 5 -- Code Generation via LLVM
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part8/08-a-standalone-native-executable/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    8. A Standalone Native Executable: Mountain Goat Without MLIR At Runtime
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part9/09-the-execution-engine-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    9. MLIR's Own Real C++ ExecutionEngine API, Called In-Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 6 -- GPU Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 6 -- GPU Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part10/10-gpu-lowering-to-ptx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10. GPU Lowering: Mountain Goat to the gpu Dialect, NVVM, and Real PTX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part11/11-the-gpu-host-side/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    11. The GPU Host Side: Device Memory, Real Runtime Calls, and a Stub Device
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 7 -- Case Studies
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 7 -- Case Studies
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part12/12-reading-the-production-pipelines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    12. Reading MLIR's Own Production Pipelines: What This Book's Compiler Is Missing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part13/13-dynamic-shapes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    13. Dynamic Shapes: Closing Chapter 12's Biggest Unknown
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part14/14-runtime-shape-checks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    14. A Runtime Shape Check: Closing Chapter 13's Memory-Safety Hole
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part15/15-a-real-test-suite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    15. A Real Test Suite: lit, FileCheck, and Proof That the Tests Can Fail
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part16/16-testing-the-gpu-path-and-loop-transforms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    16. Testing the GPU Path and the Loop Transforms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part17/17-loop-transforms-on-dynamic-bounds/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    17. Loop Transforms on Dynamic Bounds
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part18/18-why-fusion-declines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    18. Why Fusion Declines: Reading the Pass, and a Second Bug Found Along the Way
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part19/19-a-better-abort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    19. A Better Abort: Reporting Assertion Failures on stderr
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part20/20-the-mountain-goat-demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    20. The Mountain Goat Demo: A Surface Syntax, a Driver, and C++ Calling Compiled Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part21/21-more-operations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    21. More Operations: Subtract, Hadamard, Divide, Matrix Product, and Scalars
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part22/22-broadcasting-reductions-and-relu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    22. Broadcasting, Reductions and relu: Enough Operations for a Neural-Network Layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part23/23-measuring-performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    23. Measuring Performance: Does Any of It Make the Code Fast?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part24/24-closing-the-matmul-gap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    24. Closing the Gap: A Matrix Product That Walks Memory in a Better Order
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part25/25-keeping-it-working/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    25. Keeping It Working: Continuous Integration and the Tests the Early Chapters Never Had
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part26/26-learning-from-data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    26. Learning From Data: Gradient Descent in Mountain Goat
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part27/27-tensor-contractions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    27. Tensor Contractions as Matrix Products
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part28/28-contraction-in-mountain-goat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    28. Tensor Contractions in Mountain Goat Itself
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part29/29-softmax-and-attention/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    29. Softmax and Attention
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part30/30-a-small-transformer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    30. A Small Transformer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part31/31-training-a-bigram-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    31. Training a Language Model: Gradient Descent on a Bigram
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part32/32-does-it-generalize/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    32. Does It Generalize? Held-Out Data, Overfitting and Weight Decay
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    33. Backpropagation Through Attention: Training a One-Head Classifier
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    33. Backpropagation Through Attention: Training a One-Head Classifier
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-task" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The task
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#attention-for-one-sequence-by-hand" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Attention for one sequence, by hand
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-backward-pass" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The backward pass
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#training" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Training
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Training">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-did-the-attention-learn" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What did the attention learn?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#held-out-and-every-possible-sequence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Held-out and every possible sequence
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mistakes-the-compiler-reports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mistakes the compiler reports
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#are-the-checks-good-enough-run-ten-wrong-backward-passes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Are the checks good enough? Run ten wrong backward passes.
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limits-and-what-is-not-established" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits and what is not established
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-task" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The task
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#attention-for-one-sequence-by-hand" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Attention for one sequence, by hand
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-backward-pass" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The backward pass
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#training" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Training
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Training">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-did-the-attention-learn" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What did the attention learn?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#held-out-and-every-possible-sequence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Held-out and every possible sequence
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mistakes-the-compiler-reports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mistakes the compiler reports
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#are-the-checks-good-enough-run-ten-wrong-backward-passes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Are the checks good enough? Run ten wrong backward passes.
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limits-and-what-is-not-established" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits and what is not established
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="33-backpropagation-through-attention-training-a-one-head-classifier">33. Backpropagation Through Attention: Training a One-Head Classifier<a class="headerlink" href="#33-backpropagation-through-attention-training-a-one-head-classifier" title="Permanent link">&para;</a></h1>
+<p><strong>What you will understand:</strong> how a model with <strong>attention</strong> is trained, by working out its gradient by hand, step by step backwards through the computation (<strong>backpropagation</strong>), writing every step as a Mountain Goat function, and training the model with it. The model reads four tokens in any order and must say which one ranks highest under a hidden priority list: a job a bigram (Chapter 31) cannot do, because the answer depends on all four tokens. The backward pass, including the one tricky piece (the gradient through a softmax), is checked three ways: against an independent Python calculation done one token at a time, against a numerical estimate for every one of its 48 weights, and by whether the training run it drives lands where the reference lands. Then the trained model is tried on <strong>all 625 possible inputs</strong>, and the one it gets wrong is explained.</p>
+<p><strong>What you need to know first:</strong> Chapter 29 (attention), Chapter 31 (cross-entropy loss and the gradient of a softmax output) and Chapter 28's <code>reshape</code>. <strong>No new compiler operation</strong> is needed: the chapter's programs run on Chapter 32's compiler. It is also the first chapter whose model has more than one layer of structure to differentiate, so the section "The backward pass" is the heart of it.</p>
+<div class="admonition tip">
+<p class="admonition-title">Compile and run</p>
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">cd</span><span class="w"> </span>docs/part32/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./build.sh<span class="w">                 </span><span class="c1"># once: the newest compiler (this chapter adds nothing to it)</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>../../part33/code
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>python3<span class="w"> </span>make_examples.py<span class="w">                          </span><span class="c1"># (re)writes the examples from attn_lib.py</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>../../part32/code/mgc<span class="w"> </span>run<span class="w"> </span>examples/03_train.mg<span class="w">    </span><span class="c1"># train for 200 steps, then try every possible sequence (about 10 seconds)</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>./run_examples.sh<span class="w"> </span>&gt;<span class="w"> </span>examples_out.txt<span class="w">              </span><span class="c1"># every example and every error example on this page</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>./check_attention_training.py<span class="w">                     </span><span class="c1"># the backward pass and the training run against the independent Python version</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>./model_mutation.py<span class="w"> </span>&gt;<span class="w"> </span>model_mutation_out.txt<span class="w">      </span><span class="c1"># runs 10 WRONG backward passes through the checker (nine are caught; see the page)</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="nb">cd</span><span class="w"> </span>../../part15/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_lit.sh<span class="w">              </span><span class="c1"># the whole test suite</span>
+</code></pre></div>
+Every listing and output on this page comes from these commands.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Why this page shows FAIL lines and error messages, and why that is good</p>
+<p>The three error examples are programs the compiler must reject (each ends <code>exit status 1</code>). The mutation output is a negative control: deliberately wrong backward passes run against the checker, where "caught" is the wanted result and "NOT CAUGHT" would be a gap.</p>
+</div>
+<h2 id="the-task">The task<a class="headerlink" href="#the-task" title="Permanent link">&para;</a></h2>
+<p>A sequence is four tokens, each one of 0 to 4. A hidden <strong>priority list</strong> ranks the tokens: <code>1, 3, 2, 0, 4</code>, first is highest. The <strong>label</strong> of a sequence is the token <em>present in it</em> that comes first in the list:</p>
+<table>
+<thead>
+<tr>
+<th>sequence</th>
+<th>label</th>
+<th>why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2 1 1 1</td>
+<td>1</td>
+<td>token 1 is present, and it ranks first</td>
+</tr>
+<tr>
+<td>3 2 0 2</td>
+<td>3</td>
+<td>no 1; 3 ranks next</td>
+</tr>
+<tr>
+<td>2 2 3 0</td>
+<td>3</td>
+<td></td>
+</tr>
+<tr>
+<td>3 4 2 2</td>
+<td>3</td>
+<td></td>
+</tr>
+<tr>
+<td>4 4 0 4</td>
+<td>0</td>
+<td>no 1, 3 or 2; 0 beats 4</td>
+</tr>
+<tr>
+<td>4 4 4 4</td>
+<td>4</td>
+<td>only token 4 is present</td>
+</tr>
+</tbody>
+</table>
+<p>The model is shown 24 random sequences with their labels (the <em>training</em> set) and 40 more it never trains on (the <em>held-out</em> set). It is never told the rule. Order does not matter: <code>2 1 1 1</code> and <code>1 2 1 1</code> have the same label. That is the job attention is built for: it looks at all the tokens at once and combines them, with no preference for position.</p>
+<p>(The data are deliberately lopsided, as random sequences are. Of the 24 training labels, 13 are 1, 8 are 3, 2 are 2, 1 is 0 and none is 4; of the 40 held-out labels, 22 are 1, 13 are 3, 5 are 2 and none is 0 or 4. Label 4 requires a sequence made only of 4s, which is 1 in 625. This will matter at the end.)</p>
+<h2 id="the-model">The model<a class="headerlink" href="#the-model" title="Permanent link">&para;</a></h2>
+<p>One attention head, with a learned <strong>query</strong> <code>q</code> (1×3), and tables that turn a token into a <strong>key</strong> and a <strong>value</strong> (<code>wk</code> and <code>wv</code>, each 5×3, one row per token), then an output matrix <code>wo</code> (3×5) that turns the attended value into a score for each of the five possible labels:</p>
+<ol>
+<li>each token's <strong>score</strong> is its key's dot product with the query, divided by √3: <code>score_n = q · key(token_n) / √3</code>;</li>
+<li>a softmax over the four scores gives the <strong>attention weights</strong> <code>a</code> (four positive numbers adding to 1);</li>
+<li>the <strong>context</strong> is the attention-weighted average of the four values: <code>h = Σ a_n · value(token_n)</code> (a 1×3 row);</li>
+<li>the <strong>logits</strong> are <code>h @ wo</code> (one score per label), and a softmax and cross-entropy loss (Chapter 31) measure how surprised the model is by the true label.</li>
+</ol>
+<p>That is 3 + 15 + 15 + 15 = <strong>48 numbers</strong> to learn.</p>
+<p><strong>Doing it for 24 sequences at once, with only matrix operations.</strong> Mountain Goat has no batched matrix product, so the sequences are stacked: <code>x</code> has 96 rows (the four one-hot token rows of sequence 0, then of sequence 1, and so on). Keys and values for all tokens at once are <code>x @ wk</code> and <code>x @ wv</code> (96×3). The scores are <code>(x @ wk) @ transpose(q)</code>, a 96×1 column; <strong><code>reshape</code> turns it into 24×4</strong>, one row per sequence, so a row-wise softmax is a softmax within each sequence. To add up each sequence's four weighted values, a constant <strong>group matrix</strong> <code>g</code> (24×96, with a 1 where column ÷ 4 equals the row) does it as a matrix product: <code>g @ (values * weights)</code>.</p>
+<h3 id="attention-for-one-sequence-by-hand">Attention for one sequence, by hand<a class="headerlink" href="#attention-for-one-sequence-by-hand" title="Permanent link">&para;</a></h3>
+<p>First the forward pass on one sequence of four tokens (1, 3, 2, 0) with numbers small enough to follow. The query is <code>(1, 0)</code>, so a token's score is the first number of its key (times 0.7071):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>################ mgc run 01_attention_by_hand.mg
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  | # Attention for one sequence of four tokens (1, 3, 2, 0), small enough to follow by hand. Each token has a 2-number key and a 2-number value.
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  | # The query is (1, 0), so a token&#39;s score is just the first number of its key (times 1/sqrt(2) = 0.7071), and the second number of a value is 0 for tokens 1 and 3.
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  | let x  = [[0, 1, 0, 0, 0], [0, 0, 0, 1, 0], [0, 0, 1, 0, 0], [1, 0, 0, 0, 0]]         # the four tokens, one-hot
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>  | let wk = [[0, 0], [2, 0], [1, 0], [1.5, 0], [0, 0]]                                      # key of each of the five tokens
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>  | let wv = [[1, 1], [10, 0], [0, 10], [5, 0], [0, 0]]                                      # value of each of the five tokens
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>  | let q  = [[1, 0]]
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>  | let scores = (x @ wk) @ transpose(q) * 0.7071067811865476        # 4x1: token 1 scores 2, token 3 scores 1.5, token 2 scores 1, token 0 scores 0 (all times 0.7071)
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>  | print scores
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>  | let a = exp(transpose(scores) - row_max(transpose(scores))) / row_sum(exp(transpose(scores) - row_max(transpose(scores))))      # softmax over the four scores: 1x4 attention weights
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>  | print a
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>  | print a @ (x @ wv)                                                # the attended value: the average of the four values, weighted by attention
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>  ----- output
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [4, 1] strides = [1, 1] data = 
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>[[1.41421], 
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a> [1.06066], 
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a> [0.707107], 
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a> [0]]
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 4] strides = [4, 1] data = 
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>[[0.410109,   0.287974,   0.202212,   0.0997045]]
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 2] strides = [2, 1] data = 
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>[[5.64067,   2.12183]]
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>  ----- exit status 0
+</code></pre></div>
+<p>Token 1 scores 2, token 3 scores 1.5, token 2 scores 1 and token 0 scores 0, all times 0.7071: <code>1.41421, 1.06066, 0.707107, 0</code>. The softmax gives the attention weights <code>0.410, 0.288, 0.202, 0.0997</code>: token 1 gets the most. The context is the weighted average of the four values (<code>[10, 0]</code>, <code>[5, 0]</code>, <code>[0, 10]</code>, <code>[1, 1]</code>): <code>0.410·10 + 0.288·5 + 0.0997·1 = 5.64</code> and <code>0.202·10 + 0.0997·1 = 2.12</code>.</p>
+<h2 id="the-backward-pass">The backward pass<a class="headerlink" href="#the-backward-pass" title="Permanent link">&para;</a></h2>
+<p>Training needs the gradient: how the loss changes with each of the 48 numbers. It is found by the <strong>chain rule</strong>, working backwards from the loss one step at a time. Each step takes the gradient with respect to a step's <em>output</em> and produces the gradient with respect to its <em>inputs</em>. Write <code>B</code> for the number of sequences (24), <code>dX</code> for "the gradient of the loss with respect to X":</p>
+<table>
+<thead>
+<tr>
+<th>forward step</th>
+<th>backward step (what the Mountain Goat function computes)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>logits = h @ wo</code>, loss = cross-entropy</td>
+<td><code>dlogits = (softmax(logits) − y) / B</code> (Chapter 31's result, one row per sequence)</td>
+</tr>
+<tr>
+<td>↳ weights <code>wo</code></td>
+<td><code>dwo = hᵀ @ dlogits</code></td>
+</tr>
+<tr>
+<td>↳ context <code>h</code></td>
+<td><code>dh = dlogits @ woᵀ</code> (one row per sequence)</td>
+</tr>
+<tr>
+<td><code>h = Σ a_n · v_n</code></td>
+<td>every token row of sequence <em>b</em> receives sequence <em>b</em>'s <code>dh</code>: <code>dh_tokens = gᵀ @ dh</code> (96×3)</td>
+</tr>
+<tr>
+<td>↳ values</td>
+<td><code>dv = dh_tokens * a</code> (each token's share of <code>dh</code> is scaled by its attention weight), and <code>dwv = xᵀ @ dv</code></td>
+</tr>
+<tr>
+<td>↳ attention weights</td>
+<td><code>da_n = dh_n · v_n</code> (how much the loss would change per unit of attention on token <em>n</em>): <code>row_sum(dh_tokens * v)</code></td>
+</tr>
+<tr>
+<td><code>a = softmax(s)</code></td>
+<td><code>ds = a * (da − Σ a·da)</code> (below)</td>
+</tr>
+<tr>
+<td><code>s = q · k / √3</code></td>
+<td><code>dq = dsᵀ @ K / √3</code>, <code>dK = ds @ q / √3</code>, and <code>dwk = xᵀ @ dK</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>The one new piece of calculus is the softmax backward step.</strong> If the loss depends on <code>a = softmax(s)</code> through <code>da</code>, then the derivative with respect to score <code>s_i</code> is <code>a_i · (da_i − Σ_j a_j da_j)</code>. Each score affects <em>its own</em> weight directly (the <code>a_i da_i</code> part) and every other weight indirectly, because the weights must sum to 1 (the <code>− a_i Σ_j a_j da_j</code> part). Forgetting the second part is the most natural mistake. A tiny example computes it by the formula and by brute force (nudge each score by 0.01 up and down and watch the loss change):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>################ mgc run 02_softmax_backward.mg
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  | # The one new piece of calculus in this chapter: how the loss changes when the scores of a softmax change.
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  | # If L = (d . softmax(s)) for a fixed vector d, the derivative with respect to s_i is  a_i * (d_i - sum_j a_j d_j)  where a = softmax(s).
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>  | # The first line prints that formula; the second computes the same derivatives by brute force (nudge each score by 0.01 up and down and watch L change).
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>  | def softmax(s: tensor[1x3]) = exp(s - row_max(s)) / row_sum(exp(s - row_max(s)))
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>  | def loss(s: tensor[1x3], d: tensor[1x3]) = row_sum(d * softmax(s))
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>  | def backward(s: tensor[1x3], d: tensor[1x3]) = softmax(s) * (d - row_sum(softmax(s) * d))
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>  | let s = [[0.5, -1, 2]]
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>  | let d = [[3, -2, 1]]
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>  | print backward(s, d)
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>  | print (loss(s + [[0.01, 0, 0]], d) - loss(s - [[0.01, 0, 0]], d)) / 0.02       # nudge s_0
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>  | print (loss(s + [[0, 0.01, 0]], d) - loss(s - [[0, 0.01, 0]], d)) / 0.02       # nudge s_1
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>  | print (loss(s + [[0, 0, 0.01]], d) - loss(s - [[0, 0, 0.01]], d)) / 0.02       # nudge s_2
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>  ----- output
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 3] strides = [3, 1] data = 
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>[[0.309696,   -0.12646,   -0.183235]]
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>[[0.309696]]
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>[[-0.126462]]
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a>[[-0.183235]]
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a>  ----- exit status 0
+</code></pre></div>
+<p>The formula's <code>[0.309696, −0.12646, −0.183235]</code> and the three brute-force numbers <code>0.309696, −0.126462, −0.183235</code> agree. The check on the whole model does this for all 48 weights.</p>
+<p>Writing it down as functions (the definitions below are the program, in order: the forward pass first, then one function per gradient):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a># One-head attention classifier. A sequence of 4 tokens (one-hot rows) goes in; the label is the token present that ranks first in a hidden priority list.
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a># B sequences are stacked: x has B*4 rows (the tokens of sequence 0, then sequence 1, ...) and g (B x B*4) adds up the 4 rows belonging to each sequence.
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a># q (1x3) is the learned query; wk, wv (5x3) turn a token into its key and value; wo (3x5) turns the attended value into scores for the 5 possible labels.
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a># (The same functions exist again with the suffix _te for the 40 held-out sequences and _ex for chunks of 25 sequences; only the sizes differ.)
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>def softmax_rows(m: tensor[24x4]) = exp(m - row_max(m)) / row_sum(exp(m - row_max(m)))
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>def attn_matrix(x: tensor[96x5], q: tensor[1x3], wk: tensor[5x3]) = softmax_rows(reshape((x @ wk) @ transpose(q) * 0.5773502691896258, 24, 4))
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>def context(x: tensor[96x5], g: tensor[24x96], q: tensor[1x3], wk: tensor[5x3], wv: tensor[5x3]) = g @ ((x @ wv) * reshape(attn_matrix(x, q, wk), 96, 1))
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>def logits(x: tensor[96x5], g: tensor[24x96], q: tensor[1x3], wk: tensor[5x3], wv: tensor[5x3], wo: tensor[3x5]) = context(x, g, q, wk, wv) @ wo
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>def log_softmax(z: tensor[24x5]) = z - row_max(z) - log(row_sum(exp(z - row_max(z))))
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>def loss(x: tensor[96x5], g: tensor[24x96], q: tensor[1x3], wk: tensor[5x3], wv: tensor[5x3], wo: tensor[3x5], y: tensor[24x5]) = col_sum(row_sum(y * log_softmax(logits(x, g, q, wk, wv, wo)))) * -0.041666666666666664
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>def correct(x: tensor[96x5], g: tensor[24x96], q: tensor[1x3], wk: tensor[5x3], wv: tensor[5x3], wo: tensor[3x5], y: tensor[24x5]) = col_sum(row_sum(ge(logits(x, g, q, wk, wv, wo), row_max(logits(x, g, q, wk, wv, wo))) * y))
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>def d_logits(x: tensor[96x5], g: tensor[24x96], q: tensor[1x3], wk: tensor[5x3], wv: tensor[5x3], wo: tensor[3x5], y: tensor[24x5]) = (exp(log_softmax(logits(x, g, q, wk, wv, wo))) - y) * 0.041666666666666664
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>def grad_wo(x: tensor[96x5], g: tensor[24x96], q: tensor[1x3], wk: tensor[5x3], wv: tensor[5x3], wo: tensor[3x5], y: tensor[24x5]) = transpose(context(x, g, q, wk, wv)) @ d_logits(x, g, q, wk, wv, wo, y)
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>def d_context_rows(x: tensor[96x5], g: tensor[24x96], q: tensor[1x3], wk: tensor[5x3], wv: tensor[5x3], wo: tensor[3x5], y: tensor[24x5]) = transpose(g) @ (d_logits(x, g, q, wk, wv, wo, y) @ transpose(wo))
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>def grad_wv(x: tensor[96x5], g: tensor[24x96], q: tensor[1x3], wk: tensor[5x3], wv: tensor[5x3], wo: tensor[3x5], y: tensor[24x5]) = transpose(x) @ (d_context_rows(x, g, q, wk, wv, wo, y) * reshape(attn_matrix(x, q, wk), 96, 1))
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>def d_attn_matrix(x: tensor[96x5], g: tensor[24x96], q: tensor[1x3], wk: tensor[5x3], wv: tensor[5x3], wo: tensor[3x5], y: tensor[24x5]) = reshape(row_sum(d_context_rows(x, g, q, wk, wv, wo, y) * (x @ wv)), 24, 4)
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>def d_scores(x: tensor[96x5], g: tensor[24x96], q: tensor[1x3], wk: tensor[5x3], wv: tensor[5x3], wo: tensor[3x5], y: tensor[24x5]) = reshape(attn_matrix(x, q, wk) * (d_attn_matrix(x, g, q, wk, wv, wo, y) - row_sum(attn_matrix(x, q, wk) * d_attn_matrix(x, g, q, wk, wv, wo, y))), 96, 1)
+<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>def grad_q(x: tensor[96x5], g: tensor[24x96], q: tensor[1x3], wk: tensor[5x3], wv: tensor[5x3], wo: tensor[3x5], y: tensor[24x5]) = transpose(d_scores(x, g, q, wk, wv, wo, y)) @ (x @ wk) * 0.5773502691896258
+<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a>def grad_wk(x: tensor[96x5], g: tensor[24x96], q: tensor[1x3], wk: tensor[5x3], wv: tensor[5x3], wo: tensor[3x5], y: tensor[24x5]) = transpose(x) @ (d_scores(x, g, q, wk, wv, wo, y) @ q) * 0.5773502691896258
+</code></pre></div>
+<p><code>attn_matrix</code> is the 24×4 matrix of attention weights (the reshape makes the softmax work within each sequence); <code>context</code> is the group-matrix product; <code>d_logits</code>, <code>grad_wo</code>, <code>d_context_rows</code>, <code>grad_wv</code>, <code>d_attn_matrix</code>, <code>d_scores</code>, <code>grad_q</code> and <code>grad_wk</code> are the backward table, row by row. The gradients with respect to <code>wv</code> and <code>wk</code> collect contributions from every token of every sequence through <code>xᵀ @ …</code>: a token that appears in several places receives the sum of the gradients of those places, which the matrix product does automatically.</p>
+<h2 id="training">Training<a class="headerlink" href="#training" title="Permanent link">&para;</a></h2>
+<p><code>examples/03_train.mg</code> is the definitions, the data (as matrices), seeded starting weights, then 200 unrolled steps (four <code>let</code> lines each: every parameter minus the learning rate 3 times its gradient), and prints. First the loss and the number of correctly classified training sequences at eight checkpoints (pairs of numbers: loss, then count):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>[[1.60134]]
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>[[0]]
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>[[1.51356]]
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>[[18]]
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>[[0.625597]]
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>[[21]]
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>[[0.273815]]
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>[[21]]
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>[[0.0903657]]
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>[[24]]
+<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a>[[0.0098207]]
+<a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a>[[24]]
+<a id="__codelineno-4-25" name="__codelineno-4-25" href="#__codelineno-4-25"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-4-26" name="__codelineno-4-26" href="#__codelineno-4-26"></a>[[0.00168072]]
+<a id="__codelineno-4-27" name="__codelineno-4-27" href="#__codelineno-4-27"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-4-28" name="__codelineno-4-28" href="#__codelineno-4-28"></a>[[24]]
+<a id="__codelineno-4-29" name="__codelineno-4-29" href="#__codelineno-4-29"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-4-30" name="__codelineno-4-30" href="#__codelineno-4-30"></a>[[0.000522397]]
+<a id="__codelineno-4-31" name="__codelineno-4-31" href="#__codelineno-4-31"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-4-32" name="__codelineno-4-32" href="#__codelineno-4-32"></a>[[24]]
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>after step</th>
+<th>0</th>
+<th>1</th>
+<th>5</th>
+<th>10</th>
+<th>25</th>
+<th>50</th>
+<th>100</th>
+<th>200</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>loss</td>
+<td>1.601</td>
+<td>1.514</td>
+<td>0.626</td>
+<td>0.274</td>
+<td>0.0904</td>
+<td>0.0098</td>
+<td>0.00168</td>
+<td><strong>0.000522</strong></td>
+</tr>
+<tr>
+<td>correct of 24</td>
+<td>0</td>
+<td>18</td>
+<td>21</td>
+<td>21</td>
+<td>24</td>
+<td>24</td>
+<td>24</td>
+<td><strong>24</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The loss starts near <code>log 5 = 1.609</code> (the model knows nothing; the seeded start gives 1.601) and falls at every checkpoint to 0.0005. After one step 18 of 24 are already right, helped by the lopsided data (13 of the 24 are labelled 1). All 24 are right from step 25 on. The final trained numbers, and then <strong>each token's attention score</strong> (<code>wk @ transpose(q) / √3</code>, the last matrix):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 3] strides = [3, 1] data = 
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>[[1.04345,   -3.07148,   -0.181485]]
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [5, 3] strides = [3, 1] data = 
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>[[-0.476807,   1.78582,   -0.140316], 
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a> [0.782224,   -1.83158,   -0.376133], 
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a> [-0.519774,   -0.114151,   0.0289385], 
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a> [0.258599,   -1.26574,   0.346387], 
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a> [-0.374243,   1.32564,   0.321124]]
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [5, 3] strides = [3, 1] data = 
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>[[1.0821,   -0.0214015,   -0.259401], 
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a> [-0.0367175,   2.77773,   -2.25651], 
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a> [1.69849,   -0.749124,   2.27048], 
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a> [-1.37339,   1.83481,   2.81956], 
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a> [1.88499,   -1.33383,   -1.34076]]
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [3, 5] strides = [5, 1] data = 
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>[[1.67379,   -0.251191,   1.53316,   -1.78568,   -0.910079], 
+<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a> [-1.65609,   2.69704,   -1.09644,   1.2281,   -0.782607], 
+<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a> [-1.84888,   -2.10787,   2.20213,   2.56983,   -0.865204]]
+<a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [5, 1] strides = [1, 1] data = 
+<a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a>[[-3.43937], 
+<a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a> [3.75862], 
+<a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a> [-0.113735], 
+<a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a> [2.36405], 
+<a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a> [-2.60989]]
+</code></pre></div>
+<h3 id="what-did-the-attention-learn">What did the attention learn?<a class="headerlink" href="#what-did-the-attention-learn" title="Permanent link">&para;</a></h3>
+<p>The five scores, by token: <code>0: −3.44</code>, <code>1: +3.76</code>, <code>2: −0.11</code>, <code>3: +2.36</code>, <code>4: −2.61</code>. Sorted from highest: <strong>1, 3, 2, 4, 0</strong>. The hidden rule is <code>1, 3, 2, 0, 4</code>. So the model found the first three correctly and in order, and swapped the last two: it gives token 4 more attention than token 0. (The checker confirms this rather than assuming the model learned the rule.)</p>
+<p>Does the model attend to the answer? Here are the attention weights for all 24 training sequences:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [24, 4] strides = [4, 1] data = 
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>[[0.00688869,   0.331037,   0.331037,   0.331037], 
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a> [0.854062,   0.0716807,   0.0025769,   0.0716807], 
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a> [0.851227,   0.00588698,   0.0714428,   0.0714428], 
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a> [0.0716807,   0.0716807,   0.854062,   0.0025769], 
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a> [0.25,   0.25,   0.25,   0.25], 
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a> [0.958466,   0.0016435,   0.0199451,   0.0199451], 
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a> [0.00150407,   0.00150407,   0.498496,   0.498496], 
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a> [0.800361,   0.000598743,   0.198442,   0.000598743], 
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a> [0.0401413,   0.0033077,   0.478276,   0.478276], 
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a> [0.000373766,   0.499626,   0.499626,   0.000373766], 
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a> [0.00343419,   0.496566,   0.00343419,   0.496566], 
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a> [0.0686248,   0.832811,   0.0686248,   0.0299393], 
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a> [0.499385,   0.000856307,   0.000373585,   0.499385], 
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a> [0.800361,   0.000598743,   0.198442,   0.000598743], 
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a> [0.00137028,   0.198135,   0.799124,   0.00137028], 
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a> [0.478276,   0.478276,   0.0401413,   0.0033077], 
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a> [0.00629999,   0.910945,   0.0764549,   0.00629999], 
+<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a> [0.494668,   0.494668,   0.000370057,   0.0102938], 
+<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a> [0.00134968,   0.787114,   0.0163794,   0.195157], 
+<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a> [0.0203361,   0.000731077,   0.977257,   0.00167573], 
+<a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a> [0.195306,   0.787713,   0.0163918,   0.000589281], 
+<a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a> [0.329386,   0.329386,   0.329386,   0.0118413], 
+<a id="__codelineno-6-24" name="__codelineno-6-24" href="#__codelineno-6-24"></a> [0.291013,   0.291013,   0.126962,   0.291013], 
+<a id="__codelineno-6-25" name="__codelineno-6-25" href="#__codelineno-6-25"></a> [0.109285,   0.440771,   0.440771,   0.00917219]]
+</code></pre></div>
+<p>For <code>3 1 2 0</code> (label 1) the weights are <code>0.195, 0.788, 0.016, 0.001</code>: most attention goes to the 1, as hoped. But the weights are not a clean lookup: for 13 of the 24 sequences more than 90% of the attention lands on label tokens, for only 6 more than 99%, and for the sequence <code>4 4 0 4</code> (label <strong>0</strong>) the weights are <code>0.291, 0.291, 0.127, 0.291</code>: <strong>the model puts less than half as much attention on the 0 as on each of the 4s, and still gets the answer right.</strong> The values (and <code>wo</code>) do the rest of the work: the model learned a combination of how much to attend and what each token contributes, not "attend to the winner". This is a general caution: <strong>attention weights are part of the computation, not an explanation of it.</strong></p>
+<h3 id="held-out-and-every-possible-sequence">Held-out and every possible sequence<a class="headerlink" href="#held-out-and-every-possible-sequence" title="Permanent link">&para;</a></h3>
+<p>The model never trained on the 40 held-out sequences:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>[[0.000605852]]
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>[[40]]
+</code></pre></div>
+<p>Held-out loss <code>0.000606</code> and <strong>40 of 40 correct</strong>. But look at the labels of those 40: 22 are 1, 13 are 3, 5 are 2. A model that always output 1 or 3 would score well, so this is a weak test. A stronger one: there are only 5⁴ = <strong>625</strong> possible sequences, and the program tries all of them, 25 at a time. The number correct in each chunk of 25:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>[[25]]
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>[[25]]
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>[[25]]
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>[[25]]
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>[[25]]
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>[[25]]
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>[[25]]
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a>[[25]]
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a>[[25]]
+<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a>[[25]]
+<a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a>[[25]]
+<a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-8-24" name="__codelineno-8-24" href="#__codelineno-8-24"></a>[[25]]
+<a id="__codelineno-8-25" name="__codelineno-8-25" href="#__codelineno-8-25"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-8-26" name="__codelineno-8-26" href="#__codelineno-8-26"></a>[[25]]
+<a id="__codelineno-8-27" name="__codelineno-8-27" href="#__codelineno-8-27"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-8-28" name="__codelineno-8-28" href="#__codelineno-8-28"></a>[[25]]
+<a id="__codelineno-8-29" name="__codelineno-8-29" href="#__codelineno-8-29"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-8-30" name="__codelineno-8-30" href="#__codelineno-8-30"></a>[[25]]
+<a id="__codelineno-8-31" name="__codelineno-8-31" href="#__codelineno-8-31"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-8-32" name="__codelineno-8-32" href="#__codelineno-8-32"></a>[[25]]
+<a id="__codelineno-8-33" name="__codelineno-8-33" href="#__codelineno-8-33"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-8-34" name="__codelineno-8-34" href="#__codelineno-8-34"></a>[[25]]
+<a id="__codelineno-8-35" name="__codelineno-8-35" href="#__codelineno-8-35"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-8-36" name="__codelineno-8-36" href="#__codelineno-8-36"></a>[[25]]
+<a id="__codelineno-8-37" name="__codelineno-8-37" href="#__codelineno-8-37"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-8-38" name="__codelineno-8-38" href="#__codelineno-8-38"></a>[[25]]
+<a id="__codelineno-8-39" name="__codelineno-8-39" href="#__codelineno-8-39"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-8-40" name="__codelineno-8-40" href="#__codelineno-8-40"></a>[[25]]
+<a id="__codelineno-8-41" name="__codelineno-8-41" href="#__codelineno-8-41"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-8-42" name="__codelineno-8-42" href="#__codelineno-8-42"></a>[[25]]
+<a id="__codelineno-8-43" name="__codelineno-8-43" href="#__codelineno-8-43"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-8-44" name="__codelineno-8-44" href="#__codelineno-8-44"></a>[[25]]
+<a id="__codelineno-8-45" name="__codelineno-8-45" href="#__codelineno-8-45"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-8-46" name="__codelineno-8-46" href="#__codelineno-8-46"></a>[[25]]
+<a id="__codelineno-8-47" name="__codelineno-8-47" href="#__codelineno-8-47"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-8-48" name="__codelineno-8-48" href="#__codelineno-8-48"></a>[[25]]
+<a id="__codelineno-8-49" name="__codelineno-8-49" href="#__codelineno-8-49"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+<a id="__codelineno-8-50" name="__codelineno-8-50" href="#__codelineno-8-50"></a>[[24]]
+</code></pre></div>
+<p>Twenty-four chunks have 25 correct, and the last has <strong>24</strong>. In total <strong>624 of 625</strong> sequences are classified correctly: all of them but one. Which one? The last sequence in the last chunk, <code>4 4 4 4</code>, label 4. Here are the model's scores for that chunk (its last row is <code>4 4 4 4</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [25, 5] strides = [5, 1] data = 
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>[[6.16721,   -0.800652,   1.31225,   -6.68039,   0.114174], 
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a> [-0.459043,   12.2022,   -8.03186,   -2.34312,   -0.186213], 
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a> [1.05089,   -6.18801,   7.24211,   0.328861,   -2.3903], 
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a> [-10.262,   -0.655251,   2.07933,   11.6308,   -2.57759], 
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a> [7.14251,   -1.05912,   1.36328,   -7.7101,   0.331987], 
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a> [-0.459043,   12.2022,   -8.03186,   -2.34312,   -0.186213], 
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a> [-0.475334,   12.2342,   -8.05483,   -2.33246,   -0.186952], 
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a> [-0.454073,   11.8161,   -7.70418,   -2.25708,   -0.241428], 
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a> [-2.46016,   9.66297,   -6.0315,   0.48932,   -0.669194], 
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a> [-0.446953,   12.1882,   -8.02257,   -2.35333,   -0.184647], 
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a> [1.05089,   -6.18801,   7.24211,   0.328861,   -2.3903], 
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a> [-0.454073,   11.8161,   -7.70418,   -2.25708,   -0.241428], 
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a> [0.491467,   -6.77707,   7.89048,   1.09526,   -2.66414], 
+<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a> [-9.52075,   -1.16055,   2.56717,   10.9246,   -2.60911], 
+<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a> [1.46287,   -6.04604,   7.03284,   -0.165972,   -2.24757], 
+<a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a> [-10.262,   -0.655251,   2.07933,   11.6308,   -2.57759], 
+<a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a> [-2.46016,   9.66297,   -6.0315,   0.48932,   -0.669194], 
+<a id="__codelineno-9-19" name="__codelineno-9-19" href="#__codelineno-9-19"></a> [-9.52075,   -1.16055,   2.56717,   10.9246,   -2.60911], 
+<a id="__codelineno-9-20" name="__codelineno-9-20" href="#__codelineno-9-20"></a> [-10.4241,   -0.653817,   2.08689,   11.8114,   -2.60414], 
+<a id="__codelineno-9-21" name="__codelineno-9-21" href="#__codelineno-9-21"></a> [-10.1765,   -0.661824,   2.07759,   11.5369,   -2.56224], 
+<a id="__codelineno-9-22" name="__codelineno-9-22" href="#__codelineno-9-22"></a> [7.14251,   -1.05912,   1.36328,   -7.7101,   0.331987], 
+<a id="__codelineno-9-23" name="__codelineno-9-23" href="#__codelineno-9-23"></a> [-0.446953,   12.1882,   -8.02257,   -2.35333,   -0.184647], 
+<a id="__codelineno-9-24" name="__codelineno-9-24" href="#__codelineno-9-24"></a> [1.46287,   -6.04604,   7.03284,   -0.165972,   -2.24757], 
+<a id="__codelineno-9-25" name="__codelineno-9-25" href="#__codelineno-9-25"></a> [-10.1765,   -0.661824,   2.07759,   11.5369,   -2.56224], 
+<a id="__codelineno-9-26" name="__codelineno-9-26" href="#__codelineno-9-26"></a> [7.84292,   -1.24474,   1.39993,   -8.44957,   0.488406]]
+</code></pre></div>
+<p>The last row is <code>[7.84, −1.24, 1.40, −8.45, 0.49]</code>: the highest score is token <strong>0</strong>, so the model says 0 where the answer is 4. This failure has a clear cause. <strong>Label 4 never occurs in any of the 64 sequences the model saw</strong>, so nothing in training ever rewarded outputting 4: to a model trained on 24 sequences with labels 0, 1, 2 and 3, the sequence <code>4 4 4 4</code> carries no evidence at all. (Compare Chapter 32: the held-out pairs that failed were the ones the training pairs never showed.) What is notable is the other direction: the model is correct on all 15 other sequences made only of 0s and 4s, whose label is 0, though in training it saw exactly one sequence with label 0.</p>
+<h2 id="mistakes-the-compiler-reports">Mistakes the compiler reports<a class="headerlink" href="#mistakes-the-compiler-reports" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>################ mgc run errors/e1_one_sequence_short.mg
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>  | # The defs were written for 24 sequences (96 token rows). A batch of 23 sequences (92 rows) does not fit, and the compiler says so.
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>  | def softmax_rows(m: tensor[24x4]) = exp(m - row_max(m)) / row_sum(exp(m - row_max(m)))
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>  | def attn_matrix(x: tensor[96x5], q: tensor[1x3], wk: tensor[5x3]) = softmax_rows(reshape((x @ wk) @ transpose(q) * 0.5773502691896258, 24, 4))
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>  | let x = [[0, 0, 1, 0, 0], [0, 1, 0, 0, 0], [0, 1, 0, 0, 0], [0, 1, 0, 0, 0], [0, 0, 0, 1, 0], [0, 0, 1, 0, 0], [1, 0, 0, 0, 0], [0, 0, 1, 0, 0], [0, 0, 0, 1, 0], [0, 0, 0, 0, 1], [0, 0, 1, 0, 0], [0, 0, 1, 0, 0], [0, 0, 1, 0, 
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>  | print attn_matrix(x, [[0.1, 0.2, 0.3]], [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]])
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>  ----- output
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>errors/e1_one_sequence_short.mg:5: error: argument shape 92x5 does not fit parameter 96x5
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>  ----- exit status 1
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>################ mgc run errors/e2_group_matrix_transposed.mg
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>  | # The group matrix is 24 x 96 (one row per sequence). Passing its transpose, 96 x 24, is a shape error caught when compiling.
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>  | def softmax_rows(m: tensor[24x4]) = exp(m - row_max(m)) / row_sum(exp(m - row_max(m)))
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>  | def attn_matrix(x: tensor[96x5], q: tensor[1x3], wk: tensor[5x3]) = softmax_rows(reshape((x @ wk) @ transpose(q) * 0.5773502691896258, 24, 4))
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>  | def context(x: tensor[96x5], g: tensor[24x96], q: tensor[1x3], wk: tensor[5x3], wv: tensor[5x3]) = g @ ((x @ wv) * reshape(attn_matrix(x, q, wk), 96, 1))
+<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>  | let x = [[0, 0, 1, 0, 0], [0, 1, 0, 0, 0], [0, 1, 0, 0, 0], [0, 1, 0, 0, 0], [0, 0, 0, 1, 0], [0, 0, 1, 0, 0], [1, 0, 0, 0, 0], [0, 0, 1, 0, 0], [0, 0, 0, 1, 0], [0, 0, 0, 0, 1], [0, 0, 1, 0, 0], [0, 0, 1, 0, 0], [0, 0, 1, 0, 
+<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a>  | let g_wrong = [[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a>  | let w = [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]]
+<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a>  | print context(x, g_wrong, [[0, 0, 0]], w, w)
+<a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a>  ----- output
+<a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a>errors/e2_group_matrix_transposed.mg:8: error: argument shape 96x24 does not fit parameter 24x96
+<a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a>  ----- exit status 1
+<a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a>
+<a id="__codelineno-10-24" name="__codelineno-10-24" href="#__codelineno-10-24"></a>################ mgc run errors/e3_reshape_element_count.mg
+<a id="__codelineno-10-25" name="__codelineno-10-25" href="#__codelineno-10-25"></a>  | # reshape keeps the numbers, so the counts must match: 8 numbers cannot fill a 4 x 3 shape (12 numbers). (The chapter reshapes 96 x 1 to 24 x 4: the same 96 numbers.)
+<a id="__codelineno-10-26" name="__codelineno-10-26" href="#__codelineno-10-26"></a>  | let a = [[1], [2], [3], [4], [5], [6], [7], [8]]
+<a id="__codelineno-10-27" name="__codelineno-10-27" href="#__codelineno-10-27"></a>  | print reshape(a, 4, 3)
+<a id="__codelineno-10-28" name="__codelineno-10-28" href="#__codelineno-10-28"></a>  ----- output
+<a id="__codelineno-10-29" name="__codelineno-10-29" href="#__codelineno-10-29"></a>errors/e3_reshape_element_count.mg:3: error: cannot reshape 8x1 (8 elements) to 4x3 (12 elements)
+<a id="__codelineno-10-30" name="__codelineno-10-30" href="#__codelineno-10-30"></a>  ----- exit status 1
+</code></pre></div>
+<p>A batch of 23 sequences (92 rows) where 24 (96 rows) are expected; the group matrix passed transposed (96×24 where 24×96 is wanted); and a reshape that does not keep the number of elements. As in earlier chapters the shapes are types, and a trainer cannot be connected to data of the wrong size.</p>
+<h2 id="tests">Tests<a class="headerlink" href="#tests" title="Permanent link">&para;</a></h2>
+<p>Three new <code>lit</code> files in <code>test/attention33/</code> (the suite is now 135 tests). There is no <code>verifiers</code> or <code>ir</code> test because this chapter adds no compiler operation:</p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>What it checks</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>examples</code></td>
+<td>the two small examples (worked out above) and the training run's loss and correct-count at every checkpoint</td>
+</tr>
+<tr>
+<td><code>errors</code></td>
+<td>the three shape mistakes give the exact messages</td>
+</tr>
+<tr>
+<td><code>against-reference</code></td>
+<td><code>check_attention_training.py</code>, below</td>
+</tr>
+</tbody>
+</table>
+<p><code>check_attention_training.py</code> compares with an <strong>independent</strong> Python implementation (plain lists; the gradient derived <strong>token by token</strong> with loops, not as matrix algebra) and checks, in order:</p>
+<ol>
+<li><strong>The gradient</strong>, for three different random starting weight sets: the loss and all four gradients equal the reference's, and <strong>the gradient of every one of the 48 weights agrees with a finite-difference estimate</strong> (nudge the weight by 0.01 up and down, watch the loss). The largest disagreement is about <code>4·10⁻⁴</code>; the tolerance is <code>2·10⁻³</code> because <code>mgc</code> prints the loss to six digits.</li>
+<li><strong>Training:</strong> the loss and the correct count at all eight checkpoints, the final weights, each token's attention score and the 24×4 attention weights equal the reference's.</li>
+<li><strong>Learning:</strong> the loss falls at every checkpoint to below 0.001; all 24 training and all 40 held-out sequences are right.</li>
+<li><strong>Every sequence:</strong> the count in each of the 25 chunks equals the reference's, the total is 624, and the single failure is <code>4 4 4 4</code>, with the label that never occurs in the data.</li>
+<li><strong>Attention scores:</strong> found rather than assumed: the three highest tokens are the three highest in the priority list in order, and the last two are in the opposite order (so the check would fail if a different training run learned the rule exactly, which is the point of looking).</li>
+</ol>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>-- the hand-derived backward pass against the independent per-token gradient, and against finite differences
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>  ok   starting weights #1: the loss and all four gradients equal the reference
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>  ok   starting weights #1: all 48 gradient entries agree with finite differences (largest difference 3.6e-04)
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>  ok   starting weights #2: the loss and all four gradients equal the reference
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>  ok   starting weights #2: all 48 gradient entries agree with finite differences (largest difference 4.7e-04)
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>  ok   starting weights #3: the loss and all four gradients equal the reference
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>  ok   starting weights #3: all 48 gradient entries agree with finite differences (largest difference 3.9e-04)
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>-- training against the independent Python trainer
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>  ok   step 0: loss 1.601341 and 0 of 24 correct equal the reference
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>  ok   step 1: loss 1.513557 and 18 of 24 correct equal the reference
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>  ok   step 5: loss 0.625597 and 21 of 24 correct equal the reference
+<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>  ok   step 10: loss 0.273815 and 21 of 24 correct equal the reference
+<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>  ok   step 25: loss 0.090366 and 24 of 24 correct equal the reference
+<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a>  ok   step 50: loss 0.009821 and 24 of 24 correct equal the reference
+<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a>  ok   step 100: loss 0.001681 and 24 of 24 correct equal the reference
+<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a>  ok   step 200: loss 0.000522 and 24 of 24 correct equal the reference
+<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a>  ok   the final weights equal the reference
+<a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a>  ok   each token&#39;s attention score equals the reference
+<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a>  ok   the attention weights on the 24 training sequences equal the reference
+<a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a>  ok   every row of attention weights sums to 1
+<a id="__codelineno-11-21" name="__codelineno-11-21" href="#__codelineno-11-21"></a>-- learning
+<a id="__codelineno-11-22" name="__codelineno-11-22" href="#__codelineno-11-22"></a>  ok   the loss falls at every checkpoint
+<a id="__codelineno-11-23" name="__codelineno-11-23" href="#__codelineno-11-23"></a>  ok   from 1.6013 (about log 5 = 1.609) to 0.000522
+<a id="__codelineno-11-24" name="__codelineno-11-24" href="#__codelineno-11-24"></a>  ok   all 24 training sequences are classified correctly
+<a id="__codelineno-11-25" name="__codelineno-11-25" href="#__codelineno-11-25"></a>  ok   all 40 held-out sequences are classified correctly (loss 0.000606)
+<a id="__codelineno-11-26" name="__codelineno-11-26" href="#__codelineno-11-26"></a>-- every one of the 625 possible sequences
+<a id="__codelineno-11-27" name="__codelineno-11-27" href="#__codelineno-11-27"></a>  ok   the number correct in each of the 25 chunks of 25 equals the reference&#39;s
+<a id="__codelineno-11-28" name="__codelineno-11-28" href="#__codelineno-11-28"></a>  ok   624 of 625 sequences are classified correctly (got 624)
+<a id="__codelineno-11-29" name="__codelineno-11-29" href="#__codelineno-11-29"></a>  ok   the one wrong sequence is 4 4 4 4 (label 4, predicted 0): the last row of the last chunk
+<a id="__codelineno-11-30" name="__codelineno-11-30" href="#__codelineno-11-30"></a>  ok   label 4 never occurs among the 64 training and held-out sequences (labels seen: [0, 1, 2, 3])
+<a id="__codelineno-11-31" name="__codelineno-11-31" href="#__codelineno-11-31"></a>-- attention scores
+<a id="__codelineno-11-32" name="__codelineno-11-32" href="#__codelineno-11-32"></a>  ok   the three highest-scoring tokens [1, 3, 2] are the three highest in the priority list [1, 3, 2], in order
+<a id="__codelineno-11-33" name="__codelineno-11-33" href="#__codelineno-11-33"></a>  ok   the last two are in the opposite order to the priority rule: scores order [1, 3, 2, 4, 0] vs rule [1, 3, 2, 0, 4] (this model did not learn to rank 0 above 4)
+<a id="__codelineno-11-34" name="__codelineno-11-34" href="#__codelineno-11-34"></a>all checks pass
+</code></pre></div>
+<h3 id="are-the-checks-good-enough-run-ten-wrong-backward-passes">Are the checks good enough? Run ten wrong backward passes.<a class="headerlink" href="#are-the-checks-good-enough-run-ten-wrong-backward-passes" title="Permanent link">&para;</a></h3>
+<p><code>model_mutation.py</code> writes ten versions of the definitions, each with one mistake mostly in the hand-derived backward pass (the softmax backward missing its second term, a forgotten <code>1/√d</code>, the wrong sign, the wrong average, keys used where values belong, and so on), and runs the checker on each:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>NOTE: this script deliberately runs wrong backward passes. &#39;caught&#39; lines are EXPECTED: they show the checker can detect the mistake.
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>baseline (nothing broken): checker passes (expected)
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>the softmax backward forgets its second term (treats the softmax as elementwise): caught by 25 failing checks (the reference, finite differences, learning, other, every sequence, attention scores)
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>grad_q forgets the 1/sqrt(d) scale: caught by 13 failing checks (the reference, finite differences)
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>grad_wk forgets the 1/sqrt(d) scale: caught by 14 failing checks (the reference, finite differences)
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>grad_wv does not weight by the attention (uses the unweighted upstream): caught by 16 failing checks (the reference, finite differences)
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>d_logits has the wrong sign (y minus p): caught by 25 failing checks (the reference, finite differences, learning, other, every sequence, attention scores)
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>d_logits is not averaged over the 24 sequences: caught by 26 failing checks (the reference, finite differences, other, learning, every sequence, attention scores)
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>grad_wo uses the values instead of the attended context: caught by 16 failing checks (the reference, finite differences)
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>the attention scores are not scaled by 1/sqrt(d) in the forward pass (the gradient no longer matches): caught by 19 failing checks (the reference, finite differences, learning, every sequence)
+<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a>d_attn_matrix uses the keys instead of the values: caught by 21 failing checks (the reference, finite differences, other, learning, every sequence, attention scores)
+<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a>the naive softmax in the attention (no row maximum subtracted): NOT CAUGHT
+<a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a>(The last one is expected to be NOT CAUGHT: the attention scores here stay below about 4 in size, where exp cannot overflow, so the naive formula gives the
+<a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a> same numbers. Chapters 29 to 32 showed the overflow regime; this chapter&#39;s checks do not enter it.)
+</code></pre></div>
+<p>Nine of the ten are caught, and by the right checks. The two forgotten <code>1/√d</code> scales and the missing attention weighting in <code>grad_wv</code> are caught by the reference and by the finite-difference check but <strong>not</strong> by the learning checks that follow, because a gradient that is wrong by a constant factor still trains (more slowly or faster); only comparing the gradient itself notices. The wrong-sign and wrong-average versions of <code>d_logits</code> are caught by almost everything. The forward-pass scale mutation shows why the finite-difference check is worth having: the hand-derived gradient still describes the <em>original</em> function, so it no longer matches the changed loss. The tenth (a naive softmax) is <strong>not caught</strong>, as I predicted before running it: nothing in this chapter drives the attention scores into the range where <code>exp</code> overflows.</p>
+<p>There is no compiler-mutation run for this chapter: no compiler code changed.</p>
+<p>The full suite:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>-- Testing: 135 tests, 4 workers --
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>PASS: IR Forge / Mountain Goat :: transformer30/against-reference.mlir (1 of 135)
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>PASS: IR Forge / Mountain Goat :: generalize32/against-reference.mlir (2 of 135)
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>PASS: IR Forge / Mountain Goat :: attention33/examples.mlir (3 of 135)
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>PASS: IR Forge / Mountain Goat :: attention29/against-reference.mlir (4 of 135)
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>PASS: IR Forge / Mountain Goat :: contraction/tensor-contraction.mlir (5 of 135)
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>PASS: IR Forge / Mountain Goat :: contraction28/against-definition.mlir (6 of 135)
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>PASS: IR Forge / Mountain Goat :: attention33/against-reference.mlir (7 of 135)
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>PASS: IR Forge / Mountain Goat :: generalize32/examples.mlir (8 of 135)
+<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a>PASS: IR Forge / Mountain Goat :: tour/gallery.mlir (9 of 135)
+<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a>PASS: IR Forge / Mountain Goat :: bigram31/against-reference.mlir (10 of 135)
+<a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a>PASS: IR Forge / Mountain Goat :: learning/gradient-descent.mlir (11 of 135)
+<a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a>PASS: IR Forge / Mountain Goat :: contraction28/examples.mlir (12 of 135)
+<a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a>PASS: IR Forge / Mountain Goat :: perf/options-same-results.mlir (13 of 135)
+<a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a>PASS: IR Forge / Mountain Goat :: attention29/examples.mlir (14 of 135)
+<a id="__codelineno-13-16" name="__codelineno-13-16" href="#__codelineno-13-16"></a>PASS: IR Forge / Mountain Goat :: tour/more-examples.mlir (15 of 135)
+<a id="__codelineno-13-17" name="__codelineno-13-17" href="#__codelineno-13-17"></a>PASS: IR Forge / Mountain Goat :: loop-order/results-identical.mlir (16 of 135)
+<a id="__codelineno-13-18" name="__codelineno-13-18" href="#__codelineno-13-18"></a>PASS: IR Forge / Mountain Goat :: tour/tour-examples.mlir (17 of 135)
+<a id="__codelineno-13-19" name="__codelineno-13-19" href="#__codelineno-13-19"></a>PASS: IR Forge / Mountain Goat :: loop-order/bitwise-identical.mlir (18 of 135)
+<a id="__codelineno-13-20" name="__codelineno-13-20" href="#__codelineno-13-20"></a>PASS: IR Forge / Mountain Goat :: broadcast/values.mlir (19 of 135)
+<a id="__codelineno-13-21" name="__codelineno-13-21" href="#__codelineno-13-21"></a>PASS: IR Forge / Mountain Goat :: transformer30/examples.mlir (20 of 135)
+<a id="__codelineno-13-22" name="__codelineno-13-22" href="#__codelineno-13-22"></a>PASS: IR Forge / Mountain Goat :: broadcast/cpp-interop-reductions.mlir (21 of 135)
+<a id="__codelineno-13-23" name="__codelineno-13-23" href="#__codelineno-13-23"></a>PASS: IR Forge / Mountain Goat :: bigram31/examples.mlir (22 of 135)
+<a id="__codelineno-13-24" name="__codelineno-13-24" href="#__codelineno-13-24"></a>PASS: IR Forge / Mountain Goat :: ops/values.mlir (23 of 135)
+<a id="__codelineno-13-25" name="__codelineno-13-25" href="#__codelineno-13-25"></a>PASS: IR Forge / Mountain Goat :: contraction/mismatch-trap.mlir (24 of 135)
+<a id="__codelineno-13-26" name="__codelineno-13-26" href="#__codelineno-13-26"></a>PASS: IR Forge / Mountain Goat :: ops/elementwise-mismatch-aborts.mlir (25 of 135)
+<a id="__codelineno-13-27" name="__codelineno-13-27" href="#__codelineno-13-27"></a>PASS: IR Forge / Mountain Goat :: loop-order/cpp-ikj.mlir (26 of 135)
+<a id="__codelineno-13-28" name="__codelineno-13-28" href="#__codelineno-13-28"></a>PASS: IR Forge / Mountain Goat :: attention33/errors.mlir (27 of 135)
+<a id="__codelineno-13-29" name="__codelineno-13-29" href="#__codelineno-13-29"></a>PASS: IR Forge / Mountain Goat :: frontend/more-examples.mlir (28 of 135)
+<a id="__codelineno-13-30" name="__codelineno-13-30" href="#__codelineno-13-30"></a>PASS: IR Forge / Mountain Goat :: ops/cpp-interop-ops.mlir (29 of 135)
+<a id="__codelineno-13-31" name="__codelineno-13-31" href="#__codelineno-13-31"></a>PASS: IR Forge / Mountain Goat :: ops/composed-programs.mlir (30 of 135)
+<a id="__codelineno-13-32" name="__codelineno-13-32" href="#__codelineno-13-32"></a>PASS: IR Forge / Mountain Goat :: tour/scientific-literals.mlir (31 of 135)
+<a id="__codelineno-13-33" name="__codelineno-13-33" href="#__codelineno-13-33"></a>PASS: IR Forge / Mountain Goat :: frontend/cpp-interop.mlir (32 of 135)
+<a id="__codelineno-13-34" name="__codelineno-13-34" href="#__codelineno-13-34"></a>PASS: IR Forge / Mountain Goat :: ops/dynamic-ops.mlir (33 of 135)
+<a id="__codelineno-13-35" name="__codelineno-13-35" href="#__codelineno-13-35"></a>PASS: IR Forge / Mountain Goat :: perf/flags-reach-clang.mlir (34 of 135)
+<a id="__codelineno-13-36" name="__codelineno-13-36" href="#__codelineno-13-36"></a>PASS: IR Forge / Mountain Goat :: broadcast/dynamic-reductions.mlir (35 of 135)
+<a id="__codelineno-13-37" name="__codelineno-13-37" href="#__codelineno-13-37"></a>PASS: IR Forge / Mountain Goat :: broadcast/networks.mlir (36 of 135)
+<a id="__codelineno-13-38" name="__codelineno-13-38" href="#__codelineno-13-38"></a>PASS: IR Forge / Mountain Goat :: frontend/dynamic-runs.mlir (37 of 135)
+<a id="__codelineno-13-39" name="__codelineno-13-39" href="#__codelineno-13-39"></a>PASS: IR Forge / Mountain Goat :: perf/tiling-structure.mlir (38 of 135)
+<a id="__codelineno-13-40" name="__codelineno-13-40" href="#__codelineno-13-40"></a>PASS: IR Forge / Mountain Goat :: frontend/runtime-mismatch-aborts.mlir (39 of 135)
+<a id="__codelineno-13-41" name="__codelineno-13-41" href="#__codelineno-13-41"></a>PASS: IR Forge / Mountain Goat :: ops/precedence-and-identities.mlir (40 of 135)
+<a id="__codelineno-13-42" name="__codelineno-13-42" href="#__codelineno-13-42"></a>PASS: IR Forge / Mountain Goat :: execution/gpu-host-with-stub-runtime.mlir (41 of 135)
+<a id="__codelineno-13-43" name="__codelineno-13-43" href="#__codelineno-13-43"></a>PASS: IR Forge / Mountain Goat :: broadcast/identities.mlir (42 of 135)
+<a id="__codelineno-13-44" name="__codelineno-13-44" href="#__codelineno-13-44"></a>PASS: IR Forge / Mountain Goat :: ops/negate-and-dynamic-divide.mlir (43 of 135)
+<a id="__codelineno-13-45" name="__codelineno-13-45" href="#__codelineno-13-45"></a>PASS: IR Forge / Mountain Goat :: frontend/hello-and-static.mlir (44 of 135)
+<a id="__codelineno-13-46" name="__codelineno-13-46" href="#__codelineno-13-46"></a>PASS: IR Forge / Mountain Goat :: loop-order/flag-reaches-pass.mlir (45 of 135)
+<a id="__codelineno-13-47" name="__codelineno-13-47" href="#__codelineno-13-47"></a>PASS: IR Forge / Mountain Goat :: contraction28/errors.mlir (46 of 135)
+<a id="__codelineno-13-48" name="__codelineno-13-48" href="#__codelineno-13-48"></a>PASS: IR Forge / Mountain Goat :: execution/mismatch-columns-aborts.mlir (47 of 135)
+<a id="__codelineno-13-49" name="__codelineno-13-49" href="#__codelineno-13-49"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/message-on-stderr.mlir (48 of 135)
+<a id="__codelineno-13-50" name="__codelineno-13-50" href="#__codelineno-13-50"></a>PASS: IR Forge / Mountain Goat :: execution/mismatch-aborts.mlir (49 of 135)
+<a id="__codelineno-13-51" name="__codelineno-13-51" href="#__codelineno-13-51"></a>PASS: IR Forge / Mountain Goat :: ops/ptx-new-ops.mlir (50 of 135)
+<a id="__codelineno-13-52" name="__codelineno-13-52" href="#__codelineno-13-52"></a>PASS: IR Forge / Mountain Goat :: execution/dynamic-shapes-run.mlir (51 of 135)
+<a id="__codelineno-13-53" name="__codelineno-13-53" href="#__codelineno-13-53"></a>PASS: IR Forge / Mountain Goat :: execution/static-add-runs.mlir (52 of 135)
+<a id="__codelineno-13-54" name="__codelineno-13-54" href="#__codelineno-13-54"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/unroll-runs.mlir (53 of 135)
+<a id="__codelineno-13-55" name="__codelineno-13-55" href="#__codelineno-13-55"></a>PASS: IR Forge / Mountain Goat :: tour/tour-errors.mlir (54 of 135)
+<a id="__codelineno-13-56" name="__codelineno-13-56" href="#__codelineno-13-56"></a>PASS: IR Forge / Mountain Goat :: ops/division-ieee.mlir (55 of 135)
+<a id="__codelineno-13-57" name="__codelineno-13-57" href="#__codelineno-13-57"></a>PASS: IR Forge / Mountain Goat :: ops/matmul-mismatch-aborts.mlir (56 of 135)
+<a id="__codelineno-13-58" name="__codelineno-13-58" href="#__codelineno-13-58"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/tiling-runs.mlir (57 of 135)
+<a id="__codelineno-13-59" name="__codelineno-13-59" href="#__codelineno-13-59"></a>PASS: IR Forge / Mountain Goat :: transformer30/errors.mlir (58 of 135)
+<a id="__codelineno-13-60" name="__codelineno-13-60" href="#__codelineno-13-60"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/runtime-check-survives-transforms.mlir (59 of 135)
+<a id="__codelineno-13-61" name="__codelineno-13-61" href="#__codelineno-13-61"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/nested-assert-runs.mlir (60 of 135)
+<a id="__codelineno-13-62" name="__codelineno-13-62" href="#__codelineno-13-62"></a>PASS: IR Forge / Mountain Goat :: execution/strided-view.mlir (61 of 135)
+<a id="__codelineno-13-63" name="__codelineno-13-63" href="#__codelineno-13-63"></a>PASS: IR Forge / Mountain Goat :: generalize32/errors.mlir (62 of 135)
+<a id="__codelineno-13-64" name="__codelineno-13-64" href="#__codelineno-13-64"></a>PASS: IR Forge / Mountain Goat :: chapters/ch01-pipeline.mlir (63 of 135)
+<a id="__codelineno-13-65" name="__codelineno-13-65" href="#__codelineno-13-65"></a>PASS: IR Forge / Mountain Goat :: bigram31/errors.mlir (64 of 135)
+<a id="__codelineno-13-66" name="__codelineno-13-66" href="#__codelineno-13-66"></a>PASS: IR Forge / Mountain Goat :: attention29/errors.mlir (65 of 135)
+<a id="__codelineno-13-67" name="__codelineno-13-67" href="#__codelineno-13-67"></a>PASS: IR Forge / Mountain Goat :: execution/mixed-static-dynamic.mlir (66 of 135)
+<a id="__codelineno-13-68" name="__codelineno-13-68" href="#__codelineno-13-68"></a>PASS: IR Forge / Mountain Goat :: broadcast/ptx-layer.mlir (67 of 135)
+<a id="__codelineno-13-69" name="__codelineno-13-69" href="#__codelineno-13-69"></a>PASS: IR Forge / Mountain Goat :: chapters/ch09-execution-engine.mlir (68 of 135)
+<a id="__codelineno-13-70" name="__codelineno-13-70" href="#__codelineno-13-70"></a>PASS: IR Forge / Mountain Goat :: frontend/ptx-from-source.mlir (69 of 135)
+<a id="__codelineno-13-71" name="__codelineno-13-71" href="#__codelineno-13-71"></a>PASS: IR Forge / Mountain Goat :: gpu/pass-order-crash.mlir (70 of 135)
+<a id="__codelineno-13-72" name="__codelineno-13-72" href="#__codelineno-13-72"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/fusion-after-tiling.mlir (71 of 135)
+<a id="__codelineno-13-73" name="__codelineno-13-73" href="#__codelineno-13-73"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/valid-shapes-still-pass.mlir (72 of 135)
+<a id="__codelineno-13-74" name="__codelineno-13-74" href="#__codelineno-13-74"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/fusion-needs-constant-trip-counts.mlir (73 of 135)
+<a id="__codelineno-13-75" name="__codelineno-13-75" href="#__codelineno-13-75"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/message-bytes-exact.mlir (74 of 135)
+<a id="__codelineno-13-76" name="__codelineno-13-76" href="#__codelineno-13-76"></a>PASS: IR Forge / Mountain Goat :: frontend/front-end-errors.mlir (75 of 135)
+<a id="__codelineno-13-77" name="__codelineno-13-77" href="#__codelineno-13-77"></a>PASS: IR Forge / Mountain Goat :: contraction28/ir.mlir (76 of 135)
+<a id="__codelineno-13-78" name="__codelineno-13-78" href="#__codelineno-13-78"></a>PASS: IR Forge / Mountain Goat :: gpu/host-runtime-calls-bare.mlir (77 of 135)
+<a id="__codelineno-13-79" name="__codelineno-13-79" href="#__codelineno-13-79"></a>PASS: IR Forge / Mountain Goat :: gpu/host-runtime-calls.mlir (78 of 135)
+<a id="__codelineno-13-80" name="__codelineno-13-80" href="#__codelineno-13-80"></a>PASS: IR Forge / Mountain Goat :: gpu/ptx-index32.mlir (79 of 135)
+<a id="__codelineno-13-81" name="__codelineno-13-81" href="#__codelineno-13-81"></a>PASS: IR Forge / Mountain Goat :: gpu/ptx-bare-pointers.mlir (80 of 135)
+<a id="__codelineno-13-82" name="__codelineno-13-82" href="#__codelineno-13-82"></a>PASS: IR Forge / Mountain Goat :: gpu/ptx-default.mlir (81 of 135)
+<a id="__codelineno-13-83" name="__codelineno-13-83" href="#__codelineno-13-83"></a>PASS: IR Forge / Mountain Goat :: loop-order/structure.mlir (82 of 135)
+<a id="__codelineno-13-84" name="__codelineno-13-84" href="#__codelineno-13-84"></a>PASS: IR Forge / Mountain Goat :: broadcast/front-end-errors.mlir (83 of 135)
+<a id="__codelineno-13-85" name="__codelineno-13-85" href="#__codelineno-13-85"></a>PASS: IR Forge / Mountain Goat :: bigram31/ir.mlir (84 of 135)
+<a id="__codelineno-13-86" name="__codelineno-13-86" href="#__codelineno-13-86"></a>PASS: IR Forge / Mountain Goat :: chapters/ch02-example-programs.mlir (85 of 135)
+<a id="__codelineno-13-87" name="__codelineno-13-87" href="#__codelineno-13-87"></a>PASS: IR Forge / Mountain Goat :: transformer30/ir.mlir (86 of 135)
+<a id="__codelineno-13-88" name="__codelineno-13-88" href="#__codelineno-13-88"></a>PASS: IR Forge / Mountain Goat :: ops/front-end-errors.mlir (87 of 135)
+<a id="__codelineno-13-89" name="__codelineno-13-89" href="#__codelineno-13-89"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/unroll-full-needs-constant-trip-count.mlir (88 of 135)
+<a id="__codelineno-13-90" name="__codelineno-13-90" href="#__codelineno-13-90"></a>PASS: IR Forge / Mountain Goat :: gpu/nvvm-lowering.mlir (89 of 135)
+<a id="__codelineno-13-91" name="__codelineno-13-91" href="#__codelineno-13-91"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/tiling-structure.mlir (90 of 135)
+<a id="__codelineno-13-92" name="__codelineno-13-92" href="#__codelineno-13-92"></a>PASS: IR Forge / Mountain Goat :: attention29/ir.mlir (91 of 135)
+<a id="__codelineno-13-93" name="__codelineno-13-93" href="#__codelineno-13-93"></a>PASS: IR Forge / Mountain Goat :: generalize32/ir.mlir (92 of 135)
+<a id="__codelineno-13-94" name="__codelineno-13-94" href="#__codelineno-13-94"></a>PASS: IR Forge / Mountain Goat :: ops/matmul-lowering-structure.mlir (93 of 135)
+<a id="__codelineno-13-95" name="__codelineno-13-95" href="#__codelineno-13-95"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/fusion-declines.mlir (94 of 135)
+<a id="__codelineno-13-96" name="__codelineno-13-96" href="#__codelineno-13-96"></a>PASS: IR Forge / Mountain Goat :: gpu/cuda-comparison.mlir (95 of 135)
+<a id="__codelineno-13-97" name="__codelineno-13-97" href="#__codelineno-13-97"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/guard-nested-assert.mlir (96 of 135)
+<a id="__codelineno-13-98" name="__codelineno-13-98" href="#__codelineno-13-98"></a>PASS: IR Forge / Mountain Goat :: gpu/kernel-outlining.mlir (97 of 135)
+<a id="__codelineno-13-99" name="__codelineno-13-99" href="#__codelineno-13-99"></a>PASS: IR Forge / Mountain Goat :: frontend/emit-mlir.mlir (98 of 135)
+<a id="__codelineno-13-100" name="__codelineno-13-100" href="#__codelineno-13-100"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/unroll-epilogue.mlir (99 of 135)
+<a id="__codelineno-13-101" name="__codelineno-13-101" href="#__codelineno-13-101"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/run-twice-no-collision.mlir (100 of 135)
+<a id="__codelineno-13-102" name="__codelineno-13-102" href="#__codelineno-13-102"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/static-unchanged.mlir (101 of 135)
+<a id="__codelineno-13-103" name="__codelineno-13-103" href="#__codelineno-13-103"></a>PASS: IR Forge / Mountain Goat :: loops/tiling.mlir (102 of 135)
+<a id="__codelineno-13-104" name="__codelineno-13-104" href="#__codelineno-13-104"></a>PASS: IR Forge / Mountain Goat :: verifier/transpose-bad-shape.mlir (103 of 135)
+<a id="__codelineno-13-105" name="__codelineno-13-105" href="#__codelineno-13-105"></a>PASS: IR Forge / Mountain Goat :: broadcast/roundtrip-and-lowering.mlir (104 of 135)
+<a id="__codelineno-13-106" name="__codelineno-13-106" href="#__codelineno-13-106"></a>PASS: IR Forge / Mountain Goat :: lowering/bufferize-static-add.mlir (105 of 135)
+<a id="__codelineno-13-107" name="__codelineno-13-107" href="#__codelineno-13-107"></a>PASS: IR Forge / Mountain Goat :: loop-order/bad-option.mlir (106 of 135)
+<a id="__codelineno-13-108" name="__codelineno-13-108" href="#__codelineno-13-108"></a>PASS: IR Forge / Mountain Goat :: loops/fusion.mlir (107 of 135)
+<a id="__codelineno-13-109" name="__codelineno-13-109" href="#__codelineno-13-109"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/fusion-fires-when-static.mlir (108 of 135)
+<a id="__codelineno-13-110" name="__codelineno-13-110" href="#__codelineno-13-110"></a>PASS: IR Forge / Mountain Goat :: loops/unroll-full.mlir (109 of 135)
+<a id="__codelineno-13-111" name="__codelineno-13-111" href="#__codelineno-13-111"></a>PASS: IR Forge / Mountain Goat :: verifier/dynamic-accepted.mlir (110 of 135)
+<a id="__codelineno-13-112" name="__codelineno-13-112" href="#__codelineno-13-112"></a>PASS: IR Forge / Mountain Goat :: bigram31/verifiers.mlir (111 of 135)
+<a id="__codelineno-13-113" name="__codelineno-13-113" href="#__codelineno-13-113"></a>PASS: IR Forge / Mountain Goat :: lowering/bufferize-dynamic-add.mlir (112 of 135)
+<a id="__codelineno-13-114" name="__codelineno-13-114" href="#__codelineno-13-114"></a>PASS: IR Forge / Mountain Goat :: broadcast/verifier-reduce.mlir (113 of 135)
+<a id="__codelineno-13-115" name="__codelineno-13-115" href="#__codelineno-13-115"></a>PASS: IR Forge / Mountain Goat :: broadcast/verifier-broadcast.mlir (114 of 135)
+<a id="__codelineno-13-116" name="__codelineno-13-116" href="#__codelineno-13-116"></a>PASS: IR Forge / Mountain Goat :: ops/elementwise-static-mismatch.mlir (115 of 135)
+<a id="__codelineno-13-117" name="__codelineno-13-117" href="#__codelineno-13-117"></a>PASS: IR Forge / Mountain Goat :: verifier/unranked-rejected.mlir (116 of 135)
+<a id="__codelineno-13-118" name="__codelineno-13-118" href="#__codelineno-13-118"></a>PASS: IR Forge / Mountain Goat :: lowering/mixed-add-one-check.mlir (117 of 135)
+<a id="__codelineno-13-119" name="__codelineno-13-119" href="#__codelineno-13-119"></a>PASS: IR Forge / Mountain Goat :: lowering/dynamic-add-affine.mlir (118 of 135)
+<a id="__codelineno-13-120" name="__codelineno-13-120" href="#__codelineno-13-120"></a>PASS: IR Forge / Mountain Goat :: canonicalize/transpose-twice-dynamic-mixed.mlir (119 of 135)
+<a id="__codelineno-13-121" name="__codelineno-13-121" href="#__codelineno-13-121"></a>PASS: IR Forge / Mountain Goat :: lowering/dynamic-transpose-no-check.mlir (120 of 135)
+<a id="__codelineno-13-122" name="__codelineno-13-122" href="#__codelineno-13-122"></a>PASS: IR Forge / Mountain Goat :: contraction28/verifiers.mlir (121 of 135)
+<a id="__codelineno-13-123" name="__codelineno-13-123" href="#__codelineno-13-123"></a>PASS: IR Forge / Mountain Goat :: ops/matmul-bad-result-shape.mlir (122 of 135)
+<a id="__codelineno-13-124" name="__codelineno-13-124" href="#__codelineno-13-124"></a>PASS: IR Forge / Mountain Goat :: canonicalize/transpose-twice-dynamic-exact.mlir (123 of 135)
+<a id="__codelineno-13-125" name="__codelineno-13-125" href="#__codelineno-13-125"></a>PASS: IR Forge / Mountain Goat :: ops/scalar-bad-op.mlir (124 of 135)
+<a id="__codelineno-13-126" name="__codelineno-13-126" href="#__codelineno-13-126"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/rewrite-structure.mlir (125 of 135)
+<a id="__codelineno-13-127" name="__codelineno-13-127" href="#__codelineno-13-127"></a>PASS: IR Forge / Mountain Goat :: verifier/transpose-rank3.mlir (126 of 135)
+<a id="__codelineno-13-128" name="__codelineno-13-128" href="#__codelineno-13-128"></a>PASS: IR Forge / Mountain Goat :: lowering/static-add-affine.mlir (127 of 135)
+<a id="__codelineno-13-129" name="__codelineno-13-129" href="#__codelineno-13-129"></a>PASS: IR Forge / Mountain Goat :: transformer30/verifiers.mlir (128 of 135)
+<a id="__codelineno-13-130" name="__codelineno-13-130" href="#__codelineno-13-130"></a>PASS: IR Forge / Mountain Goat :: verifier/add-static-mismatch.mlir (129 of 135)
+<a id="__codelineno-13-131" name="__codelineno-13-131" href="#__codelineno-13-131"></a>PASS: IR Forge / Mountain Goat :: ops/dynamic-accepted.mlir (130 of 135)
+<a id="__codelineno-13-132" name="__codelineno-13-132" href="#__codelineno-13-132"></a>PASS: IR Forge / Mountain Goat :: canonicalize/transpose-twice.mlir (131 of 135)
+<a id="__codelineno-13-133" name="__codelineno-13-133" href="#__codelineno-13-133"></a>PASS: IR Forge / Mountain Goat :: ops/matmul-inner-mismatch.mlir (132 of 135)
+<a id="__codelineno-13-134" name="__codelineno-13-134" href="#__codelineno-13-134"></a>PASS: IR Forge / Mountain Goat :: generalize32/verifiers.mlir (133 of 135)
+<a id="__codelineno-13-135" name="__codelineno-13-135" href="#__codelineno-13-135"></a>PASS: IR Forge / Mountain Goat :: attention29/verifiers.mlir (134 of 135)
+<a id="__codelineno-13-136" name="__codelineno-13-136" href="#__codelineno-13-136"></a>PASS: IR Forge / Mountain Goat :: canonicalize/fold-constant-add.mlir (135 of 135)
+<a id="__codelineno-13-137" name="__codelineno-13-137" href="#__codelineno-13-137"></a>
+<a id="__codelineno-13-138" name="__codelineno-13-138" href="#__codelineno-13-138"></a>Testing Time: 34.78s
+<a id="__codelineno-13-139" name="__codelineno-13-139" href="#__codelineno-13-139"></a>
+<a id="__codelineno-13-140" name="__codelineno-13-140" href="#__codelineno-13-140"></a>Total Discovered Tests: 135
+<a id="__codelineno-13-141" name="__codelineno-13-141" href="#__codelineno-13-141"></a>  Passed: 135 (100.00%)
+</code></pre></div>
+<h2 id="limits-and-what-is-not-established">Limits and what is not established<a class="headerlink" href="#limits-and-what-is-not-established" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>A toy task and a toy model.</strong> Four tokens, five token types, one head, no positions, 48 parameters. The task was chosen so that the answer is the same for every ordering of the tokens, which suits attention without position information. Nothing here shows the method scales or that a full transformer trains the same way.</li>
+<li><strong>Only the backward pass of THIS model is derived.</strong> There is no automatic differentiation: the nine backward functions are specific to this network. Chapter 30's transformer (layer normalization, two heads, a feed-forward network, residual connections, several blocks) would need a hand-derived backward pass for each of its parts; the pattern above (take the gradient with respect to a step's output, produce the gradient with respect to its inputs) carries over, but it was <strong>not done</strong>, and Chapter 30's weights are still random.</li>
+<li><strong>Training data are lopsided and tiny.</strong> 13 of 24 training labels are 1; label 4 never occurs. The 40-sequence held-out score (40/40) is a weak test, for the reason shown; the exhaustive test over all 625 sequences is stronger, and it is possible only because the input space is tiny. 624/625 says nothing about larger problems.</li>
+<li><strong>The one miss is a data gap, not necessarily a method failing.</strong> A different set of 24 sequences, or one that contained a sequence labelled 4, would change it. Nothing here tries other data sets or other starting weights beyond the three used for the gradient check.</li>
+<li><strong>Learning rate and steps were chosen by trying.</strong> 3 and 200, after trying 1 and 3 on two starting points in plain Python. No claim of optimality, no schedule, no stopping rule.</li>
+<li><strong>The model solves the task in its own way,</strong> not by the rule (it ranks token 4 above 0 and still classifies <code>0 4 0 4</code>-style sequences correctly, through the values). The attention weights should not be read as an explanation.</li>
+<li><strong>Finite-difference checks are limited by printing:</strong> six digits, step 0.01, tolerance <code>2·10⁻³</code>.</li>
+<li><strong>No naive-softmax test:</strong> the attention scores stay below about 4 in size, where <code>exp</code> does not overflow, so the checks cannot tell a naive softmax from the stable one here (the last wrong version above shows exactly that). Chapters 29 to 32 cover that regime.</li>
+<li><strong>Platform:</strong> x86-64 Linux, LLVM 18.1.3.</li>
+</ul>
+<h2 id="reproducing">Reproducing<a class="headerlink" href="#reproducing" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="nb">cd</span><span class="w"> </span>docs/part32/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./build.sh
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="nb">cd</span><span class="w"> </span>../../part33/code
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>python3<span class="w"> </span>make_examples.py<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_examples.sh<span class="w"> </span>&gt;<span class="w"> </span>examples_out.txt
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>./check_attention_training.py<span class="w"> </span>&gt;<span class="w"> </span>check_attention_training_out.txt
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>./model_mutation.py<span class="w"> </span>&gt;<span class="w"> </span>model_mutation_out.txt
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="nb">cd</span><span class="w"> </span>../../part15/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_lit.sh<span class="w">          </span><span class="c1"># 135 tests</span>
+</code></pre></div>
+<h2 id="chapter-summary">Chapter summary<a class="headerlink" href="#chapter-summary" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Backpropagation is the chain rule applied backwards: from the loss, take each step's output gradient and produce its input gradients. For one-head attention that is nine short matrix expressions, and the only new calculus is the softmax backward step <code>a * (da − Σ a·da)</code>.</li>
+<li>Without a batched matrix product, a batch is handled by stacking sequences, a constant group matrix to sum within a sequence, and <code>reshape</code> so a row-wise softmax acts within each sequence.</li>
+<li>The hand-derived backward pass equals an independent token-by-token computation and a finite-difference estimate for all 48 weights, for three different starting points.</li>
+<li>Trained for 200 steps, the model classifies all 24 training and 40 held-out sequences correctly and 624 of all 625 possible sequences; the miss, <code>4 4 4 4</code>, is a label that never appears in the data.</li>
+<li>The attention is partly a lookup (it ranks tokens 1, 3, 2 correctly) and partly not (it ranks 4 above 0, and attends to the 4s in a sequence labelled 0): attention weights are not an explanation.</li>
+<li>Nine of ten wrong backward passes are caught, mostly by the gradient comparisons alone; the tenth, a naive softmax, is not caught, as expected, because the scores here never get large enough to overflow <code>exp</code>.</li>
+</ul>
+<h2 id="self-check-questions">Self-check questions<a class="headerlink" href="#self-check-questions" title="Permanent link">&para;</a></h2>
+<p>Each answer is collapsed; try the question first.</p>
+<ol>
+<li>
+<p>Why can a bigram not solve this task, and why is attention a natural fit?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>The label depends on all four tokens (which of them are present), not on the most recent one, and a bigram sees only one token. Attention looks at every token in the sequence at once and combines them into one context vector, with no dependence on order, which matches a label that is the same for every ordering.</p>
+</details>
+</li>
+<li>
+<p>Why does the model stack 24 sequences into a 96-row matrix, and what do the group matrix and the <code>reshape</code> do?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>Mountain Goat has no batched matrix product, so a batch is handled as one big matrix. The scores come out as a 96×1 column; <code>reshape</code> makes it 24×4 so that a row-wise softmax runs within each sequence (each row holds one sequence's four scores). The group matrix (24×96, with 1s where column ÷ 4 equals the row) turns the sum over each sequence's four weighted values into a matrix product.</p>
+</details>
+</li>
+<li>
+<p>Write the gradient of the loss with respect to the attention scores in one line, and explain each part.</p>
+<details class="note">
+<summary>Answer</summary>
+<p><code>ds = a * (da − Σ a·da)</code>, where <code>a</code> is the attention weights, <code>da</code> the gradient with respect to them, and the sum is within each sequence. A score changes its own weight (the <code>a·da</code> part) and, because the four weights must add to 1, also every other weight (the <code>− a·Σ a·da</code> part). Leaving out the second part treats the softmax as if each output depended only on its own input.</p>
+</details>
+</li>
+<li>
+<p>Why does the checker compare the gradient both with an independent Python calculation <em>and</em> with finite differences?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>They catch different things. The Python gradient is written independently from the same mathematics: it catches a mistake in the Mountain Goat translation, but if both derive the same wrong formula it would agree with itself. Finite differences use only the loss function, not any derived formula, so they catch a wrong derivation. A wrong gradient has to fool both to survive.</p>
+</details>
+</li>
+<li>
+<p>The model attends more to the 4s than to the 0 in <code>4 4 0 4</code> and still outputs the correct label 0. What does this say about reading attention weights?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>The output depends on the attention weights <em>and</em> the values and the output matrix. The model learned values and an output matrix that, combined with this attention pattern, favour label 0 when the sequence contains a 0 and nothing higher. So attention weights alone do not say what the model "looked at" in a meaningful sense; they are one part of the computation.</p>
+</details>
+</li>
+<li>
+<p>Why is "40 of 40 held-out sequences correct" a weak result here, and what is the stronger test?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>Random sequences are dominated by labels 1 and 3 (22 and 13 of the 40, with 5 labelled 2 and none labelled 0 or 4). A model that handles only the common labels can score well. Because there are only 625 possible sequences, the program can try every one; that test includes the rare labels, and it is where the single failure appears.</p>
+</details>
+</li>
+<li>
+<p>Why does the model fail on <code>4 4 4 4</code>, and would you call that overfitting?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>The label of <code>4 4 4 4</code> is 4, and label 4 never occurs among the 64 training and held-out sequences, so nothing in training ever rewarded the output 4. It is a gap in the data, not memorizing noise: the model is right on every other sequence, including the 15 that have label 0 though only one had that label in training. It is closer to a missing-evidence failure than to Chapter 32's overfitting, though both come from the model having no way to know what training never showed.</p>
+</details>
+</li>
+<li>
+<p>Which parts of the backward pass would be needed to train Chapter 30's transformer that are not here?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>The gradients through layer normalization, the residual connections (which add gradients along two paths), a second attention head and its output split, the position matrix, the relu feed-forward network and its biases, and the stacking of several blocks, each with its own weights. The principle in this chapter's table applies to each, but each needs its own derivation and its own check against finite differences; none was done.</p>
+</details>
+</li>
+<li>
+<p>The wrong backward pass with a naive softmax in the attention was not caught. Why is that expected, and what would catch it?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>The attention scores in this model stay below about 4 in size, and <code>exp</code> of such numbers cannot overflow, so the naive softmax computes the same numbers as the stable one. To catch it a test needs scores in the hundreds, like the stress cases of Chapters 29 to 32.</p>
+</details>
+</li>
+<li>
+<p>What would change if the labels were 1 for sequences containing token 1 and 0 otherwise (two classes)?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>Only the number of output columns: <code>wo</code> would be 3×2 instead of 3×5, and the label matrices 24×2. The forward and backward formulas are the same, because the loss and the gradient <code>(softmax − y)/B</code> do not depend on the number of classes. In Mountain Goat the shapes are types, so the function definitions would be regenerated with 2 in place of 5.</p>
+</details>
+</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../../part32/32-does-it-generalize/" class="md-footer__link md-footer__link--prev" aria-label="Previous: 32. Does It Generalize? Held-Out Data, Overfitting and Weight Decay">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                32. Does It Generalize? Held-Out Data, Overfitting and Weight Decay
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 Oluwaseyi Awoga
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,2923 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A Toy Language Compiled Through a Real MLIR Dialect, Down to Real Native Machine Code">
+      
+      
+        <meta name="author" content="Oluwaseyi Awoga">
+      
+      
+      
+        <link rel="prev" href="../../part43/43-outlining-by-default/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>44. Fast-Math Flags from the Compiler: What Reordering Is Allowed to Buy, and What It Did - IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#44-fast-math-flags-from-the-compiler-what-reordering-is-allowed-to-buy-and-what-it-did" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-header__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              44. Fast-Math Flags from the Compiler: What Reordering Is Allowed to Buy, and What It Did
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-nav__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../background/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background (LLVM and MLIR in Twenty Minutes)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tour/language-tour/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Mountain Goat Language: A Short Tour
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part1/01-why-a-multi-level-ir-at-all/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1. Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part2/02-a-minimal-dialect-from-scratch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2. A Minimal Dialect From Scratch: Mountain Goat's Own mg Dialect
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part3/03-the-pass-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3. The Real Pass Infrastructure: Canonicalizing Mountain Goat
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 3 -- Progressive Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 3 -- Progressive Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part4/04-progressive-lowering-to-affine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4. Progressive Lowering: Mountain Goat to affine, Two Real Ways
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part5/05-affine-to-scf-to-llvm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5. Finishing Progressive Lowering: affine to scf to llvm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 4 -- Optimization Across Levels
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 4 -- Optimization Across Levels
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/06-real-bufferization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6. Real Bufferization: Closing Chapter 4's Own Honest Gap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part7/07-real-loop-transforms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    7. Real Loop Transforms: Fusion, Tiling, and Unrolling at the affine Level
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 5 -- Code Generation via LLVM
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 5 -- Code Generation via LLVM
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part8/08-a-standalone-native-executable/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    8. A Standalone Native Executable: Mountain Goat Without MLIR At Runtime
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part9/09-the-execution-engine-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    9. MLIR's Own Real C++ ExecutionEngine API, Called In-Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 6 -- GPU Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 6 -- GPU Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part10/10-gpu-lowering-to-ptx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10. GPU Lowering: Mountain Goat to the gpu Dialect, NVVM, and Real PTX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part11/11-the-gpu-host-side/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    11. The GPU Host Side: Device Memory, Real Runtime Calls, and a Stub Device
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 7 -- Case Studies
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 7 -- Case Studies
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part12/12-reading-the-production-pipelines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    12. Reading MLIR's Own Production Pipelines: What This Book's Compiler Is Missing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part13/13-dynamic-shapes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    13. Dynamic Shapes: Closing Chapter 12's Biggest Unknown
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part14/14-runtime-shape-checks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    14. A Runtime Shape Check: Closing Chapter 13's Memory-Safety Hole
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part15/15-a-real-test-suite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    15. A Real Test Suite: lit, FileCheck, and Proof That the Tests Can Fail
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part16/16-testing-the-gpu-path-and-loop-transforms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    16. Testing the GPU Path and the Loop Transforms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part17/17-loop-transforms-on-dynamic-bounds/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    17. Loop Transforms on Dynamic Bounds
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part18/18-why-fusion-declines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    18. Why Fusion Declines: Reading the Pass, and a Second Bug Found Along the Way
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part19/19-a-better-abort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    19. A Better Abort: Reporting Assertion Failures on stderr
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part20/20-the-mountain-goat-demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    20. The Mountain Goat Demo: A Surface Syntax, a Driver, and C++ Calling Compiled Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part21/21-more-operations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    21. More Operations: Subtract, Hadamard, Divide, Matrix Product, and Scalars
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part22/22-broadcasting-reductions-and-relu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    22. Broadcasting, Reductions and relu: Enough Operations for a Neural-Network Layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part23/23-measuring-performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    23. Measuring Performance: Does Any of It Make the Code Fast?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part24/24-closing-the-matmul-gap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    24. Closing the Gap: A Matrix Product That Walks Memory in a Better Order
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part25/25-keeping-it-working/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    25. Keeping It Working: Continuous Integration and the Tests the Early Chapters Never Had
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part26/26-learning-from-data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    26. Learning From Data: Gradient Descent in Mountain Goat
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part27/27-tensor-contractions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    27. Tensor Contractions as Matrix Products
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part28/28-contraction-in-mountain-goat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    28. Tensor Contractions in Mountain Goat Itself
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part29/29-softmax-and-attention/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    29. Softmax and Attention
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part30/30-a-small-transformer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    30. A Small Transformer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part31/31-training-a-bigram-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    31. Training a Language Model: Gradient Descent on a Bigram
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part32/32-does-it-generalize/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    32. Does It Generalize? Held-Out Data, Overfitting and Weight Decay
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part33/33-backpropagation-through-attention/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    33. Backpropagation Through Attention: Training a One-Head Classifier
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part34/34-why-a-block-has-a-feed-forward-network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    34. Why a Block Has a Feed-Forward Network: Backpropagation Through Layer Norm, ReLU and Residuals
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part35/35-training-a-transformer-language-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    35. Training a Transformer Language Model: Backpropagation Through Causal Attention and Embeddings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part36/36-training-chapter-30s-transformer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    36. Training Chapter 30's Transformer: Two Heads, Two Blocks, and a Result That Is Not Better
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part37/37-inside-the-llvm-stage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    37. Inside the LLVM Stage: Reading the IR, and Why a Loop Does or Does Not Vectorize
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part38/38-outlining-loop-nests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    38. Why Compile Time Was Quadratic, and a Pass That Outlines Loop Nests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part39/39-finding-the-quadratic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    39. Finding the Quadratic: a Differential Profile of the Lowering Pass
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part40/40-a-model-of-a-matrix-accelerator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    40. A Model of a Matrix Accelerator: Tiles, a Scratchpad, and What Loop Order Does There
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part41/41-compiling-mountain-goat-to-ga-1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    41. Compiling Mountain Goat to GA-1: Fusion, Tiling and Why Decoding Is Memory-Bound
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part42/42-lowering-loops-last-to-first/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    42. Lowering the Loops Last to First: Testing the Idea Chapter 39 Left Open
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part43/43-outlining-by-default/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    43. Outlining by Default: What the Calls Cost, and Which Defaults Changed
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    44. Fast-Math Flags from the Compiler: What Reordering Is Allowed to Buy, and What It Did
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    44. Fast-Math Flags from the Compiler: What Reordering Is Allowed to Buy, and What It Did
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-flags-are" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the flags are
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-pass-and-the-option" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The pass and the option
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-it-is-worth-speed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it is worth: speed
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What it is worth: speed">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#does-it-change-the-numbers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Does it change the numbers?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#do-the-books-programs-print-different-numbers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Do the book's programs print different numbers?
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Do the book&#39;s programs print different numbers?">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-negative-control-why-nnan-is-not-in-the-default" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The negative control: why nnan is not in the default
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#does-it-change-a-training-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Does it change a training run?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#are-the-checks-good-enough-eight-wrong-builds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Are the checks good enough? Eight wrong builds.
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limits-and-what-is-not-established" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits and what is not established
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-flags-are" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the flags are
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-pass-and-the-option" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The pass and the option
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-it-is-worth-speed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it is worth: speed
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What it is worth: speed">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#does-it-change-the-numbers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Does it change the numbers?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#do-the-books-programs-print-different-numbers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Do the book's programs print different numbers?
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Do the book&#39;s programs print different numbers?">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-negative-control-why-nnan-is-not-in-the-default" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The negative control: why nnan is not in the default
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#does-it-change-a-training-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Does it change a training run?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#are-the-checks-good-enough-eight-wrong-builds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Are the checks good enough? Eight wrong builds.
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limits-and-what-is-not-established" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits and what is not established
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="44-fast-math-flags-from-the-compiler-what-reordering-is-allowed-to-buy-and-what-it-did">44. Fast-Math Flags from the Compiler: What Reordering Is Allowed to Buy, and What It Did<a class="headerlink" href="#44-fast-math-flags-from-the-compiler-what-reordering-is-allowed-to-buy-and-what-it-did" title="Permanent link">&para;</a></h1>
+<p><img alt="Mountain goats on the mountain at sunset" src="../../assets/goats/ch-44.svg" style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" /></p>
+<p><strong>What you will understand:</strong> how a compiler can give LLVM permission to reorder floating-point arithmetic <strong>one operation at a time</strong>, why that is different from <code>-ffast-math</code>, and how to find out what the permission is worth. Chapter 37 showed that LLVM's vectorizer refuses to vectorize the dot-product loop of a matrix product (a floating-point sum) unless it is told the order of additions does not matter, and showed the permission as a <code>sed</code> experiment on the IR. This chapter makes the compiler do it: a small pass, <code>--mg-set-fastmath</code>, puts the <code>reassoc</code> and <code>contract</code> flags on the floating-point operations of a program, and <code>mgc --fast-math</code> runs it. Then it measures the result honestly: the flags change what the vectorizer decides and (with a fused multiply-add on the machine) the last bits of results, make one loop order 17% to 24% faster in a way that reproduced, and made no reproducible difference elsewhere. A negative control shows why one more flag, <code>nnan</code>, is deliberately <strong>not</strong> in the default: it turns a right answer into a wrong one.</p>
+<p><strong>What you need to know first:</strong> Chapter 37 (why the dot-product loop is not vectorized: "cannot prove it is safe to reorder floating-point operations") and Chapters 24 and 29 (loop orders; the softmax examples whose answers depend on NaN and infinity behaving as such).</p>
+<div class="admonition warning">
+<p class="admonition-title">This changes the numbers a program computes</p>
+<p>Floating-point addition is not associative: <code>(a + b) + c</code> and <code>a + (b + c)</code> can differ in the last bit. <code>--fast-math</code> allows LLVM to choose the order, so a program built with it may print different low-order bits than one built without. It is <strong>opt-in</strong> (<code>mgc</code> does not turn it on), and the page measures how much it changed, which for the programs of this book was nothing visible at six printed digits. That is a statement about these programs, not about floating-point code in general.</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Compile and run</p>
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">cd</span><span class="w"> </span>docs/part44/code
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>./build.sh<span class="w">                                      </span><span class="c1"># mg-opt of this chapter: Chapter 42&#39;s plus --mg-set-fastmath (a few minutes; needs mlir-18-tools, libmlir-18-dev, cmake)</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>./ir_and_remarks.sh<span class="w"> </span>&gt;<span class="w"> </span>ir_and_remarks_out.txt<span class="w">    </span><span class="c1"># the flags in the IR; what the loop vectorizer says (about 10 seconds)</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>./run_bench.sh<span class="w"> </span>&gt;<span class="w"> </span>bench_out_1.txt<span class="w">                </span><span class="c1"># matrix product with and without the flags, two loop orders, two clang settings (about 3 minutes); run it twice</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>./run_bench.sh<span class="w"> </span>&gt;<span class="w"> </span>bench_out_2.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./summarize.py<span class="w"> </span>&gt;<span class="w"> </span>summary_out.txt
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>./semantics.py<span class="w"> </span>&gt;<span class="w"> </span>semantics_out.txt<span class="w">              </span><span class="c1"># all book examples at -O2, three settings (about 15 minutes)</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>./training_sensitivity.py<span class="w"> </span>&gt;<span class="w"> </span>training_sensitivity_out.txt<span class="w">   </span><span class="c1"># the 10-step training programs at -O2 (about 7 minutes)</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>./check_fastmath.py<span class="w"> </span>&gt;<span class="w"> </span>check_fastmath_out.txt<span class="w">    </span><span class="c1"># the checks of this page (about 15 seconds)</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>./mutation.py<span class="w"> </span>&gt;<span class="w"> </span>mutation_out.txt<span class="w">                </span><span class="c1"># 3 WRONG drivers and 5 WRONG passes the checker must catch (about 8 minutes: each pass mutant rebuilds mg-opt)</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="nb">cd</span><span class="w"> </span>../../part15/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_lit.sh<span class="w">            </span><span class="c1"># the whole test suite</span>
+</code></pre></div>
+Every listing and output on this page comes from these commands. Times are from one 4-core machine (Xeon, 2.1 GHz, clang 18.1.3), pinned to one core.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Why this page shows a mutation run, and why 'caught' is the wanted result</p>
+<p><code>mutation.py</code> writes broken versions of the pass and the driver and expects the checker to fail on each. "Caught" is good; "NOT CAUGHT" would be a gap. Nothing on this page is a failing test, with one exception that is the point of a section (the negative control, where a flag changes an answer and the page says so).</p>
+</div>
+<h2 id="what-the-flags-are">What the flags are<a class="headerlink" href="#what-the-flags-are" title="Permanent link">&para;</a></h2>
+<p>LLVM's floating-point instructions can carry <strong>fast-math flags</strong>, one by one:</p>
+<table>
+<thead>
+<tr>
+<th>flag</th>
+<th>what the instruction is allowed to assume or do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>reassoc</code></td>
+<td>additions and multiplications may be regrouped: <code>(a + b) + c</code> may be computed as <code>a + (b + c)</code></td>
+</tr>
+<tr>
+<td><code>contract</code></td>
+<td>a multiply followed by an add may be fused into one fused multiply-add, which rounds once instead of twice</td>
+</tr>
+<tr>
+<td><code>nnan</code></td>
+<td>arguments and results are never NaN (<strong>if one is, the result is poison</strong>: anything may happen)</td>
+</tr>
+<tr>
+<td><code>ninf</code></td>
+<td>the same for infinities</td>
+</tr>
+<tr>
+<td><code>nsz</code>, <code>arcp</code>, <code>afn</code></td>
+<td>the sign of zero does not matter; reciprocals may replace divisions; approximate functions are allowed</td>
+</tr>
+</tbody>
+</table>
+<p><code>-ffast-math</code> on the command line sets all of them, and, as Chapter 37 showed, <strong>does nothing at all to a <code>.ll</code> file</strong>: the flags are properties of instructions, so they have to be in the IR. That is also why the right place to choose them is the compiler that writes the IR. Mountain Goat's default is the two that Chapter 37's experiment used, <code>reassoc</code> and <code>contract</code>, and nothing about NaN or infinity.</p>
+<h2 id="the-pass-and-the-option">The pass and the option<a class="headerlink" href="#the-pass-and-the-option" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1">// --mg-set-fastmath{flags=reassoc,contract}: put LLVM fast-math flags on the floating-point arith operations of the program.</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="c1">//</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1">// Why (Chapter 37): LLVM&#39;s vectorizer refuses to vectorize a floating-point sum (the inner loop of a dot product) because adding the terms in another order can change the rounding, and</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1">// the program did not say that is allowed. The `reassoc` flag says it is; `contract` allows a multiply and an add to become one fused multiply-add. Both are flags on the individual</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="c1">// instructions, so they can be given where the compiler knows the program tolerates them, without `-ffast-math` (which turns on more, including assumptions about NaN and infinity that</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="c1">// Mountain Goat&#39;s softmax relies on NOT being made). The flags given are a pass option; the default is reassoc and contract only.</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/Arith/IR/Arith.h&quot;</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/Func/IR/FuncOps.h&quot;</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/IR/BuiltinOps.h&quot;</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Pass/Pass.h&quot;</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Pass/PassRegistry.h&quot;</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;llvm/ADT/StringSwitch.h&quot;</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="k">using</span><span class="w"> </span><span class="k">namespace</span><span class="w"> </span><span class="nn">mlir</span><span class="p">;</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="k">namespace</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="k">struct</span><span class="w"> </span><span class="nc">SetFastMathPass</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">PassWrapper</span><span class="o">&lt;</span><span class="n">SetFastMathPass</span><span class="p">,</span><span class="w"> </span><span class="n">OperationPass</span><span class="o">&lt;</span><span class="n">ModuleOp</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">  </span><span class="n">MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID</span><span class="p">(</span><span class="n">SetFastMathPass</span><span class="p">)</span>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="w">  </span><span class="n">SetFastMathPass</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">default</span><span class="p">;</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="w">  </span><span class="n">SetFastMathPass</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">SetFastMathPass</span><span class="w"> </span><span class="o">&amp;</span><span class="n">other</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">PassWrapper</span><span class="p">(</span><span class="n">other</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span><span class="w">      </span><span class="c1">// an Option is not copyable (Chapter 38)</span>
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="w">  </span><span class="n">Option</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span><span class="w"> </span><span class="n">flags</span><span class="p">{</span><span class="o">*</span><span class="k">this</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;flags&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">llvm</span><span class="o">::</span><span class="n">cl</span><span class="o">::</span><span class="n">desc</span><span class="p">(</span><span class="s">&quot;comma-separated fast-math flags: reassoc, contract, nnan, ninf, nsz, arcp, afn&quot;</span><span class="p">),</span><span class="w"> </span><span class="n">llvm</span><span class="o">::</span><span class="n">cl</span><span class="o">::</span><span class="n">init</span><span class="p">(</span><span class="s">&quot;reassoc,contract&quot;</span><span class="p">)};</span>
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="w">  </span><span class="n">StringRef</span><span class="w"> </span><span class="nf">getArgument</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">final</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;mg-set-fastmath&quot;</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="w">  </span><span class="n">StringRef</span><span class="w"> </span><span class="nf">getDescription</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">final</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;Set fast-math flags (default reassoc,contract) on floating-point arith operations&quot;</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="w">  </span><span class="kt">void</span><span class="w"> </span><span class="nf">getDependentDialects</span><span class="p">(</span><span class="n">DialectRegistry</span><span class="w"> </span><span class="o">&amp;</span><span class="n">registry</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">registry</span><span class="p">.</span><span class="n">insert</span><span class="o">&lt;</span><span class="n">arith</span><span class="o">::</span><span class="n">ArithDialect</span><span class="o">&gt;</span><span class="p">();</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="w">  </span><span class="kt">void</span><span class="w"> </span><span class="nf">runOnOperation</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="w">    </span><span class="n">arith</span><span class="o">::</span><span class="n">FastMathFlags</span><span class="w"> </span><span class="n">fm</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">arith</span><span class="o">::</span><span class="n">FastMathFlags</span><span class="o">::</span><span class="n">none</span><span class="p">;</span>
+<a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="w">    </span><span class="n">SmallVector</span><span class="o">&lt;</span><span class="n">StringRef</span><span class="o">&gt;</span><span class="w"> </span><span class="n">parts</span><span class="p">;</span><span class="w"> </span><span class="n">StringRef</span><span class="p">(</span><span class="n">flags</span><span class="p">).</span><span class="n">split</span><span class="p">(</span><span class="n">parts</span><span class="p">,</span><span class="w"> </span><span class="sc">&#39;,&#39;</span><span class="p">,</span><span class="w"> </span><span class="mi">-1</span><span class="p">,</span><span class="w"> </span><span class="nb">false</span><span class="p">);</span>
+<a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">StringRef</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">parts</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="w">      </span><span class="k">auto</span><span class="w"> </span><span class="n">parsed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">arith</span><span class="o">::</span><span class="n">symbolizeFastMathFlags</span><span class="p">(</span><span class="n">p</span><span class="p">.</span><span class="n">trim</span><span class="p">());</span>
+<a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">parsed</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">getOperation</span><span class="p">().</span><span class="n">emitError</span><span class="p">(</span><span class="s">&quot;unknown fast-math flag &#39;&quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">str</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot;&#39;&quot;</span><span class="p">);</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">signalPassFailure</span><span class="p">();</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="w">      </span><span class="n">fm</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fm</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="o">*</span><span class="n">parsed</span><span class="p">;</span>
+<a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a><span class="w">    </span><span class="n">MLIRContext</span><span class="w"> </span><span class="o">*</span><span class="n">ctx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">getContext</span><span class="p">();</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">attr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">arith</span><span class="o">::</span><span class="n">FastMathFlagsAttr</span><span class="o">::</span><span class="n">get</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span><span class="w"> </span><span class="n">fm</span><span class="p">);</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a><span class="w">    </span><span class="n">getOperation</span><span class="p">().</span><span class="n">walk</span><span class="p">([</span><span class="o">&amp;</span><span class="p">](</span><span class="n">Operation</span><span class="w"> </span><span class="o">*</span><span class="n">op</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a><span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="n">iface</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dyn_cast</span><span class="o">&lt;</span><span class="n">arith</span><span class="o">::</span><span class="n">ArithFastMathInterface</span><span class="o">&gt;</span><span class="p">(</span><span class="n">op</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">op</span><span class="o">-&gt;</span><span class="n">setAttr</span><span class="p">(</span><span class="n">iface</span><span class="p">.</span><span class="n">getFastMathAttrName</span><span class="p">(),</span><span class="w"> </span><span class="n">attr</span><span class="p">);</span><span class="w"> </span><span class="o">++</span><span class="n">count</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a><span class="w">    </span><span class="p">});</span>
+<a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a><span class="w">    </span><span class="n">numChanged</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">count</span><span class="p">;</span>
+<a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-1-39" name="__codelineno-1-39" href="#__codelineno-1-39"></a><span class="w">  </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">numChanged</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-1-40" name="__codelineno-1-40" href="#__codelineno-1-40"></a><span class="p">};</span>
+<a id="__codelineno-1-41" name="__codelineno-1-41" href="#__codelineno-1-41"></a><span class="p">}</span><span class="w">  </span><span class="c1">// namespace</span>
+<a id="__codelineno-1-42" name="__codelineno-1-42" href="#__codelineno-1-42"></a>
+<a id="__codelineno-1-43" name="__codelineno-1-43" href="#__codelineno-1-43"></a><span class="k">namespace</span><span class="w"> </span><span class="nn">mg</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-44" name="__codelineno-1-44" href="#__codelineno-1-44"></a><span class="kt">void</span><span class="w"> </span><span class="nf">registerSetFastMathPass</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">PassRegistration</span><span class="o">&lt;</span><span class="n">SetFastMathPass</span><span class="o">&gt;</span><span class="p">();</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-1-45" name="__codelineno-1-45" href="#__codelineno-1-45"></a><span class="p">}</span>
+</code></pre></div>
+<p>The pass walks the module and, on every operation that implements MLIR's <code>ArithFastMathInterface</code> (<code>addf</code>, <code>subf</code>, <code>mulf</code>, <code>divf</code>, <code>negf</code>, the comparisons, ...), sets the <code>fastmath</code> attribute. <code>ArithToLLVM</code> carries the attribute into the LLVM dialect, and from there it becomes the flags on the LLVM instruction. The option <code>flags=</code> takes a comma-separated list; an unknown name is an error.</p>
+<p><code>mgc --fast-math</code> runs the pass after <code>--convert-mg-to-affine</code>; <code>mgc --fast-math=reassoc,nsz</code> chooses the flags. It is off unless asked for.</p>
+<p>What the IR looks like (the product of two 64 × 64 matrices, ijk order, <code>mgc lib -O0</code>), and what LLVM's vectorizer says about its inner loop with <code>clang -O3 -march=sapphirerapids</code> (the CPU is pinned, as in Chapter 37, so this output does not depend on the machine that runs it):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>== the floating-point instructions in the LLVM IR of the ijk product (llvm.mlir -&gt; .ll), without and with --fast-math
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>-- plain: 1 fmul, 1 fadd
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>   %78 = fmul double %72, %77
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>   %79 = fadd double %67, %78
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>-- fast: 1 fmul, 1 fadd
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>   %78 = fmul reassoc contract double %72, %77
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>   %79 = fadd reassoc contract double %67, %78
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>== ijk, plain: clang -O3 -march=sapphirerapids: what the loop vectorizer says (count, remark)
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>      1 loop not vectorized: cannot prove it is safe to reorder floating-point operations; allow reordering by specifying &#39;#pragma clang loop vectorize(enable)&#39; before the loop or by providing the compiler op
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>      1 loop not vectorized
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>== ijk, fast: clang -O3 -march=sapphirerapids: what the loop vectorizer says (count, remark)
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>      1 vectorized loop (vectorization width: 4, interleaved count: 1)
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>      1 the cost-model indicates that interleaving is not beneficial
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>== ikj, plain: clang -O3 -march=sapphirerapids: what the loop vectorizer says (count, remark)
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>      1 vectorized loop (vectorization width: 4, interleaved count: 1)
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>      1 the cost-model indicates that interleaving is not beneficial
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>== ikj, fast: clang -O3 -march=sapphirerapids: what the loop vectorizer says (count, remark)
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a>      1 vectorized loop (vectorization width: 4, interleaved count: 1)
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a>      1 the cost-model indicates that interleaving is not beneficial
+<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a>
+<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a>== the same ijk product, sizes unknown until run time (03_matmul_dynamic.mg)
+<a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a>-- plain
+<a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a>      1 loop not vectorized: cannot prove it is safe to reorder floating-point operations; allow reordering by specifying &#39;#pragma clang loop vectorize(enable)&#39; before the loop or by providing the compiler op
+<a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a>      1 loop not vectorized
+<a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a>-- fast
+<a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a>      1 vectorized loop (vectorization width: 4, interleaved count: 4)
+</code></pre></div>
+<ul>
+<li>Without the flags: <code>fmul double</code>, <code>fadd double</code>; the vectorizer says <strong>"cannot prove it is safe to reorder floating-point operations"</strong> and does not vectorize the dot-product loop. This is Chapter 37's finding again, now from the compiler's own output.</li>
+<li>With <code>--fast-math</code>: <code>fmul reassoc contract double</code>, <code>fadd reassoc contract double</code>, and the loop <strong>is vectorized</strong>, for sizes known at compile time (width 4) and for sizes known only at run time (width 4, interleaved 4).</li>
+<li>The ikj order was already vectorized without the flags (it has no sum to reorder: Chapter 37), and the flags do not change that.</li>
+</ul>
+<h2 id="what-it-is-worth-speed">What it is worth: speed<a class="headerlink" href="#what-it-is-worth-speed" title="Permanent link">&para;</a></h2>
+<p>Does the vectorized dot product run faster? <code>run_bench.sh</code> builds the matrix product (sizes known at run time, 64 to 512) with and without the flags, in both loop orders, with <code>clang -O2</code> (baseline x86-64) and <code>clang -O3 -march=native</code> (which has fused multiply-add), pinned to one core, 7 trials per cell. Chapter 24's benchmark used small integers, so every sum was exact and no order could show; this one uses sines and cosines, so the rounding is real. Each result is compared with a reference computed in 80-bit <code>long double</code>, and with the same program built without the flags, bit by bit. The whole benchmark is run <strong>twice</strong>; the table gives the ratio of median times (flags over no flags: below 1 means the flags are faster) from each pass:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>median time with --fast-math / median time without (below 1 = faster with the flags); two complete passes; pinned core
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>variant                           N  pass 1  pass 2      elements differing in their bits (of N*N)   largest error plain -&gt; flags
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>ijk, -O2                         64    1.09    1.02                                      0 of 4096   8.73e-17 -&gt; 8.73e-17
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>ijk, -O2                        128    0.99    0.92                                     0 of 16384   3.21e-17 -&gt; 3.21e-17
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>ijk, -O2                        256    0.98    1.04                                     0 of 65536   1.56e-17 -&gt; 1.56e-17
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>ijk, -O2                        512    1.02    1.19                                    0 of 262144   9.29e-17 -&gt; 9.29e-17
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>ijk, -O3 -march=native           64    1.41    1.69                                   3620 of 4096   8.73e-17 -&gt; 9.60e-17
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>ijk, -O3 -march=native          128    0.99    1.07                                 15216 of 16384   3.21e-17 -&gt; 2.78e-17
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>ijk, -O3 -march=native          256    1.30    1.09                                 62536 of 65536   1.56e-17 -&gt; 1.49e-17
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>ijk, -O3 -march=native          512    1.03    1.12                               233864 of 262144   9.29e-17 -&gt; 8.08e-17
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>ikj, -O2                         64    1.02    1.12                                      0 of 4096   8.73e-17 -&gt; 8.73e-17
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>ikj, -O2                        128    1.05    1.02                                     0 of 16384   3.21e-17 -&gt; 3.21e-17
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>ikj, -O2                        256    1.39    1.05                                     0 of 65536   1.56e-17 -&gt; 1.56e-17
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>ikj, -O2                        512    1.30    0.88                                    0 of 262144   9.29e-17 -&gt; 9.29e-17
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>ikj, -O3 -march=native           64    0.97    0.84                                   3620 of 4096   8.73e-17 -&gt; 9.60e-17
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>ikj, -O3 -march=native          128    0.76    0.79                                 15216 of 16384   3.21e-17 -&gt; 2.78e-17
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>ikj, -O3 -march=native          256    0.81    0.91                                 62536 of 65536   1.56e-17 -&gt; 1.49e-17
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>ikj, -O3 -march=native          512    0.80    0.83                               233864 of 262144   9.29e-17 -&gt; 8.08e-17
+</code></pre></div>
+<p>(The complete outputs are <code>bench_out_1.txt</code> and <code>bench_out_2.txt</code>.) What this says:</p>
+<ul>
+<li><strong>ikj with <code>-O3 -march=native</code>: 17% to 24% faster in the cells of both passes</strong> (ratios 0.76 to 0.91, except N = 64 at 0.84 and 0.97). This is the one reproducible speed-up, and it comes from <code>contract</code>: with a fused multiply-add, the inner loop does one instruction where it did two. It is <strong>not</strong> a vectorization effect (this loop was vectorized already).</li>
+<li><strong>Everything else is noise-sized and inconsistent</strong>: ijk and ikj at <code>-O2</code> between 0.88 and 1.39; ijk with <code>-march=native</code> between 0.99 and 1.69 (that is <em>slower</em> at N = 64, in both passes). In an earlier, single run of this experiment, ijk at <code>-O2</code> looked 28% faster at N = 512 (326 ms against 459 ms); the two passes above do not reproduce that (1.02 and 1.19), so I treat it as noise and not as a result.</li>
+<li><strong>So the vectorized dot product did not make ijk faster.</strong> Why not is partly understood: with sizes known at run time, LLVM guards the vectorized loop with a run-time check that the memref's stride is 1, and the ijk loop reads the second matrix down a column (stride N), so the check fails and the scalar path executes. Evidence: at <code>-O2</code> the results are <strong>bit-identical</strong> to the build without the flags in every element of every size (a vector sum in another order would change bits), and the object file contains packed adds (<code>addpd</code>) that are not executed. That does not explain why the timings still differ between builds at all, and I did not look further.</li>
+</ul>
+<h3 id="does-it-change-the-numbers">Does it change the numbers?<a class="headerlink" href="#does-it-change-the-numbers" title="Permanent link">&para;</a></h3>
+<p>The same table's last columns: at <code>-O2</code> (no fused multiply-add) <strong>no element differs by a single bit</strong>; with <code>-march=native</code>, <strong>88% to 89% of the elements differ in their bits</strong> (233,864 of 262,144 at N = 512), because <code>contract</code> fuses the multiply and the add and rounds once. The largest error against the <code>long double</code> reference stays at the same size, a few times 10⁻¹⁷ relative to the scale of the dot product, and is not larger with the flags (8.1 × 10⁻¹⁷ against 9.3 × 10⁻¹⁷ at N = 512). A fused multiply-add rounds once instead of twice, so it is, if anything, slightly more accurate. Different bits, same quality: but different bits are exactly what a program that compares outputs bit for bit, or a chaotic training run, can notice.</p>
+<h2 id="do-the-books-programs-print-different-numbers">Do the book's programs print different numbers?<a class="headerlink" href="#do-the-books-programs-print-different-numbers" title="Permanent link">&para;</a></h2>
+<p><code>semantics.py</code> compiles every example of the book that the front end accepts and that has under 400 lines (109 programs) at <code>-O2</code> three ways and compares the printed numbers:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>109 programs, each run at -O2 plain and with each fast-math setting; printed numbers compared
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>  --fast-math reassoc,contract  : 109 print the same, 0 differ
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>  --fast-math +nnan,ninf        : 109 print the same, 0 differ
+</code></pre></div>
+<p>All 109 print the same with the default flags. They also print the same with <code>nnan,ninf</code> added. <strong>That second line is not evidence that <code>nnan</code> is safe.</strong> It means these programs do not contain a computation on which the flag changes an answer in a way LLVM exploited. The next section builds one.</p>
+<h3 id="the-negative-control-why-nnan-is-not-in-the-default">The negative control: why <code>nnan</code> is not in the default<a class="headerlink" href="#the-negative-control-why-nnan-is-not-in-the-default" title="Permanent link">&para;</a></h3>
+<p>Chapter 29's naive softmax of huge scores is NaN (infinity divided by infinity). A NaN is not <code>&gt;=</code> itself, so <code>ge(p, p)</code> for a NaN <code>p</code> must be 0:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a># A comparison that depends on NaN behaving like NaN. softmax_naive of huge scores is NaN (Chapter 29: infinity / infinity); a NaN is not &gt;= itself, so ge(p, p) must print 0.
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a># With the flags &#39;no NaNs&#39; (nnan) the optimizer is allowed to assume p is never NaN, and then p &gt;= p is true.
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>def softmax_naive(x: tensor[1x3]) = exp(x) / row_sum(exp(x))
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>def same(p: tensor[1x3]) = ge(p, p)
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>print same(softmax_naive([[1000, 1001, 1002]]))
+</code></pre></div>
+<p>The checker's line for it:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>  ok   ge(p, p) for a NaN p at -O2: plain [[0,0,0]], reassoc+contract [[0,0,0]], with nnan [[1,1,1]] (the last is WRONG, and is why nnan is not a default)
+</code></pre></div>
+<p>At <code>-O2</code>: no flags 0 (right), <code>reassoc,contract</code> 0 (right), <code>reassoc,contract,nnan</code> <strong>1 (wrong)</strong>. The flag told LLVM that <code>p</code> is never NaN, so <code>p &gt;= p</code> was folded to true. At <code>-O0</code> it prints 0 in every setting; the wrong answer needs the optimizer. That is the whole reason the default is only <code>reassoc</code> and <code>contract</code>: those two change rounding; <code>nnan</code> and <code>ninf</code> can change <strong>which answer</strong> the program gives, and Mountain Goat's softmax examples exist to show that NaN and infinity are results a program may legitimately compute. The 109-program check above would not have caught this: the program that exposes it had to be written.</p>
+<h2 id="does-it-change-a-training-run">Does it change a training run?<a class="headerlink" href="#does-it-change-a-training-run" title="Permanent link">&para;</a></h2>
+<p>Chapter 35 found its 200-step training run chaotic: a change in the last bit grows until the printed checkpoints disagree. A flag that changes the last bit of every sum is a direct test of that. <code>training_sensitivity.py</code> compiles the 10-step training programs of Chapters 35 and 36 at <code>-O2</code>, plain and with <code>--fast-math</code>, for the baseline CPU and with <code>-march=native</code>, and compares everything they print:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>== part35 10 steps, clang -O2 
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>   plain      compile    24 s, 31 numbers printed
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>   fast-math  compile    23 s, 31 numbers printed
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>   printed numbers: 31 against 31; 0 differ in their printed (six-digit) text; the outputs are identical
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>== part35 10 steps, clang -O2 -march=native
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>   plain      compile    26 s, 31 numbers printed
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>   fast-math  compile    27 s, 31 numbers printed
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>   printed numbers: 31 against 31; 0 differ in their printed (six-digit) text; the outputs are identical
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>== part36 10 steps, clang -O2 
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>   plain      compile    99 s, 112 numbers printed
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>   fast-math  compile   113 s, 112 numbers printed
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>   printed numbers: 112 against 112; 0 differ in their printed (six-digit) text; the outputs are identical
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>== part36 10 steps, clang -O2 -march=native
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>   plain      compile   127 s, 112 numbers printed
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>   fast-math  compile   153 s, 112 numbers printed
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>   printed numbers: 112 against 112; 0 differ in their printed (six-digit) text; the outputs are identical
+</code></pre></div>
+<p>All four pairs print identical numbers at six digits. <strong>That does not show the bits are the same</strong> (I printed no more than six digits, and with <code>-march=native</code> the matrix-product test above shows the bits do change), and 10 steps is far from where Chapter 35's chaos appears. The 200-step experiment I wanted is <strong>not</strong> here: at <code>-O2</code>, <code>clang</code> was still compiling the 200-step Chapter 35 program after 29 minutes and I stopped it. (That also bounds Chapter 43's compile-time claim for <code>-O2</code>: it was measured on the 10-step programs only.) So the honest statement is: the flag did not change a 10-step run's printed output; whether it changes a 200-step run is <strong>not established</strong>.</p>
+<h2 id="tests">Tests<a class="headerlink" href="#tests" title="Permanent link">&para;</a></h2>
+<p>One new <code>lit</code> file <code>test/fastmath44/check.mlir</code> (the suite is now 156 tests). The checker:</p>
+<ol>
+<li><strong>The pass:</strong> every floating-point operation gets <code>fastmath&lt;reassoc,contract&gt;</code>, the integer addition gets nothing, the unprocessed file gets nothing; <code>flags=reassoc,nsz</code> gives exactly those; an unknown flag is an error with a message.</li>
+<li><strong>The driver:</strong> by default the LLVM IR of the self-attention example has 18 <code>fadd</code>/<code>fsub</code>/<code>fmul</code>/<code>fdiv</code>, none with a flag; with <code>--fast-math</code> all 18 carry <code>reassoc contract</code>; with <code>--fast-math=reassoc</code> all carry <code>reassoc</code> and nothing else.</li>
+<li><strong>The vectorizer:</strong> the ijk product is not vectorized without the flags (and the remark is the one about reordering), and is vectorized with them, for static and dynamic sizes.</li>
+<li><strong>The default is safe on the book's programs:</strong> every sixth example prints the same at <code>-O2</code> with <code>--fast-math</code>.</li>
+<li><strong>The negative control:</strong> <code>ge(p, p)</code> prints 0, 0 and 1 for plain, <code>reassoc,contract</code> and <code>nnan</code>.</li>
+</ol>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>-- 1. the pass
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>  ok   all 4 floating-point operations get fastmath&lt;reassoc,contract&gt;; the integer addition and the unprocessed file get none
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>  ok   flags=reassoc,nsz gives exactly those flags; an unknown flag is an error with a message
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>-- 2. the driver
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>  ok   default: 18 fadd/fsub/fmul/fdiv in the self-attention example, none with a flag
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>  ok   --fast-math: all 18 carry reassoc contract
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>  ok   --fast-math=reassoc: all 18 carry reassoc and nothing else
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>-- 3. the loop vectorizer
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>  ok   ijk product, static and dynamic sizes: not vectorized (cannot reorder floating-point operations) without the flags, vectorized with them
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>-- 4. the default prints the same on the book&#39;s examples
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>  ok   19 programs (every sixth example) print the same at -O2 with --fast-math, 0 differ
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>-- 5. the negative control: nnan changes an answer
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>  ok   ge(p, p) for a NaN p at -O2: plain [[0,0,0]], reassoc+contract [[0,0,0]], with nnan [[1,1,1]] (the last is WRONG, and is why nnan is not a default)
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>all checks pass
+</code></pre></div>
+<h3 id="are-the-checks-good-enough-eight-wrong-builds">Are the checks good enough? Eight wrong builds.<a class="headerlink" href="#are-the-checks-good-enough-eight-wrong-builds" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>NOTE: this script deliberately breaks the pass and the driver. &#39;caught&#39; lines are EXPECTED: they show the checker can detect the mistake.
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>baseline (nothing broken): checker passes (expected)
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>fast-math is ON by default: caught by 2 failing check(s):
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>      default: 18 fadd/fsub/fmul/fdiv in the self-attention example, none with a flag
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>      ijk product, static and dynamic sizes: not vectorized (cannot reorder floating-point operations) without the flags, vectorized with them
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>--fast-math=FLAGS ignores FLAGS (always the default flags): caught by 2 failing check(s):
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>      --fast-math=reassoc: all 18 carry reassoc and nothing else
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>      ge(p, p) for a NaN p at -O2: plain [[0,0,0]], reassoc+contract [[0,0,0]], with nnan [[0,0,0]] (the last is WRONG, and is why nnan is not a d
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>--fast-math is accepted but the pass is never run: caught by 4 failing check(s):
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>      --fast-math: all 18 carry reassoc contract
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>      --fast-math=reassoc: all 18 carry reassoc and nothing else
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>      ijk product, static and dynamic sizes: not vectorized (cannot reorder floating-point operations) without the flags, vectorized with them
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a>      ge(p, p) for a NaN p at -O2: plain [[0,0,0]], reassoc+contract [[0,0,0]], with nnan [[0,0,0]] (the last is WRONG, and is why nnan is not a d
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a>the default flags include nnan (no NaNs): caught by 3 failing check(s):
+<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a>      all 4 floating-point operations get fastmath&lt;reassoc,contract&gt;; the integer addition and the unprocessed file get none
+<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a>      --fast-math: all 18 carry reassoc contract
+<a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a>      ge(p, p) for a NaN p at -O2: plain [[0,0,0]], reassoc+contract [[1,1,1]], with nnan [[1,1,1]] (the last is WRONG, and is why nnan is not a d
+<a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a>the default flags lack contract: caught by 2 failing check(s):
+<a id="__codelineno-9-19" name="__codelineno-9-19" href="#__codelineno-9-19"></a>      all 4 floating-point operations get fastmath&lt;reassoc,contract&gt;; the integer addition and the unprocessed file get none
+<a id="__codelineno-9-20" name="__codelineno-9-20" href="#__codelineno-9-20"></a>      --fast-math: all 18 carry reassoc contract
+<a id="__codelineno-9-21" name="__codelineno-9-21" href="#__codelineno-9-21"></a>multiplications are skipped: caught by 3 failing check(s):
+<a id="__codelineno-9-22" name="__codelineno-9-22" href="#__codelineno-9-22"></a>      all 4 floating-point operations get fastmath&lt;reassoc,contract&gt;; the integer addition and the unprocessed file get none
+<a id="__codelineno-9-23" name="__codelineno-9-23" href="#__codelineno-9-23"></a>      --fast-math: all 18 carry reassoc contract
+<a id="__codelineno-9-24" name="__codelineno-9-24" href="#__codelineno-9-24"></a>      --fast-math=reassoc: all 18 carry reassoc and nothing else
+<a id="__codelineno-9-25" name="__codelineno-9-25" href="#__codelineno-9-25"></a>the flags option is ignored (always the default): caught by 3 failing check(s):
+<a id="__codelineno-9-26" name="__codelineno-9-26" href="#__codelineno-9-26"></a>      flags=reassoc,nsz gives exactly those flags; an unknown flag is an error with a message
+<a id="__codelineno-9-27" name="__codelineno-9-27" href="#__codelineno-9-27"></a>      --fast-math=reassoc: all 18 carry reassoc and nothing else
+<a id="__codelineno-9-28" name="__codelineno-9-28" href="#__codelineno-9-28"></a>      ge(p, p) for a NaN p at -O2: plain [[0,0,0]], reassoc+contract [[0,0,0]], with nnan [[0,0,0]] (the last is WRONG, and is why nnan is not a d
+<a id="__codelineno-9-29" name="__codelineno-9-29" href="#__codelineno-9-29"></a>an unknown flag is silently ignored: caught by 1 failing check(s):
+<a id="__codelineno-9-30" name="__codelineno-9-30" href="#__codelineno-9-30"></a>      flags=reassoc,nsz gives exactly those flags; an unknown flag is an error with a message
+<a id="__codelineno-9-31" name="__codelineno-9-31" href="#__codelineno-9-31"></a>
+<a id="__codelineno-9-32" name="__codelineno-9-32" href="#__codelineno-9-32"></a>restored: SetFastMath.cpp is back to its original and mg-opt is rebuilt
+</code></pre></div>
+<p>All eight are caught, and which check catches which is informative:</p>
+<ul>
+<li>A default that includes <code>nnan</code> is caught by the negative control as well as by the flag check: it is the mutant that makes the wrong answer appear.</li>
+<li>A driver whose <code>--fast-math=FLAGS</code> ignores FLAGS is caught by the <code>reassoc</code>-only check; so is a pass that ignores its option.</li>
+<li>A pass that skips multiplications and a default that lacks <code>contract</code> are caught by the first check because it looks at every operation and at the exact flag list.</li>
+<li>An unknown flag silently ignored is caught <strong>only</strong> by the check that asks for the error message.</li>
+</ul>
+<h2 id="limits-and-what-is-not-established">Limits and what is not established<a class="headerlink" href="#limits-and-what-is-not-established" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>The speed-up is one case</strong>: ikj with <code>-O3 -march=native</code>, 17% to 24%, from fused multiply-add. The dot-product vectorization that motivated the chapter gave <strong>no reproducible speed-up</strong> here, probably because of the run-time stride check (not shown to be the whole story). Static sizes were not benchmarked.</li>
+<li><strong>One machine</strong>, pinned to one core, 7 trials per cell, two passes. Ratios between 0.9 and 1.4 in the noise-sized cells show how much the machine itself moves.</li>
+<li><strong>Bits change with <code>-march=native</code></strong> (88% to 89% of the matrix-product results). Whether that matters is up to the program; the book's programs printed the same at six digits, which is weaker than "the same".</li>
+<li><strong>The 200-step training run was not tested</strong> (compile time at <code>-O2</code> over 29 minutes, stopped); chaos is therefore untested with this flag.</li>
+<li><strong>The negative control is one program.</strong> It shows <code>nnan</code> can change an answer, not how often; the flags <code>ninf</code>, <code>nsz</code>, <code>arcp</code> and <code>afn</code> were not studied one by one.</li>
+<li><strong>The pass sets the same flags on every floating-point operation</strong> of the module. It does not choose per loop or per operation, which LLVM allows and a real compiler might want (for example, only on sums).</li>
+<li><strong><code>math</code> operations (<code>exp</code>, <code>sqrt</code>, <code>log</code>) are not touched</strong>: they become library calls, and the <code>math</code> dialect's own flags are not set here.</li>
+</ul>
+<h2 id="reproducing">Reproducing<a class="headerlink" href="#reproducing" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nb">cd</span><span class="w"> </span>docs/part44/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./build.sh
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>./ir_and_remarks.sh<span class="w"> </span>&gt;<span class="w"> </span>ir_and_remarks_out.txt
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>./run_bench.sh<span class="w"> </span>&gt;<span class="w"> </span>bench_out_1.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_bench.sh<span class="w"> </span>&gt;<span class="w"> </span>bench_out_2.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./summarize.py<span class="w"> </span>&gt;<span class="w"> </span>summary_out.txt
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>./semantics.py<span class="w"> </span>&gt;<span class="w"> </span>semantics_out.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./training_sensitivity.py<span class="w"> </span>&gt;<span class="w"> </span>training_sensitivity_out.txt
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>./check_fastmath.py<span class="w"> </span>&gt;<span class="w"> </span>check_fastmath_out.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./mutation.py<span class="w"> </span>&gt;<span class="w"> </span>mutation_out.txt
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="nb">cd</span><span class="w"> </span>../../part15/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_lit.sh<span class="w">          </span><span class="c1"># 156 tests</span>
+</code></pre></div>
+<h2 id="chapter-summary">Chapter summary<a class="headerlink" href="#chapter-summary" title="Permanent link">&para;</a></h2>
+<ul>
+<li>LLVM fast-math flags are per instruction, and <code>-ffast-math</code> does nothing to a <code>.ll</code> file, so the compiler that writes the IR is the place to choose them. <code>--mg-set-fastmath</code> puts <code>reassoc</code> and <code>contract</code> on every floating-point operation; <code>mgc --fast-math</code> runs it; it is off by default.</li>
+<li>With the flags, LLVM vectorizes the ijk dot-product loop it refused to before (Chapter 37, now from the compiler's own output).</li>
+<li>The only reproducible speed-up was ikj with a fused multiply-add: 17% to 24%. ijk did not get faster, plausibly because the vectorized path is guarded by a stride check that column access fails.</li>
+<li>At <code>-O2</code> the results are bit-identical; with <code>-march=native</code>, 88% to 89% of results differ in their bits and the error against a long-double reference is not larger.</li>
+<li>109 book programs and the 10-step training programs print the same numbers. That is not proof of safety: <code>nnan</code> flips <code>ge(p, p)</code> for a NaN <code>p</code> from 0 to 1 at <code>-O2</code>, which is why it is not a default.</li>
+<li>Eight broken builds are caught. The 200-step training run was not tested.</li>
+</ul>
+<h2 id="self-check-questions">Self-check questions<a class="headerlink" href="#self-check-questions" title="Permanent link">&para;</a></h2>
+<p>Each answer is collapsed; try the question first.</p>
+<ol>
+<li>
+<p>Why did Chapter 37's <code>-ffast-math</code> experiment on a <code>.ll</code> file do nothing, and what does this chapter do instead?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>Fast-math flags are properties of individual LLVM instructions. <code>-ffast-math</code> is an option of the C front end of clang that sets them on the instructions it generates from C; a <code>.ll</code> file already contains the instructions and clang does not rewrite them. The compiler that writes the IR has to put the flags on the operations, which is what <code>--mg-set-fastmath</code> does.</p>
+</details>
+</li>
+<li>
+<p>What do <code>reassoc</code> and <code>contract</code> allow, and why those two and not <code>-ffast-math</code>'s whole set?</p>
+<details class="note">
+<summary>Answer</summary>
+<p><code>reassoc</code> allows regrouping sums and products, which is what lets the dot-product loop be vectorized; <code>contract</code> allows a multiply and an add to become one fused multiply-add. Both change rounding. <code>nnan</code> and <code>ninf</code> change the meaning of NaN and infinity, which Mountain Goat's softmax examples rely on; the negative control shows <code>nnan</code> turning <code>ge(p, p)</code> for a NaN <code>p</code> from 0 to 1.</p>
+</details>
+</li>
+<li>
+<p>The 109 book programs print the same with <code>nnan,ninf</code>. Why is that not evidence the flags are safe?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>It only shows that none of those programs has a computation on which LLVM exploited the assumption. The negative control, written specifically to depend on NaN behaviour, changes its answer at <code>-O2</code>. A test that passes on programs that never exercise the risk says nothing about the risk.</p>
+</details>
+</li>
+<li>
+<p>Why did the vectorized ijk loop not run faster, and what is the evidence?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>With sizes known at run time, LLVM guards the vectorized loop with a check that the stride is 1; ijk reads the second matrix down a column, so the check fails and the scalar loop runs. At <code>-O2</code> every result element is bit-identical with and without the flags (a vectorized sum in another order would differ), although the object file contains packed adds. This does not explain the remaining timing differences, and static sizes were not benchmarked.</p>
+</details>
+</li>
+<li>
+<p>What reproduced as a speed-up, and why?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>ikj at <code>-O3 -march=native</code>: 17% to 24% faster in both passes (ratios 0.76 to 0.91, with N = 64 at 0.84 and 0.97). The cause is <code>contract</code>: the machine has a fused multiply-add, and the inner loop does one instruction where it did two. The loop was already vectorized, so it is not about vectorization.</p>
+</details>
+</li>
+<li>
+<p>With <code>-march=native</code>, 88% to 89% of the matrix-product results differ in their bits with the flags. Is the answer worse?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>Not by the measure used: the largest error against an 80-bit reference stays at the same size (8.1 × 10⁻¹⁷ against 9.3 × 10⁻¹⁷ at N = 512), and a fused multiply-add rounds once instead of twice. The bits are different, which matters for a program that compares outputs exactly or amplifies tiny differences, as Chapter 35's chaotic run does.</p>
+</details>
+</li>
+<li>
+<p>Name three things this chapter does not establish.</p>
+<details class="note">
+<summary>Answer</summary>
+<p>Any of: whether the flag changes a 200-step training run (the <code>-O2</code> compile did not finish in 29 minutes); the speed for statically known sizes; how often <code>nnan</code> changes an answer (one program only); the effect of the other flags (<code>ninf</code>, <code>nsz</code>, <code>arcp</code>, <code>afn</code>); why the timings of the ijk builds differ at all when their results are bit-identical; per-operation instead of module-wide flags.</p>
+</details>
+</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../../part43/43-outlining-by-default/" class="md-footer__link md-footer__link--prev" aria-label="Previous: 43. Outlining by Default: What the Calls Cost, and Which Defaults Changed">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                43. Outlining by Default: What the Calls Cost, and Which Defaults Changed
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 Oluwaseyi Awoga
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

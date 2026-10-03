@@ -2289,6 +2289,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part44/44-fast-math-flags/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    44. Fast-Math Flags from the Compiler: What Reordering Is Allowed to Buy, and What It Did
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2748,14 +2776,17 @@
 <a id="__codelineno-0-170" name="__codelineno-0-170" href="#__codelineno-0-170"></a><span class="c1"># Chapter 43: mgc&#39;s defaults changed (loops lowered last to first, big functions outlined); the driver is part43/code/mgc, its mg-opt is Chapter 42&#39;s.</span>
 <a id="__codelineno-0-171" name="__codelineno-0-171" href="#__codelineno-0-171"></a><span class="n">ch43</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">test_source_root</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;part43&quot;</span><span class="p">,</span> <span class="s2">&quot;code&quot;</span><span class="p">)</span>
 <a id="__codelineno-0-172" name="__codelineno-0-172" href="#__codelineno-0-172"></a><span class="n">config</span><span class="o">.</span><span class="n">substitutions</span> <span class="o">+=</span> <span class="p">[(</span><span class="s2">&quot;</span><span class="si">%c</span><span class="s2">h43&quot;</span><span class="p">,</span> <span class="n">ch43</span><span class="p">)]</span>
+<a id="__codelineno-0-173" name="__codelineno-0-173" href="#__codelineno-0-173"></a><span class="c1"># Chapter 44: fast-math flags (--mg-set-fastmath, mgc --fast-math); the newest mg-opt build is this chapter&#39;s.</span>
+<a id="__codelineno-0-174" name="__codelineno-0-174" href="#__codelineno-0-174"></a><span class="n">ch44</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">test_source_root</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;part44&quot;</span><span class="p">,</span> <span class="s2">&quot;code&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-175" name="__codelineno-0-175" href="#__codelineno-0-175"></a><span class="n">config</span><span class="o">.</span><span class="n">substitutions</span> <span class="o">+=</span> <span class="p">[(</span><span class="s2">&quot;</span><span class="si">%c</span><span class="s2">h44&quot;</span><span class="p">,</span> <span class="n">ch44</span><span class="p">)]</span>
 </code></pre></div>
 <p>The one design decision worth noticing is <code>MG_OPT</code>: <strong>which <code>mg-opt</code> binary is tested is an environment variable</strong>, not a constant. That is what lets the same suite be pointed at older builds later in this chapter to show the tests can fail. Each test gets its own scratch name (<code>%t</code>), so tests cannot read each other's files.</p>
 <p>The launcher script is three lines of real logic:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="ch">#!/bin/sh</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="c1"># Run the regression suite against an mg-opt build. Default: the newest build that exists, Chapter 42, then 38, 32, 31, 30, 29, 28, 24, 22, 21, 20, 19, 14 (run ../../part42/code/build.sh etc. first).</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="c1"># Run the regression suite against an mg-opt build. Default: the newest build that exists, Chapter 44, then 42, 38, 32, 31, 30, 29, 28, 24, 22, 21, 20, 19, 14 (run ../../part44/code/build.sh etc. first).</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># Override with MG_OPT=/path/to/mg-opt. Needs: pip install lit; FileCheck-18, not-18, mlir-translate-18, clang-18.</span>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="nv">HERE</span><span class="o">=</span><span class="k">$(</span><span class="nb">cd</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>dirname<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$0</span><span class="s2">&quot;</span><span class="k">)</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">pwd</span><span class="k">)</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">MG_OPT</span><span class="o">=</span><span class="si">${</span><span class="nv">MG_OPT</span><span class="k">:-$(for</span><span class="w"> </span>b<span class="w"> </span><span class="k">in</span><span class="w"> </span>part42<span class="w"> </span>part38<span class="w"> </span>part32<span class="w"> </span>part31<span class="w"> </span>part30<span class="w"> </span>part29<span class="w"> </span>part28<span class="w"> </span>part24<span class="w"> </span>part22<span class="w"> </span>part21<span class="w"> </span>part20<span class="w"> </span>part19<span class="w"> </span>part14<span class="p">;</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-x<span class="w"> </span><span class="nv">$HERE</span>/../../<span class="nv">$b</span>/code/build/mg-opt<span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="nv">$HERE</span>/../../<span class="nv">$b</span>/code/build/mg-opt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="k">break</span><span class="p">;</span><span class="w"> </span><span class="k">done)</span><span class="si">}</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">MG_OPT</span><span class="o">=</span><span class="si">${</span><span class="nv">MG_OPT</span><span class="k">:-$(for</span><span class="w"> </span>b<span class="w"> </span><span class="k">in</span><span class="w"> </span>part44<span class="w"> </span>part42<span class="w"> </span>part38<span class="w"> </span>part32<span class="w"> </span>part31<span class="w"> </span>part30<span class="w"> </span>part29<span class="w"> </span>part28<span class="w"> </span>part24<span class="w"> </span>part22<span class="w"> </span>part21<span class="w"> </span>part20<span class="w"> </span>part19<span class="w"> </span>part14<span class="p">;</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-x<span class="w"> </span><span class="nv">$HERE</span>/../../<span class="nv">$b</span>/code/build/mg-opt<span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="nv">$HERE</span>/../../<span class="nv">$b</span>/code/build/mg-opt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="k">break</span><span class="p">;</span><span class="w"> </span><span class="k">done)</span><span class="si">}</span>
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="o">[</span><span class="w"> </span>-x<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$MG_OPT</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;no mg-opt at </span><span class="nv">$MG_OPT</span><span class="s2"> (build it first)&quot;</span><span class="p">;</span><span class="w"> </span><span class="nb">exit</span><span class="w"> </span><span class="m">2</span><span class="p">;</span><span class="w"> </span><span class="o">}</span>
 <a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="nb">export</span><span class="w"> </span><span class="nv">MG_TEST_TMP</span><span class="o">=</span><span class="si">${</span><span class="nv">MG_TEST_TMP</span><span class="k">:-</span><span class="nv">$HERE</span><span class="p">/work/lit-out</span><span class="si">}</span>
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>mkdir<span class="w"> </span>-p<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$MG_TEST_TMP</span><span class="s2">&quot;</span>

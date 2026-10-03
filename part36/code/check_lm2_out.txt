@@ -1,0 +1,23 @@
+-- the hand-derived backward pass against the independent per-position gradient, and against finite differences
+  ok   starting weights #1: the loss and all 36 gradient matrices equal the reference
+  ok   starting weights #1: 36 weights (the largest gradient in every matrix) agree with finite differences (largest difference 0.0e+00; at this size of gradient that means all six printed digits agree)
+  ok   starting weights #2: the loss and all 36 gradient matrices equal the reference
+  ok   starting weights #3: the loss and all 36 gradient matrices equal the reference
+-- training 200 steps against the independent Python trainer
+  ok   step 0: loss 1.596249 and 10 of 64 correct equal the reference
+  ok   step 1: loss 1.352912 and 20 of 64 correct equal the reference
+  ok   step 10: loss 1.034531 and 39 of 64 correct equal the reference
+  ok   step 25: loss 0.715460 and 45 of 64 correct equal the reference
+  ok   step 50: loss 0.473335 and 49 of 64 correct equal the reference
+  ok   step 100: loss 0.357390 and 55 of 64 correct equal the reference
+  ok   step 150: loss 0.014850 and 64 of 64 correct equal the reference
+  ok   step 200: loss 0.003145 and 64 of 64 correct equal the reference
+  ok   the 16 held-out sequences: 40 of 64 correct and loss 2.326970 equal the reference
+  ok   the number correct in each of the four chunks of 16 of all 64 sequences, [39, 51, 51, 43], equals the reference's [39, 51, 51, 43]
+  ok   four attention patterns were printed (2 blocks x 2 heads)
+  ok   the four attention patterns of the first training sequence equal the reference's
+  ok   every attention row of every head sums to 1 and puts exactly 0 on every later position (the mask works)
+-- the experiment
+  ok   it fits its 16 training sequences: loss 0.003145, 64 of 64 predictions right
+  --   held-out: 40 of 64 predictions right; all 64 sequences: 184 of 256 right (reported on the page, not asserted)
+all checks pass

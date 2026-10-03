@@ -1,0 +1,13 @@
+mutant 1: softmax backward misses the row-sum correction in head 2 of block 2 only
+-- the hand-derived backward pass against the independent per-position gradient, and against finite differences
+  FAIL starting weights #1: the loss and all 36 gradient matrices equal the reference
+       ['emb', 'g1_1', 'bt1_1', 'wq1_1', 'wk1_1', 'wv1_1', 'wo1_1', 'wv2_1', 'wo2_1', 'g2_1', 'bt2_1', 'w1_1', 'b1_1', 'w2_1', 'b2_1', 'g1_2', 'bt1_2', 'wq2_2', 'wk2_2']
+  ok   starting weights #1: 36 weights (the largest gradient in every matrix) agree with finite differences (largest difference 4.7e-04)
+  FAIL starting weights #2: the loss and all 36 gradient matrices equal the reference
+
+mutant 2: dk forgets to transpose ds in head 2 of block 1 only
+-- the hand-derived backward pass against the independent per-position gradient, and against finite differences
+  FAIL starting weights #1: the loss and all 36 gradient matrices equal the reference
+       ['emb', 'g1_1', 'bt1_1', 'wk2_1']
+  FAIL starting weights #1: 36 weights (the largest gradient in every matrix) agree with finite differences (largest difference 1.9e-03)
+       0.0019374829999999998

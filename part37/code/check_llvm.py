@@ -14,7 +14,7 @@ Environment variables (CHK_*) change how an input is built; model_mutation.sh se
 Usage: check_llvm.py      Exit status 0 only if every check passes."""
 import os, re, subprocess, sys, tempfile
 here = os.path.dirname(os.path.abspath(__file__)); mgc = os.path.join(here, "..", "..", "part32", "code", "mgc")
-_newest = [os.path.join(here, "..", "..", p, "code", "build", "mg-opt") for p in ("part38", "part32")]      # the newest compiler build that exists (CI builds only Chapter 38's)
+_newest = [os.path.join(here, "..", "..", p, "code", "build", "mg-opt") for p in ("part42", "part38", "part32")]      # the newest compiler build that exists (CI builds only Chapter 42's)
 os.environ.setdefault("MG_OPT", next((p for p in _newest if os.path.exists(p)), _newest[-1]))
 work = tempfile.mkdtemp(prefix="ch37_")
 E = os.environ.get

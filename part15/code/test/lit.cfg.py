@@ -164,3 +164,6 @@ config.environment["PATH"] = os.environ["PATH"]
 # Chapter 41: a back end from the mg dialect to GA-1 (Python over `mgc mlir` text).
 ch41 = os.path.join(config.test_source_root, "..", "..", "..", "part41", "code")
 config.substitutions += [("%ch41", ch41)]
+# Chapter 42: lowering scf to cf last to first (--mg-scf-to-cf-reverse, mgc --reverse-loops); mg-opt of this chapter is the newest build.
+ch42 = os.path.join(config.test_source_root, "..", "..", "..", "part42", "code")
+config.substitutions += [("%ch42", ch42)]

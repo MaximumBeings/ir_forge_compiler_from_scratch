@@ -1,0 +1,8 @@
+time of the lowering pass in seconds, by number of loop nests n (each copies 4 numbers); one run each
+      n  convert-scf-to-cf  last-to-first  500 per function   growth for 2x the loops: standard, last-to-first
+   2000              0.067          0.018             0.021
+   4000              0.514          0.044             0.042      7.6x, 2.4x
+   8000              4.029          0.083             0.085      7.8x, 1.9x
+  16000             19.202          0.185             0.159      4.8x, 2.2x
+  32000             78.359          0.457             0.311      4.1x, 2.5x
+  64000            311.681          1.201             0.797      4.0x, 2.6x

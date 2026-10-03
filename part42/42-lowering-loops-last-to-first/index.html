@@ -1,0 +1,2936 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A Toy Language Compiled Through a Real MLIR Dialect, Down to Real Native Machine Code">
+      
+      
+        <meta name="author" content="Oluwaseyi Awoga">
+      
+      
+      
+        <link rel="prev" href="../../part41/41-compiling-mountain-goat-to-ga-1/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>42. Lowering the Loops Last to First: Testing the Idea Chapter 39 Left Open - IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#42-lowering-the-loops-last-to-first-testing-the-idea-chapter-39-left-open" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-header__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              42. Lowering the Loops Last to First: Testing the Idea Chapter 39 Left Open
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" class="md-nav__button md-logo" aria-label="IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5v5c4.03 2.47-.56 4.97-3 6v3h15v-3c-6.41-2.73-3.53-7 1-8V5zM2 6c.81 2.13 2.42 3.5 5 4V6z"/></svg>
+
+    </a>
+    IR Forge -- Mountain Goat, An MLIR/LLVM Compiler From Scratch -- Under Development
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../background/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background (LLVM and MLIR in Twenty Minutes)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tour/language-tour/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Mountain Goat Language: A Short Tour
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 0 -- Why a Multi-Level IR at All
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part1/01-why-a-multi-level-ir-at-all/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1. Why a Multi-Level IR at All
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 1 -- A Minimal Dialect From Scratch
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part2/02-a-minimal-dialect-from-scratch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2. A Minimal Dialect From Scratch: Mountain Goat's Own mg Dialect
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 2 -- The Pass Infrastructure
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part3/03-the-pass-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3. The Real Pass Infrastructure: Canonicalizing Mountain Goat
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 3 -- Progressive Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 3 -- Progressive Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part4/04-progressive-lowering-to-affine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4. Progressive Lowering: Mountain Goat to affine, Two Real Ways
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part5/05-affine-to-scf-to-llvm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5. Finishing Progressive Lowering: affine to scf to llvm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 4 -- Optimization Across Levels
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 4 -- Optimization Across Levels
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/06-real-bufferization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6. Real Bufferization: Closing Chapter 4's Own Honest Gap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part7/07-real-loop-transforms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    7. Real Loop Transforms: Fusion, Tiling, and Unrolling at the affine Level
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 5 -- Code Generation via LLVM
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 5 -- Code Generation via LLVM
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part8/08-a-standalone-native-executable/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    8. A Standalone Native Executable: Mountain Goat Without MLIR At Runtime
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part9/09-the-execution-engine-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    9. MLIR's Own Real C++ ExecutionEngine API, Called In-Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 6 -- GPU Lowering
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 6 -- GPU Lowering
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part10/10-gpu-lowering-to-ptx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10. GPU Lowering: Mountain Goat to the gpu Dialect, NVVM, and Real PTX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part11/11-the-gpu-host-side/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    11. The GPU Host Side: Device Memory, Real Runtime Calls, and a Stub Device
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 7 -- Case Studies
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 7 -- Case Studies
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part12/12-reading-the-production-pipelines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    12. Reading MLIR's Own Production Pipelines: What This Book's Compiler Is Missing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part13/13-dynamic-shapes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    13. Dynamic Shapes: Closing Chapter 12's Biggest Unknown
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part14/14-runtime-shape-checks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    14. A Runtime Shape Check: Closing Chapter 13's Memory-Safety Hole
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part15/15-a-real-test-suite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    15. A Real Test Suite: lit, FileCheck, and Proof That the Tests Can Fail
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part16/16-testing-the-gpu-path-and-loop-transforms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    16. Testing the GPU Path and the Loop Transforms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part17/17-loop-transforms-on-dynamic-bounds/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    17. Loop Transforms on Dynamic Bounds
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part18/18-why-fusion-declines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    18. Why Fusion Declines: Reading the Pass, and a Second Bug Found Along the Way
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part19/19-a-better-abort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    19. A Better Abort: Reporting Assertion Failures on stderr
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part20/20-the-mountain-goat-demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    20. The Mountain Goat Demo: A Surface Syntax, a Driver, and C++ Calling Compiled Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part21/21-more-operations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    21. More Operations: Subtract, Hadamard, Divide, Matrix Product, and Scalars
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part22/22-broadcasting-reductions-and-relu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    22. Broadcasting, Reductions and relu: Enough Operations for a Neural-Network Layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part23/23-measuring-performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    23. Measuring Performance: Does Any of It Make the Code Fast?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part24/24-closing-the-matmul-gap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    24. Closing the Gap: A Matrix Product That Walks Memory in a Better Order
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part25/25-keeping-it-working/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    25. Keeping It Working: Continuous Integration and the Tests the Early Chapters Never Had
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part26/26-learning-from-data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    26. Learning From Data: Gradient Descent in Mountain Goat
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part27/27-tensor-contractions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    27. Tensor Contractions as Matrix Products
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part28/28-contraction-in-mountain-goat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    28. Tensor Contractions in Mountain Goat Itself
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part29/29-softmax-and-attention/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    29. Softmax and Attention
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part30/30-a-small-transformer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    30. A Small Transformer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part31/31-training-a-bigram-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    31. Training a Language Model: Gradient Descent on a Bigram
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part32/32-does-it-generalize/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    32. Does It Generalize? Held-Out Data, Overfitting and Weight Decay
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part33/33-backpropagation-through-attention/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    33. Backpropagation Through Attention: Training a One-Head Classifier
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part34/34-why-a-block-has-a-feed-forward-network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    34. Why a Block Has a Feed-Forward Network: Backpropagation Through Layer Norm, ReLU and Residuals
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part35/35-training-a-transformer-language-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    35. Training a Transformer Language Model: Backpropagation Through Causal Attention and Embeddings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part36/36-training-chapter-30s-transformer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    36. Training Chapter 30's Transformer: Two Heads, Two Blocks, and a Result That Is Not Better
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part37/37-inside-the-llvm-stage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    37. Inside the LLVM Stage: Reading the IR, and Why a Loop Does or Does Not Vectorize
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part38/38-outlining-loop-nests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    38. Why Compile Time Was Quadratic, and a Pass That Outlines Loop Nests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part39/39-finding-the-quadratic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    39. Finding the Quadratic: a Differential Profile of the Lowering Pass
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part40/40-a-model-of-a-matrix-accelerator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    40. A Model of a Matrix Accelerator: Tiles, a Scratchpad, and What Loop Order Does There
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part41/41-compiling-mountain-goat-to-ga-1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    41. Compiling Mountain Goat to GA-1: Fusion, Tiling and Why Decoding Is Memory-Bound
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    42. Lowering the Loops Last to First: Testing the Idea Chapter 39 Left Open
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    42. Lowering the Loops Last to First: Testing the Idea Chapter 39 Left Open
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-idea-and-why-it-should-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The idea, and why it should work
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#does-it-fix-the-quadratic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Does it fix the quadratic?
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Does it fix the quadratic?">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-count-of-instructions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The count of instructions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-it-costs-when-the-quadratic-is-not-there" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it costs when the quadratic is not there
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-real-program" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The real program
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#is-it-the-same-program" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Is it the same program?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#are-the-checks-good-enough-seven-wrong-passes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Are the checks good enough? Seven wrong passes.
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-pass-does-not-fix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the pass does not fix
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limits-and-what-is-not-established" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits and what is not established
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-idea-and-why-it-should-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The idea, and why it should work
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#does-it-fix-the-quadratic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Does it fix the quadratic?
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Does it fix the quadratic?">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-count-of-instructions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The count of instructions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-it-costs-when-the-quadratic-is-not-there" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it costs when the quadratic is not there
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-real-program" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The real program
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#is-it-the-same-program" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Is it the same program?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#are-the-checks-good-enough-seven-wrong-passes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Are the checks good enough? Seven wrong passes.
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-pass-does-not-fix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the pass does not fix
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limits-and-what-is-not-established" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits and what is not established
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-check questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="42-lowering-the-loops-last-to-first-testing-the-idea-chapter-39-left-open">42. Lowering the Loops Last to First: Testing the Idea Chapter 39 Left Open<a class="headerlink" href="#42-lowering-the-loops-last-to-first-testing-the-idea-chapter-39-left-open" title="Permanent link">&para;</a></h1>
+<p><strong>What you will understand:</strong> how a hypothesis that comes out of a profile gets tested. Chapter 39 found <em>why</em> MLIR's <code>SCFToControlFlow</code> is quadratic in the number of loops in one function (each loop splits its block and moves everything behind it) and said, in its limits section, that lowering the loops from the last to the first "would make each split move a short tail; that is an idea suggested by the mechanism, not something tested here". This chapter tests it. It writes a small pass, <code>--mg-scf-to-cf-reverse</code>, that lowers the top-level statements of a function one at a time, last first, and measures it: against MLIR's own pass on a synthetic function (312 seconds against 1.2 seconds at 64,000 loops), on the real 200-step training program (the lowering pass goes from 2,106 seconds to 3 seconds with no outlining at all), and on its output, which turns out to be byte-for-byte the same IR. It also measures what the pass does <strong>not</strong> fix.</p>
+<p><strong>What you need to know first:</strong> Chapter 38 (the quadratic, outlining) and Chapter 39 (the profile and the mechanism: <code>Block::splitBlock</code>, <code>transferNodesFromList</code>). The new pass is about 40 lines of C++ on top of MLIR's own conversion patterns; you do not need to know C++ to follow the measurements.</p>
+<div class="admonition tip">
+<p class="admonition-title">Compile and run</p>
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">cd</span><span class="w"> </span>docs/part42/code
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>./build.sh<span class="w">                                   </span><span class="c1"># mg-opt of this chapter: Chapter 38&#39;s plus --mg-scf-to-cf-reverse (a few minutes; needs mlir-18-tools, libmlir-18-dev, cmake)</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>./scaling.py<span class="w"> </span>&gt;<span class="w"> </span>scaling_out.txt<span class="w">               </span><span class="c1"># synthetic loops, three lowerings, 2,000 to 64,000 loops (about 7 minutes)</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>./nested_limit.py<span class="w"> </span>&gt;<span class="w"> </span>nested_limit_out.txt<span class="w">     </span><span class="c1"># what the pass does not fix (about 1 minute)</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>./check_reverse.py<span class="w"> </span>&gt;<span class="w"> </span>check_reverse_out.txt<span class="w">   </span><span class="c1"># the checks of this page (about a minute; needs valgrind)</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>./mutation.py<span class="w"> </span>&gt;<span class="w"> </span>mutation_out.txt<span class="w">             </span><span class="c1"># 6 WRONG passes plus one wrong setting that the checker must catch (about 10 minutes: each rebuilds mg-opt)</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>./full200.sh<span class="w"> </span>&gt;<span class="w"> </span>full200_out.txt<span class="w">               </span><span class="c1"># the 200-step training program, stage by stage (about 4 minutes)</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>./pass_times_200.sh<span class="w"> </span>&gt;<span class="w"> </span>pass_times_200_out.txt<span class="w"> </span><span class="c1"># every pass of the lowering stage on that program; the ordinary pass takes about 35 minutes: run it in the background</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="nb">cd</span><span class="w"> </span>../../part15/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_lit.sh<span class="w">         </span><span class="c1"># the whole test suite</span>
+</code></pre></div>
+Every listing and output on this page comes from these commands. <code>mgc</code> now takes <code>--reverse-loops</code> (it substitutes the new pass for <code>--convert-scf-to-cf</code>); nothing else about it changes, and the option is <strong>off by default</strong> (Chapter 43 returns to what the defaults should be).</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Why this page shows a mutation run, and why 'caught' is the wanted result</p>
+<p><code>mutation.py</code> writes broken versions of the pass and expects the checker to fail on each. "Caught" is good; "NOT CAUGHT" would be a gap. Nothing on this page is a failing test.</p>
+</div>
+<h2 id="the-idea-and-why-it-should-work">The idea, and why it should work<a class="headerlink" href="#the-idea-and-why-it-should-work" title="Permanent link">&para;</a></h2>
+<p>Chapter 39's profile says: lowering the loop at position <em>i</em> of a block splits the block there and <strong>moves every operation behind it</strong> into a new block, and the loops are lowered first to last, so loop <em>i</em> still has <em>n − i</em> unlowered nests behind it. About <em>n</em>²/2 nests are moved in all.</p>
+<p>Now lower them in the other order. The last loop is split first: nothing is behind it. The next-to-last loop is split second, and what is behind it is the <strong>already lowered</strong> last loop, which is no longer a pile of operations in this block: the split left a branch behind and the loop's blocks live elsewhere. So every split moves only the operations between two neighbouring loops, a constant number, and the total is linear.</p>
+<p>MLIR's pass cannot be told to do this (the conversion driver visits operations in program order), so the new pass drives MLIR's own lowering patterns itself:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1">// --mg-scf-to-cf-reverse: lower scf.for / scf.if / scf.while to control flow like MLIR&#39;s --convert-scf-to-cf, but one top-level statement at a time, LAST TO FIRST.</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="c1">//</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1">// Why (Chapter 39): lowering a loop splits the block at the loop and moves every operation after it into a new block, so n loops in one block move about n^2/2 operations in all</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1">// when they are lowered first to last. Lowered last to first, the tail after loop k has already been turned into a few branches, so each split moves only the few operations between</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="c1">// two neighbouring loops. Chapter 42 measures whether that is enough. The result is the same control flow, in a different order of creation.</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Conversion/SCFToControlFlow/SCFToControlFlow.h&quot;</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/Arith/IR/Arith.h&quot;</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/ControlFlow/IR/ControlFlowOps.h&quot;</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/Func/IR/FuncOps.h&quot;</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Dialect/SCF/IR/SCF.h&quot;</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/IR/PatternMatch.h&quot;</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Pass/Pass.h&quot;</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Pass/PassRegistry.h&quot;</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;mlir/Transforms/DialectConversion.h&quot;</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="k">using</span><span class="w"> </span><span class="k">namespace</span><span class="w"> </span><span class="nn">mlir</span><span class="p">;</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="k">namespace</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="k">struct</span><span class="w"> </span><span class="nc">ScfToCfReversePass</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">PassWrapper</span><span class="o">&lt;</span><span class="n">ScfToCfReversePass</span><span class="p">,</span><span class="w"> </span><span class="n">OperationPass</span><span class="o">&lt;</span><span class="n">func</span><span class="o">::</span><span class="n">FuncOp</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="w">  </span><span class="n">MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID</span><span class="p">(</span><span class="n">ScfToCfReversePass</span><span class="p">)</span>
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="w">  </span><span class="n">StringRef</span><span class="w"> </span><span class="n">getArgument</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">final</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;mg-scf-to-cf-reverse&quot;</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="w">  </span><span class="n">StringRef</span><span class="w"> </span><span class="n">getDescription</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">final</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;Lower scf to cf one top-level statement at a time, from the last to the first&quot;</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="w">  </span><span class="kt">void</span><span class="w"> </span><span class="n">getDependentDialects</span><span class="p">(</span><span class="n">DialectRegistry</span><span class="w"> </span><span class="o">&amp;</span><span class="n">registry</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">registry</span><span class="p">.</span><span class="n">insert</span><span class="o">&lt;</span><span class="n">cf</span><span class="o">::</span><span class="n">ControlFlowDialect</span><span class="p">,</span><span class="w"> </span><span class="n">arith</span><span class="o">::</span><span class="n">ArithDialect</span><span class="o">&gt;</span><span class="p">();</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="w">  </span><span class="kt">void</span><span class="w"> </span><span class="n">runOnOperation</span><span class="p">()</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="w">    </span><span class="n">func</span><span class="o">::</span><span class="n">FuncOp</span><span class="w"> </span><span class="n">func</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getOperation</span><span class="p">();</span>
+<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">func</span><span class="p">.</span><span class="n">getBody</span><span class="p">().</span><span class="n">empty</span><span class="p">())</span><span class="w"> </span><span class="k">return</span><span class="p">;</span>
+<a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="w">    </span><span class="n">MLIRContext</span><span class="w"> </span><span class="o">*</span><span class="n">ctx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">getContext</span><span class="p">();</span>
+<a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="w">    </span><span class="n">RewritePatternSet</span><span class="w"> </span><span class="nf">patterns</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+<a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="w">    </span><span class="n">populateSCFToControlFlowConversionPatterns</span><span class="p">(</span><span class="n">patterns</span><span class="p">);</span>
+<a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="w">    </span><span class="n">FrozenRewritePatternSet</span><span class="w"> </span><span class="nf">frozen</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">patterns</span><span class="p">));</span>
+<a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="w">    </span><span class="n">ConversionTarget</span><span class="w"> </span><span class="nf">target</span><span class="p">(</span><span class="o">*</span><span class="n">ctx</span><span class="p">);</span>
+<a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="w">    </span><span class="n">target</span><span class="p">.</span><span class="n">addIllegalOp</span><span class="o">&lt;</span><span class="n">scf</span><span class="o">::</span><span class="n">ForOp</span><span class="p">,</span><span class="w"> </span><span class="n">scf</span><span class="o">::</span><span class="n">IfOp</span><span class="p">,</span><span class="w"> </span><span class="n">scf</span><span class="o">::</span><span class="n">WhileOp</span><span class="p">,</span><span class="w"> </span><span class="n">scf</span><span class="o">::</span><span class="n">ExecuteRegionOp</span><span class="p">,</span><span class="w"> </span><span class="n">scf</span><span class="o">::</span><span class="n">IndexSwitchOp</span><span class="o">&gt;</span><span class="p">();</span>
+<a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a><span class="w">    </span><span class="n">target</span><span class="p">.</span><span class="n">markUnknownOpDynamicallyLegal</span><span class="p">([](</span><span class="n">Operation</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span><span class="w"> </span><span class="p">});</span>
+<a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a><span class="w">    </span><span class="c1">// Only the top-level statements of the entry block are handled one by one; they hold everything nested inside them. Collect them first, then go backwards.</span>
+<a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a><span class="w">    </span><span class="n">SmallVector</span><span class="o">&lt;</span><span class="n">Operation</span><span class="w"> </span><span class="o">*&gt;</span><span class="w"> </span><span class="n">tops</span><span class="p">;</span>
+<a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">Operation</span><span class="w"> </span><span class="o">&amp;</span><span class="n">op</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">func</span><span class="p">.</span><span class="n">getBody</span><span class="p">().</span><span class="n">front</span><span class="p">())</span>
+<a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a><span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">isa</span><span class="o">&lt;</span><span class="n">scf</span><span class="o">::</span><span class="n">ForOp</span><span class="p">,</span><span class="w"> </span><span class="n">scf</span><span class="o">::</span><span class="n">IfOp</span><span class="p">,</span><span class="w"> </span><span class="n">scf</span><span class="o">::</span><span class="n">WhileOp</span><span class="p">,</span><span class="w"> </span><span class="n">scf</span><span class="o">::</span><span class="n">ExecuteRegionOp</span><span class="p">,</span><span class="w"> </span><span class="n">scf</span><span class="o">::</span><span class="n">IndexSwitchOp</span><span class="o">&gt;</span><span class="p">(</span><span class="o">&amp;</span><span class="n">op</span><span class="p">))</span><span class="w"> </span><span class="n">tops</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="o">&amp;</span><span class="n">op</span><span class="p">);</span>
+<a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tops</span><span class="p">.</span><span class="n">rbegin</span><span class="p">();</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">tops</span><span class="p">.</span><span class="n">rend</span><span class="p">();</span><span class="w"> </span><span class="o">++</span><span class="n">it</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-39" name="__codelineno-1-39" href="#__codelineno-1-39"></a><span class="w">      </span><span class="n">Operation</span><span class="w"> </span><span class="o">*</span><span class="n">one</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="o">*</span><span class="n">it</span><span class="p">};</span>
+<a id="__codelineno-1-40" name="__codelineno-1-40" href="#__codelineno-1-40"></a><span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">failed</span><span class="p">(</span><span class="n">applyPartialConversion</span><span class="p">(</span><span class="n">ArrayRef</span><span class="o">&lt;</span><span class="n">Operation</span><span class="w"> </span><span class="o">*&gt;</span><span class="p">(</span><span class="n">one</span><span class="p">),</span><span class="w"> </span><span class="n">target</span><span class="p">,</span><span class="w"> </span><span class="n">frozen</span><span class="p">)))</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">signalPassFailure</span><span class="p">();</span><span class="w"> </span><span class="k">return</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-1-41" name="__codelineno-1-41" href="#__codelineno-1-41"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-1-42" name="__codelineno-1-42" href="#__codelineno-1-42"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-1-43" name="__codelineno-1-43" href="#__codelineno-1-43"></a><span class="p">};</span>
+<a id="__codelineno-1-44" name="__codelineno-1-44" href="#__codelineno-1-44"></a><span class="p">}</span><span class="w">  </span><span class="c1">// namespace</span>
+<a id="__codelineno-1-45" name="__codelineno-1-45" href="#__codelineno-1-45"></a>
+<a id="__codelineno-1-46" name="__codelineno-1-46" href="#__codelineno-1-46"></a><span class="k">namespace</span><span class="w"> </span><span class="nn">mg</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-47" name="__codelineno-1-47" href="#__codelineno-1-47"></a><span class="kt">void</span><span class="w"> </span><span class="nf">registerScfToCfReversePass</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">PassRegistration</span><span class="o">&lt;</span><span class="n">ScfToCfReversePass</span><span class="o">&gt;</span><span class="p">();</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-1-48" name="__codelineno-1-48" href="#__codelineno-1-48"></a><span class="p">}</span>
+</code></pre></div>
+<p>It takes the statements of the entry block that are structured control flow (<code>scf.for</code>, <code>scf.if</code>, <code>scf.while</code>, <code>scf.execute_region</code>, <code>scf.index_switch</code>), then, from the last to the first, runs MLIR's own <code>populateSCFToControlFlowConversionPatterns</code> on <strong>that one statement</strong> (<code>applyPartialConversion</code> accepts a list of operations to convert; the statement's nested operations are converted with it). The patterns are MLIR's, so the lowering of each loop is by construction the one MLIR would have made; only the <strong>order</strong> differs. That is a claim, and the checks below test it.</p>
+<p><code>mg-opt</code> did not register the <code>scf</code> dialect (nothing ever parsed <code>scf</code> text, since the loops arrive as <code>affine.for</code> and <code>--lower-affine</code> creates the <code>scf</code> ones). This chapter adds it to <code>mg-opt.cpp</code>, so that the edge-case program below can be written directly in <code>scf</code>; no other behaviour changes.</p>
+<h2 id="does-it-fix-the-quadratic">Does it fix the quadratic?<a class="headerlink" href="#does-it-fix-the-quadratic" title="Permanent link">&para;</a></h2>
+<p>The synthetic function of Chapter 38 (<code>n</code> tiny loops, each copying four numbers, all in one function), lowered by MLIR's pass, by the new one, and, as the control that was always fast, with the loops spread over functions of 500. Times are the pass's own, from <code>--mlir-timing</code>; one run each:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>time of the lowering pass in seconds, by number of loop nests n (each copies 4 numbers); one run each
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>      n  convert-scf-to-cf  last-to-first  500 per function   growth for 2x the loops: standard, last-to-first
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>   2000              0.067          0.018             0.021
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>   4000              0.514          0.044             0.042      7.6x, 2.4x
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>   8000              4.029          0.083             0.085      7.8x, 1.9x
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>  16000             19.202          0.185             0.159      4.8x, 2.2x
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>  32000             78.359          0.457             0.311      4.1x, 2.5x
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>  64000            311.681          1.201             0.797      4.0x, 2.6x
+</code></pre></div>
+<p>At 64,000 loops, MLIR's pass takes <strong>311.7 seconds</strong>; lowering last to first takes <strong>1.2 seconds</strong>, 260 times less, and is within 1.5× of the spread-over-functions control (0.8 seconds). The standard pass grows by about 4× per doubling at the top of the table (4.0× at the last row: quadratic), the new pass by 2.4× to 2.6×.</p>
+<p>That 2.4× to 2.6× is a little more than the 2× of a linear algorithm, and the control column, which is linear by construction (the same functions of 500, only more of them), grows by 2.5× to 2.6× over the same last rows too. I did not find out why: memory effects at these sizes are a candidate that I did not test. What the data support is that the new pass behaves like the control, not that it is exactly linear.</p>
+<h3 id="the-count-of-instructions">The count of instructions<a class="headerlink" href="#the-count-of-instructions" title="Permanent link">&para;</a></h3>
+<p>Timings are noisy; instruction counts under <code>valgrind --tool=callgrind</code> are exact. The checker (below) counts the instructions spent in <code>ilist_traits&lt;Operation&gt;::transferNodesFromList</code>, the function Chapter 39 identified:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>  ok   convert-scf-to-cf: transferNodesFromList grows x3.97 and x3.98 per doubling (4 = quadratic)
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  ok   last to first: transferNodesFromList grows x2.00 and x2.00 per doubling (2 = linear)
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  ok   last to first: block splitting is 0.0% of the instructions at 2000 loops (convert-scf-to-cf: 5%)
+</code></pre></div>
+<p>(Lines copied from the checker's output further down.) The mechanism is the one Chapter 39 named, and it is gone: ×2.00 per doubling is exactly linear.</p>
+<h3 id="what-it-costs-when-the-quadratic-is-not-there">What it costs when the quadratic is not there<a class="headerlink" href="#what-it-costs-when-the-quadratic-is-not-there" title="Permanent link">&para;</a></h3>
+<p>At 2,000 loops the quadratic part is only 5% of the instructions, and the new pass runs one conversion per statement, which has a fixed price: 706 million instructions in all against 697 million for MLIR's pass, about 1% more. So by <strong>instructions</strong> the new pass is slightly more expensive for small functions (the checker allows up to 5% more). By <strong>time</strong> it is already ahead at 2,000 loops (0.018 seconds against 0.067 in the table above), because the instructions of the quadratic part are the expensive kind (Chapter 39: pointer-chasing that misses the cache). Both numbers are tiny at that size; the gap becomes large from 4,000 loops up.</p>
+<h2 id="the-real-program">The real program<a class="headerlink" href="#the-real-program" title="Permanent link">&para;</a></h2>
+<p>Chapter 36's 200-step training program has 190,636 loop nests in one function (<code>main</code>). Chapter 38 got its compile time from about 40 minutes to 94 seconds by outlining the nests into 75 shared functions. Here is the same program <strong>without outlining</strong>, lowered last to first, with the time of each stage (<code>full200.sh</code>; the program is the 200-step one compiled from source):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>Chapter 36&#39;s recorded output (addresses and blank lines removed): md5 cab50027c661
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>flags: --reverse-loops
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>front end 0.7 s | mg-&gt;affine(+outline) 4.7 s | lower (lower-affine, scf-&gt;cf, LLVM dialect) 62.0 s | mlir-translate 38.4 s | clang -O0 22.8 s | run 3.6 s | total compile 128.6 s
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>output: 76 lines, md5 of the output with addresses and blank lines removed: cab50027c661
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>  -&gt; output IDENTICAL to Chapter 36&#39;s recorded output (compiled without outlining and with the ordinary lowering)
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>flags: --reverse-loops --outline
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>front end 0.7 s | mg-&gt;affine(+outline) 6.1 s | lower (lower-affine, scf-&gt;cf, LLVM dialect) 14.0 s | mlir-translate 13.3 s | clang -O0 48.0 s | run 3.3 s | total compile 82.2 s
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>output: 76 lines, md5 of the output with addresses and blank lines removed: cab50027c661
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>  -&gt; output IDENTICAL to Chapter 36&#39;s recorded output (compiled without outlining and with the ordinary lowering)
+</code></pre></div>
+<p>Without outlining, the whole compile takes <strong>129 seconds</strong>, and <strong>the output is identical</strong> to the output Chapter 36 recorded when it compiled the same program with the ordinary lowering and no outlining (the checker's md5 of the 76 lines, with the addresses and blank lines removed, is the same: <code>cab50027c661</code>). With both the new pass and outlining it takes 82 seconds.</p>
+<p>Where did the time go? MLIR's own <code>--mlir-timing</code> report for the lowering stage, for the new pass and for the ordinary pass (<code>pass_times_200.sh</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>################ --mg-scf-to-cf-reverse
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>  Total Execution Time: 62.8096 seconds
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    3.4562 (  5.2%)    3.4562 (  5.5%)  Parser
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    3.0524 (  4.6%)    3.0524 (  4.9%)  ConvertAffineToStandard
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    3.0916 (  4.7%)    3.0784 (  4.9%)  &#39;func.func&#39; Pipeline
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    3.0916 (  4.7%)    3.0784 (  4.9%)    {anonymous}::ScfToCfReversePass
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>    6.5084 (  9.9%)    6.5084 ( 10.4%)  {anonymous}::MgAssertToStderrPass
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>    2.4105 (  3.7%)    2.4105 (  3.8%)  ConvertMathToLLVMPass
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>    5.8842 (  8.9%)    5.8842 (  9.4%)  ArithToLLVMConversionPass
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>    8.6890 ( 13.2%)    8.6890 ( 13.8%)  FinalizeMemRefToLLVMConversionPass
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>    0.2466 (  0.4%)    0.2466 (  0.4%)    (A) DataLayoutAnalysis
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>    9.0285 ( 13.7%)    9.0285 ( 14.4%)  ConvertFuncToLLVMPass
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>    0.4463 (  0.7%)    0.4463 (  0.7%)    (A) DataLayoutAnalysis
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>    7.8416 ( 11.9%)    7.8416 ( 12.5%)  ReconcileUnrealizedCasts
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>   10.9995 ( 16.7%)   10.9995 ( 17.5%)  Output
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>    1.6416 (  2.5%)    1.6416 (  2.6%)  Rest
+<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>   65.9013 (100.0%)   62.8096 (100.0%)  Total
+<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>################ --convert-scf-to-cf
+<a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a>  Total Execution Time: 2173.0708 seconds
+<a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a>    3.2893 (  0.2%)  Parser
+<a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a>    3.2489 (  0.1%)  ConvertAffineToStandard
+<a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a>  2106.2219 ( 96.9%)  SCFToControlFlow
+<a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a>    8.2455 (  0.4%)  {anonymous}::MgAssertToStderrPass
+<a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a>    3.3522 (  0.2%)  ConvertMathToLLVMPass
+<a id="__codelineno-5-25" name="__codelineno-5-25" href="#__codelineno-5-25"></a>    6.2020 (  0.3%)  ArithToLLVMConversionPass
+<a id="__codelineno-5-26" name="__codelineno-5-26" href="#__codelineno-5-26"></a>    9.2687 (  0.4%)  FinalizeMemRefToLLVMConversionPass
+<a id="__codelineno-5-27" name="__codelineno-5-27" href="#__codelineno-5-27"></a>    0.2598 (  0.0%)    (A) DataLayoutAnalysis
+<a id="__codelineno-5-28" name="__codelineno-5-28" href="#__codelineno-5-28"></a>   10.1083 (  0.5%)  ConvertFuncToLLVMPass
+<a id="__codelineno-5-29" name="__codelineno-5-29" href="#__codelineno-5-29"></a>    0.4519 (  0.0%)    (A) DataLayoutAnalysis
+<a id="__codelineno-5-30" name="__codelineno-5-30" href="#__codelineno-5-30"></a>    8.8744 (  0.4%)  ReconcileUnrealizedCasts
+<a id="__codelineno-5-31" name="__codelineno-5-31" href="#__codelineno-5-31"></a>   12.3533 (  0.6%)  Output
+<a id="__codelineno-5-32" name="__codelineno-5-32" href="#__codelineno-5-32"></a>    1.9064 (  0.1%)  Rest
+<a id="__codelineno-5-33" name="__codelineno-5-33" href="#__codelineno-5-33"></a>  2173.0708 (100.0%)  Total
+</code></pre></div>
+<ul>
+<li>Ordinary <code>SCFToControlFlow</code>: <strong>2,106 seconds</strong> of the stage's 2,173 (97%). The new pass: <strong>3.1 seconds</strong> of 62.8. <strong>Everything else in the stage is the same in both</strong>: a list of passes taking 3 to 11 seconds each, none of which dominates.</li>
+<li>The stage at 62 seconds is then 48% of the compile; the rest is <code>mlir-translate</code> (38 s) and <code>clang -O0</code> (23 s), also linear in the size of the program. The quadratic really was in one pass.</li>
+<li>The 2,106-second figure is <strong>one run</strong>, made while other work (builds and checks) was running on the same four-core machine; treat it as "about 35 minutes", which is consistent with Chapter 36's "about 40 minutes" for compile and run together, and not as a measurement to the second.</li>
+</ul>
+<p>One more observation, not explained: with outlining added, <code>clang -O0</code> took 48 seconds, against 23 without. So outlining shortens the MLIR stages but lengthens the last one on this machine (at <code>-O0</code>). The total is still better (82 s against 129 s). I did not look into why clang is slower on the outlined file.</p>
+<h2 id="is-it-the-same-program">Is it the same program?<a class="headerlink" href="#is-it-the-same-program" title="Permanent link">&para;</a></h2>
+<p>The new pass only helps if it changes nothing else. The checker tests this four ways.</p>
+<p><strong>1. The book's examples.</strong> On every Mountain Goat example of the book that the front end accepts and that has under 400 lines, <code>--lower-affine</code> followed by each lowering gives output that is <strong>byte-for-byte identical</strong>: 107 programs, none differ (13 are skipped: 400 lines or more, or deliberately rejected by the front end).</p>
+<p><strong>2. Control flow that the examples do not have.</strong> The front end only ever produces plain loops, so the examples never contain an <code>scf.if</code> or an <code>scf.while</code>, a loop with a result or a loop inside a loop with <code>iter_args</code>. <code>examples/edge_cases.mlir</code> is hand-written <code>scf</code> with all of them, each later statement using the results of earlier ones:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>// Chapter 42: structured control flow that is NOT a plain run of loops, to see that lowering the top-level statements last to first still gives the right program:
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>// a loop with a result (iter_args) used by a later loop, an scf.if with results, an scf.while, loops nested inside loops, and a loop whose bounds come from an earlier result.
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>module {
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>  func.func private @printF64(f64)
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>  func.func private @printNewline()
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>  func.func @main() {
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>    %c0 = arith.constant 0 : index
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>    %c1 = arith.constant 1 : index
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>    %c5 = arith.constant 5 : index
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>    %c10 = arith.constant 10 : index
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>    %z = arith.constant 0.0 : f64
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>    %one = arith.constant 1.0 : f64
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>    // 1: a loop with a result: the sum 0+1+2+3+4 = 10
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>    %s = scf.for %i = %c0 to %c5 step %c1 iter_args(%acc = %z) -&gt; (f64) {
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>      %fi = arith.index_cast %i : index to i64
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>      %f = arith.sitofp %fi : i64 to f64
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>      %n = arith.addf %acc, %f : f64
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a>      scf.yield %n : f64
+<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a>    }
+<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a>    call @printF64(%s) : (f64) -&gt; ()
+<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a>    call @printNewline() : () -&gt; ()
+<a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a>    // 2: an scf.if with a result that uses the result of loop 1: 10 &gt; 5, so 1000
+<a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a>    %lim = arith.constant 5.0 : f64
+<a id="__codelineno-6-24" name="__codelineno-6-24" href="#__codelineno-6-24"></a>    %cond = arith.cmpf ogt, %s, %lim : f64
+<a id="__codelineno-6-25" name="__codelineno-6-25" href="#__codelineno-6-25"></a>    %pick = scf.if %cond -&gt; (f64) {
+<a id="__codelineno-6-26" name="__codelineno-6-26" href="#__codelineno-6-26"></a>      %big = arith.constant 1000.0 : f64
+<a id="__codelineno-6-27" name="__codelineno-6-27" href="#__codelineno-6-27"></a>      scf.yield %big : f64
+<a id="__codelineno-6-28" name="__codelineno-6-28" href="#__codelineno-6-28"></a>    } else {
+<a id="__codelineno-6-29" name="__codelineno-6-29" href="#__codelineno-6-29"></a>      %small = arith.constant -1.0 : f64
+<a id="__codelineno-6-30" name="__codelineno-6-30" href="#__codelineno-6-30"></a>      scf.yield %small : f64
+<a id="__codelineno-6-31" name="__codelineno-6-31" href="#__codelineno-6-31"></a>    }
+<a id="__codelineno-6-32" name="__codelineno-6-32" href="#__codelineno-6-32"></a>    call @printF64(%pick) : (f64) -&gt; ()
+<a id="__codelineno-6-33" name="__codelineno-6-33" href="#__codelineno-6-33"></a>    call @printNewline() : () -&gt; ()
+<a id="__codelineno-6-34" name="__codelineno-6-34" href="#__codelineno-6-34"></a>    // 3: an scf.while that doubles until the value passes 100, starting from 1: 128
+<a id="__codelineno-6-35" name="__codelineno-6-35" href="#__codelineno-6-35"></a>    %w = scf.while (%v = %one) : (f64) -&gt; f64 {
+<a id="__codelineno-6-36" name="__codelineno-6-36" href="#__codelineno-6-36"></a>      %hundred = arith.constant 100.0 : f64
+<a id="__codelineno-6-37" name="__codelineno-6-37" href="#__codelineno-6-37"></a>      %go = arith.cmpf olt, %v, %hundred : f64
+<a id="__codelineno-6-38" name="__codelineno-6-38" href="#__codelineno-6-38"></a>      scf.condition(%go) %v : f64
+<a id="__codelineno-6-39" name="__codelineno-6-39" href="#__codelineno-6-39"></a>    } do {
+<a id="__codelineno-6-40" name="__codelineno-6-40" href="#__codelineno-6-40"></a>    ^bb0(%u: f64):
+<a id="__codelineno-6-41" name="__codelineno-6-41" href="#__codelineno-6-41"></a>      %two = arith.constant 2.0 : f64
+<a id="__codelineno-6-42" name="__codelineno-6-42" href="#__codelineno-6-42"></a>      %d = arith.mulf %u, %two : f64
+<a id="__codelineno-6-43" name="__codelineno-6-43" href="#__codelineno-6-43"></a>      scf.yield %d : f64
+<a id="__codelineno-6-44" name="__codelineno-6-44" href="#__codelineno-6-44"></a>    }
+<a id="__codelineno-6-45" name="__codelineno-6-45" href="#__codelineno-6-45"></a>    call @printF64(%w) : (f64) -&gt; ()
+<a id="__codelineno-6-46" name="__codelineno-6-46" href="#__codelineno-6-46"></a>    call @printNewline() : () -&gt; ()
+<a id="__codelineno-6-47" name="__codelineno-6-47" href="#__codelineno-6-47"></a>    // 4: nested loops: 5 x 5 times adding 1, starting from the result of 3: 128 + 25 = 153
+<a id="__codelineno-6-48" name="__codelineno-6-48" href="#__codelineno-6-48"></a>    %nest = scf.for %i = %c0 to %c5 step %c1 iter_args(%a0 = %w) -&gt; (f64) {
+<a id="__codelineno-6-49" name="__codelineno-6-49" href="#__codelineno-6-49"></a>      %inner = scf.for %j = %c0 to %c5 step %c1 iter_args(%a1 = %a0) -&gt; (f64) {
+<a id="__codelineno-6-50" name="__codelineno-6-50" href="#__codelineno-6-50"></a>        %n = arith.addf %a1, %one : f64
+<a id="__codelineno-6-51" name="__codelineno-6-51" href="#__codelineno-6-51"></a>        scf.yield %n : f64
+<a id="__codelineno-6-52" name="__codelineno-6-52" href="#__codelineno-6-52"></a>      }
+<a id="__codelineno-6-53" name="__codelineno-6-53" href="#__codelineno-6-53"></a>      scf.yield %inner : f64
+<a id="__codelineno-6-54" name="__codelineno-6-54" href="#__codelineno-6-54"></a>    }
+<a id="__codelineno-6-55" name="__codelineno-6-55" href="#__codelineno-6-55"></a>    call @printF64(%nest) : (f64) -&gt; ()
+<a id="__codelineno-6-56" name="__codelineno-6-56" href="#__codelineno-6-56"></a>    call @printNewline() : () -&gt; ()
+<a id="__codelineno-6-57" name="__codelineno-6-57" href="#__codelineno-6-57"></a>    // 5: a loop whose upper bound is computed (from 4 steps of loop 1&#39;s count): 10 iterations adding the loop-2 pick, 153 + 10 * 1000 = 10153
+<a id="__codelineno-6-58" name="__codelineno-6-58" href="#__codelineno-6-58"></a>    %last = scf.for %i = %c0 to %c10 step %c1 iter_args(%a2 = %nest) -&gt; (f64) {
+<a id="__codelineno-6-59" name="__codelineno-6-59" href="#__codelineno-6-59"></a>      %n = arith.addf %a2, %pick : f64
+<a id="__codelineno-6-60" name="__codelineno-6-60" href="#__codelineno-6-60"></a>      scf.yield %n : f64
+<a id="__codelineno-6-61" name="__codelineno-6-61" href="#__codelineno-6-61"></a>    }
+<a id="__codelineno-6-62" name="__codelineno-6-62" href="#__codelineno-6-62"></a>    call @printF64(%last) : (f64) -&gt; ()
+<a id="__codelineno-6-63" name="__codelineno-6-63" href="#__codelineno-6-63"></a>    call @printNewline() : () -&gt; ()
+<a id="__codelineno-6-64" name="__codelineno-6-64" href="#__codelineno-6-64"></a>    return
+<a id="__codelineno-6-65" name="__codelineno-6-65" href="#__codelineno-6-65"></a>  }
+<a id="__codelineno-6-66" name="__codelineno-6-66" href="#__codelineno-6-66"></a>}
+</code></pre></div>
+<p>Both lowerings give the same text for it, and the lowered program, run, prints <strong>10, 1000, 128, 153, 10153</strong>, the values worked out in the comments by hand.</p>
+<p><strong>3. Real programs run the same.</strong> An attention example, the tiny transformer and the bigram training run print identical output with and without <code>--reverse-loops</code>.</p>
+<p><strong>4. A big function.</strong> One function of 3,000 loops lowers to byte-identical IR (1.6 megabytes) from both.</p>
+<h2 id="tests">Tests<a class="headerlink" href="#tests" title="Permanent link">&para;</a></h2>
+<p>One new <code>lit</code> file <code>test/reverse42/check.mlir</code> (the suite is now 154 tests). The full output of <code>check_reverse.py</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="ch">#!/usr/bin/env python3</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="sd">&quot;&quot;&quot;Checks the Chapter 42 claims about --mg-scf-to-cf-reverse (lowering scf to cf last to first):</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="sd">  1. SAME PROGRAM: on every Mountain Goat example of the book that the front end accepts and that has under 400 lines, the output of --lower-affine --mg-scf-to-cf-reverse is byte-for-byte the output of</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="sd">     --lower-affine --convert-scf-to-cf (so nothing downstream can differ);</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="sd">  2. NOT ONLY PLAIN LOOPS: a hand-written function with a loop that has a result, an scf.if with results, an scf.while, nested loops, and a loop that uses earlier results lowers to the same text</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="sd">     and RUNS to the values worked out by hand (10, 1000, 128, 153, 10153);</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="sd">  3. SAME OUTPUT WHEN RUN: three real programs (an attention example, the tiny transformer, the bigram training run) print the same thing with and without --reverse-loops;</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="sd">  4. THE COST IS LINEAR (and one function of 3000 loops lowers to the same text), MEASURED IN INSTRUCTIONS (callgrind, exact and repeatable): in one function of n loops, the cost of moving operations between blocks (ilist_traits::transferNodesFromList)</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="sd">     grows by 4x per doubling under --convert-scf-to-cf and by at most 2.3x under --mg-scf-to-cf-reverse, where it is under 5% of the program&#39;s instructions at 2000 loops.</span>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="sd">Environment variables (CHK_*) change an input; mutation.py sets them to check that each claim can fail.   Usage: check_reverse.py     Exit status 0 only if all pass.&quot;&quot;&quot;</span>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="kn">import</span> <span class="nn">glob</span><span class="o">,</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">re</span><span class="o">,</span> <span class="nn">subprocess</span><span class="o">,</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">tempfile</span>
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="n">here</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">));</span> <span class="n">root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">here</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">);</span> <span class="n">E</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span>
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="n">OPT</span> <span class="o">=</span> <span class="n">E</span><span class="p">(</span><span class="s2">&quot;MG_OPT&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">here</span><span class="p">,</span> <span class="s2">&quot;build&quot;</span><span class="p">,</span> <span class="s2">&quot;mg-opt&quot;</span><span class="p">);</span> <span class="n">W</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;ch42c_&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="n">REV</span> <span class="o">=</span> <span class="n">E</span><span class="p">(</span><span class="s2">&quot;CHK_REVERSE&quot;</span><span class="p">,</span> <span class="s2">&quot;--mg-scf-to-cf-reverse&quot;</span><span class="p">);</span> <span class="n">STD</span> <span class="o">=</span> <span class="s2">&quot;--convert-scf-to-cf&quot;</span>
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="n">failures</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="k">def</span> <span class="nf">report</span><span class="p">(</span><span class="n">ok</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>    <span class="k">global</span> <span class="n">failures</span><span class="p">;</span> <span class="n">failures</span> <span class="o">+=</span> <span class="ow">not</span> <span class="n">ok</span>
+<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="s1">&#39;ok  &#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">ok</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;FAIL&#39;</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="p">(</span><span class="s2">&quot;&quot;</span> <span class="k">if</span> <span class="n">ok</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">       </span><span class="si">{</span><span class="n">detail</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">))</span>
+<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a><span class="k">def</span> <span class="nf">sh</span><span class="p">(</span><span class="o">*</span><span class="n">a</span><span class="p">,</span> <span class="o">**</span><span class="n">k</span><span class="p">):</span> <span class="k">return</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">k</span><span class="p">)</span>
+<a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a><span class="c1"># ---- 1</span>
+<a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-- 1. same program on the book&#39;s examples&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a><span class="n">same</span> <span class="o">=</span> <span class="n">diff</span> <span class="o">=</span> <span class="n">skipped</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">bad</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a><span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">root</span> <span class="o">+</span> <span class="s2">&quot;/part*/code/examples/*.mg&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">root</span> <span class="o">+</span> <span class="s2">&quot;/tour/code/*.mg&quot;</span><span class="p">)):</span>
+<a id="__codelineno-7-24" name="__codelineno-7-24" href="#__codelineno-7-24"></a>    <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">open</span><span class="p">(</span><span class="n">f</span><span class="p">))</span> <span class="o">&gt;=</span> <span class="mi">400</span><span class="p">:</span> <span class="n">skipped</span> <span class="o">+=</span> <span class="mi">1</span><span class="p">;</span> <span class="k">continue</span>
+<a id="__codelineno-7-25" name="__codelineno-7-25" href="#__codelineno-7-25"></a>    <span class="n">m</span> <span class="o">=</span> <span class="n">sh</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">executable</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">here</span><span class="p">,</span> <span class="s2">&quot;mgfront.py&quot;</span><span class="p">),</span> <span class="n">f</span><span class="p">)</span>
+<a id="__codelineno-7-26" name="__codelineno-7-26" href="#__codelineno-7-26"></a>    <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">returncode</span><span class="p">:</span> <span class="n">skipped</span> <span class="o">+=</span> <span class="mi">1</span><span class="p">;</span> <span class="k">continue</span>
+<a id="__codelineno-7-27" name="__codelineno-7-27" href="#__codelineno-7-27"></a>    <span class="nb">open</span><span class="p">(</span><span class="n">W</span> <span class="o">+</span> <span class="s2">&quot;/x.mlir&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">stdout</span><span class="p">);</span> <span class="n">a</span> <span class="o">=</span> <span class="n">sh</span><span class="p">(</span><span class="n">OPT</span><span class="p">,</span> <span class="n">W</span> <span class="o">+</span> <span class="s2">&quot;/x.mlir&quot;</span><span class="p">,</span> <span class="s2">&quot;--convert-mg-to-affine&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-28" name="__codelineno-7-28" href="#__codelineno-7-28"></a>    <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">returncode</span><span class="p">:</span> <span class="n">skipped</span> <span class="o">+=</span> <span class="mi">1</span><span class="p">;</span> <span class="k">continue</span>
+<a id="__codelineno-7-29" name="__codelineno-7-29" href="#__codelineno-7-29"></a>    <span class="nb">open</span><span class="p">(</span><span class="n">W</span> <span class="o">+</span> <span class="s2">&quot;/y.mlir&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">stdout</span><span class="p">);</span> <span class="n">r</span> <span class="o">=</span> <span class="p">[</span><span class="n">sh</span><span class="p">(</span><span class="n">OPT</span><span class="p">,</span> <span class="n">W</span> <span class="o">+</span> <span class="s2">&quot;/y.mlir&quot;</span><span class="p">,</span> <span class="s2">&quot;--lower-affine&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="p">(</span><span class="n">STD</span><span class="p">,</span> <span class="n">REV</span><span class="p">)]</span>
+<a id="__codelineno-7-30" name="__codelineno-7-30" href="#__codelineno-7-30"></a>    <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">returncode</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">returncode</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stdout</span> <span class="o">==</span> <span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">stdout</span><span class="p">:</span> <span class="n">same</span> <span class="o">+=</span> <span class="mi">1</span>
+<a id="__codelineno-7-31" name="__codelineno-7-31" href="#__codelineno-7-31"></a>    <span class="k">else</span><span class="p">:</span> <span class="n">diff</span> <span class="o">+=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">bad</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">relpath</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">root</span><span class="p">))</span>
+<a id="__codelineno-7-32" name="__codelineno-7-32" href="#__codelineno-7-32"></a><span class="n">report</span><span class="p">(</span><span class="n">same</span> <span class="o">&gt;=</span> <span class="mi">100</span> <span class="ow">and</span> <span class="n">diff</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">same</span><span class="si">}</span><span class="s2"> programs lower to byte-identical IR with --mg-scf-to-cf-reverse and --convert-scf-to-cf, </span><span class="si">{</span><span class="n">diff</span><span class="si">}</span><span class="s2"> differ (</span><span class="si">{</span><span class="n">skipped</span><span class="si">}</span><span class="s2"> skipped: 400 lines or more, or rejected by the front end)&quot;</span><span class="p">,</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">bad</span><span class="p">[:</span><span class="mi">5</span><span class="p">]))</span>
+<a id="__codelineno-7-33" name="__codelineno-7-33" href="#__codelineno-7-33"></a><span class="c1"># ---- 2</span>
+<a id="__codelineno-7-34" name="__codelineno-7-34" href="#__codelineno-7-34"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-- 2. structured control flow that is not a plain run of loops&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-35" name="__codelineno-7-35" href="#__codelineno-7-35"></a><span class="n">edge</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">here</span><span class="p">,</span> <span class="s2">&quot;examples&quot;</span><span class="p">,</span> <span class="s2">&quot;edge_cases.mlir&quot;</span><span class="p">);</span> <span class="n">outs</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="__codelineno-7-36" name="__codelineno-7-36" href="#__codelineno-7-36"></a><span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="p">(</span><span class="n">STD</span><span class="p">,</span> <span class="n">REV</span><span class="p">):</span>
+<a id="__codelineno-7-37" name="__codelineno-7-37" href="#__codelineno-7-37"></a>    <span class="n">r</span> <span class="o">=</span> <span class="n">sh</span><span class="p">(</span><span class="n">OPT</span><span class="p">,</span> <span class="n">edge</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="s2">&quot;--convert-arith-to-llvm&quot;</span><span class="p">,</span> <span class="s2">&quot;--convert-func-to-llvm&quot;</span><span class="p">,</span> <span class="s2">&quot;--reconcile-unrealized-casts&quot;</span><span class="p">,</span> <span class="s2">&quot;-o&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">W</span><span class="si">}</span><span class="s2">/e</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">.mlir&quot;</span><span class="p">);</span> <span class="n">outs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">returncode</span><span class="p">)</span>
+<a id="__codelineno-7-38" name="__codelineno-7-38" href="#__codelineno-7-38"></a><span class="n">report</span><span class="p">(</span><span class="n">outs</span> <span class="o">==</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="ow">and</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">W</span><span class="si">}</span><span class="s2">/e</span><span class="si">{</span><span class="n">STD</span><span class="si">}</span><span class="s2">.mlir&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span> <span class="o">==</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">W</span><span class="si">}</span><span class="s2">/e</span><span class="si">{</span><span class="n">REV</span><span class="si">}</span><span class="s2">.mlir&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">(),</span> <span class="s2">&quot;loop with result, scf.if, scf.while, nested loops: the same text from both lowerings&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;exit codes </span><span class="si">{</span><span class="n">outs</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-39" name="__codelineno-7-39" href="#__codelineno-7-39"></a><span class="n">sh</span><span class="p">(</span><span class="s2">&quot;mlir-translate-18&quot;</span><span class="p">,</span> <span class="s2">&quot;--mlir-to-llvmir&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">W</span><span class="si">}</span><span class="s2">/e</span><span class="si">{</span><span class="n">REV</span><span class="si">}</span><span class="s2">.mlir&quot;</span><span class="p">,</span> <span class="s2">&quot;-o&quot;</span><span class="p">,</span> <span class="n">W</span> <span class="o">+</span> <span class="s2">&quot;/e.ll&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-40" name="__codelineno-7-40" href="#__codelineno-7-40"></a><span class="n">sh</span><span class="p">(</span><span class="s2">&quot;clang-18&quot;</span><span class="p">,</span> <span class="n">W</span> <span class="o">+</span> <span class="s2">&quot;/e.ll&quot;</span><span class="p">,</span> <span class="s2">&quot;-o&quot;</span><span class="p">,</span> <span class="n">W</span> <span class="o">+</span> <span class="s2">&quot;/e.exe&quot;</span><span class="p">,</span> <span class="s2">&quot;-L/usr/lib/llvm-18/lib&quot;</span><span class="p">,</span> <span class="s2">&quot;-lmlir_c_runner_utils&quot;</span><span class="p">,</span> <span class="s2">&quot;-lm&quot;</span><span class="p">,</span> <span class="s2">&quot;-Wl,-rpath,/usr/lib/llvm-18/lib&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-41" name="__codelineno-7-41" href="#__codelineno-7-41"></a><span class="n">got</span> <span class="o">=</span> <span class="n">sh</span><span class="p">(</span><span class="n">W</span> <span class="o">+</span> <span class="s2">&quot;/e.exe&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+<a id="__codelineno-7-42" name="__codelineno-7-42" href="#__codelineno-7-42"></a><span class="n">report</span><span class="p">(</span><span class="n">got</span> <span class="o">==</span> <span class="p">[</span><span class="s2">&quot;10&quot;</span><span class="p">,</span> <span class="s2">&quot;1000&quot;</span><span class="p">,</span> <span class="s2">&quot;128&quot;</span><span class="p">,</span> <span class="s2">&quot;153&quot;</span><span class="p">,</span> <span class="s2">&quot;10153&quot;</span><span class="p">],</span> <span class="s2">&quot;the lowered program prints 10, 1000, 128, 153, 10153 (worked out by hand)&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;got </span><span class="si">{</span><span class="n">got</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-43" name="__codelineno-7-43" href="#__codelineno-7-43"></a><span class="c1"># ---- 3</span>
+<a id="__codelineno-7-44" name="__codelineno-7-44" href="#__codelineno-7-44"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-- 3. real programs print the same with and without --reverse-loops&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-45" name="__codelineno-7-45" href="#__codelineno-7-45"></a><span class="n">MGC</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">here</span><span class="p">,</span> <span class="s2">&quot;mgc&quot;</span><span class="p">);</span> <span class="n">env</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">,</span> <span class="n">MG_OPT</span><span class="o">=</span><span class="n">OPT</span><span class="p">);</span> <span class="n">progs</span> <span class="o">=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;part29/code/examples/08_self_attention_block.mg&quot;</span><span class="p">,</span> <span class="s2">&quot;part30/code/examples/03_tiny_transformer.mg&quot;</span><span class="p">,</span> <span class="s2">&quot;part31/code/examples/04_training.mg&quot;</span><span class="p">)]</span>
+<a id="__codelineno-7-46" name="__codelineno-7-46" href="#__codelineno-7-46"></a><span class="n">progs</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">progs</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">p</span><span class="p">)]</span>
+<a id="__codelineno-7-47" name="__codelineno-7-47" href="#__codelineno-7-47"></a><span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="__codelineno-7-48" name="__codelineno-7-48" href="#__codelineno-7-48"></a><span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">progs</span><span class="p">:</span>
+<a id="__codelineno-7-49" name="__codelineno-7-49" href="#__codelineno-7-49"></a>    <span class="n">a</span> <span class="o">=</span> <span class="n">sh</span><span class="p">(</span><span class="n">MGC</span><span class="p">,</span> <span class="s2">&quot;run&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">);</span> <span class="n">b</span> <span class="o">=</span> <span class="n">sh</span><span class="p">(</span><span class="n">MGC</span><span class="p">,</span> <span class="s2">&quot;run&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="s2">&quot;--reverse-loops&quot;</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">)</span>
+<a id="__codelineno-7-50" name="__codelineno-7-50" href="#__codelineno-7-50"></a>    <span class="n">norm</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;base@ = 0x[0-9a-f]+&quot;</span><span class="p">,</span> <span class="s2">&quot;base@ = 0x&quot;</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+<a id="__codelineno-7-51" name="__codelineno-7-51" href="#__codelineno-7-51"></a>    <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">p</span><span class="p">),</span> <span class="n">a</span><span class="o">.</span><span class="n">returncode</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">b</span><span class="o">.</span><span class="n">returncode</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">norm</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span> <span class="o">==</span> <span class="n">norm</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">20</span><span class="p">))</span>
+<a id="__codelineno-7-52" name="__codelineno-7-52" href="#__codelineno-7-52"></a><span class="n">report</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="n">ok</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">ok</span> <span class="ow">in</span> <span class="n">res</span><span class="p">),</span> <span class="s2">&quot;three programs print identical output: &quot;</span> <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">res</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">res</span><span class="p">))</span>
+<a id="__codelineno-7-53" name="__codelineno-7-53" href="#__codelineno-7-53"></a><span class="c1"># ---- 4</span>
+<a id="__codelineno-7-54" name="__codelineno-7-54" href="#__codelineno-7-54"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-- 4. cost in instructions (callgrind): the splitting cost is quadratic under convert-scf-to-cf, linear under the reverse pass&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-55" name="__codelineno-7-55" href="#__codelineno-7-55"></a><span class="k">def</span> <span class="nf">gen</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<a id="__codelineno-7-56" name="__codelineno-7-56" href="#__codelineno-7-56"></a>    <span class="n">out</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;module {&quot;</span><span class="p">,</span> <span class="s2">&quot;  func.func @f(</span><span class="si">%a</span><span class="s2">: memref&lt;4xf64&gt;, %b: memref&lt;4xf64&gt;) {&quot;</span><span class="p">]</span>
+<a id="__codelineno-7-57" name="__codelineno-7-57" href="#__codelineno-7-57"></a>    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span> <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    affine.for %i</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> = 0 to 4 </span><span class="se">{{\n</span><span class="s2">      %x</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> = affine.load %a[%i</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">] : memref&lt;4xf64&gt;</span><span class="se">\n</span><span class="s2">      affine.store %x</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">, %b[%i</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">] : memref&lt;4xf64&gt;</span><span class="se">\n</span><span class="s2">    </span><span class="se">}}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-58" name="__codelineno-7-58" href="#__codelineno-7-58"></a>    <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;    return&quot;</span><span class="p">,</span> <span class="s2">&quot;  }&quot;</span><span class="p">,</span> <span class="s2">&quot;}&quot;</span><span class="p">])</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+<a id="__codelineno-7-59" name="__codelineno-7-59" href="#__codelineno-7-59"></a><span class="k">def</span> <span class="nf">profile</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">lowering</span><span class="p">):</span>
+<a id="__codelineno-7-60" name="__codelineno-7-60" href="#__codelineno-7-60"></a>    <span class="n">src</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">W</span><span class="si">}</span><span class="s2">/g.mlir&quot;</span><span class="p">;</span> <span class="nb">open</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">gen</span><span class="p">(</span><span class="n">n</span><span class="p">));</span> <span class="n">cg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">W</span><span class="si">}</span><span class="s2">/cg.out&quot;</span>
+<a id="__codelineno-7-61" name="__codelineno-7-61" href="#__codelineno-7-61"></a>    <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s2">&quot;valgrind&quot;</span><span class="p">,</span> <span class="s2">&quot;--tool=callgrind&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;--callgrind-out-file=</span><span class="si">{</span><span class="n">cg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">OPT</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="s2">&quot;--lower-affine&quot;</span><span class="p">,</span> <span class="n">lowering</span><span class="p">,</span> <span class="s2">&quot;-o&quot;</span><span class="p">,</span> <span class="s2">&quot;/dev/null&quot;</span><span class="p">],</span> <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-7-62" name="__codelineno-7-62" href="#__codelineno-7-62"></a>    <span class="n">text</span> <span class="o">=</span> <span class="n">sh</span><span class="p">(</span><span class="s2">&quot;callgrind_annotate&quot;</span><span class="p">,</span> <span class="n">cg</span><span class="p">)</span><span class="o">.</span><span class="n">stdout</span><span class="p">;</span> <span class="n">tot</span> <span class="o">=</span> <span class="n">tr</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="__codelineno-7-63" name="__codelineno-7-63" href="#__codelineno-7-63"></a>    <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">):</span>
+<a id="__codelineno-7-64" name="__codelineno-7-64" href="#__codelineno-7-64"></a>        <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\s*([\d,]+) \(\s*[\d.]+%\)\s+(.*)&quot;</span><span class="p">,</span> <span class="n">l</span><span class="p">)</span>
+<a id="__codelineno-7-65" name="__codelineno-7-65" href="#__codelineno-7-65"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">m</span><span class="p">:</span> <span class="k">continue</span>
+<a id="__codelineno-7-66" name="__codelineno-7-66" href="#__codelineno-7-66"></a>        <span class="n">ir</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+<a id="__codelineno-7-67" name="__codelineno-7-67" href="#__codelineno-7-67"></a>        <span class="k">if</span> <span class="s2">&quot;PROGRAM TOTALS&quot;</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span> <span class="n">tot</span> <span class="o">=</span> <span class="n">ir</span>
+<a id="__codelineno-7-68" name="__codelineno-7-68" href="#__codelineno-7-68"></a>        <span class="k">elif</span> <span class="s2">&quot;ilist_traits&lt;mlir::Operation&gt;::transferNodesFromList&quot;</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span> <span class="n">tr</span> <span class="o">+=</span> <span class="n">ir</span>
+<a id="__codelineno-7-69" name="__codelineno-7-69" href="#__codelineno-7-69"></a>    <span class="k">return</span> <span class="n">tot</span><span class="p">,</span> <span class="n">tr</span>
+<a id="__codelineno-7-70" name="__codelineno-7-70" href="#__codelineno-7-70"></a><span class="nb">open</span><span class="p">(</span><span class="n">W</span> <span class="o">+</span> <span class="s2">&quot;/big.mlir&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">gen</span><span class="p">(</span><span class="mi">3000</span><span class="p">));</span> <span class="n">big</span> <span class="o">=</span> <span class="p">[</span><span class="n">sh</span><span class="p">(</span><span class="n">OPT</span><span class="p">,</span> <span class="n">W</span> <span class="o">+</span> <span class="s2">&quot;/big.mlir&quot;</span><span class="p">,</span> <span class="s2">&quot;--lower-affine&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span><span class="o">.</span><span class="n">stdout</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="p">(</span><span class="n">STD</span><span class="p">,</span> <span class="n">REV</span><span class="p">)]</span>
+<a id="__codelineno-7-71" name="__codelineno-7-71" href="#__codelineno-7-71"></a><span class="n">report</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">big</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="o">**</span><span class="mi">6</span> <span class="ow">and</span> <span class="n">big</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">big</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;one function of 3000 loops: byte-identical IR from both lowerings (</span><span class="si">%d</span><span class="s2"> bytes)&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">big</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+<a id="__codelineno-7-72" name="__codelineno-7-72" href="#__codelineno-7-72"></a><span class="n">sizes</span> <span class="o">=</span> <span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">2000</span><span class="p">)</span>
+<a id="__codelineno-7-73" name="__codelineno-7-73" href="#__codelineno-7-73"></a><span class="n">std</span> <span class="o">=</span> <span class="p">{</span><span class="n">n</span><span class="p">:</span> <span class="n">profile</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">STD</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">sizes</span><span class="p">};</span> <span class="n">rev</span> <span class="o">=</span> <span class="p">{</span><span class="n">n</span><span class="p">:</span> <span class="n">profile</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">REV</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">sizes</span><span class="p">}</span>
+<a id="__codelineno-7-74" name="__codelineno-7-74" href="#__codelineno-7-74"></a><span class="n">gs</span> <span class="o">=</span> <span class="p">[</span><span class="n">std</span><span class="p">[</span><span class="n">b</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">std</span><span class="p">[</span><span class="n">a</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="p">((</span><span class="mi">500</span><span class="p">,</span> <span class="mi">1000</span><span class="p">),</span> <span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">2000</span><span class="p">))];</span> <span class="n">gr</span> <span class="o">=</span> <span class="p">[</span><span class="n">rev</span><span class="p">[</span><span class="n">b</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">rev</span><span class="p">[</span><span class="n">a</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="p">((</span><span class="mi">500</span><span class="p">,</span> <span class="mi">1000</span><span class="p">),</span> <span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">2000</span><span class="p">))]</span>
+<a id="__codelineno-7-75" name="__codelineno-7-75" href="#__codelineno-7-75"></a><span class="n">report</span><span class="p">(</span><span class="nb">all</span><span class="p">(</span><span class="mf">3.9</span> <span class="o">&lt;=</span> <span class="n">g</span> <span class="o">&lt;=</span> <span class="mf">4.1</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">gs</span><span class="p">),</span> <span class="s2">&quot;convert-scf-to-cf: transferNodesFromList grows </span><span class="si">%s</span><span class="s2"> per doubling (4 = quadratic)&quot;</span> <span class="o">%</span> <span class="s2">&quot; and &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;x</span><span class="si">%.2f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">g</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">gs</span><span class="p">))</span>
+<a id="__codelineno-7-76" name="__codelineno-7-76" href="#__codelineno-7-76"></a><span class="n">report</span><span class="p">(</span><span class="nb">all</span><span class="p">(</span><span class="n">g</span> <span class="o">&lt;=</span> <span class="mf">2.3</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">gr</span><span class="p">),</span> <span class="s2">&quot;last to first: transferNodesFromList grows </span><span class="si">%s</span><span class="s2"> per doubling (2 = linear)&quot;</span> <span class="o">%</span> <span class="s2">&quot; and &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;x</span><span class="si">%.2f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">g</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">gr</span><span class="p">),</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-77" name="__codelineno-7-77" href="#__codelineno-7-77"></a><span class="n">share</span> <span class="o">=</span> <span class="n">rev</span><span class="p">[</span><span class="mi">2000</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">rev</span><span class="p">[</span><span class="mi">2000</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+<a id="__codelineno-7-78" name="__codelineno-7-78" href="#__codelineno-7-78"></a><span class="n">report</span><span class="p">(</span><span class="n">share</span> <span class="o">&lt;</span> <span class="mf">0.05</span><span class="p">,</span> <span class="s2">&quot;last to first: block splitting is </span><span class="si">%.1f%%</span><span class="s2"> of the instructions at 2000 loops (convert-scf-to-cf: </span><span class="si">%.0f%%</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="n">share</span><span class="p">,</span> <span class="mi">100</span> <span class="o">*</span> <span class="n">std</span><span class="p">[</span><span class="mi">2000</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">std</span><span class="p">[</span><span class="mi">2000</span><span class="p">][</span><span class="mi">0</span><span class="p">]))</span>
+<a id="__codelineno-7-79" name="__codelineno-7-79" href="#__codelineno-7-79"></a><span class="n">report</span><span class="p">(</span><span class="n">rev</span><span class="p">[</span><span class="mi">2000</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mf">1.05</span> <span class="o">*</span> <span class="n">std</span><span class="p">[</span><span class="mi">2000</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;last to first costs at most 5</span><span class="si">%%</span><span class="s2"> more in all at 2000 loops (one conversion per statement): </span><span class="si">%d</span><span class="s2"> million instructions against </span><span class="si">%d</span><span class="s2"> million&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">rev</span><span class="p">[</span><span class="mi">2000</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">//</span> <span class="mi">10</span><span class="o">**</span><span class="mi">6</span><span class="p">,</span> <span class="n">std</span><span class="p">[</span><span class="mi">2000</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">//</span> <span class="mi">10</span><span class="o">**</span><span class="mi">6</span><span class="p">))</span>
+<a id="__codelineno-7-80" name="__codelineno-7-80" href="#__codelineno-7-80"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;all checks pass&quot;</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">failures</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">failures</span><span class="si">}</span><span class="s2"> CHECK(S) FAILED&quot;</span><span class="p">);</span> <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span> <span class="k">if</span> <span class="n">failures</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span>
+</code></pre></div>
+<p>(The listing is the checker itself.) Its output:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>-- 1. same program on the book&#39;s examples
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>  ok   107 programs lower to byte-identical IR with --mg-scf-to-cf-reverse and --convert-scf-to-cf, 0 differ (13 skipped: 400 lines or more, or rejected by the front end)
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>-- 2. structured control flow that is not a plain run of loops
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>  ok   loop with result, scf.if, scf.while, nested loops: the same text from both lowerings
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>  ok   the lowered program prints 10, 1000, 128, 153, 10153 (worked out by hand)
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>-- 3. real programs print the same with and without --reverse-loops
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>  ok   three programs print identical output: 08_self_attention_block.mg, 03_tiny_transformer.mg, 04_training.mg
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>-- 4. cost in instructions (callgrind): the splitting cost is quadratic under convert-scf-to-cf, linear under the reverse pass
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>  ok   one function of 3000 loops: byte-identical IR from both lowerings (1634222 bytes)
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>  ok   convert-scf-to-cf: transferNodesFromList grows x3.97 and x3.98 per doubling (4 = quadratic)
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>  ok   last to first: transferNodesFromList grows x2.00 and x2.00 per doubling (2 = linear)
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>  ok   last to first: block splitting is 0.0% of the instructions at 2000 loops (convert-scf-to-cf: 5%)
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>  ok   last to first costs at most 5% more in all at 2000 loops (one conversion per statement): 706 million instructions against 697 million
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>all checks pass
+</code></pre></div>
+<p>CI now builds this chapter's <code>mg-opt</code> (the newest build, which contains everything before it); <code>run_lit.sh</code>, <code>ci.sh</code>, the workflow and its checker, and Chapter 37's scripts that look for the newest build were updated to find it.</p>
+<h3 id="are-the-checks-good-enough-seven-wrong-passes">Are the checks good enough? Seven wrong passes.<a class="headerlink" href="#are-the-checks-good-enough-seven-wrong-passes" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>NOTE: this script deliberately breaks the pass. &#39;caught&#39; lines are EXPECTED: they show the checker can detect the mistake.
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>baseline (nothing broken): checker passes (expected)
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>the pass is replaced by MLIR&#39;s own --convert-scf-to-cf (CHK_REVERSE): caught by 1 failing check(s):
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>      last to first: transferNodesFromList grows x3.97 and x3.98 per doubling (2 = linear)
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>the statements are lowered first to last, not last to first: caught by 2 failing check(s):
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>      last to first: transferNodesFromList grows x3.97 and x3.98 per doubling (2 = linear)
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>      last to first costs at most 5% more in all at 2000 loops (one conversion per statement): 739 million instructions against 699 million
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>the whole function is converted in one call (what --convert-scf-to-cf does): caught by 1 failing check(s):
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>      last to first: transferNodesFromList grows x3.97 and x3.98 per doubling (2 = linear)
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>a top-level scf.if is never lowered: caught by 1 failing check(s):
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>      loop with result, scf.if, scf.while, nested loops: the same text from both lowerings
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>a top-level scf.while is never lowered: caught by 1 failing check(s):
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a>      loop with result, scf.if, scf.while, nested loops: the same text from both lowerings
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a>only the first 2500 top-level statements are lowered: caught by 1 failing check(s):
+<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a>      one function of 3000 loops: byte-identical IR from both lowerings (1634222 bytes)
+<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a>nested loops are never lowered (only statements whose body has no loop: a loop with a loop inside is skipped): caught by 2 failing check(s):
+<a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a>      2 programs lower to byte-identical IR with --mg-scf-to-cf-reverse and --convert-scf-to-cf, 105 differ (13 skipped: 400 lines or more, or rej
+<a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a>      loop with result, scf.if, scf.while, nested loops: the same text from both lowerings
+<a id="__codelineno-9-19" name="__codelineno-9-19" href="#__codelineno-9-19"></a>
+<a id="__codelineno-9-20" name="__codelineno-9-20" href="#__codelineno-9-20"></a>restored: ScfToCfReverse.cpp is back to its original and mg-opt is rebuilt
+</code></pre></div>
+<p>All seven are caught. Look at <em>which check</em> catches each:</p>
+<ul>
+<li>The two that make the order wrong (first to last, or the whole function in one call) are caught <strong>only by the instruction count</strong>: the output is still the right program, so no output comparison could notice them. A pass that gave the right answer but quietly lost the speed-up would be invisible without that check.</li>
+<li>A pass that skips top-level <code>scf.if</code> or <code>scf.while</code> is caught <strong>only by the hand-written file</strong>, because the book's examples contain neither. If I had trusted the 107 programs alone, this would have gone unnoticed.</li>
+<li>Lowering only the first 2,500 statements is caught <strong>only by the 3,000-loop comparison</strong> (the instruction counts stop at 2,000 loops and look at no output of a big function, so I expected this mutant to slip through and added the 3,000-loop comparison before the run; I did not run the mutants without it).</li>
+</ul>
+<h2 id="what-the-pass-does-not-fix">What the pass does not fix<a class="headerlink" href="#what-the-pass-does-not-fix" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>time of the lowering pass in seconds: ONE outer loop whose body contains n loops
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>      n  convert-scf-to-cf  last-to-first
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>   2000              0.066          0.066
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>   4000              0.484          0.650
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>   8000              5.186          5.052
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>  16000             23.892         24.444
+</code></pre></div>
+<p>The pass reorders only the <strong>top-level statements of a function</strong>. One outer loop whose body holds <em>n</em> inner loops is lowered as one statement, and inside it MLIR's driver still goes in program order, so the quadratic is back: 23.9 seconds against 24.4 seconds at 16,000 inner loops, no better at all (the small differences at 2,000 to 8,000 are noise from one run each). The training programs do not look like this (each matrix operation is its own top-level nest), which is why the pass works on them, but a program that put all its operations inside one big loop body would not benefit. Lowering the nested loops last to first too is not a matter of recursing: a lowered inner loop leaves its parent's body with several blocks, and an <code>scf.for</code> must have a single-block body, so the order of conversion has to change more than this pass does. I did not do that.</p>
+<h2 id="limits-and-what-is-not-established">Limits and what is not established<a class="headerlink" href="#limits-and-what-is-not-established" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>One machine, one run per cell</strong> in the timing tables (the instruction counts are exact; the times are not). The 2,106-second figure was measured with other work running.</li>
+<li><strong>The new pass is not in MLIR.</strong> It drives MLIR's patterns from outside and handles only the entry block's top-level statements. A real fix would go in the conversion driver or in <code>SCFToControlFlow</code> itself, and I have not read that code to see whether such a change would be accepted or would break something else.</li>
+<li><strong>Byte-identical output was shown on 107 programs, one synthetic function and one hand-written one,</strong> not for every possible <code>scf</code> program. For any case where MLIR's patterns depend on the order of conversion the outputs could differ; none was found.</li>
+<li><strong>The nested case is not fixed</strong> (above), and functions that are not <code>func.func</code> (a <code>gpu.module</code>, for example) are not looked at by this pass.</li>
+<li><strong>Still unexplained:</strong> why the new pass and the control both grow by about 2.5× per doubling at the top of the table, and why <code>clang -O0</code> is slower on outlined input.</li>
+<li><strong>The default is unchanged.</strong> Whether <code>mgc</code> should lower last to first by default, and whether outlining should be on by default, is the next chapter's question.</li>
+</ul>
+<h2 id="reproducing">Reproducing<a class="headerlink" href="#reproducing" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nb">cd</span><span class="w"> </span>docs/part42/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./build.sh
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>./scaling.py<span class="w"> </span>&gt;<span class="w"> </span>scaling_out.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./nested_limit.py<span class="w"> </span>&gt;<span class="w"> </span>nested_limit_out.txt
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>./check_reverse.py<span class="w"> </span>&gt;<span class="w"> </span>check_reverse_out.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./mutation.py<span class="w"> </span>&gt;<span class="w"> </span>mutation_out.txt
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>./full200.sh<span class="w"> </span>&gt;<span class="w"> </span>full200_out.txt<span class="w">            </span><span class="c1"># and ./pass_times_200.sh in the background (about 35 minutes)</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="nb">cd</span><span class="w"> </span>../../part15/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_lit.sh<span class="w">      </span><span class="c1"># 154 tests</span>
+</code></pre></div>
+<h2 id="chapter-summary">Chapter summary<a class="headerlink" href="#chapter-summary" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Chapter 39's open idea is <strong>confirmed</strong>: lowering <code>scf</code> to control flow from the last statement to the first removes the quadratic. On 64,000 synthetic loops the pass goes from 311.7 to 1.2 seconds; on the 200-step training program (190,636 nests in one function), from 2,106 to 3.1 seconds, with <strong>no outlining</strong>, and the whole compile takes 129 seconds with identical output.</li>
+<li>The instruction count of block splitting goes from ×4 per doubling to ×2.00: the mechanism Chapter 39 found is the thing removed.</li>
+<li>The output is byte-identical to MLIR's on 107 book programs, a 3,000-loop function and a hand-written function with <code>if</code>, <code>while</code> and nested loops.</li>
+<li>The pass costs about 1% more at small sizes and helps only with many top-level statements; it does <strong>not</strong> help a function whose loops are nested inside one outer loop.</li>
+<li>Seven broken passes are caught, and which check catches each is part of the result.</li>
+</ul>
+<h2 id="self-check-questions">Self-check questions<a class="headerlink" href="#self-check-questions" title="Permanent link">&para;</a></h2>
+<p>Each answer is collapsed; try the question first.</p>
+<ol>
+<li>
+<p>Why does lowering the loops from last to first avoid the quadratic?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>Lowering a loop splits its block there and moves everything behind it. First to last, loop <em>i</em> has all the later unlowered nests behind it, so about <em>n</em>²/2 are moved in all. Last to first, what is behind a loop is already lowered (it left a branch and its blocks live elsewhere), so each split moves only the few operations between two loops.</p>
+</details>
+</li>
+<li>
+<p>The two wrong orders are caught only by the instruction count, not by any output check. Why?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>MLIR's patterns give the same lowering of each loop whatever the order; only how long it takes differs. The output of a pass with the wrong order is still byte-identical. Only a measurement of cost can see that the speed-up has gone.</p>
+</details>
+</li>
+<li>
+<p>Why does the hand-written <code>edge_cases.mlir</code> matter when 107 book programs already agree?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>The front end only produces plain loops, so none of the book's programs has a top-level <code>scf.if</code> or <code>scf.while</code>, or loops with results used later. The mutants that skip those statements are caught only by the hand-written file.</p>
+</details>
+</li>
+<li>
+<p>The new pass is about 1% more expensive at 2,000 loops. Why, and what does that say about when to use it?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>It runs one conversion per top-level statement, and each conversion has a fixed price, while the quadratic part it removes is only 5% of the instructions at that size. It pays off for functions with many top-level loops (the gap opens from 4,000 loops) and costs a little for small ones, so it should be chosen by size or accepted as a small tax.</p>
+</details>
+</li>
+<li>
+<p>What does the nested-loops experiment show, and what would be needed to fix it?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>One outer loop with <em>n</em> inner loops takes the same time under both passes (about 24 seconds at 16,000), because the pass reorders only top-level statements. Fixing it means lowering inner loops last to first as well, but a lowered inner loop leaves the outer loop's body with several blocks, which an <code>scf.for</code> cannot have, so the order of conversion has to change more than this pass does.</p>
+</details>
+</li>
+<li>
+<p>The 2,106-second figure should be read with care. Why?</p>
+<details class="note">
+<summary>Answer</summary>
+<p>It is one run, made while other work was running on the same four cores. It supports "about 35 minutes", consistent with the roughly 40 minutes Chapter 36 measured for compile and run together, not a figure to the second.</p>
+</details>
+</li>
+<li>
+<p>Name two things this chapter does not establish.</p>
+<details class="note">
+<summary>Answer</summary>
+<p>Any of: why the new pass and the control both grow by about 2.5× per doubling at the top of the table; why <code>clang -O0</code> is slower on outlined input; that the outputs match for every possible <code>scf</code> program; whether the same change would be accepted into MLIR; any benefit for loops nested in one body.</p>
+</details>
+</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../../part41/41-compiling-mountain-goat-to-ga-1/" class="md-footer__link md-footer__link--prev" aria-label="Previous: 41. Compiling Mountain Goat to GA-1: Fusion, Tiling and Why Decoding Is Memory-Bound">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                41. Compiling Mountain Goat to GA-1: Fusion, Tiling and Why Decoding Is Memory-Bound
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 Oluwaseyi Awoga
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

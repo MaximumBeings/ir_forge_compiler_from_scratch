@@ -1,0 +1,14 @@
+-- 1. same program on the book's examples
+  ok   107 programs lower to byte-identical IR with --mg-scf-to-cf-reverse and --convert-scf-to-cf, 0 differ (13 skipped: 400 lines or more, or rejected by the front end)
+-- 2. structured control flow that is not a plain run of loops
+  ok   loop with result, scf.if, scf.while, nested loops: the same text from both lowerings
+  ok   the lowered program prints 10, 1000, 128, 153, 10153 (worked out by hand)
+-- 3. real programs print the same with and without --reverse-loops
+  ok   three programs print identical output: 08_self_attention_block.mg, 03_tiny_transformer.mg, 04_training.mg
+-- 4. cost in instructions (callgrind): the splitting cost is quadratic under convert-scf-to-cf, linear under the reverse pass
+  ok   one function of 3000 loops: byte-identical IR from both lowerings (1634222 bytes)
+  ok   convert-scf-to-cf: transferNodesFromList grows x3.97 and x3.98 per doubling (4 = quadratic)
+  ok   last to first: transferNodesFromList grows x2.00 and x2.00 per doubling (2 = linear)
+  ok   last to first: block splitting is 0.0% of the instructions at 2000 loops (convert-scf-to-cf: 5%)
+  ok   last to first costs at most 5% more in all at 2000 loops (one conversion per statement): 706 million instructions against 697 million
+all checks pass

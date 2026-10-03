@@ -1,0 +1,6 @@
+time of the lowering pass in seconds: ONE outer loop whose body contains n loops
+      n  convert-scf-to-cf  last-to-first
+   2000              0.066          0.066
+   4000              0.484          0.650
+   8000              5.186          5.052
+  16000             23.892         24.444

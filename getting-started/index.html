@@ -2072,6 +2072,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../part42/42-lowering-loops-last-to-first/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    42. Lowering the Loops Last to First: Testing the Idea Chapter 39 Left Open
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2340,7 +2368,7 @@
 <tr>
 <td>38</td>
 <td><code>part38/code/build.sh</code></td>
-<td>adds the <code>--mg-outline-loops</code> pass (<code>mgc --outline</code>); the newest compiler, which <code>run_lit.sh</code> and CI use; <code>part38/code/mgc</code> is the driver</td>
+<td>adds the <code>--mg-outline-loops</code> pass (<code>mgc --outline</code>); <code>part38/code/mgc</code> is the driver</td>
 </tr>
 <tr>
 <td>39</td>
@@ -2356,6 +2384,11 @@
 <td>41</td>
 <td><code>part38/code/build.sh</code></td>
 <td>adds nothing to the compiler; <code>part41/code</code> is a Python back end that reads <code>mgc mlir</code> text and runs on Chapter 40's simulator</td>
+</tr>
+<tr>
+<td>42</td>
+<td><code>part42/code/build.sh</code></td>
+<td>adds the <code>--mg-scf-to-cf-reverse</code> pass (<code>mgc --reverse-loops</code>) and registers the <code>scf</code> dialect in <code>mg-opt</code>; the newest compiler, which <code>run_lit.sh</code> and CI use; <code>part42/code/mgc</code> is the driver</td>
 </tr>
 <tr>
 <td>the test suite (<code>part15/code/run_lit.sh</code>)</td>

@@ -5,7 +5,10 @@ root = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), 
 def alt(svg): return re.search(r"<title[^>]*>(.*?)</title>", open(svg).read()).group(1)
 def add(md, name, rel):
     text = open(md).read()
-    if "assets/goats/" in text: return 0
+    if "assets/goats/" in text:       # already there: only refresh the alt text from the picture's title (the picture may have been regenerated)
+        new = re.sub(r"!\[[^\]]*\]\(([./]*assets/goats/" + name + r"\.svg)\)", lambda m: f"![{alt(os.path.join(root, 'assets', 'goats', name + '.svg'))}]({m.group(1)})", text)
+        if new != text: open(md, "w").write(new)
+        return 0
     svg = os.path.join(root, "assets", "goats", name + ".svg"); lines = text.split("\n")
     i = next(k for k, l in enumerate(lines) if l.startswith("# "))
     lines[i + 1:i + 1] = ["", f'![{alt(svg)}]({rel}assets/goats/{name}.svg){{ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }}']

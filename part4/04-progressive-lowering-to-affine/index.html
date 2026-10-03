@@ -2472,7 +2472,7 @@
 
 
 <h1 id="4-progressive-lowering-mountain-goat-to-affine-two-real-ways">4. Progressive Lowering: Mountain Goat to <code>affine</code>, Two Real Ways<a class="headerlink" href="#4-progressive-lowering-mountain-goat-to-affine-two-real-ways" title="Permanent link">&para;</a></h1>
-<p><img alt="Mountain goats on the mountain in black and white" src="../../assets/goats/ch-04.svg" style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" /></p>
+<p><img alt="Mountain goats in space helmets on the Moon" src="../../assets/goats/ch-04.svg" style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" /></p>
 <p><strong>What you will understand:</strong> how a tensor-based toy op genuinely becomes a real loop nest over real memory -- the concrete, code-level answer to the value-semantics-to-buffer-semantics gap every real MLIR pipeline that uses <code>tensor</code> types up high and <code>affine</code>/<code>memref</code> down low has to cross somewhere. This chapter crosses it twice: once by hand, fully understood step by step, and once by reaching for MLIR's own real, built-in production machinery -- and shows, honestly, exactly where the second attempt stops short.</p>
 <p><strong>What you need to know first:</strong> Chapters 2 and 3's own <code>mg</code> dialect and its real canonicalization patterns. This chapter's own new vocabulary -- dialect conversion's real <code>ConversionTarget</code>/<code>TypeConverter</code>/<code>ConversionPattern</code>, and real bufferization -- was introduced only conceptually in Chapter 3; it is used for real, for the first time, here.</p>
 <div class="admonition tip">

@@ -170,3 +170,6 @@ config.substitutions += [("%ch42", ch42)]
 # Chapter 43: mgc's defaults changed (loops lowered last to first, big functions outlined); the driver is part43/code/mgc, its mg-opt is Chapter 42's.
 ch43 = os.path.join(config.test_source_root, "..", "..", "..", "part43", "code")
 config.substitutions += [("%ch43", ch43)]
+# Chapter 44: fast-math flags (--mg-set-fastmath, mgc --fast-math); the newest mg-opt build is this chapter's.
+ch44 = os.path.join(config.test_source_root, "..", "..", "..", "part44", "code")
+config.substitutions += [("%ch44", ch44)]

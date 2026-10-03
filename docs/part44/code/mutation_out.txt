@@ -1,0 +1,32 @@
+NOTE: this script deliberately breaks the pass and the driver. 'caught' lines are EXPECTED: they show the checker can detect the mistake.
+baseline (nothing broken): checker passes (expected)
+fast-math is ON by default: caught by 2 failing check(s):
+      default: 18 fadd/fsub/fmul/fdiv in the self-attention example, none with a flag
+      ijk product, static and dynamic sizes: not vectorized (cannot reorder floating-point operations) without the flags, vectorized with them
+--fast-math=FLAGS ignores FLAGS (always the default flags): caught by 2 failing check(s):
+      --fast-math=reassoc: all 18 carry reassoc and nothing else
+      ge(p, p) for a NaN p at -O2: plain [[0,0,0]], reassoc+contract [[0,0,0]], with nnan [[0,0,0]] (the last is WRONG, and is why nnan is not a d
+--fast-math is accepted but the pass is never run: caught by 4 failing check(s):
+      --fast-math: all 18 carry reassoc contract
+      --fast-math=reassoc: all 18 carry reassoc and nothing else
+      ijk product, static and dynamic sizes: not vectorized (cannot reorder floating-point operations) without the flags, vectorized with them
+      ge(p, p) for a NaN p at -O2: plain [[0,0,0]], reassoc+contract [[0,0,0]], with nnan [[0,0,0]] (the last is WRONG, and is why nnan is not a d
+the default flags include nnan (no NaNs): caught by 3 failing check(s):
+      all 4 floating-point operations get fastmath<reassoc,contract>; the integer addition and the unprocessed file get none
+      --fast-math: all 18 carry reassoc contract
+      ge(p, p) for a NaN p at -O2: plain [[0,0,0]], reassoc+contract [[1,1,1]], with nnan [[1,1,1]] (the last is WRONG, and is why nnan is not a d
+the default flags lack contract: caught by 2 failing check(s):
+      all 4 floating-point operations get fastmath<reassoc,contract>; the integer addition and the unprocessed file get none
+      --fast-math: all 18 carry reassoc contract
+multiplications are skipped: caught by 3 failing check(s):
+      all 4 floating-point operations get fastmath<reassoc,contract>; the integer addition and the unprocessed file get none
+      --fast-math: all 18 carry reassoc contract
+      --fast-math=reassoc: all 18 carry reassoc and nothing else
+the flags option is ignored (always the default): caught by 3 failing check(s):
+      flags=reassoc,nsz gives exactly those flags; an unknown flag is an error with a message
+      --fast-math=reassoc: all 18 carry reassoc and nothing else
+      ge(p, p) for a NaN p at -O2: plain [[0,0,0]], reassoc+contract [[0,0,0]], with nnan [[0,0,0]] (the last is WRONG, and is why nnan is not a d
+an unknown flag is silently ignored: caught by 1 failing check(s):
+      flags=reassoc,nsz gives exactly those flags; an unknown flag is an error with a message
+
+restored: SetFastMath.cpp is back to its original and mg-opt is rebuilt

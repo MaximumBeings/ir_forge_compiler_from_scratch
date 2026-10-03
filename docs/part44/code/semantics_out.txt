@@ -1,0 +1,3 @@
+109 programs, each run at -O2 plain and with each fast-math setting; printed numbers compared
+  --fast-math reassoc,contract  : 109 print the same, 0 differ
+  --fast-math +nnan,ninf        : 109 print the same, 0 differ

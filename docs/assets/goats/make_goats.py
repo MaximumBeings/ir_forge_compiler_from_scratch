@@ -128,7 +128,7 @@ def scene(n, theme, title, desc=None):
 # one entry per picture: (file, theme, alt text)
 THEMES = ["dawn", "noon", "sunset", "night", "storm", "autumn", "spring", "bw", "winter", "desert", "sepia", "inkdark", "blueprint"]
 def pick(n): return THEMES[(n * 5 + n // 13) % len(THEMES)] if n else "noon"
-PAGES = [(f"ch-{n:02d}", pick(n)) for n in range(1, 44)] + [("tour", "spring"), ("background", "sepia"), ("start", "dawn")]
+PAGES = [(f"ch-{n:02d}", pick(n)) for n in range(1, 46)] + [("tour", "spring"), ("background", "sepia"), ("start", "dawn")]
 if __name__ == "__main__":
     for i, (name, theme) in enumerate(PAGES, start=1):
         n = i if not name.startswith("ch-") else int(name[3:])

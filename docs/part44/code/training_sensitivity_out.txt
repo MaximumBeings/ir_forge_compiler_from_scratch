@@ -1,0 +1,16 @@
+== part35 10 steps, clang -O2 
+   plain      compile    24 s, 31 numbers printed
+   fast-math  compile    23 s, 31 numbers printed
+   printed numbers: 31 against 31; 0 differ in their printed (six-digit) text; the outputs are identical
+== part35 10 steps, clang -O2 -march=native
+   plain      compile    26 s, 31 numbers printed
+   fast-math  compile    27 s, 31 numbers printed
+   printed numbers: 31 against 31; 0 differ in their printed (six-digit) text; the outputs are identical
+== part36 10 steps, clang -O2 
+   plain      compile    99 s, 112 numbers printed
+   fast-math  compile   113 s, 112 numbers printed
+   printed numbers: 112 against 112; 0 differ in their printed (six-digit) text; the outputs are identical
+== part36 10 steps, clang -O2 -march=native
+   plain      compile   127 s, 112 numbers printed
+   fast-math  compile   153 s, 112 numbers printed
+   printed numbers: 112 against 112; 0 differ in their printed (six-digit) text; the outputs are identical

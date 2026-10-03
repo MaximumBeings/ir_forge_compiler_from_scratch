@@ -1,0 +1,18 @@
+median time with --fast-math / median time without (below 1 = faster with the flags); two complete passes; pinned core
+variant                           N  pass 1  pass 2      elements differing in their bits (of N*N)   largest error plain -> flags
+ijk, -O2                         64    1.09    1.02                                      0 of 4096   8.73e-17 -> 8.73e-17
+ijk, -O2                        128    0.99    0.92                                     0 of 16384   3.21e-17 -> 3.21e-17
+ijk, -O2                        256    0.98    1.04                                     0 of 65536   1.56e-17 -> 1.56e-17
+ijk, -O2                        512    1.02    1.19                                    0 of 262144   9.29e-17 -> 9.29e-17
+ijk, -O3 -march=native           64    1.41    1.69                                   3620 of 4096   8.73e-17 -> 9.60e-17
+ijk, -O3 -march=native          128    0.99    1.07                                 15216 of 16384   3.21e-17 -> 2.78e-17
+ijk, -O3 -march=native          256    1.30    1.09                                 62536 of 65536   1.56e-17 -> 1.49e-17
+ijk, -O3 -march=native          512    1.03    1.12                               233864 of 262144   9.29e-17 -> 8.08e-17
+ikj, -O2                         64    1.02    1.12                                      0 of 4096   8.73e-17 -> 8.73e-17
+ikj, -O2                        128    1.05    1.02                                     0 of 16384   3.21e-17 -> 3.21e-17
+ikj, -O2                        256    1.39    1.05                                     0 of 65536   1.56e-17 -> 1.56e-17
+ikj, -O2                        512    1.30    0.88                                    0 of 262144   9.29e-17 -> 9.29e-17
+ikj, -O3 -march=native           64    0.97    0.84                                   3620 of 4096   8.73e-17 -> 9.60e-17
+ikj, -O3 -march=native          128    0.76    0.79                                 15216 of 16384   3.21e-17 -> 2.78e-17
+ikj, -O3 -march=native          256    0.81    0.91                                 62536 of 65536   1.56e-17 -> 1.49e-17
+ikj, -O3 -march=native          512    0.80    0.83                               233864 of 262144   9.29e-17 -> 8.08e-17

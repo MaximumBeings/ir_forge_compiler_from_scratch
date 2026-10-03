@@ -22,7 +22,7 @@ for m in set(re.findall(r"docs/[A-Za-z0-9_./-]+", text)):
     base = m.split("*")[0].rstrip("/")
     if not os.path.exists(os.path.join(root, base)) and not os.path.exists(os.path.join(root, os.path.dirname(base))):
         problems.append(f"workflow mentions {m}, which does not exist")
-for f in ("ci.sh", "requirements.txt", "docs/part42/code/build.sh", "docs/part15/code/run_lit.sh"):
+for f in ("ci.sh", "requirements.txt", "docs/part44/code/build.sh", "docs/part15/code/run_lit.sh"):
     if not os.path.exists(os.path.join(root, f)): problems.append(f"missing file the workflow depends on: {f}")
 if problems:
     print("CI workflow check FAILED:"); [print("  -", p) for p in problems]; sys.exit(1)

@@ -1,0 +1,30 @@
+== the floating-point instructions in the LLVM IR of the ijk product (llvm.mlir -> .ll), without and with --fast-math
+-- plain: 1 fmul, 1 fadd
+   %78 = fmul double %72, %77
+   %79 = fadd double %67, %78
+-- fast: 1 fmul, 1 fadd
+   %78 = fmul reassoc contract double %72, %77
+   %79 = fadd reassoc contract double %67, %78
+
+== ijk, plain: clang -O3 -march=sapphirerapids: what the loop vectorizer says (count, remark)
+      1 loop not vectorized: cannot prove it is safe to reorder floating-point operations; allow reordering by specifying '#pragma clang loop vectorize(enable)' before the loop or by providing the compiler op
+      1 loop not vectorized
+
+== ijk, fast: clang -O3 -march=sapphirerapids: what the loop vectorizer says (count, remark)
+      1 vectorized loop (vectorization width: 4, interleaved count: 1)
+      1 the cost-model indicates that interleaving is not beneficial
+
+== ikj, plain: clang -O3 -march=sapphirerapids: what the loop vectorizer says (count, remark)
+      1 vectorized loop (vectorization width: 4, interleaved count: 1)
+      1 the cost-model indicates that interleaving is not beneficial
+
+== ikj, fast: clang -O3 -march=sapphirerapids: what the loop vectorizer says (count, remark)
+      1 vectorized loop (vectorization width: 4, interleaved count: 1)
+      1 the cost-model indicates that interleaving is not beneficial
+
+== the same ijk product, sizes unknown until run time (03_matmul_dynamic.mg)
+-- plain
+      1 loop not vectorized: cannot prove it is safe to reorder floating-point operations; allow reordering by specifying '#pragma clang loop vectorize(enable)' before the loop or by providing the compiler op
+      1 loop not vectorized
+-- fast
+      1 vectorized loop (vectorization width: 4, interleaved count: 4)

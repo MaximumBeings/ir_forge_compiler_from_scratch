@@ -1,0 +1,14 @@
+-- 1. the pass
+  ok   all 4 floating-point operations get fastmath<reassoc,contract>; the integer addition and the unprocessed file get none
+  ok   flags=reassoc,nsz gives exactly those flags; an unknown flag is an error with a message
+-- 2. the driver
+  ok   default: 18 fadd/fsub/fmul/fdiv in the self-attention example, none with a flag
+  ok   --fast-math: all 18 carry reassoc contract
+  ok   --fast-math=reassoc: all 18 carry reassoc and nothing else
+-- 3. the loop vectorizer
+  ok   ijk product, static and dynamic sizes: not vectorized (cannot reorder floating-point operations) without the flags, vectorized with them
+-- 4. the default prints the same on the book's examples
+  ok   19 programs (every sixth example) print the same at -O2 with --fast-math, 0 differ
+-- 5. the negative control: nnan changes an answer
+  ok   ge(p, p) for a NaN p at -O2: plain [[0,0,0]], reassoc+contract [[0,0,0]], with nnan [[1,1,1]] (the last is WRONG, and is why nnan is not a default)
+all checks pass

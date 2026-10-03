@@ -121,6 +121,7 @@ nav:
       - "41. Compiling Mountain Goat to GA-1: Fusion, Tiling and Why Decoding Is Memory-Bound": part41/41-compiling-mountain-goat-to-ga-1.md
       - "42. Lowering the Loops Last to First: Testing the Idea Chapter 39 Left Open": part42/42-lowering-loops-last-to-first.md
       - "43. Outlining by Default: What the Calls Cost, and Which Defaults Changed": part43/43-outlining-by-default.md
+      - "44. Fast-Math Flags from the Compiler: What Reordering Is Allowed to Buy, and What It Did": part44/44-fast-math-flags.md
 
 extra:
   social: []

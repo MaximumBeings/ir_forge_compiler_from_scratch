@@ -1,0 +1,7 @@
+-- Could NOT find LibEdit (missing: LibEdit_INCLUDE_DIRS LibEdit_LIBRARIES) 
+-- Could NOT find zstd (missing: zstd_LIBRARY zstd_INCLUDE_DIR) 
+-- Could NOT find CURL (missing: CURL_LIBRARY CURL_INCLUDE_DIR) 
+-- Building with -fPIC
+-- Configuring done (0.2s)
+-- Generating done (0.1s)
+-- Build files have been written to: /home/user/ir_forge_compiler_from_scratch/docs/part44/code/build

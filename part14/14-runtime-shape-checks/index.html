@@ -2468,8 +2468,7 @@
 
 
 <h1 id="14-a-runtime-shape-check-closing-chapter-13s-memory-safety-hole">14. A Runtime Shape Check: Closing Chapter 13's Memory-Safety Hole<a class="headerlink" href="#14-a-runtime-shape-check-closing-chapter-13s-memory-safety-hole" title="Permanent link">&para;</a></h1>
-<p style="text-align:center"><img src="../assets/goats/ch-14.svg" alt="Mountain goats on the mountain in spring" style="max-width:100%;height:auto;border-radius:6px"></p>
-
+<p><img alt="Mountain goats on the mountain in spring" src="../../assets/goats/ch-14.svg" style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" /></p>
 <p><strong>What you will understand:</strong> how to turn Chapter 13's silent out-of-bounds read into a loud, immediate abort, on both of this book's lowering paths, with no new pass and no cost for static programs. The chapter shows the helper code in full, the complete diff against Chapter 13, the generated IR before and after, and the real output of every test. Along the way: why a compile-time verifier cannot be enough once shapes are dynamic, what <code>cf.assert</code> is and how it reaches machine code, one crash that came from MLIR's lazy dialect loading (reproduced here from source, not just remembered), and one real weakness in how MLIR's own <code>cf.assert</code> reports its message.</p>
 <p><strong>What you need to know first:</strong> Chapter 13's dynamic-shape lowering (<code>memref.dim</code>, dynamic <code>memref.alloc</code>) and its recorded "known gap". New ground: <code>cf.assert</code> and <code>arith.cmpi</code>.</p>
 <div class="admonition tip">

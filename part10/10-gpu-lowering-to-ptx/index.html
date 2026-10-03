@@ -2466,8 +2466,7 @@
 
 
 <h1 id="10-gpu-lowering-mountain-goat-to-the-gpu-dialect-nvvm-and-real-ptx">10. GPU Lowering: Mountain Goat to the <code>gpu</code> Dialect, NVVM, and Real PTX<a class="headerlink" href="#10-gpu-lowering-mountain-goat-to-the-gpu-dialect-nvvm-and-real-ptx" title="Permanent link">&para;</a></h1>
-<p style="text-align:center"><img src="../assets/goats/ch-10.svg" alt="Mountain goats on the mountain in black and white at dusk" style="max-width:100%;height:auto;border-radius:6px"></p>
-
+<p><img alt="Mountain goats on the mountain in black and white at dusk" src="../../assets/goats/ch-10.svg" style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" /></p>
 <p><strong>What you will understand:</strong> how a real Mountain Goat program (<code>mg.add</code>) is carried from Chapter 4's own <code>affine</code> loops, through MLIR's own <code>gpu</code> dialect and its <code>nvvm</code> dialect, down to real PTX text emitted by LLVM's own NVPTX backend, and how that machine-generated PTX compares, instruction for instruction, against a hand-written CUDA-style kernel compiled by <code>clang-18</code>. This chapter also says plainly what it could <strong>not</strong> do: launch the kernel. This book's sandbox has no GPU. Every file and output on this page is embedded from the repository, so nothing is elided and nothing is paraphrased.</p>
 <p><strong>What you need to know first:</strong> Chapter 4's <code>--convert-mg-to-affine</code> output, Chapter 7's <code>affine</code> loop passes, and Chapter 5's memref-descriptor calling convention (each <code>memref</code> argument becomes several scalar parameters). New ground here: the <code>gpu</code> dialect's host/device split (<code>gpu.module</code>, <code>gpu.launch_func</code>) and PTX as an assembly language. A short primer on both comes first.</p>
 <div class="admonition tip">

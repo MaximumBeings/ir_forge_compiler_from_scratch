@@ -2556,8 +2556,7 @@
 
 
 <h1 id="15-a-real-test-suite-lit-filecheck-and-proof-that-the-tests-can-fail">15. A Real Test Suite: <code>lit</code>, <code>FileCheck</code>, and Proof That the Tests Can Fail<a class="headerlink" href="#15-a-real-test-suite-lit-filecheck-and-proof-that-the-tests-can-fail" title="Permanent link">&para;</a></h1>
-<p style="text-align:center"><img src="../assets/goats/ch-15.svg" alt="Mountain goats on the mountain in black and white at dusk" style="max-width:100%;height:auto;border-radius:6px"></p>
-
+<p><img alt="Mountain goats on the mountain in black and white at dusk" src="../../assets/goats/ch-15.svg" style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" /></p>
 <p><strong>What you will understand:</strong> how to turn this book's "run it once and paste the output" scripts into an assertion-based regression suite that fails when behavior changes, and, more important, how to <em>show</em> that it can fail. Every one of the suite's 22 original tests is printed here exactly as it exists in the repository, <strong>next to the real output it checks</strong>, so you can see what each pattern is matching and why. Chapters 12 through 14 each flagged the same gap ("no <code>lit</code>/<code>FileCheck</code> tests, no CI"); this chapter closes the first half of it. Continuous integration is not done here.</p>
 <p><strong>What you need to know first:</strong> Chapters 3 through 14's behavior. The suite tests what those chapters built; it adds no compiler features.</p>
 <div class="admonition tip">

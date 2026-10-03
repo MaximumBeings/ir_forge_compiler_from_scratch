@@ -2388,8 +2388,7 @@
 
 
 <h1 id="3-the-real-pass-infrastructure-canonicalizing-mountain-goat">3. The Real Pass Infrastructure: Canonicalizing Mountain Goat<a class="headerlink" href="#3-the-real-pass-infrastructure-canonicalizing-mountain-goat" title="Permanent link">&para;</a></h1>
-<p style="text-align:center"><img src="../assets/goats/ch-03.svg" alt="Mountain goats on the mountain at sunset" style="max-width:100%;height:auto;border-radius:6px"></p>
-
+<p><img alt="Mountain goats on the mountain at sunset" src="../../assets/goats/ch-03.svg" style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" /></p>
 <p><strong>What you will understand:</strong> how MLIR's own real pattern-rewrite and constant-folding infrastructure actually transforms IR -- not a hand-wavy "optimizations happen," but two genuinely different, real mechanisms (<code>fold()</code> and <code>RewritePattern</code>), wired into Mountain Goat's own dialect, run by the real <code>--canonicalize</code> pass, with real before/after IR captured directly.</p>
 <p><strong>What you need to know first:</strong> Chapter 2's own dialect (<code>mg.constant</code>, <code>mg.add</code>, <code>mg.transpose</code>, <code>mg.print</code>) and how <code>hasVerifier</code>/ODS traits work. This chapter's own new vocabulary -- <code>fold()</code>, <code>RewritePattern</code>, <code>PatternRewriter</code>, the canonicalizer pass -- is introduced here, grounded in real, run code.</p>
 <div class="admonition tip">

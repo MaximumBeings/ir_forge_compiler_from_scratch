@@ -1,0 +1,13 @@
+-- 1. which passes mgc asks for
+  ok   default: outline + reverse; --no-outline, --no-reverse-loops, both, and the old spellings behave as named
+-- 2. same output as Chapter 38's driver on the book's examples
+  ok   36 programs print the same with the defaults and with --no-outline --no-reverse-loops, 0 differ
+-- 3. small programs are untouched
+  ok   the self-attention example (under 32 nests per function) has no outlined function with the defaults
+-- 4. big programs are outlined, and run the same
+  ok   Chapter 35's 10-step training program: 80 outlined functions by default, 0 with --no-outline
+  ok   and it prints the same 1842 characters either way
+-- 5. what outlining costs at run time, in exact instructions (callgrind, clang -O0)
+  ok   Chapter 35's 10-step program: 488,922,861 instructions plain, 488,988,883 outlined: 0.0135% more
+  ok   the 1,928 calls cost 34 extra instructions each (a call, the arguments, the return)
+all checks pass

@@ -1,0 +1,24 @@
+NOTE: this script deliberately breaks the driver. 'caught' lines are EXPECTED: they show the checker can detect the mistake.
+baseline (nothing broken): checker passes (expected)
+outlining is off by default: caught by 2 failing check(s):
+      default: outline + reverse; --no-outline, --no-reverse-loops, both, and the old spellings behave as named
+      Chapter 35's 10-step training program: 0 outlined functions by default, 0 with --no-outline
+lowering last to first is off by default: caught by 1 failing check(s):
+      default: outline + reverse; --no-outline, --no-reverse-loops, both, and the old spellings behave as named
+--no-outline is accepted but does nothing: caught by 3 failing check(s):
+      default: outline + reverse; --no-outline, --no-reverse-loops, both, and the old spellings behave as named
+      Chapter 35's 10-step training program: 80 outlined functions by default, 80 with --no-outline
+      the 1,928 calls cost 0 extra instructions each (a call, the arguments, the return)
+--no-reverse-loops is accepted but does nothing: caught by 1 failing check(s):
+      default: outline + reverse; --no-outline, --no-reverse-loops, both, and the old spellings behave as named
+--no-reverse-loops asks for the wrong pass (canonicalize): caught by 2 failing check(s):
+      default: outline + reverse; --no-outline, --no-reverse-loops, both, and the old spellings behave as named
+      1 programs print the same with the defaults and with --no-outline --no-reverse-loops, 35 differ
+the lowering pass is dropped from the pipeline (loops are never lowered): caught by 2 failing check(s):
+      default: outline + reverse; --no-outline, --no-reverse-loops, both, and the old spellings behave as named
+      35 programs print the same with the defaults and with --no-outline --no-reverse-loops, 1 differ
+outlining runs on the already-lowered IR (after the lowering stage) so it finds nothing: caught by 2 failing check(s):
+      default: outline + reverse; --no-outline, --no-reverse-loops, both, and the old spellings behave as named
+      Chapter 35's 10-step training program: 0 outlined functions by default, 0 with --no-outline
+
+done (the real mgc was never edited; the broken copies live in work/)

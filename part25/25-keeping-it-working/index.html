@@ -2043,6 +2043,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part39/39-finding-the-quadratic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    39. Finding the Quadratic: a Differential Profile of the Lowering Pass
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2251,7 +2279,7 @@ The system packages are <code>clang-18 llvm-18-dev llvm-18-tools libmlir-18-dev 
 <a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>
 <a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>check_tools<span class="o">()</span><span class="w"> </span><span class="o">{</span>
 <a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="w">  </span><span class="nv">missing</span><span class="o">=</span><span class="s2">&quot;&quot;</span>
-<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="w">  </span><span class="k">for</span><span class="w"> </span>t<span class="w"> </span><span class="k">in</span><span class="w"> </span>clang-18<span class="w"> </span>clang++-18<span class="w"> </span>mlir-opt-18<span class="w"> </span>mlir-translate-18<span class="w"> </span>mlir-cpu-runner-18<span class="w"> </span>FileCheck-18<span class="w"> </span>not-18<span class="w"> </span>cmake<span class="w"> </span>make<span class="w"> </span>python3<span class="w"> </span>lit<span class="w"> </span>mkdocs<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="w">  </span><span class="k">for</span><span class="w"> </span>t<span class="w"> </span><span class="k">in</span><span class="w"> </span>clang-18<span class="w"> </span>clang++-18<span class="w"> </span>mlir-opt-18<span class="w"> </span>mlir-translate-18<span class="w"> </span>mlir-cpu-runner-18<span class="w"> </span>FileCheck-18<span class="w"> </span>not-18<span class="w"> </span>valgrind<span class="w"> </span>callgrind_annotate<span class="w"> </span>cmake<span class="w"> </span>make<span class="w"> </span>python3<span class="w"> </span>lit<span class="w"> </span>mkdocs<span class="p">;</span><span class="w"> </span><span class="k">do</span>
 <a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="w">    </span><span class="nb">command</span><span class="w"> </span>-v<span class="w"> </span><span class="nv">$t</span><span class="w"> </span>&gt;/dev/null<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nv">missing</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$missing</span><span class="s2"> </span><span class="nv">$t</span><span class="s2">&quot;</span>
 <a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="w">  </span><span class="k">done</span>
 <a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="w">  </span><span class="o">[</span><span class="w"> </span>-z<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$missing</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;missing tools:</span><span class="nv">$missing</span><span class="s2">&quot;</span><span class="p">;</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="m">1</span><span class="p">;</span><span class="w"> </span><span class="o">}</span>
@@ -2315,7 +2343,7 @@ The system packages are <code>clang-18 llvm-18-dev llvm-18-tools libmlir-18-dev 
 <a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Install LLVM/MLIR 18 and build tools</span>
 <a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a><span class="w">        </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
 <a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a><span class="w">          </span><span class="no">sudo apt-get update</span>
-<a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a><span class="w">          </span><span class="no">sudo apt-get install -y clang-18 llvm-18-dev llvm-18-tools libmlir-18-dev mlir-18-tools cmake make</span>
+<a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a><span class="w">          </span><span class="no">sudo apt-get install -y clang-18 llvm-18-dev llvm-18-tools libmlir-18-dev mlir-18-tools cmake make valgrind</span>
 <a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a>
 <a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/setup-python@v5</span>
 <a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a><span class="w">        </span><span class="nt">with</span><span class="p">:</span>

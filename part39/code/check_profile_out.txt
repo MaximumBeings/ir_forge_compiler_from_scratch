@@ -1,0 +1,6 @@
+  ok   one function: transferNodesFromList grows x3.93 and x3.97 per doubling (4 = quadratic)
+  ok   one function: the whole program grows x1.77 and x1.88 per doubling (about linear)
+  ok   transferNodesFromList is called by Block::splitBlock
+  ok   functions of 100 loops: transferNodesFromList grows x2.20 and x2.00 per doubling (2 = linear)
+  ok   after --mg-outline-loops: no transferNodesFromList and no splitBlock in the profile (n = 500, 1000)
+all checks pass

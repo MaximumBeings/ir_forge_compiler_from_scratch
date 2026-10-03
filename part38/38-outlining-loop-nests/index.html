@@ -16,6 +16,8 @@
         <link rel="prev" href="../../part37/37-inside-the-llvm-stage/">
       
       
+        <link rel="next" href="../../part39/39-finding-the-quadratic/">
+      
       
         
       
@@ -2080,6 +2082,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part39/39-finding-the-quadratic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    39. Finding the Quadratic: a Differential Profile of the Lowering Pass
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2731,7 +2761,7 @@ Every listing and output on this page comes from these commands. <code>mgc</code
 </ul>
 <h2 id="limits-and-what-is-not-established">Limits and what is not established<a class="headerlink" href="#limits-and-what-is-not-established" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>The mechanism is not identified.</strong> The measurements show the cost of <code>SCFToControlFlow</code> depends on the number of loops in one function and not in the module, and that splitting the function removes it. Why (block splitting, an analysis that is recomputed, memory behaviour) was not found. The doubling factors were not a clean power law (9.0, 9.7, 4.8, 3.6 in the synthetic experiment), and the extrapolation to 200 steps is not a prediction.</li>
+<li><strong>The mechanism was not identified in this chapter</strong> (Chapter 39 identifies it: <code>Block::splitBlock</code> moving the rest of the block for each loop lowered). The measurements here show the cost of <code>SCFToControlFlow</code> depends on the number of loops in one function and not in the module, and that splitting the function removes it. Why (block splitting, an analysis that is recomputed, memory behaviour) was not found. The doubling factors were not a clean power law (9.0, 9.7, 4.8, 3.6 in the synthetic experiment), and the extrapolation to 200 steps is not a prediction.</li>
 <li><strong>Only top-level <code>affine.for</code> nests are outlined,</strong> in functions with at least 32 of them. The straight-line <code>affine.store</code>s that initialize the 112 × 112 mask and the other literals in <code>main</code> (21,714 of them directly in <code>main</code> in the 1-step program) are untouched; whether they cost anything was not measured. The threshold of 32 was chosen by hand and not tuned.</li>
 <li><strong>Deduplication is by printed text,</strong> so it finds nests that are identical, not nests that are equivalent: <code>a + a</code> and <code>a + b</code> stay different (Example 1), a nest with its two loops in the other order is another function.</li>
 <li><strong>The pass is off by default</strong> (<code>--outline</code> or <code>--mg-outline-loops</code>). Making it the default would change the IR of every program with 32 or more top-level nests (the earlier chapters' tests would need new expectations), and was not done.</li>
@@ -2753,7 +2783,7 @@ Every listing and output on this page comes from these commands. <code>mgc</code
 <li>Chapter 36's 40-minute compile was one MLIR pass, <code>SCFToControlFlow</code>, whose time grows much faster than the number of loops in <strong>one function</strong> (about 3× for every doubling of the steps; 88 s for 32,000 synthetic loops in one function against 0.4 s for the same loops in functions of 500).</li>
 <li><strong><code>--mg-outline-loops</code></strong> moves each top-level loop nest into a small private function, clones constants in, passes everything else as arguments, and <strong>deduplicates</strong> identical functions: the 200-step program has 75 distinct nests. <code>mgc --outline</code> turns it on.</li>
 <li>With it the 200-step training program compiles in <strong>94 s and runs in 4 s</strong>, and prints exactly what Chapter 36 recorded; at 32 steps the compile falls from 59.9 s to 13.6 s.</li>
-<li>The mechanism inside MLIR was not found; the evidence is a synthetic experiment that isolates the number of loops per function.</li>
+<li>The mechanism inside MLIR was not found in this chapter (Chapter 39 finds it with a profiler); the evidence here is a synthetic experiment that isolates the number of loops per function.</li>
 <li>Eleven deliberate breakages of the driver and the pass were all caught; one (not erasing the original loop) is invisible to an output comparison and is caught only by IR-level tests.</li>
 <li>The test suite and the CI now use this chapter's <code>mg-opt</code>; the pass is opt-in.</li>
 </ul>
@@ -2860,6 +2890,22 @@ Every listing and output on this page comes from these commands. <code>mgc</code
             </div>
           </a>
         
+        
+          
+          <a href="../../part39/39-finding-the-quadratic/" class="md-footer__link md-footer__link--next" aria-label="Next: 39. Finding the Quadratic: a Differential Profile of the Lowering Pass">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                39. Finding the Quadratic: a Differential Profile of the Lowering Pass
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
         
       </nav>
     

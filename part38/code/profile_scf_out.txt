@@ -1,0 +1,20 @@
+callgrind instruction counts (millions) for --lower-affine --convert-scf-to-cf on n loop nests in one function
+     n      total   growth
+  1000      351.8         
+  2000      696.7    x1.98
+  4000     1430.4    x2.05
+  8000     3091.4    x2.16
+
+the functions that account for the growth from n = 2000 to n = 8000 (instructions in millions at 2000, at 8000, and the ratio; 4x the loops: ratio 4 = linear, 16 = quadratic)
+     32.1      512.5  x  15.9  llvm::ilist_traits<mlir::Operation>::transferNodesFromList(llvm::ilist_traits<mlir::Operation>&, llvm::ilist_iterator<llvm::ilist_detail::node_options
+     24.1       94.7  x   3.9  std::pair<llvm::DenseMapIterator<llvm::PointerUnion<mlir::Operation*, mlir::Block*>, llvm::detail::DenseSetEmpty, llvm::DenseMapInfo<llvm::PointerUnio
+     20.1       80.7  x   4.0  mlir::detail::StorageUniquerImpl::getOrCreate(mlir::TypeID, unsigned int, llvm::function_ref<bool (mlir::StorageUniquer::BaseStorage const*)>, llvm::f
+     16.8       64.6  x   3.8  std::pair<llvm::detail::DenseSetImpl<(anonymous namespace)::ParametricStorageUniquer::HashedStorage, llvm::DenseMap<(anonymous namespace)::ParametricS
+     15.2       60.8  x   4.0  (anonymous namespace)::OperationVerifier::verifyOpAndDominance(mlir::Operation&)
+     12.7       48.3  x   3.8  ./malloc/./malloc/malloc.c:_int_malloc
+     10.2       40.7  x   4.0  llvm::DenseMapBase<llvm::DenseMap<mlir::TypeID, std::unique_ptr<(anonymous namespace)::ParametricStorageUniquer, std::default_delete<(anonymous namesp
+      9.2       36.7  x   4.0  std::enable_if<is_hashable_data<char const>::value, llvm::hash_code>::type llvm::hashing::detail::hash_combine_range_impl<char const>(char const*, cha
+
+real	0m54.047s
+user	0m51.654s
+sys	0m1.823s

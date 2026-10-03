@@ -1,0 +1,22 @@
+usage: autograd.py [-h] [--loss LOSS] --wrt WRT [--descend STEPS] [--lr LR]
+                   program
+
+Reverse-mode automatic differentiation for Mountain Goat, as a source-to-
+source transformation.
+
+positional arguments:
+  program
+
+options:
+  -h, --help       show this help message and exit
+  --loss LOSS      which print is the loss (0 = the first)
+  --wrt WRT        comma-separated names of `let` matrices to differentiate
+                   with respect to
+  --descend STEPS  instead of printing the gradients, write a program that
+                   takes STEPS gradient-descent steps on the --wrt matrices
+                   and prints the loss after each
+  --lr LR          learning rate for --descend
+usage: hvp.py [-h] --wrt WRT --vec VEC program
+
+positional arguments:
+  program

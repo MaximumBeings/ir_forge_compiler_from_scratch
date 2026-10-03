@@ -1,0 +1,5 @@
+--convert-mg-to-affine                                 -   Lower Mountain Goat's own mg dialect to affine/memref/arith, hand-bufferizing each op's own result as it is lowered.
+--mg-lower-assert-to-stderr                            -   Rewrite cf.assert into a branch that write()s its message to fd 2 and aborts (MLIR's own lowering uses buffered stdout)
+--mg-outline-loops                                     -   Outline top-level affine loop nests into deduplicated functions (cuts compile time of huge functions)
+--mg-scf-to-cf-reverse                                 -   Lower scf to cf one top-level statement at a time, from the last to the first
+--mg-set-fastmath                                      -   Set fast-math flags (default reassoc,contract) on floating-point arith operations

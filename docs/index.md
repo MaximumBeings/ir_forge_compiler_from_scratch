@@ -11,3 +11,5 @@ This book is independent: it does not assume or reference any other book in this
 ## How to read this book
 
 Every chapter follows the same shape: a concrete question about what a compiler actually has to do, answered first with real, working MLIR and/or LLVM IR rather than an abstract diagram, then a background section citing the real, official rationale behind the relevant dialect or pass, one or more worked examples with genuinely produced output (parsed, lowered, translated, compiled, and run, with the real tool output locked into the page), a chapter summary, self-check questions, and worked answers. This book's own table of contents grows one chapter at a time rather than being fixed in advance -- see `TABLE_OF_CONTENTS.md` in this book's own repository for its current, honest state.
+
+After the last chapter come five **appendices**: a Mountain Goat language reference (A), short primers on MLIR (B) and on LLVM IR and x86-64 assembly (C), every chapter's self-check questions with their answers in one place (D), and a glossary with the command, option and pass reference (E).

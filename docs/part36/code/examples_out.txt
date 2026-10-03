@@ -1,0 +1,225 @@
+################ mgc run 01_two_paths_add.mg
+  | # Fan-out: one matrix u feeds TWO different maps (as a block's normalised input feeds two attention heads). If the loss is
+  | #     L = sum(r1 * (u @ wa)) + sum(r2 * (u @ wb))
+  | # for fixed matrices r1, r2, then u affects L along two routes, and the gradient with respect to u is the SUM of the gradients along them:
+  | #     dL/du = r1 @ transpose(wa) + r2 @ transpose(wb)
+  | # (the same rule that makes a residual connection add, and that adds the three routes q, k, v into one layer norm in Chapter 35).
+  | # The first matrix is that formula. The next four are two entries of u, found by brute force: nudge the entry by 0.01 up and down and watch L change.
+  | def loss(u: tensor[2x2], wa: tensor[2x2], wb: tensor[2x2], r1: tensor[2x2], r2: tensor[2x2]) = col_sum(row_sum(r1 * (u @ wa))) + col_sum(row_sum(r2 * (u @ wb)))
+  | let u = [[1, 2], [3, 4]]
+  | let wa = [[1, 0], [2, 1]]
+  | let wb = [[0, 3], [1, 1]]
+  | let r1 = [[1, 2], [0, 1]]
+  | let r2 = [[2, 0], [1, 1]]
+  | print r1 @ transpose(wa) + r2 @ transpose(wb)
+  | print (loss(u + [[0.01, 0], [0, 0]], wa, wb, r1, r2) - loss(u - [[0.01, 0], [0, 0]], wa, wb, r1, r2)) / 0.02
+  | print (loss(u + [[0, 0.01], [0, 0]], wa, wb, r1, r2) - loss(u - [[0, 0.01], [0, 0]], wa, wb, r1, r2)) / 0.02
+  | print (loss(u + [[0, 0], [0.01, 0]], wa, wb, r1, r2) - loss(u - [[0, 0], [0.01, 0]], wa, wb, r1, r2)) / 0.02
+  | print (loss(u + [[0, 0], [0, 0.01]], wa, wb, r1, r2) - loss(u - [[0, 0], [0, 0.01]], wa, wb, r1, r2)) / 0.02
+  | # The four brute-force numbers are the four entries of the formula's matrix, read in the order (0,0), (0,1), (1,0), (1,1). Using only one of the two terms would be wrong
+  | # for every entry.
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [2, 2] strides = [2, 1] data = 
+[[1,   6], 
+ [3,   3]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[6]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[3]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[3]]
+  ----- exit status 0
+
+################ mgc run 02_two_blocks_chain.mg
+  | # Two blocks in a row, each with a residual connection: x1 = x + f1(x), x2 = x1 + f2(x1). Here f1 and f2 are just a scale (x * w1 and x1 * w2), so every
+  | # quantity is a 1 x 3 row and the answer can be checked by hand. By the chain rule dx2/dx = (1 + w1) * (1 + w2): the identity path of each residual lets the gradient
+  | # through unchanged, and each block adds its own contribution. The backward pass works from the last block to the first, one residual at a time:
+  | #     d1 = d2 * (1 + w2)          (gradient with respect to x1)
+  | #     d0 = d1 * (1 + w1)          (gradient with respect to x)
+  | # Here w1 = 0.5 and w2 = -0.25, so the factor is 1.5 * 0.75 = 1.125. The brute-force line nudges x by 0.01 and compares.
+  | def forward(x: tensor[1x3]) = (x + x * 0.5) + (x + x * 0.5) * -0.25
+  | let x = [[1, 2, 3]]
+  | let d2 = [[1, 1, 1]]
+  | let d1 = d2 + d2 * -0.25
+  | let d0 = d1 + d1 * 0.5
+  | print d0
+  | print (forward(x + [[0.01, 0, 0]]) - forward(x - [[0.01, 0, 0]])) / 0.02
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 3] strides = [3, 1] data = 
+[[1.125,   1.125,   1.125]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 3] strides = [3, 1] data = 
+[[1.125,   0,   0]]
+  ----- exit status 0
+
+################ mgc run 03_train_10_steps.mg
+  | (1817 lines: the definitions are in lm2_lib.py; the file holds the data, the unrolled training steps and the prints, written by make_examples.py)
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1.59625]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[10]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1.35291]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[20]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1.03453]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[39]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1.54478]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[16]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[12]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[33]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[28]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[20]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [7, 7] strides = [7, 1] data = 
+[[1,   0,   0,   0,   0,   0,   0], 
+ [0.60104,   0.39896,   0,   0,   0,   0,   0], 
+ [0.459574,   0.282028,   0.258398,   0,   0,   0,   0], 
+ [0.338925,   0.230342,   0.208872,   0.221862,   0,   0,   0], 
+ [0.239208,   0.193859,   0.182488,   0.184731,   0.199714,   0,   0], 
+ [0.168839,   0.162091,   0.163213,   0.163396,   0.166391,   0.176069,   0], 
+ [0.132422,   0.133174,   0.139555,   0.143101,   0.146304,   0.150964,   0.154479]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [7, 7] strides = [7, 1] data = 
+[[1,   0,   0,   0,   0,   0,   0], 
+ [0.515228,   0.484772,   0,   0,   0,   0,   0], 
+ [0.332976,   0.333247,   0.333777,   0,   0,   0,   0], 
+ [0.248753,   0.248385,   0.249346,   0.253516,   0,   0,   0], 
+ [0.203628,   0.198616,   0.194926,   0.196566,   0.206264,   0,   0], 
+ [0.177119,   0.169132,   0.158681,   0.155926,   0.162059,   0.177083,   0], 
+ [0.156988,   0.147569,   0.134258,   0.129844,   0.133406,   0.143958,   0.153977]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [7, 7] strides = [7, 1] data = 
+[[1,   0,   0,   0,   0,   0,   0], 
+ [0.478012,   0.521988,   0,   0,   0,   0,   0], 
+ [0.366494,   0.368798,   0.264708,   0,   0,   0,   0], 
+ [0.337623,   0.303782,   0.199075,   0.15952,   0,   0,   0], 
+ [0.324793,   0.259084,   0.162537,   0.132672,   0.120913,   0,   0], 
+ [0.289552,   0.214927,   0.142177,   0.120911,   0.11334,   0.119093,   0], 
+ [0.207241,   0.169285,   0.134381,   0.120593,   0.113184,   0.116499,   0.138818]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [7, 7] strides = [7, 1] data = 
+[[1,   0,   0,   0,   0,   0,   0], 
+ [0.438909,   0.561091,   0,   0,   0,   0,   0], 
+ [0.242564,   0.322218,   0.435218,   0,   0,   0,   0], 
+ [0.186377,   0.228079,   0.280711,   0.304833,   0,   0,   0], 
+ [0.166902,   0.185844,   0.207247,   0.217539,   0.222468,   0,   0], 
+ [0.156353,   0.159587,   0.168292,   0.171906,   0.173046,   0.170816,   0], 
+ [0.131624,   0.133841,   0.147682,   0.151921,   0.151635,   0.145514,   0.137784]]
+  ----- exit status 0
+
+################ mgc run 04_train_200_steps.mg
+  | (29552 lines: the definitions are in lm2_lib.py; the file holds the data, the unrolled training steps and the prints, written by make_examples.py)
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1.59625]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[10]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1.35291]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[20]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1.03453]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[39]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.71546]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[45]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.473335]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[49]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.35739]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[55]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.0148499]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[64]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.00314496]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[64]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[2.32697]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[40]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[39]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[51]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[51]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[43]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [7, 7] strides = [7, 1] data = 
+[[1,   0,   0,   0,   0,   0,   0], 
+ [0.96946,   0.0305399,   0,   0,   0,   0,   0], 
+ [0.969008,   0.0222117,   0.00878067,   0,   0,   0,   0], 
+ [0.557512,   0.055509,   0.0600112,   0.326968,   0,   0,   0], 
+ [0.0557753,   0.028792,   0.0807993,   0.269132,   0.565501,   0,   0], 
+ [0.0274193,   0.0231965,   0.0648619,   0.168411,   0.263826,   0.452285,   0], 
+ [0.0556258,   0.0195863,   0.0213945,   0.0604971,   0.180867,   0.334439,   0.327591]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [7, 7] strides = [7, 1] data = 
+[[1,   0,   0,   0,   0,   0,   0], 
+ [0.429237,   0.570763,   0,   0,   0,   0,   0], 
+ [0.386722,   0.37168,   0.241598,   0,   0,   0,   0], 
+ [0.258896,   0.301081,   0.258509,   0.181513,   0,   0,   0], 
+ [0.134648,   0.238009,   0.301597,   0.200764,   0.124981,   0,   0], 
+ [0.103569,   0.212047,   0.290446,   0.180147,   0.0998673,   0.113924,   0], 
+ [0.141362,   0.20838,   0.210643,   0.137534,   0.0889365,   0.086038,   0.127107]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [7, 7] strides = [7, 1] data = 
+[[1,   0,   0,   0,   0,   0,   0], 
+ [0.558696,   0.441304,   0,   0,   0,   0,   0], 
+ [0.409464,   0.338723,   0.251813,   0,   0,   0,   0], 
+ [0.304893,   0.271178,   0.225935,   0.197994,   0,   0,   0], 
+ [0.219538,   0.211915,   0.200007,   0.187926,   0.180613,   0,   0], 
+ [0.197382,   0.185836,   0.16847,   0.154779,   0.149963,   0.14357,   0], 
+ [0.185421,   0.16737,   0.1414,   0.124755,   0.122285,   0.122015,   0.136753]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [7, 7] strides = [7, 1] data = 
+[[1,   0,   0,   0,   0,   0,   0], 
+ [0.612717,   0.387283,   0,   0,   0,   0,   0], 
+ [0.432061,   0.322394,   0.245545,   0,   0,   0,   0], 
+ [0.282482,   0.251039,   0.232589,   0.23389,   0,   0,   0], 
+ [0.184766,   0.186436,   0.201191,   0.214806,   0.212801,   0,   0], 
+ [0.17601,   0.161929,   0.158827,   0.163357,   0.170394,   0.169482,   0], 
+ [0.176834,   0.142726,   0.122014,   0.118722,   0.133017,   0.138458,   0.168228]]
+  ----- exit status 0
+
+################ mgc run errors/e1_head_output_of_the_wrong_width.mg
+  | # A head of width 4 produces a 6 x 4 result; its output matrix must be 4 x 8 to bring it back to the model width 8. A 2 x 8 matrix does not fit, and the compiler says so.
+  | let o = [[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]]
+  | let wo = [[1, 0, 0, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0, 0]]
+  | print o @ wo
+  ----- output
+errors/e1_head_output_of_the_wrong_width.mg:4: error: cannot multiply (matmul) shapes 6x4 and 2x8: inner dimensions differ
+  ----- exit status 1
+
+################ mgc run errors/e2_missing_argument.mg
+  | # ln_back takes three arguments (the upstream gradient, the layer's input and the scale). Two is an arity error, reported before any code exists.
+  | def ln_sigma(h: tensor[2x4]) = sqrt(row_mean((h - row_mean(h)) * (h - row_mean(h))) + 0.00001)
+  | def ln_hat(h: tensor[2x4]) = (h - row_mean(h)) / ln_sigma(h)
+  | def ln_back(d: tensor[2x4], h: tensor[2x4], g: tensor[1x4]) = ((d * g) - row_mean(d * g) - ln_hat(h) * row_mean((d * g) * ln_hat(h))) / ln_sigma(h)
+  | print ln_back([[1, 2, 3, 4], [4, 3, 2, 1]], [[1, 2, 4, 8], [8, 4, 2, 1]])
+  ----- output
+errors/e2_missing_argument.mg:5: error: ln_back takes 3 arguments, got 2
+  ----- exit status 1
+
+################ mgc run errors/e3_residual_of_the_wrong_width.mg
+  | # A residual connection adds a block's output to its input, so the widths must agree. If the head's output matrix is forgotten, the 6 x 4 head result cannot be added to the 6 x 8 input.
+  | let x = [[1, 2, 3, 4, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7, 8]]
+  | let o = [[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]]
+  | print x + o
+  ----- output
+errors/e3_residual_of_the_wrong_width.mg:4: error: cannot add shapes 6x8 and 6x4: dimensions 8 and 4 differ and neither is 1
+  ----- exit status 1
+

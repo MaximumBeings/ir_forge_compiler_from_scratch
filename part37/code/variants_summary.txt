@@ -1,0 +1,23 @@
+variant           N  median GFLOP/s in each of the three passes    slowest..fastest
+ijk             256    2.17    2.01    2.52     2.01..  2.52
+ijk             512    0.63    0.74    0.64     0.63..  0.74
+ijk_reassoc     256    1.94    2.43    2.47     1.94..  2.47
+ijk_reassoc     512    0.63    0.62    0.66     0.62..  0.66
+ikj             256   11.73    9.23    9.94     9.23.. 11.73
+ikj             512    7.16    7.34    7.36     7.16..  7.36
+ikj_reassoc     256   13.63    9.80    9.98     9.80.. 13.63
+ikj_reassoc     512    8.01    8.34    6.84     6.84..  8.34
+ikj_contract    256   10.07   11.98   11.15    10.07.. 11.98
+ikj_contract    512    9.38    8.24    9.55     8.24..  9.55
+
+mean of the three passes, relative to ijk at the same N:
+  ijk            N=256    2.23 GFLOP/s =  1.00x ijk
+  ijk            N=512    0.67 GFLOP/s =  1.00x ijk
+  ijk_reassoc    N=256    2.28 GFLOP/s =  1.02x ijk
+  ijk_reassoc    N=512    0.64 GFLOP/s =  0.95x ijk
+  ikj            N=256   10.30 GFLOP/s =  4.61x ijk
+  ikj            N=512    7.29 GFLOP/s = 10.88x ijk
+  ikj_reassoc    N=256   11.14 GFLOP/s =  4.99x ijk
+  ikj_reassoc    N=512    7.73 GFLOP/s = 11.54x ijk
+  ikj_contract   N=256   11.07 GFLOP/s =  4.96x ijk
+  ikj_contract   N=512    9.06 GFLOP/s = 13.52x ijk

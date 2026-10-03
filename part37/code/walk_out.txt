@@ -1,0 +1,41 @@
+== ijk order, 64 x 64 (opt-18, target x86-64 with this machine's CPU)
+ 77 instructions, 16 blocks,   0 lines with vector doubles   <- as emitted by mgc (no passes)
+ 57 instructions, 12 blocks,   0 lines with vector doubles   <- instcombine, simplifycfg
+ 56 instructions, 11 blocks,   0 lines with vector doubles   <- + loop-simplify, lcssa, loop-rotate
+ 57 instructions, 11 blocks,   0 lines with vector doubles   <- + licm (loop-invariant code motion)
+ 57 instructions, 11 blocks,   0 lines with vector doubles   <- + indvars
+ 69 instructions, 15 blocks,   1 lines with vector doubles   <- + loop-vectorize
+ 56 instructions, 10 blocks,   1 lines with vector doubles   <- + instcombine, simplifycfg again
+180 instructions, 11 blocks,  32 lines with vector doubles   <- + loop-unroll
+102 instructions,  8 blocks,   0 lines with vector doubles   <- the whole -O3 pipeline
+
+== ikj order, 64 x 64 (opt-18, target x86-64 with this machine's CPU)
+ 77 instructions, 16 blocks,   0 lines with vector doubles   <- as emitted by mgc (no passes)
+ 57 instructions, 12 blocks,   0 lines with vector doubles   <- instcombine, simplifycfg
+ 56 instructions, 11 blocks,   0 lines with vector doubles   <- + loop-simplify, lcssa, loop-rotate
+ 56 instructions, 11 blocks,   0 lines with vector doubles   <- + licm (loop-invariant code motion)
+ 56 instructions, 11 blocks,   0 lines with vector doubles   <- + indvars
+106 instructions, 20 blocks,   8 lines with vector doubles   <- + loop-vectorize
+ 85 instructions, 12 blocks,   8 lines with vector doubles   <- + instcombine, simplifycfg again
+377 instructions, 15 blocks, 144 lines with vector doubles   <- + loop-unroll
+169 instructions,  6 blocks,  98 lines with vector doubles   <- the whole -O3 pipeline
+
+== what the whole -O3 pipeline made of the ijk product's setup and inner loop (the lines that matter, from opt's own output)
+9:  %calloc = tail call dereferenceable_or_null(32768) ptr @calloc(i64 1, i64 32768)
+15:  %16 = getelementptr double, ptr %calloc, i64 %15
+22:  %.promoted = load double, ptr %18, align 8
+27:  %21 = phi double [ %.promoted, %.preheader ], [ %84, %19 ]
+34:  %27 = fmul double %24, %26
+35:  %28 = fadd double %21, %27
+43:  %35 = fmul double %32, %34
+44:  %36 = fadd double %28, %35
+52:  %43 = fmul double %40, %42
+53:  %44 = fadd double %36, %43
+61:  %51 = fmul double %48, %50
+62:  %52 = fadd double %44, %51
+70:  %59 = fmul double %56, %58
+71:  %60 = fadd double %52, %59
+in all: 8 fadd, 8 fmul, 17 loads, 1 stores, 1 calloc, 0 malloc
+
+== the one line with a vector of doubles that the ijk order has after loop-vectorize (before the loop-idiom pass that later turns the whole zero-fill loop into calloc)
+  store <4 x double> zeroinitializer, ptr %21, align 8

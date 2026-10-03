@@ -1,0 +1,23 @@
+NOTE: this script deliberately breaks inputs. 'caught' lines are EXPECTED: they show each check can fail.
+baseline (nothing broken): checker passes (expected)
+the 'ijk' program is built in ikj order: caught by 4 failing check(s):
+      after loop-vectorize the ijk order has no vector fmul, only the vector store of zeros
+      the accumulator lives in a register (phi double, promoted from memory) and no multiply is a vector one
+      ijk: not vectorized, 'cannot prove it is safe to reorder floating-point operations'
+      the vectorized ijk gathers the column of b with vgather instructions (0); ikj needs none (0)
+the reassoc flag is not applied (the edit changes nothing): caught by 2 failing check(s):
+      ijk with the reassoc flag on its fadd: 'vectorized loop'
+      the vectorized ijk gathers the column of b with vgather instructions (0); ikj needs none (0)
+the second assembly is built with -O1 in place of -ffast-math (a flag that does matter): caught by 1 failing check(s):
+      clang's -O1 on the unchanged .ll leaves the assembly byte for byte identical
+no -march=native (plain x86-64: SSE2 instructions, not the v-prefixed AVX ones the checks count): caught by 5 failing check(s):
+      ijk with the reassoc flag on its fadd: 'vectorized loop'
+      the vectorized ijk gathers the column of b with vgather instructions (0); ikj needs none (0)
+      add: packed arithmetic (0), no scalar arithmetic (0)
+      row_sum: packed arithmetic (0) fed by gathers (0)
+      ikj: no fused multiply-add (0); with the contract flag: 0
+the contract flag is replaced by nsz (a flag that does not allow fusing): caught by 1 failing check(s):
+      ikj: no fused multiply-add (0); with the contract flag: 0
+opt is run without a target (no -mtriple, no -mcpu): caught by 2 failing check(s):
+      after loop-vectorize the ikj order has a vector fmul
+      after loop-vectorize the ijk order has no vector fmul, only the vector store of zeros

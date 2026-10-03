@@ -6,7 +6,7 @@ import glob, os, re
 here = os.path.dirname(os.path.abspath(__file__)); docs = os.path.join(here, "..")
 def key(p): return int(re.search(r"part(\d+)", p).group(1))
 pages = sorted(glob.glob(os.path.join(docs, "part*", "[0-9]*.md")), key=key)
-out = ["# Appendix D. Self-Check Answers", "",
+out = ["# Appendix D. Self-Check Answers", "", '![Mountain goats on the mountain in autumn](../assets/goats/appx-d.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }', "",
        "Every chapter ends with a short *Self-check questions* section. On the chapter pages the newer ones keep each answer collapsed so you can try the question first; this appendix opens every answer in one place, "
        "in chapter order, for review or for looking one up. It is generated from the chapter pages by `appendixD/make_appendix_d.py` and is therefore always the same text as the chapters (nothing here is separately written). "
        "Questions that refer to a listing, a table or an output refer to the one on the chapter page.", ""]

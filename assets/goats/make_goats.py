@@ -202,8 +202,8 @@ def space_scene(n, body, title):
 THEMES = ["dawn", "noon", "sunset", "night", "storm", "autumn", "spring", "bw", "winter", "desert", "sepia", "inkdark", "blueprint"]
 def pick(n): return THEMES[(n * 5 + n // 13) % len(THEMES)] if n else "noon"
 SPACE_PAGES = {"ch-04": "moon", "ch-06": "mercury", "ch-08": "saturn", "ch-10": "venus", "ch-13": "mars", "ch-15": "io", "ch-17": "pluto", "ch-19": "uranus", "ch-21": "europa", "ch-23": "neptune", "ch-25": "moon", "ch-27": "mercury",
-               "ch-29": "saturn", "ch-31": "venus", "ch-33": "mars", "ch-35": "io", "ch-37": "uranus", "ch-39": "neptune", "ch-40": "moon", "ch-41": "pluto", "ch-42": "saturn", "ch-43": "europa", "ch-44": "mars", "ch-45": "uranus", "ch-46": "neptune", "tour": "moon", "background": "venus"}
-PAGES = [(f"ch-{n:02d}", pick(n)) for n in range(1, 47)] + [("tour", "spring"), ("background", "sepia"), ("start", "dawn")]
+               "ch-29": "saturn", "ch-31": "venus", "ch-33": "mars", "ch-35": "io", "ch-37": "uranus", "ch-39": "neptune", "ch-40": "moon", "ch-41": "pluto", "ch-42": "saturn", "ch-43": "europa", "ch-44": "mars", "ch-45": "uranus", "ch-46": "neptune", "tour": "moon", "background": "venus", "appx-b": "mercury", "appx-c": "saturn", "appx-e": "io"}
+PAGES = [(f"ch-{n:02d}", pick(n)) for n in range(1, 47)] + [("tour", "spring"), ("background", "sepia"), ("start", "dawn"), ("appx-a", "blueprint"), ("appx-b", "night"), ("appx-c", "night"), ("appx-d", "autumn"), ("appx-e", "sunset")]
 if __name__ == "__main__":
     for i, (name, theme) in enumerate(PAGES, start=1):
         n = i if not name.startswith("ch-") else int(name[3:])

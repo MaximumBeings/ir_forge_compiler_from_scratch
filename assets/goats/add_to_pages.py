@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Puts each chapter's picture under its page's title as a MARKDOWN image (mkdocs rewrites its path for the page's final URL; a raw <img> with a relative path is not rewritten and breaks) (once; running it again changes nothing). Chapter pages get assets/goats/ch-NN.svg; the tour, the background page and Getting Started get theirs."""
+"""Puts each chapter's picture under its page's title as a MARKDOWN image (mkdocs rewrites its path for the page's final URL; a raw <img> with a relative path is not rewritten and breaks) (once; running it again changes nothing). Chapter pages get assets/goats/ch-NN.svg; the tour, the background page, Getting Started and the five appendices (appx-a to appx-e) get theirs."""
 import glob, os, re
 root = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 def alt(svg): return re.search(r"<title[^>]*>(.*?)</title>", open(svg).read()).group(1)
@@ -18,4 +18,6 @@ for md in sorted(glob.glob(os.path.join(root, "part*", "*.md"))):
     m = re.match(r"(\d+)-", os.path.basename(md))
     if m: n += add(md, f"ch-{int(m.group(1)):02d}", "../")
 n += add(os.path.join(root, "tour", "language-tour.md"), "tour", "../") + add(os.path.join(root, "background.md"), "background", "") + add(os.path.join(root, "getting-started.md"), "start", "")
+for L, d, f in (("a", "appendixA", "a-language-reference.md"), ("b", "appendixB", "b-introduction-to-mlir.md"), ("c", "appendixC", "c-introduction-to-llvm-ir-and-x86.md"), ("d", "appendixD", "d-self-check-answers.md"), ("e", "appendixE", "e-glossary-and-command-reference.md")):
+    n += add(os.path.join(root, d, f), "appx-" + L, "../")
 print("added to", n, "pages")

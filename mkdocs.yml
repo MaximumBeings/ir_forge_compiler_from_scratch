@@ -117,6 +117,7 @@ nav:
       - "37. Inside the LLVM Stage: Reading the IR, and Why a Loop Does or Does Not Vectorize": part37/37-inside-the-llvm-stage.md
       - "38. Why Compile Time Was Quadratic, and a Pass That Outlines Loop Nests": part38/38-outlining-loop-nests.md
       - "39. Finding the Quadratic: a Differential Profile of the Lowering Pass": part39/39-finding-the-quadratic.md
+      - "40. A Model of a Matrix Accelerator: Tiles, a Scratchpad, and What Loop Order Does There": part40/40-a-model-of-a-matrix-accelerator.md
 
 extra:
   social: []

@@ -38,6 +38,9 @@ config.substitutions += [
 ]
 # The language tour (docs/tour): its examples are run in place, like the chapters' examples.
 config.substitutions += [("%tour", os.path.join(config.test_source_root, "..", "..", "..", "tour", "code"))]
+# Chapter 40: GA-1, a cycle-counting model of a matrix accelerator (pure Python; no compiler involved).
+ch40 = os.path.join(config.test_source_root, "..", "..", "..", "part40", "code")
+config.substitutions += [("%ch40", ch40)]
 # Chapter 39: a differential profile (valgrind callgrind) of the lowering pass. No compiler change.
 ch39 = os.path.join(config.test_source_root, "..", "..", "..", "part39", "code")
 config.substitutions += [("%ch39", ch39)]

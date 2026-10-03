@@ -1,0 +1,15 @@
+NOTE: this script deliberately breaks the simulator. 'caught' lines are EXPECTED: they show the checker can detect the mistake.
+baseline (nothing broken): checker passes (expected)
+a write does not wait for the earlier READS of its slot (write-after-read hazard dropped): caught by 2 failing check(s) (double buffering, the independent hazard replay)
+an instruction waits for only the FIRST of its source slots (the second operand is not waited for): caught by 3 failing check(s) (the hand-timed program, double buffering, the independent hazard replay)
+a DMA transfer has no setup cost: caught by 3 failing check(s) (the hand-timed program, the DMA-bound schedule, other)
+chained accumulating products wait for the fill time as well: caught by 1 failing check(s) (the hand-timed program)
+the product's fill time is zero: caught by 1 failing check(s) (the hand-timed program)
+each store is counted as two tile transfers: caught by 1 failing check(s) (traffic)
+a tile that sticks out of the matrix wraps around instead of being padded with zeros: caught by 1 failing check(s) (the results)
+a store writes the padding too (writes past the edge): caught (the checker did not finish: IndexError: list assignment index out of range)
+the matrix unit multiplies with A transposed: caught by 1 failing check(s) (the results)
+all engines run in lock step (an instruction waits for every engine to be free): caught by 4 failing check(s) (the hand-timed program, the DMA-bound schedule, double buffering, other)
+a load does not wait for the slot to become free (no WAW either): caught by 2 failing check(s) (double buffering, the independent hazard replay)
+
+restored: ga.py is back to its original

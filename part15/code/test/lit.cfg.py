@@ -179,3 +179,6 @@ config.substitutions += [("%ch45", ch45)]
 # Chapter 46: Hessian-vector products (hvp.py differentiates the generated backward pass again).
 ch46 = os.path.join(config.test_source_root, "..", "..", "..", "part46", "code")
 config.substitutions += [("%ch46", ch46)]
+# Appendices: the language reference (A) is checked against the compiler, the self-check answers (D) against the chapter pages.
+apx = os.path.join(config.test_source_root, "..", "..", "..")
+config.substitutions += [("%apxA", os.path.join(apx, "appendixA", "code")), ("%apxD", os.path.join(apx, "appendixD"))]

@@ -1,0 +1,1 @@
+usage: mgc run|build|lib|mlir|ptx prog.mg [-o exe] [-O0..-O3] [--passes "..."] [--matmul-order ikj|ijk] [--no-outline] [--no-reverse-loops] [--fast-math[=flags]]

@@ -114,6 +114,7 @@ nav:
       - "34. Why a Block Has a Feed-Forward Network: Backpropagation Through Layer Norm, ReLU and Residuals": part34/34-why-a-block-has-a-feed-forward-network.md
       - "35. Training a Transformer Language Model: Backpropagation Through Causal Attention and Embeddings": part35/35-training-a-transformer-language-model.md
       - "36. Training Chapter 30's Transformer: Two Heads, Two Blocks, and a Result That Is Not Better": part36/36-training-chapter-30s-transformer.md
+      - "37. Inside the LLVM Stage: Reading the IR, and Why a Loop Does or Does Not Vectorize": part37/37-inside-the-llvm-stage.md
 
 extra:
   social: []

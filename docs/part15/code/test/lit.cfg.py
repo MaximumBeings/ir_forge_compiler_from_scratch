@@ -38,6 +38,12 @@ config.substitutions += [
 ]
 # The language tour (docs/tour): its examples are run in place, like the chapters' examples.
 config.substitutions += [("%tour", os.path.join(config.test_source_root, "..", "..", "..", "tour", "code"))]
+# Chapter 37: inside the LLVM stage (reading the IR, the passes, the vectorizer's reasons, the backend). No new compiler operation; the tests run LLVM's own tools.
+ch37 = os.path.join(config.test_source_root, "..", "..", "..", "part37", "code")
+config.substitutions += [
+    ("%ex37", os.path.join(ch37, "examples")),
+    ("%ch37", ch37),
+]
 # Chapter 36: Chapter 30's architecture (two blocks, two heads each) trained with a hand-derived backward pass. No new compiler operation ('%mgc32' runs the examples).
 ch36 = os.path.join(config.test_source_root, "..", "..", "..", "part36", "code")
 config.substitutions += [

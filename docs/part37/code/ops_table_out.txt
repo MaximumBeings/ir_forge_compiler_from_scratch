@@ -1,0 +1,15 @@
+operation   packed  scalar  gather  library calls
+add             16       0       0  
+hadamard        16       0       0  
+scale           16       0       0  
+relu            32       0       0  
+sqrt            16       0       0  
+ge              16       0       0  
+bcast_add       16       0       0  memcpy 
+transpose        0       0      16  
+col_sum         16       0       0  
+row_sum         64       0      64  
+row_mean        80       0      64  
+row_max        128       0      64  
+exp              0       0       0  exp 
+log              0       0       0  log 

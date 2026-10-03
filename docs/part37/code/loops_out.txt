@@ -1,0 +1,55 @@
+llvm-mca-18, -mcpu=native (= sapphirerapids), 100 iterations of the loop body; dynamic sizes (examples/03_matmul_dynamic.mg), clang -O3 -march=native
+variant                                    instrs mul-adds cycles/iter  cycles per mul-add
+## ijk (the default order): the innermost loop with the most multiply-adds (34 instructions)
+	vmovsd	-56(%r8,%r13,8), %xmm1
+	vmovsd	-48(%r8,%r13,8), %xmm2
+	vmulsd	(%rcx), %xmm1, %xmm1
+	vaddsd	%xmm1, %xmm0, %xmm0
+	leaq	(%rcx,%rax,8), %r11
+	vmulsd	(%rcx,%rax,8), %xmm2, %xmm1
+	vmovsd	-40(%r8,%r13,8), %xmm2
+	vmulsd	(%r10,%r11), %xmm2, %xmm2
+	vaddsd	%xmm1, %xmm0, %xmm0
+	addq	%r10, %r11
+	vaddsd	%xmm2, %xmm0, %xmm0
+	vmovsd	-32(%r8,%r13,8), %xmm1
+	vmulsd	(%r10,%r11), %xmm1, %xmm1
+	addq	%r10, %r11
+	vaddsd	%xmm1, %xmm0, %xmm0
+	vmovsd	-24(%r8,%r13,8), %xmm1
+	vmulsd	(%r10,%r11), %xmm1, %xmm1
+	addq	%r10, %r11
+	vaddsd	%xmm1, %xmm0, %xmm0
+	vmovsd	-16(%r8,%r13,8), %xmm1
+	vmulsd	(%r10,%r11), %xmm1, %xmm1
+	addq	%r10, %r11
+	vaddsd	%xmm1, %xmm0, %xmm0
+	vmovsd	-8(%r8,%r13,8), %xmm1
+	vmulsd	(%r10,%r11), %xmm1, %xmm1
+	addq	%r10, %r11
+	vaddsd	%xmm1, %xmm0, %xmm0
+	vmovsd	(%r8,%r13,8), %xmm1
+	vmulsd	(%r10,%r11), %xmm1, %xmm1
+	vaddsd	%xmm1, %xmm0, %xmm0
+	addq	$8, %r13
+	addq	%r9, %rcx
+	cmpq	%r13, %rdi
+	jne	.LBB0_9
+
+## ikj: the innermost loop with the most multiply-adds (15 instructions)
+	vmulpd	-96(%r9,%r12,8), %ymm1, %ymm2
+	vmulpd	-64(%r9,%r12,8), %ymm1, %ymm3
+	vmulpd	-32(%r9,%r12,8), %ymm1, %ymm4
+	vmulpd	(%r9,%r12,8), %ymm1, %ymm5
+	vaddpd	-96(%rdi,%r12,8), %ymm2, %ymm2
+	vaddpd	-64(%rdi,%r12,8), %ymm3, %ymm3
+	vaddpd	-32(%rdi,%r12,8), %ymm4, %ymm4
+	vaddpd	(%rdi,%r12,8), %ymm5, %ymm5
+	vmovupd	%ymm2, -96(%rdi,%r12,8)
+	vmovupd	%ymm3, -64(%rdi,%r12,8)
+	vmovupd	%ymm4, -32(%rdi,%r12,8)
+	vmovupd	%ymm5, (%rdi,%r12,8)
+	addq	$16, %r12
+	cmpq	%r12, %rsi
+	jne	.LBB0_11
+

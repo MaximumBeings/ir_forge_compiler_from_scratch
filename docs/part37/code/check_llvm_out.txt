@@ -1,0 +1,24 @@
+-- 1. reading the IR
+  ok   the 2x2 add: one fadd, one malloc, two loop counters (phi i64)
+  ok   the 64x64 product (ijk): a fmul and a fadd, five loop counters (two for the zero fill, three for the product)
+-- 2. the passes (opt)
+  ok   after loop-vectorize the ikj order has a vector fmul
+  ok   after loop-vectorize the ijk order has no vector fmul, only the vector store of zeros
+  ok   the whole -O3 pipeline turns ijk's malloc and zero-fill loop into one calloc
+  ok   the accumulator lives in a register (phi double, promoted from memory) and no multiply is a vector one
+-- 3. the vectorizer's reasons (clang remarks)
+  ok   ijk: not vectorized, 'cannot prove it is safe to reorder floating-point operations'
+  ok   ikj: 'vectorized loop'
+  ok   ijk with the reassoc flag on its fadd: 'vectorized loop'
+  ok   the vectorized ijk gathers the column of b with vgather instructions (16); ikj needs none (0)
+  ok   clang's -ffast-math on the unchanged .ll leaves the assembly byte for byte identical
+-- 4. the operations (packed = vector arithmetic, scalar = one double at a time)
+  ok   add: packed arithmetic (16), no scalar arithmetic (0)
+  ok   exp: no packed arithmetic, a library call to ['exp']
+  ok   row_sum: packed arithmetic (64) fed by gathers (64)
+  ok   transpose: no arithmetic at all (0 packed), only moves
+-- 5. the backend
+  ok   ikj: no fused multiply-add (0); with the contract flag: 16
+  ok   llvm-mca: ijk 3.02 cycles per multiply-add against ikj 0.29 (more than 5x)
+  ok   llvm-mca: ijk with reassoc 0.2 against ijk 3.02 (less than a third)
+all checks pass

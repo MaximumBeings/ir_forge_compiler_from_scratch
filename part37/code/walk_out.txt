@@ -1,4 +1,4 @@
-== ijk order, 64 x 64 (opt-18, target x86-64 with this machine's CPU)
+== ijk order, 64 x 64 (opt-18, target x86-64, CPU sapphirerapids)
  77 instructions, 16 blocks,   0 lines with vector doubles   <- as emitted by mgc (no passes)
  57 instructions, 12 blocks,   0 lines with vector doubles   <- instcombine, simplifycfg
  56 instructions, 11 blocks,   0 lines with vector doubles   <- + loop-simplify, lcssa, loop-rotate
@@ -9,7 +9,7 @@
 180 instructions, 11 blocks,  32 lines with vector doubles   <- + loop-unroll
 102 instructions,  8 blocks,   0 lines with vector doubles   <- the whole -O3 pipeline
 
-== ikj order, 64 x 64 (opt-18, target x86-64 with this machine's CPU)
+== ikj order, 64 x 64 (opt-18, target x86-64, CPU sapphirerapids)
  77 instructions, 16 blocks,   0 lines with vector doubles   <- as emitted by mgc (no passes)
  57 instructions, 12 blocks,   0 lines with vector doubles   <- instcombine, simplifycfg
  56 instructions, 11 blocks,   0 lines with vector doubles   <- + loop-simplify, lcssa, loop-rotate

@@ -1,0 +1,10 @@
+same IR, compiled for four x86-64 CPUs (compile only; clang -O3 -march=CPU, opt -mcpu=CPU, llvm-mca -mcpu=CPU)
+                                              sapphirerapids          skylake-avx512          haswell                 znver3                  
+ijk                                           not vectorized          not vectorized          not vectorized          not vectorized          
+ikj                                           vectorized (width 4)    vectorized (width 4)    vectorized (width 4)    vectorized (width 4)    
+ijk + reassoc                                 vectorized (width 4)    vectorized (width 4)    vectorized (width 4)    vectorized (width 4)    
+vgather in ijk + reassoc                      16                      16                      0                       0                       
+vgather in row_sum                            64                      64                      0                       0                       
+vector fmul left in ijk after -O3             0                       0                       0                       0                       
+vfmadd in ikj + contract                      16                      16                      16                      64                      
+mca cycles/mul-add: ijk, ijk+reassoc, ikj     3.02 , 0.20 , 0.29      4.02 , 0.26 , 0.30      3.02 , 0.32 , 0.45      3.02 , 0.26 , 0.38      

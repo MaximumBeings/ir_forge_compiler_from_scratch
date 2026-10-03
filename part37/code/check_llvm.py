@@ -9,15 +9,17 @@
   4. THE OPERATIONS: add has packed arithmetic and no scalar; exp has a call to exp and no packed arithmetic; row_sum uses gathers; transpose has no packed arithmetic;
   5. THE BACKEND: the ikj assembly has no fused multiply-add, and the same IR with the contract flag has some; llvm-mca predicts ijk costs more than 5x ikj per multiply-add,
      and ijk with reassoc less than a third of ijk.
+The target CPU is pinned (sapphirerapids; CHK_CPU changes it): the vectorizer's choices depend on the CPU (see cpu_dependence.py), so the claims are claims about that target.
 Environment variables (CHK_*) change how an input is built; model_mutation.sh sets them to check that each check can fail. Defaults give the page's experiments.
 Usage: check_llvm.py      Exit status 0 only if every check passes."""
 import os, re, subprocess, sys, tempfile
 here = os.path.dirname(os.path.abspath(__file__)); mgc = os.path.join(here, "..", "..", "part32", "code", "mgc")
 work = tempfile.mkdtemp(prefix="ch37_")
 E = os.environ.get
-ORDER_IJK, MARCH = E("CHK_ORDER_IJK", "ijk"), E("CHK_MARCH", "-march=native")
+CPU = E("CHK_CPU", "sapphirerapids")          # pinned, so the expected values do not depend on the machine running the check (CI ran on a different CPU and got different assembly)
+ORDER_IJK, MARCH = E("CHK_ORDER_IJK", "ijk"), E("CHK_MARCH", f"-march={CPU}")
 REASSOC, CONTRACT, FASTFLAG = E("CHK_REASSOC", "fadd reassoc double"), E("CHK_CONTRACT", "contract"), E("CHK_FAST_FLAG", "-ffast-math")
-TRIPLE = E("CHK_TRIPLE", "-mtriple=x86_64-unknown-linux-gnu -mcpu=native").split()
+TRIPLE = E("CHK_TRIPLE", f"-mtriple=x86_64-unknown-linux-gnu -mcpu={CPU}").split()
 failures = 0
 def report(ok, name, detail=""):
     global failures; failures += not ok
@@ -71,7 +73,7 @@ fm_plain = len(re.findall(r"vfmadd", asm(ikj, "ikj_plain", MARCH)))
 ct = os.path.join(work, "ikj_contract.ll"); open(ct, "w").write(open(ikj).read().replace("fadd double", f"fadd {CONTRACT} double").replace("fmul double", f"fmul {CONTRACT} double"))
 fm_ct = len(re.findall(r"vfmadd", asm(ct, "ikj_ct", MARCH)))
 report(fm_plain == 0 and fm_ct > 0, f"ikj: no fused multiply-add ({fm_plain}); with the contract flag: {fm_ct}", f"{fm_plain} vs {fm_ct}")
-m = sh([sys.executable, os.path.join(here, "mca.py")]).stdout.strip().split("\n")
+m = sh([sys.executable, os.path.join(here, "mca.py")], env=dict(os.environ, MCA_CPU=CPU)).stdout.strip().split("\n")
 cyc = {l.split("  ")[0].strip(): float(l.split()[-1]) for l in m[2:] if l.strip()}
 k = list(cyc.values()); report(len(k) == 4 and k[0] > 5 * k[2], f"llvm-mca: ijk {k[0]} cycles per multiply-add against ikj {k[2]} (more than 5x)", str(m))
 report(len(k) == 4 and k[1] < k[0] / 3, f"llvm-mca: ijk with reassoc {k[1]} against ijk {k[0]} (less than a third)", str(m))

@@ -1,17 +1,17 @@
 == ijk, clang -O3 
 loop not vectorized: cannot prove it is safe to reorder floating-point operations; allow reordering by specifying '#pragma clang loop vectorize(enable)' before the loop or by providing the compiler option '-ffast-math'.
 loop not vectorized
-== ijk, clang -O3 -march=native
+== ijk, clang -O3 -march=sapphirerapids
 loop not vectorized: cannot prove it is safe to reorder floating-point operations; allow reordering by specifying '#pragma clang loop vectorize(enable)' before the loop or by providing the compiler option '-ffast-math'.
 loop not vectorized
 == ikj, clang -O3 
 the cost-model indicates that interleaving is not beneficial
 vectorized loop (vectorization width: 2, interleaved count: 1)
-== ikj, clang -O3 -march=native
+== ikj, clang -O3 -march=sapphirerapids
 the cost-model indicates that interleaving is not beneficial
 vectorized loop (vectorization width: 4, interleaved count: 1)
 
-== (2) ijk with the reassoc flag on every fadd in the IR (sed 's/fadd double/fadd reassoc double/'), clang -O3 -march=native
+== (2) ijk with the reassoc flag on every fadd in the IR (sed 's/fadd double/fadd reassoc double/'), clang -O3 -march=sapphirerapids
 fadd instructions changed: 1
 the cost-model indicates that interleaving is not beneficial
 vectorized loop (vectorization width: 4, interleaved count: 1)
@@ -21,7 +21,7 @@ loop not vectorized: cannot prove it is safe to reorder floating-point operation
 loop not vectorized
 assembly with and without -ffast-math: byte for byte identical
 
-== the same sizes unknown until run time (examples/03_matmul_dynamic.mg), ijk and ikj, clang -O3 -march=native
+== the same sizes unknown until run time (examples/03_matmul_dynamic.mg), ijk and ikj, clang -O3 -march=sapphirerapids
 -- ijk
 loop not vectorized: cannot prove it is safe to reorder floating-point operations; allow reordering by specifying '#pragma clang loop vectorize(enable)' before the loop or by providing the compiler option '-ffast-math'.
 loop not vectorized

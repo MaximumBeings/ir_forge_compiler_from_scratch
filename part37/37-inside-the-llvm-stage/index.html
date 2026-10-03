@@ -1972,6 +1972,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#is-this-specific-to-one-cpu-yes-in-the-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Is this specific to one CPU? Yes, in the details
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#tests" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2163,6 +2174,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#is-this-specific-to-one-cpu-yes-in-the-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Is this specific to one CPU? Yes, in the details
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#tests" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2263,10 +2285,11 @@
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>./remarks.sh<span class="w"> </span>&gt;<span class="w"> </span>remarks_out.txt<span class="w">                    </span><span class="c1"># the loop vectorizer&#39;s decisions and reasons</span>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>./ops_table.sh<span class="w"> </span>&gt;<span class="w"> </span>ops_table_out.txt<span class="w">                </span><span class="c1"># which of Mountain Goat&#39;s operations vectorize (instruction counts)</span>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>./mca.py<span class="w"> </span>&gt;<span class="w"> </span>mca_out.txt<span class="p">;</span><span class="w"> </span>./mca.py<span class="w"> </span>--loops<span class="w"> </span>&gt;<span class="w"> </span>loops_out.txt<span class="w">   </span><span class="c1"># llvm-mca&#39;s prediction, and the assembly of the two inner loops</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>./variants.sh<span class="w"> </span>&gt;<span class="w"> </span>variants_out.txt<span class="p">;</span><span class="w"> </span>./summarize_variants.py<span class="w"> </span>&gt;<span class="w"> </span>variants_summary.txt<span class="w">   </span><span class="c1"># the measurement: 3 passes of the Chapter 24 benchmark (about 2 minutes)</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>./check_llvm.py<span class="w"> </span>&gt;<span class="w"> </span>check_llvm_out.txt<span class="w">              </span><span class="c1"># every claim on this page, tested (about 3 seconds)</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>./claims_mutation.py<span class="w"> </span>&gt;<span class="w"> </span>claims_mutation_out.txt<span class="w">    </span><span class="c1"># six WRONG inputs the checker must catch (about 20 seconds)</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="nb">cd</span><span class="w"> </span>../../part15/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_lit.sh<span class="w">              </span><span class="c1"># the whole test suite</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>./cpu_dependence.py<span class="w"> </span>&gt;<span class="w"> </span>cpu_dependence_out.txt<span class="w">      </span><span class="c1"># the same IR compiled for four different CPUs (compile only)</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>./variants.sh<span class="w"> </span>&gt;<span class="w"> </span>variants_out.txt<span class="p">;</span><span class="w"> </span>./summarize_variants.py<span class="w"> </span>&gt;<span class="w"> </span>variants_summary.txt<span class="w">   </span><span class="c1"># the measurement: 3 passes of the Chapter 24 benchmark (about 2 minutes)</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>./check_llvm.py<span class="w"> </span>&gt;<span class="w"> </span>check_llvm_out.txt<span class="w">              </span><span class="c1"># every claim on this page, tested for the pinned CPU (about 3 seconds)</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>./claims_mutation.py<span class="w"> </span>&gt;<span class="w"> </span>claims_mutation_out.txt<span class="w">    </span><span class="c1"># six WRONG inputs the checker must catch (about 20 seconds)</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="nb">cd</span><span class="w"> </span>../../part15/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_lit.sh<span class="w">              </span><span class="c1"># the whole test suite</span>
 </code></pre></div>
 Every listing and output on this page comes from these commands.</p>
 </div>
@@ -2379,7 +2402,7 @@ Every listing and output on this page comes from these commands.</p>
 <p>The 64 × 64 matrix product (<code>02_matmul64.mg</code>) has the same pieces plus a second loop nest for the zero fill and a three-deep nest whose body is <code>load</code> the running sum from the result, <code>load</code> a, <code>load</code> b, <code>fmul</code>, <code>fadd</code>, <code>store</code> the sum back (every iteration goes through memory).</p>
 <h2 id="what-opt-does-pass-by-pass">What <code>opt</code> does, pass by pass<a class="headerlink" href="#what-opt-does-pass-by-pass" title="Permanent link">&para;</a></h2>
 <p><code>opt</code> runs <em>passes</em> over the IR. <code>walk.sh</code> runs a growing list of the standard ones on the matrix product and counts what is left (instructions, basic blocks, and lines that mention a vector of doubles <code>&lt;N x double&gt;</code>). The target (<code>-mtriple</code>, <code>-mcpu</code>) must be given: without it <code>opt</code> does not know which vector instructions exist, and the vectorizer did nothing (the first version of this script forgot, and every row showed 0 vector lines).</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>== ijk order, 64 x 64 (opt-18, target x86-64 with this machine&#39;s CPU)
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>== ijk order, 64 x 64 (opt-18, target x86-64, CPU sapphirerapids)
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a> 77 instructions, 16 blocks,   0 lines with vector doubles   &lt;- as emitted by mgc (no passes)
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a> 57 instructions, 12 blocks,   0 lines with vector doubles   &lt;- instcombine, simplifycfg
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a> 56 instructions, 11 blocks,   0 lines with vector doubles   &lt;- + loop-simplify, lcssa, loop-rotate
@@ -2390,7 +2413,7 @@ Every listing and output on this page comes from these commands.</p>
 <a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>180 instructions, 11 blocks,  32 lines with vector doubles   &lt;- + loop-unroll
 <a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>102 instructions,  8 blocks,   0 lines with vector doubles   &lt;- the whole -O3 pipeline
 <a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>
-<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>== ikj order, 64 x 64 (opt-18, target x86-64 with this machine&#39;s CPU)
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>== ikj order, 64 x 64 (opt-18, target x86-64, CPU sapphirerapids)
 <a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a> 77 instructions, 16 blocks,   0 lines with vector doubles   &lt;- as emitted by mgc (no passes)
 <a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a> 57 instructions, 12 blocks,   0 lines with vector doubles   &lt;- instcombine, simplifycfg
 <a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a> 56 instructions, 11 blocks,   0 lines with vector doubles   &lt;- + loop-simplify, lcssa, loop-rotate
@@ -2434,17 +2457,17 @@ Every listing and output on this page comes from these commands.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>== ijk, clang -O3 
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>loop not vectorized: cannot prove it is safe to reorder floating-point operations; allow reordering by specifying &#39;#pragma clang loop vectorize(enable)&#39; before the loop or by providing the compiler option &#39;-ffast-math&#39;.
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>loop not vectorized
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>== ijk, clang -O3 -march=native
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>== ijk, clang -O3 -march=sapphirerapids
 <a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>loop not vectorized: cannot prove it is safe to reorder floating-point operations; allow reordering by specifying &#39;#pragma clang loop vectorize(enable)&#39; before the loop or by providing the compiler option &#39;-ffast-math&#39;.
 <a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>loop not vectorized
 <a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>== ikj, clang -O3 
 <a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>the cost-model indicates that interleaving is not beneficial
 <a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>vectorized loop (vectorization width: 2, interleaved count: 1)
-<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>== ikj, clang -O3 -march=native
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>== ikj, clang -O3 -march=sapphirerapids
 <a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>the cost-model indicates that interleaving is not beneficial
 <a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>vectorized loop (vectorization width: 4, interleaved count: 1)
 <a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>
-<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>== (2) ijk with the reassoc flag on every fadd in the IR (sed &#39;s/fadd double/fadd reassoc double/&#39;), clang -O3 -march=native
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>== (2) ijk with the reassoc flag on every fadd in the IR (sed &#39;s/fadd double/fadd reassoc double/&#39;), clang -O3 -march=sapphirerapids
 <a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>fadd instructions changed: 1
 <a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>the cost-model indicates that interleaving is not beneficial
 <a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>vectorized loop (vectorization width: 4, interleaved count: 1)
@@ -2454,18 +2477,18 @@ Every listing and output on this page comes from these commands.</p>
 <a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a>loop not vectorized
 <a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a>assembly with and without -ffast-math: byte for byte identical
 <a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a>
-<a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a>== the same sizes unknown until run time (examples/03_matmul_dynamic.mg), ijk and ikj, clang -O3 -march=native
+<a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a>== the same sizes unknown until run time (examples/03_matmul_dynamic.mg), ijk and ikj, clang -O3 -march=sapphirerapids
 <a id="__codelineno-5-25" name="__codelineno-5-25" href="#__codelineno-5-25"></a>-- ijk
 <a id="__codelineno-5-26" name="__codelineno-5-26" href="#__codelineno-5-26"></a>loop not vectorized: cannot prove it is safe to reorder floating-point operations; allow reordering by specifying &#39;#pragma clang loop vectorize(enable)&#39; before the loop or by providing the compiler option &#39;-ffast-math&#39;.
 <a id="__codelineno-5-27" name="__codelineno-5-27" href="#__codelineno-5-27"></a>loop not vectorized
 <a id="__codelineno-5-28" name="__codelineno-5-28" href="#__codelineno-5-28"></a>-- ikj
 <a id="__codelineno-5-29" name="__codelineno-5-29" href="#__codelineno-5-29"></a>vectorized loop (vectorization width: 4, interleaved count: 4)
 </code></pre></div>
-<p>For the default <code>ijk</code> order the vectorizer says, with and without <code>-march=native</code>:</p>
+<p>For the default <code>ijk</code> order the vectorizer says, with and without <code>-march=sapphirerapids</code> (the CPU of the machine these pages were produced on; the scripts pin it, see "Is this specific to one CPU?" below):</p>
 <blockquote>
 <p>loop not vectorized: cannot prove it is safe to reorder floating-point operations</p>
 </blockquote>
-<p>For <code>ikj</code> it says <code>vectorized loop</code> (width 2 on plain x86-64, which has 128-bit SSE2 registers; width 4 with <code>-march=native</code>, which allows 256-bit AVX registers on this machine).</p>
+<p>For <code>ikj</code> it says <code>vectorized loop</code> (width 2 on plain x86-64, which has 128-bit SSE2 registers; width 4 with <code>-march=sapphirerapids</code>, which allows 256-bit AVX registers).</p>
 <p><strong>Why.</strong> The <code>ijk</code> inner loop is a <em>reduction</em>: <code>sum = sum + a[i][k] * b[k][j]</code>. A vectorized version adds four partial sums and combines them at the end, which adds the numbers in a different order, and floating-point addition is <strong>not associative</strong>: <code>(a + b) + c</code> can differ from <code>a + (b + c)</code>. LLVM must produce exactly what the program says unless it is told reordering is allowed. The <code>ikj</code> loop has no reduction: each iteration <code>c[i][j] += x * b[k][j]</code> updates a different element, so the iterations are independent and vectorizing them reorders nothing.</p>
 <p><strong>The experiment: give the permission, and see what it buys.</strong> Fast-math permission is a <em>flag on each instruction in the IR</em>: <code>fadd reassoc double …</code> means "this addition may be reassociated". Add it to every <code>fadd</code> of the ijk IR (<code>sed 's/fadd double/fadd reassoc double/'</code>): the vectorizer now says <code>vectorized loop (vectorization width: 4 …)</code>. The ijk loop vectorizes. Is it faster? <code>variants.sh</code> builds Chapter 24's benchmark (dynamic sizes) four ways and times each at N = 256 and 512 (pinned to one core, three passes, each result checked against a reference; the table is <code>summarize_variants.py</code>'s):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>variant           N  median GFLOP/s in each of the three passes    slowest..fastest
@@ -2499,7 +2522,7 @@ Every listing and output on this page comes from these commands.</p>
 </ul>
 <p><strong>A correction.</strong> The first version of this experiment used clang's <code>-ffast-math</code> option, the way a C programmer would. It changed nothing: <code>remarks.sh</code> shows the same "cannot prove it is safe" remark and the assembly with and without the flag is <strong>byte for byte identical</strong> (<code>cmp</code> says so). The reason is that <code>-ffast-math</code> tells the <em>front end</em> which flags to put on the instructions it generates from C or C++ source; a <code>.ll</code> file already has its instructions, with no flags, and clang does not rewrite them. The permission has to be in the IR, which is where Mountain Goat would have to put it if it ever offered it (its lowering emits plain <code>arith.addf</code>; MLIR can attach <code>fastmath&lt;reassoc&gt;</code> to it, which was not done here).</p>
 <h2 id="reading-the-assembly">Reading the assembly<a class="headerlink" href="#reading-the-assembly" title="Permanent link">&para;</a></h2>
-<p>Here are the two inner loops from <code>clang -O3 -march=native</code> (<code>mca.py --loops</code>), the ijk order's first, then ikj's:</p>
+<p>Here are the two inner loops from <code>clang -O3 -march=sapphirerapids</code> (<code>mca.py --loops</code>), the ijk order's first, then ikj's:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>## ijk (the default order): the innermost loop with the most multiply-adds (34 instructions)
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>    vmovsd  -56(%r8,%r13,8), %xmm1
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>    vmovsd  -48(%r8,%r13,8), %xmm2
@@ -2559,8 +2582,8 @@ Every listing and output on this page comes from these commands.</p>
 <li><strong>Neither uses <code>vfmadd</code>.</strong> A fused multiply-add computes <code>a * b + c</code> in one instruction with one rounding, which gives a <em>different</em> result from a multiply followed by an add, so LLVM needs permission: the <code>contract</code> flag on the <code>fmul</code> and the <code>fadd</code>. C compilers grant it by default in C (<code>-ffp-contract=on</code>), which is why you rarely see this; our IR has no flags. Adding <code>contract</code> (same <code>sed</code> trick) turns the ikj loop's multiply and add into <code>vfmadd</code> instructions (16 in the static 64 × 64 version, <code>check_llvm_out.txt</code>), and <code>variants.sh</code> measures them: ikj with <code>contract</code> is 7.3 → 9.1 GFLOP/s at N = 512 (all three of its passes, 8.24 to 9.55, are above all three of plain ikj's, 7.16 to 7.36) and 10.3 → 11.1 at N = 256 (overlapping passes: <strong>no clear gain</strong> there). That is about +24% at N = 512 on this machine.</li>
 </ul>
 <h2 id="what-llvm-mca-predicts-and-where-the-prediction-fails">What <code>llvm-mca</code> predicts, and where the prediction fails<a class="headerlink" href="#what-llvm-mca-predicts-and-where-the-prediction-fails" title="Permanent link">&para;</a></h2>
-<p><code>llvm-mca</code> takes a block of assembly and simulates how the CPU's pipeline would execute it, many times, and reports cycles. It models the <strong>core</strong> (instruction latencies, issue ports, dispatch width). It assumes every load hits the L1 cache: <strong>it does not model the memory system.</strong> <code>mca.py</code> runs each variant's hot loop through it (<code>-mcpu=native</code>, which on this machine is <code>sapphirerapids</code>) and divides by the multiply-adds per iteration:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>llvm-mca-18, -mcpu=native (= sapphirerapids), 100 iterations of the loop body; dynamic sizes (examples/03_matmul_dynamic.mg), clang -O3 -march=native
+<p><code>llvm-mca</code> takes a block of assembly and simulates how the CPU's pipeline would execute it, many times, and reports cycles. It models the <strong>core</strong> (instruction latencies, issue ports, dispatch width). It assumes every load hits the L1 cache: <strong>it does not model the memory system.</strong> <code>mca.py</code> runs each variant's hot loop through it (<code>-mcpu=sapphirerapids</code>) and divides by the multiply-adds per iteration:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>llvm-mca-18, -mcpu=sapphirerapids, 100 iterations of the loop body; dynamic sizes (examples/03_matmul_dynamic.mg), clang -O3 -march=sapphirerapids
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>variant                                    instrs mul-adds cycles/iter  cycles per mul-add
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>ijk (the default order)                        34        8        24.1                3.02
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>ijk, reassoc on every fadd                     15       16         3.2                0.20
@@ -2574,7 +2597,7 @@ Every listing and output on this page comes from these commands.</p>
 </ul>
 <p>(One repair along the way: the first version of <code>mca.py</code> picked a loop that contained the inner loops, so it counted too many multiplies; and weighed instructions, not lanes, so it preferred the unrolled scalar loop to the vectorized one. It now takes innermost loops only, ranked by multiply-adds per iteration.)</p>
 <h2 id="which-mountain-goat-operations-vectorize">Which Mountain Goat operations vectorize?<a class="headerlink" href="#which-mountain-goat-operations-vectorize" title="Permanent link">&para;</a></h2>
-<p><code>ops_table.sh</code> compiles each one-operation program in <code>ops/</code> on 64 × 64 matrices with <code>clang -O3 -march=native</code> and counts, in the assembly, packed arithmetic instructions (<code>vaddpd</code>, <code>vmulpd</code>, <code>vmaxpd</code>, <code>vsqrtpd</code>, <code>vcmppd</code>, …: four doubles at once), scalar ones (<code>vaddsd</code>, …), gathers, and library calls. It counts <strong>instructions</strong>; it says whether the compiler vectorized, not whether that was faster.</p>
+<p><code>ops_table.sh</code> compiles each one-operation program in <code>ops/</code> on 64 × 64 matrices with <code>clang -O3 -march=sapphirerapids</code> and counts, in the assembly, packed arithmetic instructions (<code>vaddpd</code>, <code>vmulpd</code>, <code>vmaxpd</code>, <code>vsqrtpd</code>, <code>vcmppd</code>, …: four doubles at once), scalar ones (<code>vaddsd</code>, …), gathers, and library calls. It counts <strong>instructions</strong>; it says whether the compiler vectorized, not whether that was faster.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>operation   packed  scalar  gather  library calls
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>add             16       0       0  
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>hadamard        16       0       0  
@@ -2597,6 +2620,24 @@ Every listing and output on this page comes from these commands.</p>
 <li><strong><code>transpose</code> has no arithmetic</strong>: it is 16 gathers and moves.</li>
 <li><strong>The row reductions</strong> (<code>row_sum</code>, <code>row_mean</code>, <code>row_max</code>) have <strong>no scalar adds</strong> and use 64 gathers each, which is the opposite of what the matrix product's reduction did. The reason is not established here: the assembly (64 gathers feeding 64 packed adds, no scalar adds) is consistent with LLVM keeping each row's addition order exactly as written and vectorizing <strong>across rows</strong> (four rows' running sums in one register, gathered from four rows), which reorders nothing, but the transformation was not identified (the IR was not read for it). The same permission question does not arise when each lane is a different row. <code>col_sum</code> adds whole rows, so it vectorizes without gathers.</li>
 </ul>
+<h2 id="is-this-specific-to-one-cpu-yes-in-the-details">Is this specific to one CPU? Yes, in the details<a class="headerlink" href="#is-this-specific-to-one-cpu-yes-in-the-details" title="Permanent link">&para;</a></h2>
+<p>The first CI run of this chapter's test <strong>failed</strong>, on a different CPU from the one used here, while every other test passed. The compiler's choices depend on the target CPU, so the scripts now pin it (<code>sapphirerapids</code>; <code>CPU=native ./walk.sh</code> overrides) and the chapter's claims are claims <em>about that target</em>. <code>cpu_dependence.py</code> compiles the same IR for four CPUs (compilation only: nothing is run) and shows how much changes:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>same IR, compiled for four x86-64 CPUs (compile only; clang -O3 -march=CPU, opt -mcpu=CPU, llvm-mca -mcpu=CPU)
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>                                              sapphirerapids          skylake-avx512          haswell                 znver3                  
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>ijk                                           not vectorized          not vectorized          not vectorized          not vectorized          
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>ikj                                           vectorized (width 4)    vectorized (width 4)    vectorized (width 4)    vectorized (width 4)    
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>ijk + reassoc                                 vectorized (width 4)    vectorized (width 4)    vectorized (width 4)    vectorized (width 4)    
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>vgather in ijk + reassoc                      16                      16                      0                       0                       
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>vgather in row_sum                            64                      64                      0                       0                       
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>vector fmul left in ijk after -O3             0                       0                       0                       0                       
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>vfmadd in ikj + contract                      16                      16                      16                      64                      
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>mca cycles/mul-add: ijk, ijk+reassoc, ikj     3.02 , 0.20 , 0.29      4.02 , 0.26 , 0.30      3.02 , 0.32 , 0.45      3.02 , 0.26 , 0.38      
+</code></pre></div>
+<ul>
+<li><strong>What does not depend on the CPU, in these four:</strong> <code>ijk</code> is not vectorized, <code>ikj</code> is (width 4), and <code>ijk</code> with the <code>reassoc</code> flag is (width 4). The reduction story holds everywhere tried.</li>
+<li><strong>What does:</strong> the <strong>gathers</strong>. On <code>sapphirerapids</code> and <code>skylake-avx512</code> the vectorized ijk loop and <code>row_sum</code> use <code>vgather</code> instructions (16 and 64). On <code>haswell</code> and <code>znver3</code> there are <strong>none</strong>, although both CPUs have AVX2 and the vectorizer still vectorizes: it fills the vectors with scalar loads instead (LLVM treats gathers as slow on those CPUs; the exact mechanism in the assembly was not read for them). So the chapter's inference "the vectorized ijk is no faster because it gathers" was tested only on the Intel targets and the measurement was made on an Intel machine; for the other two CPUs only the instruction mix, not a timing, is known.</li>
+<li><strong>The fused multiply-add count differs</strong> (16, 16, 16 and 64 <code>vfmadd</code> for the same loop), and so do <code>llvm-mca</code>'s cycles per multiply-add (ijk 3.0 to 4.0, ijk with <code>reassoc</code> 0.20 to 0.32, ikj 0.29 to 0.45): the <em>ranking</em> is the same on all four (ikj and reassoc'd ijk far below ijk), the numbers are not.</li>
+</ul>
 <h2 id="tests">Tests<a class="headerlink" href="#tests" title="Permanent link">&para;</a></h2>
 <p>Two new <code>lit</code> files in <code>test/llvm37/</code> (the suite is now 146 tests; no <code>verifiers</code> or <code>ir</code> test because no compiler operation was added):</p>
 <table>
@@ -2618,215 +2659,215 @@ Every listing and output on this page comes from these commands.</p>
 </tbody>
 </table>
 <p><code>check_llvm.py</code> runs the tools and tests the claims, in five groups: (1) the IR's shape (one <code>fadd</code>, one <code>malloc</code>, two loop counters for the add; a <code>fmul</code> and a <code>fadd</code> in the product); (2) <code>opt</code>: after <code>loop-vectorize</code> ikj has a vector <code>fmul</code> and ijk has only the vector store of zeros; the whole <code>-O3</code> pipeline leaves one <code>calloc</code>, no <code>malloc</code>, a promoted accumulator and no vector multiply; (3) the remarks: ijk's "cannot prove it is safe", ikj's "vectorized loop", ijk with <code>reassoc</code> vectorized <strong>and gathering</strong> (16 <code>vgather</code>s, ikj none), and <code>-ffast-math</code> leaving the assembly identical; (4) the operations: <code>add</code> packed and not scalar, <code>exp</code> a library call and not packed, <code>row_sum</code> gathers, <code>transpose</code> no arithmetic; (5) the backend: ikj has no <code>vfmadd</code> and has them with <code>contract</code>, and <code>llvm-mca</code> puts ijk above five times ikj per multiply-add and <code>reassoc</code> below a third of ijk.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>-- 1. reading the IR
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>  ok   the 2x2 add: one fadd, one malloc, two loop counters (phi i64)
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>  ok   the 64x64 product (ijk): a fmul and a fadd, five loop counters (two for the zero fill, three for the product)
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>-- 2. the passes (opt)
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>  ok   after loop-vectorize the ikj order has a vector fmul
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>  ok   after loop-vectorize the ijk order has no vector fmul, only the vector store of zeros
-<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>  ok   the whole -O3 pipeline turns ijk&#39;s malloc and zero-fill loop into one calloc
-<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>  ok   the accumulator lives in a register (phi double, promoted from memory) and no multiply is a vector one
-<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>-- 3. the vectorizer&#39;s reasons (clang remarks)
-<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>  ok   ijk: not vectorized, &#39;cannot prove it is safe to reorder floating-point operations&#39;
-<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>  ok   ikj: &#39;vectorized loop&#39;
-<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>  ok   ijk with the reassoc flag on its fadd: &#39;vectorized loop&#39;
-<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>  ok   the vectorized ijk gathers the column of b with vgather instructions (16); ikj needs none (0)
-<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>  ok   clang&#39;s -ffast-math on the unchanged .ll leaves the assembly byte for byte identical
-<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>-- 4. the operations (packed = vector arithmetic, scalar = one double at a time)
-<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>  ok   add: packed arithmetic (16), no scalar arithmetic (0)
-<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a>  ok   exp: no packed arithmetic, a library call to [&#39;exp&#39;]
-<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a>  ok   row_sum: packed arithmetic (64) fed by gathers (64)
-<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a>  ok   transpose: no arithmetic at all (0 packed), only moves
-<a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a>-- 5. the backend
-<a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a>  ok   ikj: no fused multiply-add (0); with the contract flag: 16
-<a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a>  ok   llvm-mca: ijk 3.02 cycles per multiply-add against ikj 0.29 (more than 5x)
-<a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a>  ok   llvm-mca: ijk with reassoc 0.2 against ijk 3.02 (less than a third)
-<a id="__codelineno-10-24" name="__codelineno-10-24" href="#__codelineno-10-24"></a>all checks pass
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>-- 1. reading the IR
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>  ok   the 2x2 add: one fadd, one malloc, two loop counters (phi i64)
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>  ok   the 64x64 product (ijk): a fmul and a fadd, five loop counters (two for the zero fill, three for the product)
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>-- 2. the passes (opt)
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>  ok   after loop-vectorize the ikj order has a vector fmul
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>  ok   after loop-vectorize the ijk order has no vector fmul, only the vector store of zeros
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>  ok   the whole -O3 pipeline turns ijk&#39;s malloc and zero-fill loop into one calloc
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>  ok   the accumulator lives in a register (phi double, promoted from memory) and no multiply is a vector one
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>-- 3. the vectorizer&#39;s reasons (clang remarks)
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>  ok   ijk: not vectorized, &#39;cannot prove it is safe to reorder floating-point operations&#39;
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>  ok   ikj: &#39;vectorized loop&#39;
+<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>  ok   ijk with the reassoc flag on its fadd: &#39;vectorized loop&#39;
+<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>  ok   the vectorized ijk gathers the column of b with vgather instructions (16); ikj needs none (0)
+<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a>  ok   clang&#39;s -ffast-math on the unchanged .ll leaves the assembly byte for byte identical
+<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a>-- 4. the operations (packed = vector arithmetic, scalar = one double at a time)
+<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a>  ok   add: packed arithmetic (16), no scalar arithmetic (0)
+<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a>  ok   exp: no packed arithmetic, a library call to [&#39;exp&#39;]
+<a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a>  ok   row_sum: packed arithmetic (64) fed by gathers (64)
+<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a>  ok   transpose: no arithmetic at all (0 packed), only moves
+<a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a>-- 5. the backend
+<a id="__codelineno-11-21" name="__codelineno-11-21" href="#__codelineno-11-21"></a>  ok   ikj: no fused multiply-add (0); with the contract flag: 16
+<a id="__codelineno-11-22" name="__codelineno-11-22" href="#__codelineno-11-22"></a>  ok   llvm-mca: ijk 3.02 cycles per multiply-add against ikj 0.29 (more than 5x)
+<a id="__codelineno-11-23" name="__codelineno-11-23" href="#__codelineno-11-23"></a>  ok   llvm-mca: ijk with reassoc 0.2 against ijk 3.02 (less than a third)
+<a id="__codelineno-11-24" name="__codelineno-11-24" href="#__codelineno-11-24"></a>all checks pass
 </code></pre></div>
 <h3 id="are-the-checks-good-enough-feed-it-six-wrong-inputs">Are the checks good enough? Feed it six wrong inputs.<a class="headerlink" href="#are-the-checks-good-enough-feed-it-six-wrong-inputs" title="Permanent link">&para;</a></h3>
 <p><code>claims_mutation.py</code> changes one input at a time (the environment variables <code>CHK_*</code> of the checker) and expects the checker to fail:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>NOTE: this script deliberately breaks inputs. &#39;caught&#39; lines are EXPECTED: they show each check can fail.
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>baseline (nothing broken): checker passes (expected)
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>the &#39;ijk&#39; program is built in ikj order: caught by 4 failing check(s):
-<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>      after loop-vectorize the ijk order has no vector fmul, only the vector store of zeros
-<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>      the accumulator lives in a register (phi double, promoted from memory) and no multiply is a vector one
-<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>      ijk: not vectorized, &#39;cannot prove it is safe to reorder floating-point operations&#39;
-<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>      the vectorized ijk gathers the column of b with vgather instructions (0); ikj needs none (0)
-<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>the reassoc flag is not applied (the edit changes nothing): caught by 2 failing check(s):
-<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>      ijk with the reassoc flag on its fadd: &#39;vectorized loop&#39;
-<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>      the vectorized ijk gathers the column of b with vgather instructions (0); ikj needs none (0)
-<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>the second assembly is built with -O1 in place of -ffast-math (a flag that does matter): caught by 1 failing check(s):
-<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>      clang&#39;s -O1 on the unchanged .ll leaves the assembly byte for byte identical
-<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>no -march=native (plain x86-64: SSE2 instructions, not the v-prefixed AVX ones the checks count): caught by 5 failing check(s):
-<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a>      ijk with the reassoc flag on its fadd: &#39;vectorized loop&#39;
-<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a>      the vectorized ijk gathers the column of b with vgather instructions (0); ikj needs none (0)
-<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a>      add: packed arithmetic (0), no scalar arithmetic (0)
-<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a>      row_sum: packed arithmetic (0) fed by gathers (0)
-<a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a>      ikj: no fused multiply-add (0); with the contract flag: 0
-<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a>the contract flag is replaced by nsz (a flag that does not allow fusing): caught by 1 failing check(s):
-<a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a>      ikj: no fused multiply-add (0); with the contract flag: 0
-<a id="__codelineno-11-21" name="__codelineno-11-21" href="#__codelineno-11-21"></a>opt is run without a target (no -mtriple, no -mcpu): caught by 2 failing check(s):
-<a id="__codelineno-11-22" name="__codelineno-11-22" href="#__codelineno-11-22"></a>      after loop-vectorize the ikj order has a vector fmul
-<a id="__codelineno-11-23" name="__codelineno-11-23" href="#__codelineno-11-23"></a>      after loop-vectorize the ijk order has no vector fmul, only the vector store of zeros
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>NOTE: this script deliberately breaks inputs. &#39;caught&#39; lines are EXPECTED: they show each check can fail.
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>baseline (nothing broken): checker passes (expected)
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>the &#39;ijk&#39; program is built in ikj order: caught by 4 failing check(s):
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>      after loop-vectorize the ijk order has no vector fmul, only the vector store of zeros
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>      the accumulator lives in a register (phi double, promoted from memory) and no multiply is a vector one
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>      ijk: not vectorized, &#39;cannot prove it is safe to reorder floating-point operations&#39;
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>      the vectorized ijk gathers the column of b with vgather instructions (0); ikj needs none (0)
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>the reassoc flag is not applied (the edit changes nothing): caught by 2 failing check(s):
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>      ijk with the reassoc flag on its fadd: &#39;vectorized loop&#39;
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>      the vectorized ijk gathers the column of b with vgather instructions (0); ikj needs none (0)
+<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a>the second assembly is built with -O1 in place of -ffast-math (a flag that does matter): caught by 1 failing check(s):
+<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a>      clang&#39;s -O1 on the unchanged .ll leaves the assembly byte for byte identical
+<a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a>no -march=native (plain x86-64: SSE2 instructions, not the v-prefixed AVX ones the checks count): caught by 5 failing check(s):
+<a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a>      ijk with the reassoc flag on its fadd: &#39;vectorized loop&#39;
+<a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a>      the vectorized ijk gathers the column of b with vgather instructions (0); ikj needs none (0)
+<a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a>      add: packed arithmetic (0), no scalar arithmetic (0)
+<a id="__codelineno-12-17" name="__codelineno-12-17" href="#__codelineno-12-17"></a>      row_sum: packed arithmetic (0) fed by gathers (0)
+<a id="__codelineno-12-18" name="__codelineno-12-18" href="#__codelineno-12-18"></a>      ikj: no fused multiply-add (0); with the contract flag: 0
+<a id="__codelineno-12-19" name="__codelineno-12-19" href="#__codelineno-12-19"></a>the contract flag is replaced by nsz (a flag that does not allow fusing): caught by 1 failing check(s):
+<a id="__codelineno-12-20" name="__codelineno-12-20" href="#__codelineno-12-20"></a>      ikj: no fused multiply-add (0); with the contract flag: 0
+<a id="__codelineno-12-21" name="__codelineno-12-21" href="#__codelineno-12-21"></a>opt is run without a target (no -mtriple, no -mcpu): caught by 2 failing check(s):
+<a id="__codelineno-12-22" name="__codelineno-12-22" href="#__codelineno-12-22"></a>      after loop-vectorize the ikj order has a vector fmul
+<a id="__codelineno-12-23" name="__codelineno-12-23" href="#__codelineno-12-23"></a>      after loop-vectorize the ijk order has no vector fmul, only the vector store of zeros
 </code></pre></div>
-<p>All six are caught, each by the checks that should depend on the input that was broken: the <code>ijk</code> program built in the other order fails the three ijk claims; leaving out <code>reassoc</code> fails the "vectorized" claim and the gather claim; replacing <code>-ffast-math</code> with <code>-O1</code> (a flag that does change the assembly) fails the byte-for-byte claim; <code>nsz</code> in place of <code>contract</code> fails the fused-multiply-add claim; <code>opt</code> without a target fails both vectorization claims. One result was a surprise and is worth reading: <strong>removing AVX (<code>-mno-avx</code>)</strong> fails five checks, including "ijk with <code>reassoc</code> is vectorized": with only SSE2 the vectorizer declines the strided reduction loop that it vectorizes with AVX2's gathers (the reason was not investigated; cost model or missing gathers are the candidates). The practical lesson is that <strong>these claims describe an x86-64 machine with AVX2 or newer</strong> (the test uses <code>-march=native</code>), and would need different expected values elsewhere.</p>
+<p>All six are caught, each by the checks that should depend on the input that was broken: the <code>ijk</code> program built in the other order fails the three ijk claims; leaving out <code>reassoc</code> fails the "vectorized" claim and the gather claim; replacing <code>-ffast-math</code> with <code>-O1</code> (a flag that does change the assembly) fails the byte-for-byte claim; <code>nsz</code> in place of <code>contract</code> fails the fused-multiply-add claim; <code>opt</code> without a target fails both vectorization claims. One result was a surprise and is worth reading: <strong>removing AVX (<code>-mno-avx</code>)</strong> fails five checks, including "ijk with <code>reassoc</code> is vectorized": with only SSE2 the vectorizer declines the strided reduction loop that it vectorizes with AVX (the reason was not investigated; the cost model or the missing gather instructions are the candidates). The practical lesson is that <strong>these claims describe the <code>sapphirerapids</code> target</strong> (the checks pin <code>sapphirerapids</code>), and would need different expected values for other targets, as the CPU section shows.</p>
 <p>The full suite:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>-- Testing: 146 tests, 4 workers --
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>PASS: IR Forge / Mountain Goat :: lm35/against-reference.mlir (1 of 146)
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>PASS: IR Forge / Mountain Goat :: lm36/examples.mlir (2 of 146)
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>PASS: IR Forge / Mountain Goat :: attention33/against-reference.mlir (3 of 146)
-<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>PASS: IR Forge / Mountain Goat :: lm36/against-reference.mlir (4 of 146)
-<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>PASS: IR Forge / Mountain Goat :: attention33/examples.mlir (5 of 146)
-<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>PASS: IR Forge / Mountain Goat :: transformer30/against-reference.mlir (6 of 146)
-<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>PASS: IR Forge / Mountain Goat :: generalize32/against-reference.mlir (7 of 146)
-<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>PASS: IR Forge / Mountain Goat :: lm35/examples.mlir (8 of 146)
-<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>PASS: IR Forge / Mountain Goat :: contraction28/against-definition.mlir (9 of 146)
-<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a>PASS: IR Forge / Mountain Goat :: attention29/against-reference.mlir (10 of 146)
-<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a>PASS: IR Forge / Mountain Goat :: chapters/ch09-execution-engine.mlir (11 of 146)
-<a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a>PASS: IR Forge / Mountain Goat :: execution/gpu-host-with-stub-runtime.mlir (12 of 146)
-<a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a>PASS: IR Forge / Mountain Goat :: contraction/tensor-contraction.mlir (13 of 146)
-<a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a>PASS: IR Forge / Mountain Goat :: tour/gallery.mlir (14 of 146)
-<a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a>PASS: IR Forge / Mountain Goat :: llvm37/claims.mlir (15 of 146)
-<a id="__codelineno-12-17" name="__codelineno-12-17" href="#__codelineno-12-17"></a>PASS: IR Forge / Mountain Goat :: generalize32/examples.mlir (16 of 146)
-<a id="__codelineno-12-18" name="__codelineno-12-18" href="#__codelineno-12-18"></a>PASS: IR Forge / Mountain Goat :: learning/gradient-descent.mlir (17 of 146)
-<a id="__codelineno-12-19" name="__codelineno-12-19" href="#__codelineno-12-19"></a>PASS: IR Forge / Mountain Goat :: bigram31/against-reference.mlir (18 of 146)
-<a id="__codelineno-12-20" name="__codelineno-12-20" href="#__codelineno-12-20"></a>PASS: IR Forge / Mountain Goat :: contraction28/examples.mlir (19 of 146)
-<a id="__codelineno-12-21" name="__codelineno-12-21" href="#__codelineno-12-21"></a>PASS: IR Forge / Mountain Goat :: attention29/examples.mlir (20 of 146)
-<a id="__codelineno-12-22" name="__codelineno-12-22" href="#__codelineno-12-22"></a>PASS: IR Forge / Mountain Goat :: perf/options-same-results.mlir (21 of 146)
-<a id="__codelineno-12-23" name="__codelineno-12-23" href="#__codelineno-12-23"></a>PASS: IR Forge / Mountain Goat :: loop-order/results-identical.mlir (22 of 146)
-<a id="__codelineno-12-24" name="__codelineno-12-24" href="#__codelineno-12-24"></a>PASS: IR Forge / Mountain Goat :: broadcast/identities.mlir (23 of 146)
-<a id="__codelineno-12-25" name="__codelineno-12-25" href="#__codelineno-12-25"></a>PASS: IR Forge / Mountain Goat :: tour/more-examples.mlir (24 of 146)
-<a id="__codelineno-12-26" name="__codelineno-12-26" href="#__codelineno-12-26"></a>PASS: IR Forge / Mountain Goat :: transformer30/examples.mlir (25 of 146)
-<a id="__codelineno-12-27" name="__codelineno-12-27" href="#__codelineno-12-27"></a>PASS: IR Forge / Mountain Goat :: tour/tour-examples.mlir (26 of 146)
-<a id="__codelineno-12-28" name="__codelineno-12-28" href="#__codelineno-12-28"></a>PASS: IR Forge / Mountain Goat :: tour/tour-errors.mlir (27 of 146)
-<a id="__codelineno-12-29" name="__codelineno-12-29" href="#__codelineno-12-29"></a>PASS: IR Forge / Mountain Goat :: perf/flags-reach-clang.mlir (28 of 146)
-<a id="__codelineno-12-30" name="__codelineno-12-30" href="#__codelineno-12-30"></a>PASS: IR Forge / Mountain Goat :: broadcast/values.mlir (29 of 146)
-<a id="__codelineno-12-31" name="__codelineno-12-31" href="#__codelineno-12-31"></a>PASS: IR Forge / Mountain Goat :: loop-order/bitwise-identical.mlir (30 of 146)
-<a id="__codelineno-12-32" name="__codelineno-12-32" href="#__codelineno-12-32"></a>PASS: IR Forge / Mountain Goat :: contraction/mismatch-trap.mlir (31 of 146)
-<a id="__codelineno-12-33" name="__codelineno-12-33" href="#__codelineno-12-33"></a>PASS: IR Forge / Mountain Goat :: ops/values.mlir (32 of 146)
-<a id="__codelineno-12-34" name="__codelineno-12-34" href="#__codelineno-12-34"></a>PASS: IR Forge / Mountain Goat :: bigram31/examples.mlir (33 of 146)
-<a id="__codelineno-12-35" name="__codelineno-12-35" href="#__codelineno-12-35"></a>PASS: IR Forge / Mountain Goat :: broadcast/cpp-interop-reductions.mlir (34 of 146)
-<a id="__codelineno-12-36" name="__codelineno-12-36" href="#__codelineno-12-36"></a>PASS: IR Forge / Mountain Goat :: loop-order/cpp-ikj.mlir (35 of 146)
-<a id="__codelineno-12-37" name="__codelineno-12-37" href="#__codelineno-12-37"></a>PASS: IR Forge / Mountain Goat :: frontend/more-examples.mlir (36 of 146)
-<a id="__codelineno-12-38" name="__codelineno-12-38" href="#__codelineno-12-38"></a>PASS: IR Forge / Mountain Goat :: ops/cpp-interop-ops.mlir (37 of 146)
-<a id="__codelineno-12-39" name="__codelineno-12-39" href="#__codelineno-12-39"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/tiling-runs.mlir (38 of 146)
-<a id="__codelineno-12-40" name="__codelineno-12-40" href="#__codelineno-12-40"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/unroll-runs.mlir (39 of 146)
-<a id="__codelineno-12-41" name="__codelineno-12-41" href="#__codelineno-12-41"></a>PASS: IR Forge / Mountain Goat :: ops/elementwise-mismatch-aborts.mlir (40 of 146)
-<a id="__codelineno-12-42" name="__codelineno-12-42" href="#__codelineno-12-42"></a>PASS: IR Forge / Mountain Goat :: frontend/dynamic-runs.mlir (41 of 146)
-<a id="__codelineno-12-43" name="__codelineno-12-43" href="#__codelineno-12-43"></a>PASS: IR Forge / Mountain Goat :: frontend/cpp-interop.mlir (42 of 146)
-<a id="__codelineno-12-44" name="__codelineno-12-44" href="#__codelineno-12-44"></a>PASS: IR Forge / Mountain Goat :: llvm37/examples.mlir (43 of 146)
-<a id="__codelineno-12-45" name="__codelineno-12-45" href="#__codelineno-12-45"></a>PASS: IR Forge / Mountain Goat :: ops/ptx-new-ops.mlir (44 of 146)
-<a id="__codelineno-12-46" name="__codelineno-12-46" href="#__codelineno-12-46"></a>PASS: IR Forge / Mountain Goat :: ops/matmul-mismatch-aborts.mlir (45 of 146)
-<a id="__codelineno-12-47" name="__codelineno-12-47" href="#__codelineno-12-47"></a>PASS: IR Forge / Mountain Goat :: perf/tiling-structure.mlir (46 of 146)
-<a id="__codelineno-12-48" name="__codelineno-12-48" href="#__codelineno-12-48"></a>PASS: IR Forge / Mountain Goat :: broadcast/networks.mlir (47 of 146)
-<a id="__codelineno-12-49" name="__codelineno-12-49" href="#__codelineno-12-49"></a>PASS: IR Forge / Mountain Goat :: broadcast/dynamic-reductions.mlir (48 of 146)
-<a id="__codelineno-12-50" name="__codelineno-12-50" href="#__codelineno-12-50"></a>PASS: IR Forge / Mountain Goat :: ops/precedence-and-identities.mlir (49 of 146)
-<a id="__codelineno-12-51" name="__codelineno-12-51" href="#__codelineno-12-51"></a>PASS: IR Forge / Mountain Goat :: execution/mismatch-aborts.mlir (50 of 146)
-<a id="__codelineno-12-52" name="__codelineno-12-52" href="#__codelineno-12-52"></a>PASS: IR Forge / Mountain Goat :: ops/composed-programs.mlir (51 of 146)
-<a id="__codelineno-12-53" name="__codelineno-12-53" href="#__codelineno-12-53"></a>PASS: IR Forge / Mountain Goat :: ops/negate-and-dynamic-divide.mlir (52 of 146)
-<a id="__codelineno-12-54" name="__codelineno-12-54" href="#__codelineno-12-54"></a>PASS: IR Forge / Mountain Goat :: tour/scientific-literals.mlir (53 of 146)
-<a id="__codelineno-12-55" name="__codelineno-12-55" href="#__codelineno-12-55"></a>PASS: IR Forge / Mountain Goat :: frontend/hello-and-static.mlir (54 of 146)
-<a id="__codelineno-12-56" name="__codelineno-12-56" href="#__codelineno-12-56"></a>PASS: IR Forge / Mountain Goat :: frontend/runtime-mismatch-aborts.mlir (55 of 146)
-<a id="__codelineno-12-57" name="__codelineno-12-57" href="#__codelineno-12-57"></a>PASS: IR Forge / Mountain Goat :: ops/dynamic-ops.mlir (56 of 146)
-<a id="__codelineno-12-58" name="__codelineno-12-58" href="#__codelineno-12-58"></a>PASS: IR Forge / Mountain Goat :: execution/mismatch-columns-aborts.mlir (57 of 146)
-<a id="__codelineno-12-59" name="__codelineno-12-59" href="#__codelineno-12-59"></a>PASS: IR Forge / Mountain Goat :: loop-order/flag-reaches-pass.mlir (58 of 146)
-<a id="__codelineno-12-60" name="__codelineno-12-60" href="#__codelineno-12-60"></a>PASS: IR Forge / Mountain Goat :: execution/dynamic-shapes-run.mlir (59 of 146)
-<a id="__codelineno-12-61" name="__codelineno-12-61" href="#__codelineno-12-61"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/message-on-stderr.mlir (60 of 146)
-<a id="__codelineno-12-62" name="__codelineno-12-62" href="#__codelineno-12-62"></a>PASS: IR Forge / Mountain Goat :: execution/static-add-runs.mlir (61 of 146)
-<a id="__codelineno-12-63" name="__codelineno-12-63" href="#__codelineno-12-63"></a>PASS: IR Forge / Mountain Goat :: contraction28/errors.mlir (62 of 146)
-<a id="__codelineno-12-64" name="__codelineno-12-64" href="#__codelineno-12-64"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/runtime-check-survives-transforms.mlir (63 of 146)
-<a id="__codelineno-12-65" name="__codelineno-12-65" href="#__codelineno-12-65"></a>PASS: IR Forge / Mountain Goat :: transformer30/errors.mlir (64 of 146)
-<a id="__codelineno-12-66" name="__codelineno-12-66" href="#__codelineno-12-66"></a>PASS: IR Forge / Mountain Goat :: attention33/errors.mlir (65 of 146)
-<a id="__codelineno-12-67" name="__codelineno-12-67" href="#__codelineno-12-67"></a>PASS: IR Forge / Mountain Goat :: ops/division-ieee.mlir (66 of 146)
-<a id="__codelineno-12-68" name="__codelineno-12-68" href="#__codelineno-12-68"></a>PASS: IR Forge / Mountain Goat :: execution/strided-view.mlir (67 of 146)
-<a id="__codelineno-12-69" name="__codelineno-12-69" href="#__codelineno-12-69"></a>PASS: IR Forge / Mountain Goat :: attention29/errors.mlir (68 of 146)
-<a id="__codelineno-12-70" name="__codelineno-12-70" href="#__codelineno-12-70"></a>PASS: IR Forge / Mountain Goat :: chapters/ch01-pipeline.mlir (69 of 146)
-<a id="__codelineno-12-71" name="__codelineno-12-71" href="#__codelineno-12-71"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/nested-assert-runs.mlir (70 of 146)
-<a id="__codelineno-12-72" name="__codelineno-12-72" href="#__codelineno-12-72"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/valid-shapes-still-pass.mlir (71 of 146)
-<a id="__codelineno-12-73" name="__codelineno-12-73" href="#__codelineno-12-73"></a>PASS: IR Forge / Mountain Goat :: execution/mixed-static-dynamic.mlir (72 of 146)
-<a id="__codelineno-12-74" name="__codelineno-12-74" href="#__codelineno-12-74"></a>PASS: IR Forge / Mountain Goat :: generalize32/errors.mlir (73 of 146)
-<a id="__codelineno-12-75" name="__codelineno-12-75" href="#__codelineno-12-75"></a>PASS: IR Forge / Mountain Goat :: contraction28/ir.mlir (74 of 146)
-<a id="__codelineno-12-76" name="__codelineno-12-76" href="#__codelineno-12-76"></a>PASS: IR Forge / Mountain Goat :: lm36/errors.mlir (75 of 146)
-<a id="__codelineno-12-77" name="__codelineno-12-77" href="#__codelineno-12-77"></a>PASS: IR Forge / Mountain Goat :: broadcast/ptx-layer.mlir (76 of 146)
-<a id="__codelineno-12-78" name="__codelineno-12-78" href="#__codelineno-12-78"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/fusion-after-tiling.mlir (77 of 146)
-<a id="__codelineno-12-79" name="__codelineno-12-79" href="#__codelineno-12-79"></a>PASS: IR Forge / Mountain Goat :: ffn34/errors.mlir (78 of 146)
-<a id="__codelineno-12-80" name="__codelineno-12-80" href="#__codelineno-12-80"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/message-bytes-exact.mlir (79 of 146)
-<a id="__codelineno-12-81" name="__codelineno-12-81" href="#__codelineno-12-81"></a>PASS: IR Forge / Mountain Goat :: lm35/errors.mlir (80 of 146)
-<a id="__codelineno-12-82" name="__codelineno-12-82" href="#__codelineno-12-82"></a>PASS: IR Forge / Mountain Goat :: bigram31/errors.mlir (81 of 146)
-<a id="__codelineno-12-83" name="__codelineno-12-83" href="#__codelineno-12-83"></a>PASS: IR Forge / Mountain Goat :: gpu/pass-order-crash.mlir (82 of 146)
-<a id="__codelineno-12-84" name="__codelineno-12-84" href="#__codelineno-12-84"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/fusion-needs-constant-trip-counts.mlir (83 of 146)
-<a id="__codelineno-12-85" name="__codelineno-12-85" href="#__codelineno-12-85"></a>PASS: IR Forge / Mountain Goat :: gpu/ptx-default.mlir (84 of 146)
-<a id="__codelineno-12-86" name="__codelineno-12-86" href="#__codelineno-12-86"></a>PASS: IR Forge / Mountain Goat :: frontend/ptx-from-source.mlir (85 of 146)
-<a id="__codelineno-12-87" name="__codelineno-12-87" href="#__codelineno-12-87"></a>PASS: IR Forge / Mountain Goat :: gpu/host-runtime-calls-bare.mlir (86 of 146)
-<a id="__codelineno-12-88" name="__codelineno-12-88" href="#__codelineno-12-88"></a>PASS: IR Forge / Mountain Goat :: frontend/front-end-errors.mlir (87 of 146)
-<a id="__codelineno-12-89" name="__codelineno-12-89" href="#__codelineno-12-89"></a>PASS: IR Forge / Mountain Goat :: gpu/ptx-index32.mlir (88 of 146)
-<a id="__codelineno-12-90" name="__codelineno-12-90" href="#__codelineno-12-90"></a>PASS: IR Forge / Mountain Goat :: gpu/host-runtime-calls.mlir (89 of 146)
-<a id="__codelineno-12-91" name="__codelineno-12-91" href="#__codelineno-12-91"></a>PASS: IR Forge / Mountain Goat :: ops/front-end-errors.mlir (90 of 146)
-<a id="__codelineno-12-92" name="__codelineno-12-92" href="#__codelineno-12-92"></a>PASS: IR Forge / Mountain Goat :: gpu/ptx-bare-pointers.mlir (91 of 146)
-<a id="__codelineno-12-93" name="__codelineno-12-93" href="#__codelineno-12-93"></a>PASS: IR Forge / Mountain Goat :: broadcast/front-end-errors.mlir (92 of 146)
-<a id="__codelineno-12-94" name="__codelineno-12-94" href="#__codelineno-12-94"></a>PASS: IR Forge / Mountain Goat :: generalize32/ir.mlir (93 of 146)
-<a id="__codelineno-12-95" name="__codelineno-12-95" href="#__codelineno-12-95"></a>PASS: IR Forge / Mountain Goat :: chapters/ch02-example-programs.mlir (94 of 146)
-<a id="__codelineno-12-96" name="__codelineno-12-96" href="#__codelineno-12-96"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/unroll-full-needs-constant-trip-count.mlir (95 of 146)
-<a id="__codelineno-12-97" name="__codelineno-12-97" href="#__codelineno-12-97"></a>PASS: IR Forge / Mountain Goat :: loop-order/structure.mlir (96 of 146)
-<a id="__codelineno-12-98" name="__codelineno-12-98" href="#__codelineno-12-98"></a>PASS: IR Forge / Mountain Goat :: gpu/nvvm-lowering.mlir (97 of 146)
-<a id="__codelineno-12-99" name="__codelineno-12-99" href="#__codelineno-12-99"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/static-unchanged.mlir (98 of 146)
-<a id="__codelineno-12-100" name="__codelineno-12-100" href="#__codelineno-12-100"></a>PASS: IR Forge / Mountain Goat :: ops/matmul-lowering-structure.mlir (99 of 146)
-<a id="__codelineno-12-101" name="__codelineno-12-101" href="#__codelineno-12-101"></a>PASS: IR Forge / Mountain Goat :: gpu/cuda-comparison.mlir (100 of 146)
-<a id="__codelineno-12-102" name="__codelineno-12-102" href="#__codelineno-12-102"></a>PASS: IR Forge / Mountain Goat :: attention29/ir.mlir (101 of 146)
-<a id="__codelineno-12-103" name="__codelineno-12-103" href="#__codelineno-12-103"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/fusion-fires-when-static.mlir (102 of 146)
-<a id="__codelineno-12-104" name="__codelineno-12-104" href="#__codelineno-12-104"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/guard-nested-assert.mlir (103 of 146)
-<a id="__codelineno-12-105" name="__codelineno-12-105" href="#__codelineno-12-105"></a>PASS: IR Forge / Mountain Goat :: transformer30/ir.mlir (104 of 146)
-<a id="__codelineno-12-106" name="__codelineno-12-106" href="#__codelineno-12-106"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/unroll-epilogue.mlir (105 of 146)
-<a id="__codelineno-12-107" name="__codelineno-12-107" href="#__codelineno-12-107"></a>PASS: IR Forge / Mountain Goat :: broadcast/roundtrip-and-lowering.mlir (106 of 146)
-<a id="__codelineno-12-108" name="__codelineno-12-108" href="#__codelineno-12-108"></a>PASS: IR Forge / Mountain Goat :: bigram31/ir.mlir (107 of 146)
-<a id="__codelineno-12-109" name="__codelineno-12-109" href="#__codelineno-12-109"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/rewrite-structure.mlir (108 of 146)
-<a id="__codelineno-12-110" name="__codelineno-12-110" href="#__codelineno-12-110"></a>PASS: IR Forge / Mountain Goat :: frontend/emit-mlir.mlir (109 of 146)
-<a id="__codelineno-12-111" name="__codelineno-12-111" href="#__codelineno-12-111"></a>PASS: IR Forge / Mountain Goat :: gpu/kernel-outlining.mlir (110 of 146)
-<a id="__codelineno-12-112" name="__codelineno-12-112" href="#__codelineno-12-112"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/fusion-declines.mlir (111 of 146)
-<a id="__codelineno-12-113" name="__codelineno-12-113" href="#__codelineno-12-113"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/run-twice-no-collision.mlir (112 of 146)
-<a id="__codelineno-12-114" name="__codelineno-12-114" href="#__codelineno-12-114"></a>PASS: IR Forge / Mountain Goat :: verifier/transpose-rank3.mlir (113 of 146)
-<a id="__codelineno-12-115" name="__codelineno-12-115" href="#__codelineno-12-115"></a>PASS: IR Forge / Mountain Goat :: loops/unroll-full.mlir (114 of 146)
-<a id="__codelineno-12-116" name="__codelineno-12-116" href="#__codelineno-12-116"></a>PASS: IR Forge / Mountain Goat :: verifier/unranked-rejected.mlir (115 of 146)
-<a id="__codelineno-12-117" name="__codelineno-12-117" href="#__codelineno-12-117"></a>PASS: IR Forge / Mountain Goat :: canonicalize/transpose-twice-dynamic-exact.mlir (116 of 146)
-<a id="__codelineno-12-118" name="__codelineno-12-118" href="#__codelineno-12-118"></a>PASS: IR Forge / Mountain Goat :: lowering/bufferize-static-add.mlir (117 of 146)
-<a id="__codelineno-12-119" name="__codelineno-12-119" href="#__codelineno-12-119"></a>PASS: IR Forge / Mountain Goat :: loops/fusion.mlir (118 of 146)
-<a id="__codelineno-12-120" name="__codelineno-12-120" href="#__codelineno-12-120"></a>PASS: IR Forge / Mountain Goat :: ops/matmul-inner-mismatch.mlir (119 of 146)
-<a id="__codelineno-12-121" name="__codelineno-12-121" href="#__codelineno-12-121"></a>PASS: IR Forge / Mountain Goat :: loop-order/bad-option.mlir (120 of 146)
-<a id="__codelineno-12-122" name="__codelineno-12-122" href="#__codelineno-12-122"></a>PASS: IR Forge / Mountain Goat :: verifier/dynamic-accepted.mlir (121 of 146)
-<a id="__codelineno-12-123" name="__codelineno-12-123" href="#__codelineno-12-123"></a>PASS: IR Forge / Mountain Goat :: broadcast/verifier-broadcast.mlir (122 of 146)
-<a id="__codelineno-12-124" name="__codelineno-12-124" href="#__codelineno-12-124"></a>PASS: IR Forge / Mountain Goat :: canonicalize/fold-constant-add.mlir (123 of 146)
-<a id="__codelineno-12-125" name="__codelineno-12-125" href="#__codelineno-12-125"></a>PASS: IR Forge / Mountain Goat :: loops/tiling.mlir (124 of 146)
-<a id="__codelineno-12-126" name="__codelineno-12-126" href="#__codelineno-12-126"></a>PASS: IR Forge / Mountain Goat :: canonicalize/transpose-twice.mlir (125 of 146)
-<a id="__codelineno-12-127" name="__codelineno-12-127" href="#__codelineno-12-127"></a>PASS: IR Forge / Mountain Goat :: ops/matmul-bad-result-shape.mlir (126 of 146)
-<a id="__codelineno-12-128" name="__codelineno-12-128" href="#__codelineno-12-128"></a>PASS: IR Forge / Mountain Goat :: canonicalize/transpose-twice-dynamic-mixed.mlir (127 of 146)
-<a id="__codelineno-12-129" name="__codelineno-12-129" href="#__codelineno-12-129"></a>PASS: IR Forge / Mountain Goat :: verifier/add-static-mismatch.mlir (128 of 146)
-<a id="__codelineno-12-130" name="__codelineno-12-130" href="#__codelineno-12-130"></a>PASS: IR Forge / Mountain Goat :: verifier/transpose-bad-shape.mlir (129 of 146)
-<a id="__codelineno-12-131" name="__codelineno-12-131" href="#__codelineno-12-131"></a>PASS: IR Forge / Mountain Goat :: lowering/dynamic-add-affine.mlir (130 of 146)
-<a id="__codelineno-12-132" name="__codelineno-12-132" href="#__codelineno-12-132"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/tiling-structure.mlir (131 of 146)
-<a id="__codelineno-12-133" name="__codelineno-12-133" href="#__codelineno-12-133"></a>PASS: IR Forge / Mountain Goat :: lowering/bufferize-dynamic-add.mlir (132 of 146)
-<a id="__codelineno-12-134" name="__codelineno-12-134" href="#__codelineno-12-134"></a>PASS: IR Forge / Mountain Goat :: broadcast/verifier-reduce.mlir (133 of 146)
-<a id="__codelineno-12-135" name="__codelineno-12-135" href="#__codelineno-12-135"></a>PASS: IR Forge / Mountain Goat :: ops/dynamic-accepted.mlir (134 of 146)
-<a id="__codelineno-12-136" name="__codelineno-12-136" href="#__codelineno-12-136"></a>PASS: IR Forge / Mountain Goat :: ops/elementwise-static-mismatch.mlir (135 of 146)
-<a id="__codelineno-12-137" name="__codelineno-12-137" href="#__codelineno-12-137"></a>PASS: IR Forge / Mountain Goat :: ops/scalar-bad-op.mlir (136 of 146)
-<a id="__codelineno-12-138" name="__codelineno-12-138" href="#__codelineno-12-138"></a>PASS: IR Forge / Mountain Goat :: lowering/dynamic-transpose-no-check.mlir (137 of 146)
-<a id="__codelineno-12-139" name="__codelineno-12-139" href="#__codelineno-12-139"></a>PASS: IR Forge / Mountain Goat :: contraction28/verifiers.mlir (138 of 146)
-<a id="__codelineno-12-140" name="__codelineno-12-140" href="#__codelineno-12-140"></a>PASS: IR Forge / Mountain Goat :: lowering/static-add-affine.mlir (139 of 146)
-<a id="__codelineno-12-141" name="__codelineno-12-141" href="#__codelineno-12-141"></a>PASS: IR Forge / Mountain Goat :: attention29/verifiers.mlir (140 of 146)
-<a id="__codelineno-12-142" name="__codelineno-12-142" href="#__codelineno-12-142"></a>PASS: IR Forge / Mountain Goat :: generalize32/verifiers.mlir (141 of 146)
-<a id="__codelineno-12-143" name="__codelineno-12-143" href="#__codelineno-12-143"></a>PASS: IR Forge / Mountain Goat :: lowering/mixed-add-one-check.mlir (142 of 146)
-<a id="__codelineno-12-144" name="__codelineno-12-144" href="#__codelineno-12-144"></a>PASS: IR Forge / Mountain Goat :: bigram31/verifiers.mlir (143 of 146)
-<a id="__codelineno-12-145" name="__codelineno-12-145" href="#__codelineno-12-145"></a>PASS: IR Forge / Mountain Goat :: transformer30/verifiers.mlir (144 of 146)
-<a id="__codelineno-12-146" name="__codelineno-12-146" href="#__codelineno-12-146"></a>PASS: IR Forge / Mountain Goat :: ffn34/examples.mlir (145 of 146)
-<a id="__codelineno-12-147" name="__codelineno-12-147" href="#__codelineno-12-147"></a>PASS: IR Forge / Mountain Goat :: ffn34/against-reference.mlir (146 of 146)
-<a id="__codelineno-12-148" name="__codelineno-12-148" href="#__codelineno-12-148"></a>
-<a id="__codelineno-12-149" name="__codelineno-12-149" href="#__codelineno-12-149"></a>Testing Time: 100.19s
-<a id="__codelineno-12-150" name="__codelineno-12-150" href="#__codelineno-12-150"></a>
-<a id="__codelineno-12-151" name="__codelineno-12-151" href="#__codelineno-12-151"></a>Total Discovered Tests: 146
-<a id="__codelineno-12-152" name="__codelineno-12-152" href="#__codelineno-12-152"></a>  Passed: 146 (100.00%)
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>-- Testing: 146 tests, 4 workers --
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>PASS: IR Forge / Mountain Goat :: lm35/against-reference.mlir (1 of 146)
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>PASS: IR Forge / Mountain Goat :: lm36/examples.mlir (2 of 146)
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>PASS: IR Forge / Mountain Goat :: attention33/against-reference.mlir (3 of 146)
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>PASS: IR Forge / Mountain Goat :: lm36/against-reference.mlir (4 of 146)
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>PASS: IR Forge / Mountain Goat :: generalize32/against-reference.mlir (5 of 146)
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>PASS: IR Forge / Mountain Goat :: attention33/examples.mlir (6 of 146)
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>PASS: IR Forge / Mountain Goat :: transformer30/against-reference.mlir (7 of 146)
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>PASS: IR Forge / Mountain Goat :: lm35/examples.mlir (8 of 146)
+<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a>PASS: IR Forge / Mountain Goat :: contraction28/against-definition.mlir (9 of 146)
+<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a>PASS: IR Forge / Mountain Goat :: contraction/tensor-contraction.mlir (10 of 146)
+<a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a>PASS: IR Forge / Mountain Goat :: attention29/against-reference.mlir (11 of 146)
+<a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a>PASS: IR Forge / Mountain Goat :: generalize32/examples.mlir (12 of 146)
+<a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a>PASS: IR Forge / Mountain Goat :: llvm37/claims.mlir (13 of 146)
+<a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a>PASS: IR Forge / Mountain Goat :: tour/gallery.mlir (14 of 146)
+<a id="__codelineno-13-16" name="__codelineno-13-16" href="#__codelineno-13-16"></a>PASS: IR Forge / Mountain Goat :: learning/gradient-descent.mlir (15 of 146)
+<a id="__codelineno-13-17" name="__codelineno-13-17" href="#__codelineno-13-17"></a>PASS: IR Forge / Mountain Goat :: bigram31/against-reference.mlir (16 of 146)
+<a id="__codelineno-13-18" name="__codelineno-13-18" href="#__codelineno-13-18"></a>PASS: IR Forge / Mountain Goat :: contraction28/examples.mlir (17 of 146)
+<a id="__codelineno-13-19" name="__codelineno-13-19" href="#__codelineno-13-19"></a>PASS: IR Forge / Mountain Goat :: tour/tour-examples.mlir (18 of 146)
+<a id="__codelineno-13-20" name="__codelineno-13-20" href="#__codelineno-13-20"></a>PASS: IR Forge / Mountain Goat :: attention29/examples.mlir (19 of 146)
+<a id="__codelineno-13-21" name="__codelineno-13-21" href="#__codelineno-13-21"></a>PASS: IR Forge / Mountain Goat :: tour/more-examples.mlir (20 of 146)
+<a id="__codelineno-13-22" name="__codelineno-13-22" href="#__codelineno-13-22"></a>PASS: IR Forge / Mountain Goat :: loop-order/results-identical.mlir (21 of 146)
+<a id="__codelineno-13-23" name="__codelineno-13-23" href="#__codelineno-13-23"></a>PASS: IR Forge / Mountain Goat :: perf/options-same-results.mlir (22 of 146)
+<a id="__codelineno-13-24" name="__codelineno-13-24" href="#__codelineno-13-24"></a>PASS: IR Forge / Mountain Goat :: transformer30/examples.mlir (23 of 146)
+<a id="__codelineno-13-25" name="__codelineno-13-25" href="#__codelineno-13-25"></a>PASS: IR Forge / Mountain Goat :: loop-order/bitwise-identical.mlir (24 of 146)
+<a id="__codelineno-13-26" name="__codelineno-13-26" href="#__codelineno-13-26"></a>PASS: IR Forge / Mountain Goat :: broadcast/values.mlir (25 of 146)
+<a id="__codelineno-13-27" name="__codelineno-13-27" href="#__codelineno-13-27"></a>PASS: IR Forge / Mountain Goat :: bigram31/examples.mlir (26 of 146)
+<a id="__codelineno-13-28" name="__codelineno-13-28" href="#__codelineno-13-28"></a>PASS: IR Forge / Mountain Goat :: contraction/mismatch-trap.mlir (27 of 146)
+<a id="__codelineno-13-29" name="__codelineno-13-29" href="#__codelineno-13-29"></a>PASS: IR Forge / Mountain Goat :: ops/values.mlir (28 of 146)
+<a id="__codelineno-13-30" name="__codelineno-13-30" href="#__codelineno-13-30"></a>PASS: IR Forge / Mountain Goat :: ops/elementwise-mismatch-aborts.mlir (29 of 146)
+<a id="__codelineno-13-31" name="__codelineno-13-31" href="#__codelineno-13-31"></a>PASS: IR Forge / Mountain Goat :: frontend/cpp-interop.mlir (30 of 146)
+<a id="__codelineno-13-32" name="__codelineno-13-32" href="#__codelineno-13-32"></a>PASS: IR Forge / Mountain Goat :: llvm37/examples.mlir (31 of 146)
+<a id="__codelineno-13-33" name="__codelineno-13-33" href="#__codelineno-13-33"></a>PASS: IR Forge / Mountain Goat :: broadcast/cpp-interop-reductions.mlir (32 of 146)
+<a id="__codelineno-13-34" name="__codelineno-13-34" href="#__codelineno-13-34"></a>PASS: IR Forge / Mountain Goat :: ops/cpp-interop-ops.mlir (33 of 146)
+<a id="__codelineno-13-35" name="__codelineno-13-35" href="#__codelineno-13-35"></a>PASS: IR Forge / Mountain Goat :: frontend/more-examples.mlir (34 of 146)
+<a id="__codelineno-13-36" name="__codelineno-13-36" href="#__codelineno-13-36"></a>PASS: IR Forge / Mountain Goat :: loop-order/cpp-ikj.mlir (35 of 146)
+<a id="__codelineno-13-37" name="__codelineno-13-37" href="#__codelineno-13-37"></a>PASS: IR Forge / Mountain Goat :: broadcast/networks.mlir (36 of 146)
+<a id="__codelineno-13-38" name="__codelineno-13-38" href="#__codelineno-13-38"></a>PASS: IR Forge / Mountain Goat :: frontend/dynamic-runs.mlir (37 of 146)
+<a id="__codelineno-13-39" name="__codelineno-13-39" href="#__codelineno-13-39"></a>PASS: IR Forge / Mountain Goat :: perf/flags-reach-clang.mlir (38 of 146)
+<a id="__codelineno-13-40" name="__codelineno-13-40" href="#__codelineno-13-40"></a>PASS: IR Forge / Mountain Goat :: broadcast/identities.mlir (39 of 146)
+<a id="__codelineno-13-41" name="__codelineno-13-41" href="#__codelineno-13-41"></a>PASS: IR Forge / Mountain Goat :: tour/scientific-literals.mlir (40 of 146)
+<a id="__codelineno-13-42" name="__codelineno-13-42" href="#__codelineno-13-42"></a>PASS: IR Forge / Mountain Goat :: ops/dynamic-ops.mlir (41 of 146)
+<a id="__codelineno-13-43" name="__codelineno-13-43" href="#__codelineno-13-43"></a>PASS: IR Forge / Mountain Goat :: frontend/runtime-mismatch-aborts.mlir (42 of 146)
+<a id="__codelineno-13-44" name="__codelineno-13-44" href="#__codelineno-13-44"></a>PASS: IR Forge / Mountain Goat :: perf/tiling-structure.mlir (43 of 146)
+<a id="__codelineno-13-45" name="__codelineno-13-45" href="#__codelineno-13-45"></a>PASS: IR Forge / Mountain Goat :: broadcast/dynamic-reductions.mlir (44 of 146)
+<a id="__codelineno-13-46" name="__codelineno-13-46" href="#__codelineno-13-46"></a>PASS: IR Forge / Mountain Goat :: execution/gpu-host-with-stub-runtime.mlir (45 of 146)
+<a id="__codelineno-13-47" name="__codelineno-13-47" href="#__codelineno-13-47"></a>PASS: IR Forge / Mountain Goat :: execution/dynamic-shapes-run.mlir (46 of 146)
+<a id="__codelineno-13-48" name="__codelineno-13-48" href="#__codelineno-13-48"></a>PASS: IR Forge / Mountain Goat :: ops/precedence-and-identities.mlir (47 of 146)
+<a id="__codelineno-13-49" name="__codelineno-13-49" href="#__codelineno-13-49"></a>PASS: IR Forge / Mountain Goat :: ops/composed-programs.mlir (48 of 146)
+<a id="__codelineno-13-50" name="__codelineno-13-50" href="#__codelineno-13-50"></a>PASS: IR Forge / Mountain Goat :: ops/negate-and-dynamic-divide.mlir (49 of 146)
+<a id="__codelineno-13-51" name="__codelineno-13-51" href="#__codelineno-13-51"></a>PASS: IR Forge / Mountain Goat :: frontend/hello-and-static.mlir (50 of 146)
+<a id="__codelineno-13-52" name="__codelineno-13-52" href="#__codelineno-13-52"></a>PASS: IR Forge / Mountain Goat :: loop-order/flag-reaches-pass.mlir (51 of 146)
+<a id="__codelineno-13-53" name="__codelineno-13-53" href="#__codelineno-13-53"></a>PASS: IR Forge / Mountain Goat :: contraction28/errors.mlir (52 of 146)
+<a id="__codelineno-13-54" name="__codelineno-13-54" href="#__codelineno-13-54"></a>PASS: IR Forge / Mountain Goat :: execution/mismatch-aborts.mlir (53 of 146)
+<a id="__codelineno-13-55" name="__codelineno-13-55" href="#__codelineno-13-55"></a>PASS: IR Forge / Mountain Goat :: execution/mismatch-columns-aborts.mlir (54 of 146)
+<a id="__codelineno-13-56" name="__codelineno-13-56" href="#__codelineno-13-56"></a>PASS: IR Forge / Mountain Goat :: ops/ptx-new-ops.mlir (55 of 146)
+<a id="__codelineno-13-57" name="__codelineno-13-57" href="#__codelineno-13-57"></a>PASS: IR Forge / Mountain Goat :: tour/tour-errors.mlir (56 of 146)
+<a id="__codelineno-13-58" name="__codelineno-13-58" href="#__codelineno-13-58"></a>PASS: IR Forge / Mountain Goat :: execution/static-add-runs.mlir (57 of 146)
+<a id="__codelineno-13-59" name="__codelineno-13-59" href="#__codelineno-13-59"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/message-on-stderr.mlir (58 of 146)
+<a id="__codelineno-13-60" name="__codelineno-13-60" href="#__codelineno-13-60"></a>PASS: IR Forge / Mountain Goat :: chapters/ch09-execution-engine.mlir (59 of 146)
+<a id="__codelineno-13-61" name="__codelineno-13-61" href="#__codelineno-13-61"></a>PASS: IR Forge / Mountain Goat :: ops/matmul-mismatch-aborts.mlir (60 of 146)
+<a id="__codelineno-13-62" name="__codelineno-13-62" href="#__codelineno-13-62"></a>PASS: IR Forge / Mountain Goat :: execution/strided-view.mlir (61 of 146)
+<a id="__codelineno-13-63" name="__codelineno-13-63" href="#__codelineno-13-63"></a>PASS: IR Forge / Mountain Goat :: transformer30/errors.mlir (62 of 146)
+<a id="__codelineno-13-64" name="__codelineno-13-64" href="#__codelineno-13-64"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/tiling-runs.mlir (63 of 146)
+<a id="__codelineno-13-65" name="__codelineno-13-65" href="#__codelineno-13-65"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/unroll-runs.mlir (64 of 146)
+<a id="__codelineno-13-66" name="__codelineno-13-66" href="#__codelineno-13-66"></a>PASS: IR Forge / Mountain Goat :: ops/division-ieee.mlir (65 of 146)
+<a id="__codelineno-13-67" name="__codelineno-13-67" href="#__codelineno-13-67"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/runtime-check-survives-transforms.mlir (66 of 146)
+<a id="__codelineno-13-68" name="__codelineno-13-68" href="#__codelineno-13-68"></a>PASS: IR Forge / Mountain Goat :: attention29/errors.mlir (67 of 146)
+<a id="__codelineno-13-69" name="__codelineno-13-69" href="#__codelineno-13-69"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/fusion-after-tiling.mlir (68 of 146)
+<a id="__codelineno-13-70" name="__codelineno-13-70" href="#__codelineno-13-70"></a>PASS: IR Forge / Mountain Goat :: lm35/errors.mlir (69 of 146)
+<a id="__codelineno-13-71" name="__codelineno-13-71" href="#__codelineno-13-71"></a>PASS: IR Forge / Mountain Goat :: broadcast/ptx-layer.mlir (70 of 146)
+<a id="__codelineno-13-72" name="__codelineno-13-72" href="#__codelineno-13-72"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/nested-assert-runs.mlir (71 of 146)
+<a id="__codelineno-13-73" name="__codelineno-13-73" href="#__codelineno-13-73"></a>PASS: IR Forge / Mountain Goat :: bigram31/errors.mlir (72 of 146)
+<a id="__codelineno-13-74" name="__codelineno-13-74" href="#__codelineno-13-74"></a>PASS: IR Forge / Mountain Goat :: execution/mixed-static-dynamic.mlir (73 of 146)
+<a id="__codelineno-13-75" name="__codelineno-13-75" href="#__codelineno-13-75"></a>PASS: IR Forge / Mountain Goat :: attention33/errors.mlir (74 of 146)
+<a id="__codelineno-13-76" name="__codelineno-13-76" href="#__codelineno-13-76"></a>PASS: IR Forge / Mountain Goat :: frontend/ptx-from-source.mlir (75 of 146)
+<a id="__codelineno-13-77" name="__codelineno-13-77" href="#__codelineno-13-77"></a>PASS: IR Forge / Mountain Goat :: chapters/ch01-pipeline.mlir (76 of 146)
+<a id="__codelineno-13-78" name="__codelineno-13-78" href="#__codelineno-13-78"></a>PASS: IR Forge / Mountain Goat :: contraction28/ir.mlir (77 of 146)
+<a id="__codelineno-13-79" name="__codelineno-13-79" href="#__codelineno-13-79"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/message-bytes-exact.mlir (78 of 146)
+<a id="__codelineno-13-80" name="__codelineno-13-80" href="#__codelineno-13-80"></a>PASS: IR Forge / Mountain Goat :: ffn34/errors.mlir (79 of 146)
+<a id="__codelineno-13-81" name="__codelineno-13-81" href="#__codelineno-13-81"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/valid-shapes-still-pass.mlir (80 of 146)
+<a id="__codelineno-13-82" name="__codelineno-13-82" href="#__codelineno-13-82"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/fusion-needs-constant-trip-counts.mlir (81 of 146)
+<a id="__codelineno-13-83" name="__codelineno-13-83" href="#__codelineno-13-83"></a>PASS: IR Forge / Mountain Goat :: generalize32/errors.mlir (82 of 146)
+<a id="__codelineno-13-84" name="__codelineno-13-84" href="#__codelineno-13-84"></a>PASS: IR Forge / Mountain Goat :: gpu/pass-order-crash.mlir (83 of 146)
+<a id="__codelineno-13-85" name="__codelineno-13-85" href="#__codelineno-13-85"></a>PASS: IR Forge / Mountain Goat :: lm36/errors.mlir (84 of 146)
+<a id="__codelineno-13-86" name="__codelineno-13-86" href="#__codelineno-13-86"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/unroll-full-needs-constant-trip-count.mlir (85 of 146)
+<a id="__codelineno-13-87" name="__codelineno-13-87" href="#__codelineno-13-87"></a>PASS: IR Forge / Mountain Goat :: gpu/ptx-default.mlir (86 of 146)
+<a id="__codelineno-13-88" name="__codelineno-13-88" href="#__codelineno-13-88"></a>PASS: IR Forge / Mountain Goat :: gpu/ptx-index32.mlir (87 of 146)
+<a id="__codelineno-13-89" name="__codelineno-13-89" href="#__codelineno-13-89"></a>PASS: IR Forge / Mountain Goat :: loop-order/structure.mlir (88 of 146)
+<a id="__codelineno-13-90" name="__codelineno-13-90" href="#__codelineno-13-90"></a>PASS: IR Forge / Mountain Goat :: frontend/front-end-errors.mlir (89 of 146)
+<a id="__codelineno-13-91" name="__codelineno-13-91" href="#__codelineno-13-91"></a>PASS: IR Forge / Mountain Goat :: gpu/host-runtime-calls-bare.mlir (90 of 146)
+<a id="__codelineno-13-92" name="__codelineno-13-92" href="#__codelineno-13-92"></a>PASS: IR Forge / Mountain Goat :: gpu/ptx-bare-pointers.mlir (91 of 146)
+<a id="__codelineno-13-93" name="__codelineno-13-93" href="#__codelineno-13-93"></a>PASS: IR Forge / Mountain Goat :: gpu/host-runtime-calls.mlir (92 of 146)
+<a id="__codelineno-13-94" name="__codelineno-13-94" href="#__codelineno-13-94"></a>PASS: IR Forge / Mountain Goat :: attention29/ir.mlir (93 of 146)
+<a id="__codelineno-13-95" name="__codelineno-13-95" href="#__codelineno-13-95"></a>PASS: IR Forge / Mountain Goat :: transformer30/ir.mlir (94 of 146)
+<a id="__codelineno-13-96" name="__codelineno-13-96" href="#__codelineno-13-96"></a>PASS: IR Forge / Mountain Goat :: gpu/nvvm-lowering.mlir (95 of 146)
+<a id="__codelineno-13-97" name="__codelineno-13-97" href="#__codelineno-13-97"></a>PASS: IR Forge / Mountain Goat :: bigram31/ir.mlir (96 of 146)
+<a id="__codelineno-13-98" name="__codelineno-13-98" href="#__codelineno-13-98"></a>PASS: IR Forge / Mountain Goat :: chapters/ch02-example-programs.mlir (97 of 146)
+<a id="__codelineno-13-99" name="__codelineno-13-99" href="#__codelineno-13-99"></a>PASS: IR Forge / Mountain Goat :: ops/front-end-errors.mlir (98 of 146)
+<a id="__codelineno-13-100" name="__codelineno-13-100" href="#__codelineno-13-100"></a>PASS: IR Forge / Mountain Goat :: broadcast/roundtrip-and-lowering.mlir (99 of 146)
+<a id="__codelineno-13-101" name="__codelineno-13-101" href="#__codelineno-13-101"></a>PASS: IR Forge / Mountain Goat :: broadcast/front-end-errors.mlir (100 of 146)
+<a id="__codelineno-13-102" name="__codelineno-13-102" href="#__codelineno-13-102"></a>PASS: IR Forge / Mountain Goat :: ops/matmul-lowering-structure.mlir (101 of 146)
+<a id="__codelineno-13-103" name="__codelineno-13-103" href="#__codelineno-13-103"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/guard-nested-assert.mlir (102 of 146)
+<a id="__codelineno-13-104" name="__codelineno-13-104" href="#__codelineno-13-104"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/static-unchanged.mlir (103 of 146)
+<a id="__codelineno-13-105" name="__codelineno-13-105" href="#__codelineno-13-105"></a>PASS: IR Forge / Mountain Goat :: gpu/kernel-outlining.mlir (104 of 146)
+<a id="__codelineno-13-106" name="__codelineno-13-106" href="#__codelineno-13-106"></a>PASS: IR Forge / Mountain Goat :: frontend/emit-mlir.mlir (105 of 146)
+<a id="__codelineno-13-107" name="__codelineno-13-107" href="#__codelineno-13-107"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/unroll-epilogue.mlir (106 of 146)
+<a id="__codelineno-13-108" name="__codelineno-13-108" href="#__codelineno-13-108"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/fusion-fires-when-static.mlir (107 of 146)
+<a id="__codelineno-13-109" name="__codelineno-13-109" href="#__codelineno-13-109"></a>PASS: IR Forge / Mountain Goat :: generalize32/ir.mlir (108 of 146)
+<a id="__codelineno-13-110" name="__codelineno-13-110" href="#__codelineno-13-110"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/fusion-declines.mlir (109 of 146)
+<a id="__codelineno-13-111" name="__codelineno-13-111" href="#__codelineno-13-111"></a>PASS: IR Forge / Mountain Goat :: gpu/cuda-comparison.mlir (110 of 146)
+<a id="__codelineno-13-112" name="__codelineno-13-112" href="#__codelineno-13-112"></a>PASS: IR Forge / Mountain Goat :: loops/tiling.mlir (111 of 146)
+<a id="__codelineno-13-113" name="__codelineno-13-113" href="#__codelineno-13-113"></a>PASS: IR Forge / Mountain Goat :: dynamic-loops/tiling-structure.mlir (112 of 146)
+<a id="__codelineno-13-114" name="__codelineno-13-114" href="#__codelineno-13-114"></a>PASS: IR Forge / Mountain Goat :: ops/elementwise-static-mismatch.mlir (113 of 146)
+<a id="__codelineno-13-115" name="__codelineno-13-115" href="#__codelineno-13-115"></a>PASS: IR Forge / Mountain Goat :: verifier/transpose-bad-shape.mlir (114 of 146)
+<a id="__codelineno-13-116" name="__codelineno-13-116" href="#__codelineno-13-116"></a>PASS: IR Forge / Mountain Goat :: canonicalize/transpose-twice.mlir (115 of 146)
+<a id="__codelineno-13-117" name="__codelineno-13-117" href="#__codelineno-13-117"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/run-twice-no-collision.mlir (116 of 146)
+<a id="__codelineno-13-118" name="__codelineno-13-118" href="#__codelineno-13-118"></a>PASS: IR Forge / Mountain Goat :: loops/fusion.mlir (117 of 146)
+<a id="__codelineno-13-119" name="__codelineno-13-119" href="#__codelineno-13-119"></a>PASS: IR Forge / Mountain Goat :: loops/unroll-full.mlir (118 of 146)
+<a id="__codelineno-13-120" name="__codelineno-13-120" href="#__codelineno-13-120"></a>PASS: IR Forge / Mountain Goat :: broadcast/verifier-broadcast.mlir (119 of 146)
+<a id="__codelineno-13-121" name="__codelineno-13-121" href="#__codelineno-13-121"></a>PASS: IR Forge / Mountain Goat :: verifier/dynamic-accepted.mlir (120 of 146)
+<a id="__codelineno-13-122" name="__codelineno-13-122" href="#__codelineno-13-122"></a>PASS: IR Forge / Mountain Goat :: loop-order/bad-option.mlir (121 of 146)
+<a id="__codelineno-13-123" name="__codelineno-13-123" href="#__codelineno-13-123"></a>PASS: IR Forge / Mountain Goat :: ops/matmul-inner-mismatch.mlir (122 of 146)
+<a id="__codelineno-13-124" name="__codelineno-13-124" href="#__codelineno-13-124"></a>PASS: IR Forge / Mountain Goat :: verifier/transpose-rank3.mlir (123 of 146)
+<a id="__codelineno-13-125" name="__codelineno-13-125" href="#__codelineno-13-125"></a>PASS: IR Forge / Mountain Goat :: assert-stderr/rewrite-structure.mlir (124 of 146)
+<a id="__codelineno-13-126" name="__codelineno-13-126" href="#__codelineno-13-126"></a>PASS: IR Forge / Mountain Goat :: verifier/unranked-rejected.mlir (125 of 146)
+<a id="__codelineno-13-127" name="__codelineno-13-127" href="#__codelineno-13-127"></a>PASS: IR Forge / Mountain Goat :: ops/matmul-bad-result-shape.mlir (126 of 146)
+<a id="__codelineno-13-128" name="__codelineno-13-128" href="#__codelineno-13-128"></a>PASS: IR Forge / Mountain Goat :: broadcast/verifier-reduce.mlir (127 of 146)
+<a id="__codelineno-13-129" name="__codelineno-13-129" href="#__codelineno-13-129"></a>PASS: IR Forge / Mountain Goat :: lowering/bufferize-static-add.mlir (128 of 146)
+<a id="__codelineno-13-130" name="__codelineno-13-130" href="#__codelineno-13-130"></a>PASS: IR Forge / Mountain Goat :: generalize32/verifiers.mlir (129 of 146)
+<a id="__codelineno-13-131" name="__codelineno-13-131" href="#__codelineno-13-131"></a>PASS: IR Forge / Mountain Goat :: verifier/add-static-mismatch.mlir (130 of 146)
+<a id="__codelineno-13-132" name="__codelineno-13-132" href="#__codelineno-13-132"></a>PASS: IR Forge / Mountain Goat :: lowering/bufferize-dynamic-add.mlir (131 of 146)
+<a id="__codelineno-13-133" name="__codelineno-13-133" href="#__codelineno-13-133"></a>PASS: IR Forge / Mountain Goat :: ops/scalar-bad-op.mlir (132 of 146)
+<a id="__codelineno-13-134" name="__codelineno-13-134" href="#__codelineno-13-134"></a>PASS: IR Forge / Mountain Goat :: lowering/dynamic-add-affine.mlir (133 of 146)
+<a id="__codelineno-13-135" name="__codelineno-13-135" href="#__codelineno-13-135"></a>PASS: IR Forge / Mountain Goat :: lowering/mixed-add-one-check.mlir (134 of 146)
+<a id="__codelineno-13-136" name="__codelineno-13-136" href="#__codelineno-13-136"></a>PASS: IR Forge / Mountain Goat :: canonicalize/fold-constant-add.mlir (135 of 146)
+<a id="__codelineno-13-137" name="__codelineno-13-137" href="#__codelineno-13-137"></a>PASS: IR Forge / Mountain Goat :: canonicalize/transpose-twice-dynamic-exact.mlir (136 of 146)
+<a id="__codelineno-13-138" name="__codelineno-13-138" href="#__codelineno-13-138"></a>PASS: IR Forge / Mountain Goat :: canonicalize/transpose-twice-dynamic-mixed.mlir (137 of 146)
+<a id="__codelineno-13-139" name="__codelineno-13-139" href="#__codelineno-13-139"></a>PASS: IR Forge / Mountain Goat :: ops/dynamic-accepted.mlir (138 of 146)
+<a id="__codelineno-13-140" name="__codelineno-13-140" href="#__codelineno-13-140"></a>PASS: IR Forge / Mountain Goat :: lowering/static-add-affine.mlir (139 of 146)
+<a id="__codelineno-13-141" name="__codelineno-13-141" href="#__codelineno-13-141"></a>PASS: IR Forge / Mountain Goat :: contraction28/verifiers.mlir (140 of 146)
+<a id="__codelineno-13-142" name="__codelineno-13-142" href="#__codelineno-13-142"></a>PASS: IR Forge / Mountain Goat :: lowering/dynamic-transpose-no-check.mlir (141 of 146)
+<a id="__codelineno-13-143" name="__codelineno-13-143" href="#__codelineno-13-143"></a>PASS: IR Forge / Mountain Goat :: transformer30/verifiers.mlir (142 of 146)
+<a id="__codelineno-13-144" name="__codelineno-13-144" href="#__codelineno-13-144"></a>PASS: IR Forge / Mountain Goat :: attention29/verifiers.mlir (143 of 146)
+<a id="__codelineno-13-145" name="__codelineno-13-145" href="#__codelineno-13-145"></a>PASS: IR Forge / Mountain Goat :: bigram31/verifiers.mlir (144 of 146)
+<a id="__codelineno-13-146" name="__codelineno-13-146" href="#__codelineno-13-146"></a>PASS: IR Forge / Mountain Goat :: ffn34/examples.mlir (145 of 146)
+<a id="__codelineno-13-147" name="__codelineno-13-147" href="#__codelineno-13-147"></a>PASS: IR Forge / Mountain Goat :: ffn34/against-reference.mlir (146 of 146)
+<a id="__codelineno-13-148" name="__codelineno-13-148" href="#__codelineno-13-148"></a>
+<a id="__codelineno-13-149" name="__codelineno-13-149" href="#__codelineno-13-149"></a>Testing Time: 98.73s
+<a id="__codelineno-13-150" name="__codelineno-13-150" href="#__codelineno-13-150"></a>
+<a id="__codelineno-13-151" name="__codelineno-13-151" href="#__codelineno-13-151"></a>Total Discovered Tests: 146
+<a id="__codelineno-13-152" name="__codelineno-13-152" href="#__codelineno-13-152"></a>  Passed: 146 (100.00%)
 </code></pre></div>
 <h2 id="limits-and-what-is-not-established">Limits and what is not established<a class="headerlink" href="#limits-and-what-is-not-established" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>One machine, one LLVM.</strong> An Intel Xeon (<code>sapphirerapids</code> in LLVM's naming) at 2.1 GHz, LLVM 18.1.3, clang 18.1.3. Vector widths, the choice of 256-bit registers, <code>llvm-mca</code>'s numbers and the benchmark all depend on them. The checks assume AVX2 or newer.</li>
+<li><strong>One machine, one LLVM.</strong> An Intel Xeon (<code>sapphirerapids</code> in LLVM's naming) at 2.1 GHz, LLVM 18.1.3, clang 18.1.3. Vector widths, the choice of 256-bit registers, <code>llvm-mca</code>'s numbers and the benchmark all depend on them. The checks pin <code>sapphirerapids</code>; the CPU section shows that gathers, fused multiply-adds and <code>llvm-mca</code> numbers differ on other targets.</li>
 <li><strong>"Memory-bound" is inferred, not measured.</strong> The explanation for the vectorized ijk being no faster is gathers in the assembly plus unchanged timings; no hardware counters (cache misses, TLB misses) were read.</li>
 <li><strong>The benchmark is the Chapter 24 harness with its noise.</strong> Three passes, one pinned core, spreads of up to about 30% between passes at N = 256 (for example ikj's 9.2 to 11.7 GFLOP/s); the contract result at N = 512 is consistent across passes, the one at N = 256 is not.</li>
 <li><strong><code>llvm-mca</code> is a core model.</strong> It ignores the memory system and assumes perfect branch prediction; the page shows it ranking correctly and over-predicting the gain from vectorizing ijk.</li>
@@ -2837,13 +2878,13 @@ Every listing and output on this page comes from these commands.</p>
 <li><strong>Platform:</strong> x86-64 Linux, LLVM 18.1.3.</li>
 </ul>
 <h2 id="reproducing">Reproducing<a class="headerlink" href="#reproducing" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nb">cd</span><span class="w"> </span>docs/part32/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./build.sh
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="nb">cd</span><span class="w"> </span>../../part37/code
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>./stages.sh<span class="w"> </span>&gt;<span class="w"> </span>stages_out.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./walk.sh<span class="w"> </span>&gt;<span class="w"> </span>walk_out.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./remarks.sh<span class="w"> </span>&gt;<span class="w"> </span>remarks_out.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./ops_table.sh<span class="w"> </span>&gt;<span class="w"> </span>ops_table_out.txt
-<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>./mca.py<span class="w"> </span>&gt;<span class="w"> </span>mca_out.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./mca.py<span class="w"> </span>--loops<span class="w"> </span>&gt;<span class="w"> </span>loops_out.txt
-<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>./variants.sh<span class="w"> </span>&gt;<span class="w"> </span>variants_out.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./summarize_variants.py<span class="w"> </span>&gt;<span class="w"> </span>variants_summary.txt
-<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>./check_llvm.py<span class="w"> </span>&gt;<span class="w"> </span>check_llvm_out.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./claims_mutation.py<span class="w"> </span>&gt;<span class="w"> </span>claims_mutation_out.txt
-<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="nb">cd</span><span class="w"> </span>../../part15/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_lit.sh<span class="w">          </span><span class="c1"># 146 tests</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="nb">cd</span><span class="w"> </span>docs/part32/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./build.sh
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="nb">cd</span><span class="w"> </span>../../part37/code
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>./stages.sh<span class="w"> </span>&gt;<span class="w"> </span>stages_out.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./walk.sh<span class="w"> </span>&gt;<span class="w"> </span>walk_out.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./remarks.sh<span class="w"> </span>&gt;<span class="w"> </span>remarks_out.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./ops_table.sh<span class="w"> </span>&gt;<span class="w"> </span>ops_table_out.txt
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>./mca.py<span class="w"> </span>&gt;<span class="w"> </span>mca_out.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./mca.py<span class="w"> </span>--loops<span class="w"> </span>&gt;<span class="w"> </span>loops_out.txt
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>./variants.sh<span class="w"> </span>&gt;<span class="w"> </span>variants_out.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./summarize_variants.py<span class="w"> </span>&gt;<span class="w"> </span>variants_summary.txt
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>./check_llvm.py<span class="w"> </span>&gt;<span class="w"> </span>check_llvm_out.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./claims_mutation.py<span class="w"> </span>&gt;<span class="w"> </span>claims_mutation_out.txt
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="nb">cd</span><span class="w"> </span>../../part15/code<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./run_lit.sh<span class="w">          </span><span class="c1"># 146 tests</span>
 </code></pre></div>
 <h2 id="chapter-summary">Chapter summary<a class="headerlink" href="#chapter-summary" title="Permanent link">&para;</a></h2>
 <ul>

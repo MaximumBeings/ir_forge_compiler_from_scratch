@@ -1,0 +1,94 @@
+part20/code/examples/01_hello.mg                               same             0 cycles, useful MXU 0%
+part20/code/examples/02_add_transpose.mg                       same             110 cycles, useful MXU 0%
+part20/code/examples/03_dynamic.mg                             unsupported      dynamic shapes are not supported by the GA-1 back end
+part20/code/examples/04_mismatch.mg                            unsupported      dynamic shapes are not supported by the GA-1 back end
+part20/code/examples/05_gpu.mg                                 prints nothing   
+part20/code/examples/06_transpose_twice.mg                     same             90 cycles, useful MXU 0%
+part20/code/examples/07_expressions.mg                         same             240 cycles, useful MXU 0%
+part20/code/examples/08_functions.mg                           same             90 cycles, useful MXU 0%
+part20/code/examples/09_vectors.mg                             unsupported      dynamic shapes are not supported by the GA-1 back end
+part20/code/examples/10_mixed.mg                               unsupported      dynamic shapes are not supported by the GA-1 back end
+part21/code/examples/01_subtract.mg                            same             130 cycles, useful MXU 0%
+part21/code/examples/02_hadamard.mg                            same             65 cycles, useful MXU 0%
+part21/code/examples/03_divide.mg                              same             65 cycles, useful MXU 0%
+part21/code/examples/04_matmul.mg                              same             152 cycles, useful MXU 0%
+part21/code/examples/05_scalar_ops.mg                          same             270 cycles, useful MXU 0%
+part21/code/examples/06_precedence.mg                          same             336 cycles, useful MXU 0%
+part21/code/examples/07_linear_layer.mg                        same             141 cycles, useful MXU 0%
+part21/code/examples/08_gram.mg                                same             197 cycles, useful MXU 0%
+part21/code/examples/09_identity.mg                            same             216 cycles, useful MXU 0%
+part21/code/examples/10_dynamic_matmul.mg                      unsupported      dynamic shapes are not supported by the GA-1 back end
+part21/code/examples/11_dynamic_scalar.mg                      unsupported      dynamic shapes are not supported by the GA-1 back end
+part21/code/examples/12_matmul_mismatch.mg                     unsupported      dynamic shapes are not supported by the GA-1 back end
+part21/code/examples/13_gpu_matmul.mg                          prints nothing   
+part21/code/examples/14_gpu_ops.mg                             prints nothing   
+part21/code/examples/15_elementwise_mismatch.mg                unsupported      dynamic shapes are not supported by the GA-1 back end
+part21/code/examples/15b_mul_mismatch.mg                       unsupported      dynamic shapes are not supported by the GA-1 back end
+part21/code/examples/15c_div_mismatch.mg                       unsupported      dynamic shapes are not supported by the GA-1 back end
+part21/code/examples/16_negate.mg                              unsupported      dynamic shapes are not supported by the GA-1 back end
+part21/code/examples/17_dynamic_divide.mg                      unsupported      dynamic shapes are not supported by the GA-1 back end
+part22/code/examples/01_relu.mg                                same             45 cycles, useful MXU 0%
+part22/code/examples/02_row_and_col_sums.mg                    same             106 cycles, useful MXU 0%
+part22/code/examples/03_max_and_mean.mg                        same             302 cycles, useful MXU 0%
+part22/code/examples/04_broadcast_bias.mg                      same             195 cycles, useful MXU 0%
+part22/code/examples/05_center_columns.mg                      same             216 cycles, useful MXU 0%
+part22/code/examples/06_normalize_rows.mg                      same             171 cycles, useful MXU 0%
+part22/code/examples/07_mlp_layer.mg                           same             146 cycles, useful MXU 0%
+part22/code/examples/08_two_layers.mg                          same             421 cycles, useful MXU 0%
+part22/code/examples/09_dynamic_reductions.mg                  unsupported      dynamic shapes are not supported by the GA-1 back end
+part22/code/examples/10_gpu_layer.mg                           prints nothing   
+part22/code/examples/11_dynamic_no_broadcast.mg                unsupported      dynamic shapes are not supported by the GA-1 back end
+part22/code/examples/12_broadcast_left.mg                      same             275 cycles, useful MXU 0%
+part22/code/examples/13_negative_max.mg                        same             106 cycles, useful MXU 0%
+part23/code/examples/matmul_odd.mg                             unsupported      dynamic shapes are not supported by the GA-1 back end
+part23/code/examples/matmul_static.mg                          same             76 cycles, useful MXU 1%
+part24/code/examples/matmul_odd.mg                             unsupported      dynamic shapes are not supported by the GA-1 back end
+part24/code/examples/matmul_static.mg                          same             76 cycles, useful MXU 1%
+part28/code/examples/01_reshape_and_permute.mg                 unsupported      rank 3 tensors are not supported by the GA-1 back end
+part28/code/examples/02_matmul_is_a_contraction.mg             same             76 cycles, useful MXU 0%
+part28/code/examples/03_double_contraction.mg                  unsupported      rank 3 tensors are not supported by the GA-1 back end
+part28/code/examples/04_axis_at_the_front.mg                   unsupported      rank 3 tensors are not supported by the GA-1 back end
+part28/code/examples/05_axes_in_reverse_order.mg               unsupported      rank 3 tensors are not supported by the GA-1 back end
+part28/code/examples/06_vectors_dot_and_outer.mg               unsupported      rank 1 tensors are not supported by the GA-1 back end
+part28/code/examples/07_rank4_result.mg                        unsupported      rank 3 tensors are not supported by the GA-1 back end
+part28/code/examples/08_in_a_function.mg                       unsupported      rank 3 tensors are not supported by the GA-1 back end
+part29/code/examples/01_exp.mg                                 same             221 cycles, useful MXU 0%
+part29/code/examples/02_softmax_naive.mg                       same             228 cycles, useful MXU 0%
+part29/code/examples/03_softmax_overflow.mg                    same             232 cycles, useful MXU 0%
+part29/code/examples/04_softmax_stable.mg                      same             804 cycles, useful MXU 0%
+part29/code/examples/05_temperature.mg                         same             849 cycles, useful MXU 0%
+part29/code/examples/06_attention.mg                           same             495 cycles, useful MXU 0%
+part29/code/examples/07_causal_attention.mg                    same             515 cycles, useful MXU 0%
+part29/code/examples/08_self_attention_block.mg                same             864 cycles, useful MXU 0%
+part30/code/examples/01_layer_norm.mg                          same             513 cycles, useful MXU 0%
+part30/code/examples/02_feed_forward.mg                        same             513 cycles, useful MXU 1%
+part30/code/examples/03_tiny_transformer.mg                    same             6595 cycles, useful MXU 0%
+part30/code/examples/04_last_token_changed.mg                  same             6595 cycles, useful MXU 0%
+part31/code/examples/01_log.mg                                 same             409 cycles, useful MXU 0%
+part31/code/examples/02_cross_entropy.mg                       same             261 cycles, useful MXU 0%
+part31/code/examples/03_one_gradient_step.mg                   same             1431 cycles, useful MXU 0%
+part32/code/examples/01_ge.mg                                  same             431 cycles, useful MXU 0%
+tour/code/01_first_program.mg                                  same             0 cycles, useful MXU 0%
+tour/code/02_literals.mg                                       same             45 cycles, useful MXU 0%
+tour/code/03_let_and_shadowing.mg                              same             50 cycles, useful MXU 0%
+tour/code/04_functions.mg                                      same             50 cycles, useful MXU 0%
+tour/code/05_dynamic_types.mg                                  unsupported      dynamic shapes are not supported by the GA-1 back end
+tour/code/06_operators.mg                                      same             476 cycles, useful MXU 0%
+tour/code/07_shapes_flow.mg                                    same             227 cycles, useful MXU 0%
+tour/code/08_column_statistics.mg                              same             306 cycles, useful MXU 0%
+tour/code/09_polynomial.mg                                     same             76 cycles, useful MXU 0%
+tour/code/10_rotation.mg                                       same             273 cycles, useful MXU 0%
+tour/code/11_markov_chain.mg                                   same             456 cycles, useful MXU 0%
+tour/code/12_graph_walks.mg                                    same             152 cycles, useful MXU 1%
+tour/code/13_blur.mg                                           same             76 cycles, useful MXU 2%
+tour/code/14_affine_layers.mg                                  same             282 cycles, useful MXU 0%
+tour/code/15_batches.mg                                        unsupported      dynamic shapes are not supported by the GA-1 back end
+tour/code/16_dynamic_bias_gotcha.mg                            unsupported      dynamic shapes are not supported by the GA-1 back end
+tour/code/17_more_literals.mg                                  same             90 cycles, useful MXU 0%
+tour/code/18_let_chains.mg                                     same             326 cycles, useful MXU 0%
+tour/code/19_function_composition.mg                           same             483 cycles, useful MXU 0%
+tour/code/20_one_function_many_shapes.mg                       unsupported      dynamic shapes are not supported by the GA-1 back end
+tour/code/21_scalars_on_either_side.mg                         same             280 cycles, useful MXU 0%
+tour/code/22_precedence.mg                                     same             608 cycles, useful MXU 0%
+
+prints nothing: 4, same: 61, unsupported: 27

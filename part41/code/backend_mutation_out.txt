@@ -1,0 +1,18 @@
+NOTE: this script deliberately breaks the back end. 'caught' lines are EXPECTED: they show the checker can detect the mistake.
+baseline (nothing broken): checker passes (expected)
+a broadcast operand is fetched at the output tile's own coordinates (not projected onto its size-1 axis): caught by 2 failing check(s) (the option combinations, other machines)
+a max-reduction pads a partial tile with 0 instead of -infinity: caught by 2 failing check(s) (agreement with the CPU on the examples, the option combinations)
+common-subexpression elimination ignores the operation's attributes (two scalar ops with different constants look equal): caught by 1 failing check(s) (agreement with the CPU on the examples)
+transpose loads the tile at the output's coordinates (the tiles are not swapped): caught by 2 failing check(s) (the option combinations, other machines)
+a scalar operation ignores 'reversed' (k - x computed as x - k): caught by 1 failing check(s) (agreement with the CPU on the examples)
+matmul is compiled with its operands swapped: caught by 3 failing check(s) (agreement with the CPU on the examples, the option combinations, other machines)
+a fused kernel stores only its last value (values used later by other kernels are lost): caught (the checker did not finish: KeyError: 't3')
+double buffering uses the same slots for both tiles (the next tile's loads overwrite the current tile): caught by 3 failing check(s) (the option combinations, other machines, block cycles)
+the matmul block is the first that fits, not the best by the model: caught by 2 failing check(s) (block cycles, decode cycles)
+useful utilization counts the padding: caught by 1 failing check(s) (utilization)
+a column vector is broadcast as a row (bcastrow where bcastcol belongs): caught by 3 failing check(s) (agreement with the CPU on the examples, the option combinations, other machines)
+masklen in the simulator ignores its fill value: caught by 2 failing check(s) (agreement with the CPU on the examples, the option combinations)
+the simulator's vscalar swaps its operands when reversed is false: caught by 3 failing check(s) (agreement with the CPU on the examples, the option combinations, other machines)
+exp overflow raises instead of giving infinity: caught (the checker did not finish: OverflowError: math range error)
+
+restored: ga_backend.py and ga_ext.py are back to their originals

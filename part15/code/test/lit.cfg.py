@@ -161,3 +161,6 @@ config.substitutions += [
     ("%cxx", "clang++-18"),
 ]
 config.environment["PATH"] = os.environ["PATH"]
+# Chapter 41: a back end from the mg dialect to GA-1 (Python over `mgc mlir` text).
+ch41 = os.path.join(config.test_source_root, "..", "..", "..", "part41", "code")
+config.substitutions += [("%ch41", ch41)]

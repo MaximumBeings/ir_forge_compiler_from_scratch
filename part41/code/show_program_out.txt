@@ -1,0 +1,56 @@
+== no options: 34 kernels, 1854 cycles, 129 instructions
+   reduce           (2, 1)   reduce
+   elementwise x1   (2, 3)   broadcast
+   elementwise x1   (2, 3)   sub
+   elementwise x1   (2, 3)   exp
+   reduce           (2, 1)   reduce
+   elementwise x1   (2, 3)   broadcast
+   elementwise x1   (2, 3)   sub
+   elementwise x1   (2, 3)   exp
+   reduce           (2, 1)   reduce
+   elementwise x1   (2, 3)   broadcast
+   elementwise x1   (2, 3)   div
+   elementwise x1   (2, 3)   scalar
+   reduce           (2, 1)   reduce
+   elementwise x1   (2, 3)   broadcast
+   elementwise x1   (2, 3)   sub
+   elementwise x1   (2, 3)   exp
+   reduce           (2, 1)   reduce
+   elementwise x1   (2, 3)   broadcast
+   elementwise x1   (2, 3)   sub
+   elementwise x1   (2, 3)   exp
+   reduce           (2, 1)   reduce
+   elementwise x1   (2, 3)   broadcast
+   elementwise x1   (2, 3)   div
+   reduce           (2, 1)   reduce
+   elementwise x1   (2, 3)   broadcast
+   elementwise x1   (2, 3)   sub
+   elementwise x1   (2, 3)   exp
+   reduce           (2, 1)   reduce
+   elementwise x1   (2, 3)   broadcast
+   elementwise x1   (2, 3)   sub
+   elementwise x1   (2, 3)   exp
+   reduce           (2, 1)   reduce
+   elementwise x1   (2, 3)   broadcast
+   elementwise x1   (2, 3)   div
+== cse + fusion: 13 kernels, 804 cycles, 66 instructions
+   reduce           (2, 1)   reduce
+   elementwise x3   (2, 3)   broadcast sub exp
+   reduce           (2, 1)   reduce
+   elementwise x2   (2, 3)   broadcast div
+   elementwise x1   (2, 3)   scalar
+   reduce           (2, 1)   reduce
+   elementwise x3   (2, 3)   broadcast sub exp
+   reduce           (2, 1)   reduce
+   elementwise x2   (2, 3)   broadcast div
+   reduce           (2, 1)   reduce
+   elementwise x3   (2, 3)   broadcast sub exp
+   reduce           (2, 1)   reduce
+   elementwise x2   (2, 3)   broadcast div
+-- the first fused kernel (broadcast sub exp) is 6 instructions (the 2x3 matrix is one tile):
+    ('load', 0, 'c1_t1', 0, 0)
+    ('load', 1, 't1', 0, 0)
+    ('bcastcol', 2, 0)
+    ('vop', 'sub', 0, 1, 2)
+    ('exp', 2, 0)
+    ('store', 2, 'c1_t4', 0, 0)

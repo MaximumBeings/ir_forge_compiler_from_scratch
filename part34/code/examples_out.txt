@@ -1,0 +1,239 @@
+################ mgc run 01_layer_norm_backward.mg
+  | # Backward through layer normalisation. y = (h - mean(h)) / sigma with sigma = sqrt(variance(h) + 0.00001), for ONE row of four numbers h.
+  | # If the loss is L = sum(d * y) for a fixed upstream gradient d, the derivative of L with respect to h is
+  | #     (d - mean(d) - y * mean(d * y)) / sigma
+  | # (three terms, because every h_i changes the mean, the spread and so every y_j). The first matrix is that formula; the next four are the same
+  | # derivatives found by brute force: nudge one entry of h by 0.01 up and by 0.01 down and watch L change.
+  | def ln_sigma(h: tensor[1x4]) = sqrt(row_mean((h - row_mean(h)) * (h - row_mean(h))) + 0.00001)
+  | def ln_hat(h: tensor[1x4]) = (h - row_mean(h)) / ln_sigma(h)
+  | def loss(h: tensor[1x4], d: tensor[1x4]) = row_sum(d * ln_hat(h))
+  | def backward(h: tensor[1x4], d: tensor[1x4]) = (d - row_mean(d) - ln_hat(h) * row_mean(d * ln_hat(h))) / ln_sigma(h)
+  | let h = [[1, 2, 4, 8]]
+  | let d = [[1, -2, 3, 0.5]]
+  | print backward(h, d)
+  | print (loss(h + [[0.01, 0, 0, 0]], d) - loss(h - [[0.01, 0, 0, 0]], d)) / 0.02
+  | print (loss(h + [[0, 0.01, 0, 0]], d) - loss(h - [[0, 0.01, 0, 0]], d)) / 0.02
+  | print (loss(h + [[0, 0, 0.01, 0]], d) - loss(h - [[0, 0, 0.01, 0]], d)) / 0.02
+  | print (loss(h + [[0, 0, 0, 0.01]], d) - loss(h - [[0, 0, 0, 0.01]], d)) / 0.02
+  | # Two things to see: the formula's four numbers add up to (nearly) zero (adding the same amount to every h changes nothing, so the gradients must cancel),
+  | # and the brute-force numbers agree with the formula to about four digits (the step 0.01 and the six printed digits limit the agreement).
+  | print row_sum(backward(h, d))
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 4] strides = [4, 1] data = 
+[[0.26921,   -0.896826,   0.874121,   -0.246505]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.26921]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[-0.896825]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.87412]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[-0.246506]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0]]
+  ----- exit status 0
+
+################ mgc run 02_relu_backward.mg
+  | # Backward through relu. y = max(0, p). The derivative is 1 where p is positive and 0 where it is negative, so the gradient d passes through where
+  | # p >= 0 and is cut where p < 0: dp = d * ge(p, 0). (ge is the comparison of Chapter 32; [[0]] is a 1x1 matrix, stretched across the row.)
+  | # At p = 0 exactly the true derivative does not exist (a corner); this program, like most training code, passes the gradient there. The brute-force
+  | # estimate at a corner is the average of the two sides, half of d. The second row shows it.
+  | let p = [[-1.5, 0, 2, 3]]
+  | let d = [[1, 2, 3, 4]]
+  | print d * ge(p, [[0]])
+  | print (row_sum(d * relu(p + [[0.01, 0, 0, 0]])) - row_sum(d * relu(p - [[0.01, 0, 0, 0]]))) / 0.02
+  | print (row_sum(d * relu(p + [[0, 0.01, 0, 0]])) - row_sum(d * relu(p - [[0, 0.01, 0, 0]]))) / 0.02
+  | print (row_sum(d * relu(p + [[0, 0, 0.01, 0]])) - row_sum(d * relu(p - [[0, 0, 0.01, 0]]))) / 0.02
+  | print (row_sum(d * relu(p + [[0, 0, 0, 0.01]])) - row_sum(d * relu(p - [[0, 0, 0, 0.01]]))) / 0.02
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 4] strides = [4, 1] data = 
+[[0,   2,   3,   4]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[1]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[3]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[4]]
+  ----- exit status 0
+
+################ mgc run 03_train_attention_only.mg
+  | (2469 lines: the definitions are ffn_lib.py, followed by the data, the unrolled training steps and the prints, written by make_examples.py; see the file)
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.698663]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[25]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.697193]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[25]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.686293]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[34]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.55837]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[41]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.526339]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[34]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.509436]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[38]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.43301]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[46]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.428121]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[46]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.6969]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[23]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[22]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[20]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[27]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [27, 2] strides = [2, 1] data = 
+[[-3.60694,   4.06754], 
+ [-0.0293974,   0.242459], 
+ [-3.58824,   4.05009], 
+ [-0.0293974,   0.242459], 
+ [0.644211,   -0.477758], 
+ [0.275541,   -0.0829202], 
+ [-3.58824,   4.05009], 
+ [0.275541,   -0.0829202], 
+ [-3.5517,   4.01598], 
+ [-0.0293974,   0.242459], 
+ [0.644211,   -0.477758], 
+ [0.275541,   -0.0829202], 
+ [0.644211,   -0.477758], 
+ [0.928892,   -0.782137], 
+ [0.851889,   -0.699427], 
+ [0.275541,   -0.0829202], 
+ [0.851889,   -0.699427], 
+ [0.63632,   -0.467883], 
+ [-3.58824,   4.05009], 
+ [0.275541,   -0.0829202], 
+ [-3.5517,   4.01598], 
+ [0.275541,   -0.0829202], 
+ [0.851889,   -0.699427], 
+ [0.63632,   -0.467883], 
+ [-3.5517,   4.01598], 
+ [0.63632,   -0.467883], 
+ [-3.4484,   3.91956]]
+  ----- exit status 0
+
+################ mgc run 04_train_with_ffn.mg
+  | (6093 lines: the definitions are ffn_lib.py, followed by the data, the unrolled training steps and the prints, written by make_examples.py; see the file)
+  ----- output
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.68508]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[37]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.640907]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[34]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.650084]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[34]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.607979]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[36]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.433422]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[45]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.0022629]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[54]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.000505909]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[54]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.000266119]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[54]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[0.467902]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[26]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[26]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[27]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [1, 1] strides = [1, 1] data = 
+[[27]]
+Unranked Memref base@ = 0x… rank = 2 offset = 0 sizes = [27, 2] strides = [2, 1] data = 
+[[-5.00221,   7.62303], 
+ [-8.30069,   12.5371], 
+ [-2.86046,   4.18645], 
+ [-8.30069,   12.5371], 
+ [-5.55465,   8.33477], 
+ [4.8715,   -7.69331], 
+ [-2.86046,   4.18645], 
+ [4.8715,   -7.69331], 
+ [-2.96705,   4.07273], 
+ [-8.30069,   12.5371], 
+ [-5.55465,   8.33477], 
+ [4.8715,   -7.69331], 
+ [-5.55465,   8.33477], 
+ [-3.75187,   5.65972], 
+ [4.51264,   -7.22861], 
+ [4.8715,   -7.69331], 
+ [4.51264,   -7.22861], 
+ [3.65257,   -6.05333], 
+ [-2.86046,   4.18645], 
+ [4.8715,   -7.69331], 
+ [-2.96705,   4.07273], 
+ [4.8715,   -7.69331], 
+ [4.51264,   -7.22861], 
+ [3.65257,   -6.05333], 
+ [-2.96705,   4.07273], 
+ [3.65257,   -6.05333], 
+ [-3.05999,   3.97357]]
+  ----- exit status 0
+
+################ mgc run errors/e1_scale_of_the_wrong_width.mg
+  | # layer norm's scale is one number per feature: 1 x 4 here. A 1 x 3 scale does not fit, and the compiler says so.
+  | def ln_sigma(h: tensor[1x4]) = sqrt(row_mean((h - row_mean(h)) * (h - row_mean(h))) + 0.00001)
+  | def ln_hat(h: tensor[1x4]) = (h - row_mean(h)) / ln_sigma(h)
+  | def ln_out(h: tensor[1x4], gm: tensor[1x4], bt: tensor[1x4]) = ln_hat(h) * gm + bt
+  | print ln_out([[1, 2, 3, 4]], [[1, 1, 1]], [[0, 0, 0, 0]])
+  ----- output
+errors/e1_scale_of_the_wrong_width.mg:5: error: argument shape 1x3 does not fit parameter 1x4
+  ----- exit status 1
+
+################ mgc run errors/e2_missing_argument.mg
+  | # ln_out takes three arguments (the row, the scale and the shift). Two is an arity error, reported before any code exists.
+  | def ln_sigma(h: tensor[1x4]) = sqrt(row_mean((h - row_mean(h)) * (h - row_mean(h))) + 0.00001)
+  | def ln_hat(h: tensor[1x4]) = (h - row_mean(h)) / ln_sigma(h)
+  | def ln_out(h: tensor[1x4], gm: tensor[1x4], bt: tensor[1x4]) = ln_hat(h) * gm + bt
+  | print ln_out([[1, 2, 3, 4]], [[1, 1, 1, 1]])
+  ----- output
+errors/e2_missing_argument.mg:5: error: ln_out takes 3 arguments, got 2
+  ----- exit status 1
+
+################ mgc run errors/e3_residual_shapes_differ.mg
+  | # A residual connection adds a sublayer's output to its input, so the shapes must agree. A 54 x 8 hidden layer cannot be added to a 54 x 4 input.
+  | let x = [[1, 2, 3, 4], [5, 6, 7, 8]]
+  | let hidden = [[1, 2, 3, 4, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7, 8]]
+  | print x + hidden
+  ----- output
+errors/e3_residual_shapes_differ.mg:4: error: cannot add shapes 2x4 and 2x8: dimensions 4 and 8 differ and neither is 1
+  ----- exit status 1
+

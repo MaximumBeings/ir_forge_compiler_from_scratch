@@ -21,7 +21,7 @@
 
 ## What an outlined call costs: exact instructions
 
-`valgrind --tool=callgrind` counts every instruction an executable runs, and the count does not change from run to run. Each program is built twice (loops lowered last to first; with and without `--outline`) and run under it. "Calls" is the number of calls to outlined functions in the program (its `main` is straight-line, so each runs once):
+`valgrind --tool=callgrind` counts every instruction an executable runs, and the count is repeatable on one setup. (It is not identical between setups: the same program counted 488,922,861 instructions when I ran it from my shell and 488,823,421 under the test suite, 0.02% apart, because the dynamic loader's work depends on the environment. That is why the checker prints rounded figures.) Each program is built twice (loops lowered last to first; with and without `--outline`) and run under it. "Calls" is the number of calls to outlined functions in the program (its `main` is straight-line, so each runs once):
 
 ```text
 --8<-- "docs/part43/code/count_instructions_out.txt"

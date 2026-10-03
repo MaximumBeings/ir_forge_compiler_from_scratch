@@ -1,6 +1,6 @@
 # 44. Fast-Math Flags from the Compiler: What Reordering Is Allowed to Buy, and What It Did
 
-![Mountain goats on the mountain at sunset](../assets/goats/ch-44.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
+![Mountain goats in space helmets on Mars](../assets/goats/ch-44.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
 
 **What you will understand:** how a compiler can give LLVM permission to reorder floating-point arithmetic **one operation at a time**, why that is different from `-ffast-math`, and how to find out what the permission is worth. Chapter 37 showed that LLVM's vectorizer refuses to vectorize the dot-product loop of a matrix product (a floating-point sum) unless it is told the order of additions does not matter, and showed the permission as a `sed` experiment on the IR. This chapter makes the compiler do it: a small pass, `--mg-set-fastmath`, puts the `reassoc` and `contract` flags on the floating-point operations of a program, and `mgc --fast-math` runs it. Then it measures the result honestly: the flags change what the vectorizer decides and (with a fused multiply-add on the machine) the last bits of results, make one loop order 17% to 24% faster in a way that reproduced, and made no reproducible difference elsewhere. A negative control shows why one more flag, `nnan`, is deliberately **not** in the default: it turns a right answer into a wrong one.
 

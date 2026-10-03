@@ -1,6 +1,6 @@
 # 8. A Standalone Native Executable: Mountain Goat Without MLIR At Runtime
 
-![Mountain goats on the mountain at midday](../assets/goats/ch-08.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
+![Mountain goats in space helmets on a moon of Saturn](../assets/goats/ch-08.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
 
 **What you will understand:** how to take a real Mountain Goat program all the way to a genuine, standalone native executable -- one that runs with no MLIR library, no JIT, no `mlir-cpu-runner-18`, present at all -- generalizing Chapter 1's own exact technique (`mlir-translate-18` + `clang-18` + a hand-written C harness) to a program this book's own tooling actually produced, for the first time.
 

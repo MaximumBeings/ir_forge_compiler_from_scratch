@@ -35,7 +35,7 @@ def height(pts, x):
         if x0 <= x <= x1: return y0 + (y1 - y0) * (x - x0) / max(x1 - x0, 1e-9)
     return pts[-1][1]
 def poly(pts, close_y=H + 5): return "M" + " L".join(f"{x:.0f},{y:.0f}" for x, y in pts) + f" L{W + 20},{close_y} L-20,{close_y} Z"
-def goat(x, y, s, flip, pose, c, kid=False):
+def goat(x, y, s, flip, pose, c, kid=False, helmet=False):
     """one goat standing with its feet at (x, y); faces right unless flip; pose in stand graze look walk leap rest."""
     L = c["line"]; lw = 1.7 / s; bodyy = -38; dy = 0; rot = 0; head = 0
     legs = {"stand": [(-18, 0), (-10, 0), (14, 0), (22, 0)], "graze": [(-18, 0), (-10, 0), (14, 0), (22, 0)], "look": [(-18, 0), (-10, 0), (14, 0), (22, 0)],
@@ -64,7 +64,8 @@ def goat(x, y, s, flip, pose, c, kid=False):
           f'<polygon points="-4,-4 -16,-8 -6,4" fill="{c["goat2"]}" stroke="{L}" stroke-width="{lw:.2f}"/>'
           f'<polygon points="-2,-8 22,-10 34,2 28,12 8,12 -4,6" fill="{c["goat"]}" stroke="{L}" stroke-width="{lw:.2f}" stroke-linejoin="round"/>'
           f'<polygon points="22,12 28,12 24,30 16,14" fill="{c["goat2"]}" stroke="{L}" stroke-width="{lw:.2f}" stroke-linejoin="round"/>'
-          f'<circle cx="14" cy="-1" r="2" fill="{L}"/><circle cx="32" cy="3" r="1.8" fill="{L}"/></g>')
+          f'<circle cx="14" cy="-1" r="2" fill="{L}"/><circle cx="32" cy="3" r="1.8" fill="{L}"/>'
+          + (f'<circle cx="17" cy="0" r="30" fill="#cfe9ff" fill-opacity=".22" stroke="#e8f4ff" stroke-width="{2.4 / s:.2f}"/><path d="M-3,-14 A24,24 0 0 1 16,-24" fill="none" stroke="#ffffff" stroke-width="{2.6 / s:.2f}" stroke-linecap="round" opacity=".85"/>' if helmet else "") + '</g>')
     parts += [neck, hd]
     sy = s * (0.62 if kid else 1.0)
     return f'<g transform="translate({x:.0f} {y:.0f}) rotate({rot if not flip else -rot}) scale({-sy if flip else sy} {sy})">' + "".join(parts) + "</g>"
@@ -125,16 +126,73 @@ def scene(n, theme, title, desc=None):
         for gy in range(0, H + 1, 40): o.append(f'<line x1="0" y1="{gy}" x2="{W}" y2="{gy}" stroke="#ffffff" stroke-width=".4" opacity=".25"/>')
     o.append("</svg>")
     return "\n".join(o)
+
+SPACE = {
+ "moon":    dict(far="#9b9b9b", mid="#7a7a7a", near="#5a5a5a", ground="#454545", shade="#2c2c2c", sky=("#000000", "#06070d"), where="on the Moon"),
+ "saturn":  dict(far="#c9b88f", mid="#a89870", near="#8a7a58", ground="#6e6046", shade="#4c4230", sky=("#000000", "#0a0a14"), where="on a moon of Saturn"),
+ "mars":    dict(far="#c98a6a", mid="#a8654a", near="#864a35", ground="#6a3a2a", shade="#4a281c", sky=("#d9a37a", "#f2d2a8"), where="on Mars"),
+ "pluto":   dict(far="#9c8478", mid="#7e665c", near="#5e4a42", ground="#4a3a34", shade="#2e231f", sky=("#000000", "#0b0a12"), where="on Pluto"),
+ "europa":  dict(far="#cfdcea", mid="#a9bdd2", near="#8aa2bd", ground="#6f87a3", shade="#4e647c", sky=("#000000", "#080a12"), where="on Europa, a moon of Jupiter"),
+}
+def planet(kind, rng, c):
+    o = []
+    if kind == "moon":      # Earth
+        cx, cy, r = rng.randint(520, 700), rng.randint(70, 110), rng.randint(42, 58)
+        o.append(f'<clipPath id="pl"><circle cx="{cx}" cy="{cy}" r="{r}"/></clipPath><circle cx="{cx}" cy="{cy}" r="{r}" fill="#2f6fc4"/>')
+        o.append(f'<g clip-path="url(#pl)"><ellipse cx="{cx - 15}" cy="{cy - 8}" rx="{r * .4:.0f}" ry="{r * .32:.0f}" fill="#4e9a4e"/><ellipse cx="{cx + 20}" cy="{cy + 14}" rx="{r * .3:.0f}" ry="{r * .22:.0f}" fill="#5aa35a"/><ellipse cx="{cx + 6}" cy="{cy - 22}" rx="{r * .5:.0f}" ry="5" fill="#ffffff" opacity=".75"/><ellipse cx="{cx - 20}" cy="{cy + 20}" rx="{r * .4:.0f}" ry="4" fill="#ffffff" opacity=".7"/><circle cx="{cx + r * .45:.0f}" cy="{cy + r * .3:.0f}" r="{r * 1.05:.0f}" fill="#000" opacity=".4"/></g>')
+    elif kind == "mars":    # Phobos and a small sun
+        o.append('<circle cx="640" cy="60" r="12" fill="#fff4d6" opacity=".95"/><circle cx="640" cy="60" r="26" fill="#fff4d6" opacity=".25"/><ellipse cx="170" cy="70" rx="16" ry="11" fill="#8a7a6e"/>')
+    elif kind in ("saturn", "pluto", "europa"):
+        cx, cy, r = rng.randint(480, 680), rng.randint(80, 120), {"saturn": 54, "pluto": 34, "europa": 62}[kind]
+        if kind == "saturn":
+            o.append(f'<ellipse cx="{cx}" cy="{cy}" rx="{r * 2.1:.0f}" ry="{r * .55:.0f}" fill="none" stroke="#d8c48e" stroke-width="9" opacity=".9" transform="rotate(-18 {cx} {cy})"/><ellipse cx="{cx}" cy="{cy}" rx="{r * 1.75:.0f}" ry="{r * .46:.0f}" fill="none" stroke="#b79f69" stroke-width="5" opacity=".9" transform="rotate(-18 {cx} {cy})"/>')
+            o.append(f'<clipPath id="pl"><circle cx="{cx}" cy="{cy}" r="{r}"/></clipPath><circle cx="{cx}" cy="{cy}" r="{r}" fill="#e3cf98"/><g clip-path="url(#pl)">' + "".join(f'<rect x="{cx - r}" y="{cy - r + k * r / 3.5:.0f}" width="{2 * r}" height="{r / 7:.0f}" fill="{col}" opacity=".7"/>' for k, col in enumerate(["#c9aa6c", "#efdcae", "#bf9c5c", "#e8d3a0", "#c4a468", "#e3cf98", "#b99655"])) + '</g>')
+        elif kind == "pluto":   # Charon big and grey, a tiny sun
+            o.append(f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="#8f8a85"/><circle cx="{cx - 8}" cy="{cy - 6}" r="9" fill="#6e6a66"/><circle cx="{cx + 12}" cy="{cy + 10}" r="6" fill="#77736f"/><circle cx="{cx - r + 10}" cy="{cy - r + 8}" r="3" fill="#fff4d6"/><circle cx="130" cy="50" r="5" fill="#fff4d6"/><circle cx="130" cy="50" r="11" fill="#fff4d6" opacity=".25"/>')
+        else:                   # Jupiter over Europa
+            o.append(f'<clipPath id="pl"><circle cx="{cx}" cy="{cy}" r="{r}"/></clipPath><circle cx="{cx}" cy="{cy}" r="{r}" fill="#e9c79a"/><g clip-path="url(#pl)">' + "".join(f'<rect x="{cx - r}" y="{cy - r + k * r / 3.2:.0f}" width="{2 * r}" height="{r / 6:.0f}" fill="{col}" opacity=".75"/>' for k, col in enumerate(["#b5703f", "#f3e1c0", "#c98450", "#efd6ad", "#a65f33", "#f0dcb8", "#c47a4a", "#e6c797"])) + f'<ellipse cx="{cx + r * .3:.0f}" cy="{cy + r * .25:.0f}" rx="{r * .22:.0f}" ry="{r * .13:.0f}" fill="#b8472f"/></g>')
+    return "".join(o)
+def space_scene(n, body, title):
+    rng = random.Random(5000 + n * 7919); P = SPACE[body]; o = []
+    c = dict(PAL["bw"]); c.update(goat="#ffffff", goat2="#d9dde6", line="#12151c", ground=P["ground"], shade=P["shade"])
+    o.append(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" role="img" aria-labelledby="t{n}"><title id="t{n}">{title}</title>')
+    o.append(f'<defs><linearGradient id="g{n}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="{P["sky"][0]}"/><stop offset="1" stop-color="{P["sky"][1]}"/></linearGradient></defs><rect width="{W}" height="{H}" fill="url(#g{n})"/>')
+    if body != "mars":
+        for _ in range(110): o.append(f'<circle cx="{rng.randint(3, W - 3)}" cy="{rng.randint(3, 190)}" r="{rng.choice([0.7, 0.9, 1.2, 1.7])}" fill="#ffffff" opacity="{rng.uniform(.4, 1):.2f}"/>')
+    o.append(planet(body, rng, P))
+    far = ridge(rng, 185, 60, rough=.6); mid = ridge(rng, 215, 45, rough=.55); near = ridge(rng, 240, 30, rough=.5)
+    for pts, col in ((far, P["far"]), (mid, P["mid"]), (near, P["near"])): o.append(f'<path d="{poly(pts)}" fill="{col}"/>')
+    ground = ridge(rng, 262, 10, n=5); o.append(f'<path d="{poly(ground)}" fill="{P["ground"]}"/>')
+    for _ in range(9):      # craters on the foreground
+        x, y = rng.randint(20, W - 20), rng.randint(272, 294); rx = rng.randint(16, 46)
+        o.append(f'<ellipse cx="{x}" cy="{y}" rx="{rx}" ry="{rx // 5 + 2}" fill="{P["shade"]}" opacity=".75"/><ellipse cx="{x - 3}" cy="{y - 2}" rx="{rx - 5}" ry="{max(rx // 5 - 1, 1)}" fill="{P["ground"]}"/>')
+    if body == "pluto": o.append('<path d="M340,282 C320,262 360,256 372,270 C384,256 424,262 404,282 C392,294 380,296 372,300 C362,296 350,294 340,282 Z" fill="#e9dccf" opacity=".85"/>')
+    if body == "europa":
+        for _ in range(7): x = rng.randint(0, W); o.append(f'<polyline points="{x},262 {x + rng.randint(-60, 60)},{rng.randint(272, 280)} {x + rng.randint(-120, 120)},{H}" fill="none" stroke="#5b4a3a" stroke-width="1.4" opacity=".6"/>')
+    k = rng.choice([1, 2, 2, 3]); xs = []
+    for x in rng.sample(range(90, W - 90, 10), 60):
+        if all(abs(x - p) >= 150 for p in xs) and len(xs) < k: xs.append(x)
+    xs.sort(); big = rng.uniform(1.15, 1.4); poses = ["stand", "look", "walk", "leap", "rest", "graze"]
+    for i, x in enumerate(xs):
+        y = height(ground, x) + 6; kid = i > 0 and rng.random() < .4; pose = poses[(n + i * 2 + rng.randint(0, 5)) % 6]
+        o.append(f'<ellipse cx="{x}" cy="{y + 2:.0f}" rx="38" ry="6" fill="#000" opacity=".5"/>')
+        o.append(goat(x, y, big * (0.85 if i else 1), rng.random() < .5, "stand" if kid and pose == "leap" else pose, c, kid, helmet=True))
+    o.append("</svg>")
+    return "\n".join(o)
+
 # one entry per picture: (file, theme, alt text)
 THEMES = ["dawn", "noon", "sunset", "night", "storm", "autumn", "spring", "bw", "winter", "desert", "sepia", "inkdark", "blueprint"]
 def pick(n): return THEMES[(n * 5 + n // 13) % len(THEMES)] if n else "noon"
+SPACE_PAGES = {"ch-04": "moon", "ch-08": "saturn", "ch-13": "mars", "ch-17": "pluto", "ch-21": "europa", "ch-25": "moon", "ch-29": "saturn", "ch-33": "mars", "ch-37": "europa", "ch-40": "moon", "ch-41": "pluto", "ch-42": "saturn", "ch-44": "mars", "ch-45": "europa", "tour": "moon"}
 PAGES = [(f"ch-{n:02d}", pick(n)) for n in range(1, 46)] + [("tour", "spring"), ("background", "sepia"), ("start", "dawn")]
 if __name__ == "__main__":
     for i, (name, theme) in enumerate(PAGES, start=1):
         n = i if not name.startswith("ch-") else int(name[3:])
         if not name.startswith("ch-"): n = 100 + i
         text = {"night": "at night", "storm": "in a storm", "winter": "in winter snow", "blueprint": "drawn as a blueprint", "bw": "in black and white", "inkdark": "in black and white at dusk", "sepia": "in sepia", "dawn": "at dawn", "noon": "at midday", "sunset": "at sunset", "autumn": "in autumn", "spring": "in spring", "desert": "above a desert"}[theme]
-        svg = scene(n, theme, f"Mountain goats on the mountain {text}")
+        if name in SPACE_PAGES:
+            body = SPACE_PAGES[name]; svg = space_scene(n, body, f"Mountain goats in space helmets {SPACE[body]['where']}")
+        else: svg = scene(n, theme, f"Mountain goats on the mountain {text}")
         if name == "start":      # Getting Started gets its own picture: a trail signpost at the foot of the climb
             c = PAL[theme]; post = (f'<g transform="translate(690 258)"><rect x="-3" y="-70" width="6" height="70" fill="#6b4a2f"/><polygon points="-4,-68 40,-68 52,-60 40,-52 -4,-52" fill="#c89a62" stroke="#4a3320" stroke-width="1.5"/>'
                                     f'<polygon points="4,-46 -38,-46 -50,-38 -38,-30 4,-30" fill="#d8b07a" stroke="#4a3320" stroke-width="1.5"/><text x="2" y="-56" font-family="sans-serif" font-size="9" font-weight="bold" fill="#3a2515" text-anchor="middle">START</text>'

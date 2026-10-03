@@ -1,6 +1,6 @@
 # 4. Progressive Lowering: Mountain Goat to `affine`, Two Real Ways
 
-![Mountain goats on the mountain in black and white](../assets/goats/ch-04.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
+![Mountain goats in space helmets on the Moon](../assets/goats/ch-04.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
 
 **What you will understand:** how a tensor-based toy op genuinely becomes a real loop nest over real memory -- the concrete, code-level answer to the value-semantics-to-buffer-semantics gap every real MLIR pipeline that uses `tensor` types up high and `affine`/`memref` down low has to cross somewhere. This chapter crosses it twice: once by hand, fully understood step by step, and once by reaching for MLIR's own real, built-in production machinery -- and shows, honestly, exactly where the second attempt stops short.
 

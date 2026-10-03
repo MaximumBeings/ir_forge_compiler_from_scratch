@@ -1,6 +1,6 @@
 # 41. Compiling Mountain Goat to GA-1: Fusion, Tiling and Why Decoding Is Memory-Bound
 
-![Mountain goats on the mountain at dawn](../assets/goats/ch-41.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
+![Mountain goats in space helmets on Pluto](../assets/goats/ch-41.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
 
 **What you will understand:** what it takes to send real Mountain Goat programs, including a transformer block, to Chapter 40's model accelerator, and what the compiler's decisions are worth there. The back end reads the same `mg` dialect text that `mgc mlir` writes for the CPU path, and produces a GA-1 program: a matmul becomes Chapter 40's blocked schedule (block shape chosen by comparing the analytic model), a run of elementwise operations becomes one **fused** kernel that keeps its intermediates in the scratchpad, and reductions and transposes become tile loops. Every program it accepts is run on the simulator and its printed matrices are compared with `mgc run`'s. Then the chapter measures three things on GA-1: what common-subexpression elimination, fusion and double buffering are each worth; where a transformer block spends its time; and why running one token at a time (decode) leaves the matrix unit nearly idle while many tokens at once (prefill) do not.
 

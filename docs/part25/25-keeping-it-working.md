@@ -1,6 +1,6 @@
 # 25. Keeping It Working: Continuous Integration and the Tests the Early Chapters Never Had
 
-![Mountain goats on the mountain above a desert](../assets/goats/ch-25.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
+![Mountain goats in space helmets on the Moon](../assets/goats/ch-25.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
 
 **What you will understand:** what "continuous integration" is, how to build a small one for this book (a script plus a workflow file), how to check that it fails when it should, and why the honest description of a CI setup says what has actually run it and what has not. Along the way this chapter fills a gap listed since Chapter 15: Chapters 1, 2 and 9 had never had automated tests.
 

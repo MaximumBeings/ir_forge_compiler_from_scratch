@@ -134,5 +134,11 @@ if __name__ == "__main__":
         n = i if not name.startswith("ch-") else int(name[3:])
         if not name.startswith("ch-"): n = 100 + i
         text = {"night": "at night", "storm": "in a storm", "winter": "in winter snow", "blueprint": "drawn as a blueprint", "bw": "in black and white", "inkdark": "in black and white at dusk", "sepia": "in sepia", "dawn": "at dawn", "noon": "at midday", "sunset": "at sunset", "autumn": "in autumn", "spring": "in spring", "desert": "above a desert"}[theme]
-        open(os.path.join(here, name + ".svg"), "w").write(scene(n, theme, f"Mountain goats on the mountain {text}") + "\n")
+        svg = scene(n, theme, f"Mountain goats on the mountain {text}")
+        if name == "start":      # Getting Started gets its own picture: a trail signpost at the foot of the climb
+            c = PAL[theme]; post = (f'<g transform="translate(690 258)"><rect x="-3" y="-70" width="6" height="70" fill="#6b4a2f"/><polygon points="-4,-68 40,-68 52,-60 40,-52 -4,-52" fill="#c89a62" stroke="#4a3320" stroke-width="1.5"/>'
+                                    f'<polygon points="4,-46 -38,-46 -50,-38 -38,-30 4,-30" fill="#d8b07a" stroke="#4a3320" stroke-width="1.5"/><text x="2" y="-56" font-family="sans-serif" font-size="9" font-weight="bold" fill="#3a2515" text-anchor="middle">START</text>'
+                                    f'<text x="-22" y="-35" font-family="sans-serif" font-size="8" fill="#3a2515" text-anchor="middle">SUMMIT</text></g>')
+            svg = svg.replace("</svg>", post + "</svg>").replace("Mountain goats on the mountain at dawn", "Mountain goats and a trail signpost marked START at the foot of the climb, at dawn")
+        open(os.path.join(here, name + ".svg"), "w").write(svg + "\n")
     print("wrote", len(PAGES), "pictures")

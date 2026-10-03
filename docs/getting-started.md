@@ -69,6 +69,7 @@ Each chapter's page starts with a "Compile and run" box (Chapters 1 to 9, 20 and
 | 38 | `part38/code/build.sh` | adds the `--mg-outline-loops` pass (`mgc --outline`); the newest compiler, which `run_lit.sh` and CI use; `part38/code/mgc` is the driver |
 | 39 | `part38/code/build.sh` | adds nothing to the compiler; `part39/code` has the profiling scripts, which need `valgrind` |
 | 40 | none | plain Python 3: the GA-1 simulator in `part40/code` needs no compiler |
+| 41 | `part38/code/build.sh` | adds nothing to the compiler; `part41/code` is a Python back end that reads `mgc mlir` text and runs on Chapter 40's simulator |
 | the test suite (`part15/code/run_lit.sh`) | any build; it picks the newest that exists | the newest build runs every test |
 
 Every build needs `cmake`, `make`, `llvm-18-dev`, `libmlir-18-dev` and `mlir-18-tools` (see above), and takes a few minutes the first time. Every `run.sh` and `demo.sh` writes its intermediate files under `./work/` or `./show/`, which are git-ignored.

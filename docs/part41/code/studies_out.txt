@@ -1,0 +1,29 @@
+STUDY 1. compiler options (32 tile slots). cycles for each combination; every program matches the CPU result
+program                                              nothing                     + cse            + cse + fusion  + cse + double buffering                 all three
+part29 04_softmax_stable                    1854                      1194 (1.55x)             804 (2.31x)            1194 (1.55x)             804 (2.31x)  
+part29 08_self_attention_block              1214                       994 (1.22x)             864 (1.41x)             994 (1.22x)             864 (1.41x)  
+part30 03_tiny_transformer                 12995                      9715 (1.34x)            6595 (1.97x)            9715 (1.34x)            6595 (1.97x)  
+block 8 tokens x 16                         7484                      5809 (1.29x)            3794 (1.97x)            5419 (1.38x)            3564 (2.10x)  
+block 32 tokens x 32                       60336                     46604 (1.29x)           29724 (2.03x)           41408 (1.46x)           26078 (2.31x)  
+
+STUDY 2. one feed-forward network, relu(x @ w1 + b1) @ w2 + b2, width 64 -> 256 -> 64, for T tokens at once (64 tile slots, all options on)
+tokens    cycles  cycles/token  useful MXU  DMA busy  weight tiles moved
+     1     14400         14400       3.6%      100%                 720
+     2     14400          7200       7.1%      100%                 720
+     4     14400          3600      14.2%      100%                 720
+     8     14400          1800      28.4%      100%                 720
+    16     18880          1180      43.4%      100%                 944
+    32     28904           903      56.7%       97%                1408
+    64     57808           903      56.7%       97%                2816
+
+STUDY 3. one transformer block, 64 tokens, width 64, feed-forward 128 (32 tile slots, all options on): the kernels, in program order
+total 127006 cycles; useful MXU utilization 32%; DMA busy 100%, MXU busy 32%, VPU busy 14%
+kernel kind    count  DMA busy  MXU busy  VPU busy  sum of spans
+matmul             8     62720     40960       576         63765
+elementwise       14     52480         0     12480         52510
+reduce             6      8640         0      4608          9216
+transpose          1      2560         0       320          2560
+
+real	0m49.517s
+user	0m44.102s
+sys	0m4.740s

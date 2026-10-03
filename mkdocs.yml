@@ -110,6 +110,7 @@ nav:
       - "30. A Small Transformer": part30/30-a-small-transformer.md
       - "31. Training a Language Model: Gradient Descent on a Bigram": part31/31-training-a-bigram-model.md
       - "32. Does It Generalize? Held-Out Data, Overfitting and Weight Decay": part32/32-does-it-generalize.md
+      - "33. Backpropagation Through Attention: Training a One-Head Classifier": part33/33-backpropagation-through-attention.md
 
 extra:
   social: []

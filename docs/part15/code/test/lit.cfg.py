@@ -38,6 +38,12 @@ config.substitutions += [
 ]
 # The language tour (docs/tour): its examples are run in place, like the chapters' examples.
 config.substitutions += [("%tour", os.path.join(config.test_source_root, "..", "..", "..", "tour", "code"))]
+# Chapter 33: an attention classifier trained by hand-derived backpropagation. No new compiler operation: the examples run with Chapter 32's driver ('%mgc32').
+ch33 = os.path.join(config.test_source_root, "..", "..", "..", "part33", "code")
+config.substitutions += [
+    ("%ex33", os.path.join(ch33, "examples")),
+    ("%ch33", ch33),
+]
 # Chapter 32: held-out data, weight decay and greedy generation ('%mgc32' etc. must come before the shorter '%mgc').
 ch32 = os.path.join(config.test_source_root, "..", "..", "..", "part32", "code")
 config.substitutions += [

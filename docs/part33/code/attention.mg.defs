@@ -1,0 +1,20 @@
+# One-head attention classifier. A sequence of 4 tokens (one-hot rows) goes in; the label is the token present that ranks first in a hidden priority list.
+# B sequences are stacked: x has B*4 rows (the tokens of sequence 0, then sequence 1, ...) and g (B x B*4) adds up the 4 rows belonging to each sequence.
+# q (1x3) is the learned query; wk, wv (5x3) turn a token into its key and value; wo (3x5) turns the attended value into scores for the 5 possible labels.
+# (The same functions exist again with the suffix _te for the 40 held-out sequences and _ex for chunks of 25 sequences; only the sizes differ.)
+
+def softmax_rows(m: tensor[24x4]) = exp(m - row_max(m)) / row_sum(exp(m - row_max(m)))
+def attn_matrix(x: tensor[96x5], q: tensor[1x3], wk: tensor[5x3]) = softmax_rows(reshape((x @ wk) @ transpose(q) * 0.5773502691896258, 24, 4))
+def context(x: tensor[96x5], g: tensor[24x96], q: tensor[1x3], wk: tensor[5x3], wv: tensor[5x3]) = g @ ((x @ wv) * reshape(attn_matrix(x, q, wk), 96, 1))
+def logits(x: tensor[96x5], g: tensor[24x96], q: tensor[1x3], wk: tensor[5x3], wv: tensor[5x3], wo: tensor[3x5]) = context(x, g, q, wk, wv) @ wo
+def log_softmax(z: tensor[24x5]) = z - row_max(z) - log(row_sum(exp(z - row_max(z))))
+def loss(x: tensor[96x5], g: tensor[24x96], q: tensor[1x3], wk: tensor[5x3], wv: tensor[5x3], wo: tensor[3x5], y: tensor[24x5]) = col_sum(row_sum(y * log_softmax(logits(x, g, q, wk, wv, wo)))) * -0.041666666666666664
+def correct(x: tensor[96x5], g: tensor[24x96], q: tensor[1x3], wk: tensor[5x3], wv: tensor[5x3], wo: tensor[3x5], y: tensor[24x5]) = col_sum(row_sum(ge(logits(x, g, q, wk, wv, wo), row_max(logits(x, g, q, wk, wv, wo))) * y))
+def d_logits(x: tensor[96x5], g: tensor[24x96], q: tensor[1x3], wk: tensor[5x3], wv: tensor[5x3], wo: tensor[3x5], y: tensor[24x5]) = (exp(log_softmax(logits(x, g, q, wk, wv, wo))) - y) * 0.041666666666666664
+def grad_wo(x: tensor[96x5], g: tensor[24x96], q: tensor[1x3], wk: tensor[5x3], wv: tensor[5x3], wo: tensor[3x5], y: tensor[24x5]) = transpose(context(x, g, q, wk, wv)) @ d_logits(x, g, q, wk, wv, wo, y)
+def d_context_rows(x: tensor[96x5], g: tensor[24x96], q: tensor[1x3], wk: tensor[5x3], wv: tensor[5x3], wo: tensor[3x5], y: tensor[24x5]) = transpose(g) @ (d_logits(x, g, q, wk, wv, wo, y) @ transpose(wo))
+def grad_wv(x: tensor[96x5], g: tensor[24x96], q: tensor[1x3], wk: tensor[5x3], wv: tensor[5x3], wo: tensor[3x5], y: tensor[24x5]) = transpose(x) @ (d_context_rows(x, g, q, wk, wv, wo, y) * reshape(attn_matrix(x, q, wk), 96, 1))
+def d_attn_matrix(x: tensor[96x5], g: tensor[24x96], q: tensor[1x3], wk: tensor[5x3], wv: tensor[5x3], wo: tensor[3x5], y: tensor[24x5]) = reshape(row_sum(d_context_rows(x, g, q, wk, wv, wo, y) * (x @ wv)), 24, 4)
+def d_scores(x: tensor[96x5], g: tensor[24x96], q: tensor[1x3], wk: tensor[5x3], wv: tensor[5x3], wo: tensor[3x5], y: tensor[24x5]) = reshape(attn_matrix(x, q, wk) * (d_attn_matrix(x, g, q, wk, wv, wo, y) - row_sum(attn_matrix(x, q, wk) * d_attn_matrix(x, g, q, wk, wv, wo, y))), 96, 1)
+def grad_q(x: tensor[96x5], g: tensor[24x96], q: tensor[1x3], wk: tensor[5x3], wv: tensor[5x3], wo: tensor[3x5], y: tensor[24x5]) = transpose(d_scores(x, g, q, wk, wv, wo, y)) @ (x @ wk) * 0.5773502691896258
+def grad_wk(x: tensor[96x5], g: tensor[24x96], q: tensor[1x3], wk: tensor[5x3], wv: tensor[5x3], wo: tensor[3x5], y: tensor[24x5]) = transpose(x) @ (d_scores(x, g, q, wk, wv, wo, y) @ q) * 0.5773502691896258

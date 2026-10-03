@@ -1,0 +1,34 @@
+-- the hand-derived backward pass against the independent per-token gradient, and against finite differences
+  ok   starting weights #1: the loss and all four gradients equal the reference
+  ok   starting weights #1: all 48 gradient entries agree with finite differences (largest difference 3.6e-04)
+  ok   starting weights #2: the loss and all four gradients equal the reference
+  ok   starting weights #2: all 48 gradient entries agree with finite differences (largest difference 4.7e-04)
+  ok   starting weights #3: the loss and all four gradients equal the reference
+  ok   starting weights #3: all 48 gradient entries agree with finite differences (largest difference 3.9e-04)
+-- training against the independent Python trainer
+  ok   step 0: loss 1.601341 and 0 of 24 correct equal the reference
+  ok   step 1: loss 1.513557 and 18 of 24 correct equal the reference
+  ok   step 5: loss 0.625597 and 21 of 24 correct equal the reference
+  ok   step 10: loss 0.273815 and 21 of 24 correct equal the reference
+  ok   step 25: loss 0.090366 and 24 of 24 correct equal the reference
+  ok   step 50: loss 0.009821 and 24 of 24 correct equal the reference
+  ok   step 100: loss 0.001681 and 24 of 24 correct equal the reference
+  ok   step 200: loss 0.000522 and 24 of 24 correct equal the reference
+  ok   the final weights equal the reference
+  ok   each token's attention score equals the reference
+  ok   the attention weights on the 24 training sequences equal the reference
+  ok   every row of attention weights sums to 1
+-- learning
+  ok   the loss falls at every checkpoint
+  ok   from 1.6013 (about log 5 = 1.609) to 0.000522
+  ok   all 24 training sequences are classified correctly
+  ok   all 40 held-out sequences are classified correctly (loss 0.000606)
+-- every one of the 625 possible sequences
+  ok   the number correct in each of the 25 chunks of 25 equals the reference's
+  ok   624 of 625 sequences are classified correctly (got 624)
+  ok   the one wrong sequence is 4 4 4 4 (label 4, predicted 0): the last row of the last chunk
+  ok   label 4 never occurs among the 64 training and held-out sequences (labels seen: [0, 1, 2, 3])
+-- attention scores
+  ok   the three highest-scoring tokens [1, 3, 2] are the three highest in the priority list [1, 3, 2], in order
+  ok   the last two are in the opposite order to the priority rule: scores order [1, 3, 2, 4, 0] vs rule [1, 3, 2, 0, 4] (this model did not learn to rank 0 above 4)
+all checks pass

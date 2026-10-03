@@ -13,8 +13,9 @@
     ./remarks.sh > remarks_out.txt                    # the loop vectorizer's decisions and reasons
     ./ops_table.sh > ops_table_out.txt                # which of Mountain Goat's operations vectorize (instruction counts)
     ./mca.py > mca_out.txt; ./mca.py --loops > loops_out.txt   # llvm-mca's prediction, and the assembly of the two inner loops
+    ./cpu_dependence.py > cpu_dependence_out.txt      # the same IR compiled for four different CPUs (compile only)
     ./variants.sh > variants_out.txt; ./summarize_variants.py > variants_summary.txt   # the measurement: 3 passes of the Chapter 24 benchmark (about 2 minutes)
-    ./check_llvm.py > check_llvm_out.txt              # every claim on this page, tested (about 3 seconds)
+    ./check_llvm.py > check_llvm_out.txt              # every claim on this page, tested for the pinned CPU (about 3 seconds)
     ./claims_mutation.py > claims_mutation_out.txt    # six WRONG inputs the checker must catch (about 20 seconds)
     cd ../../part15/code && ./run_lit.sh              # the whole test suite
     ```
@@ -76,11 +77,11 @@ The 64 × 64 matrix product (`02_matmul64.mg`) has the same pieces plus a second
 --8<-- "docs/part37/code/remarks_out.txt"
 ```
 
-For the default `ijk` order the vectorizer says, with and without `-march=native`:
+For the default `ijk` order the vectorizer says, with and without `-march=sapphirerapids` (the CPU of the machine these pages were produced on; the scripts pin it, see "Is this specific to one CPU?" below):
 
 > loop not vectorized: cannot prove it is safe to reorder floating-point operations
 
-For `ikj` it says `vectorized loop` (width 2 on plain x86-64, which has 128-bit SSE2 registers; width 4 with `-march=native`, which allows 256-bit AVX registers on this machine).
+For `ikj` it says `vectorized loop` (width 2 on plain x86-64, which has 128-bit SSE2 registers; width 4 with `-march=sapphirerapids`, which allows 256-bit AVX registers).
 
 **Why.** The `ijk` inner loop is a *reduction*: `sum = sum + a[i][k] * b[k][j]`. A vectorized version adds four partial sums and combines them at the end, which adds the numbers in a different order, and floating-point addition is **not associative**: `(a + b) + c` can differ from `a + (b + c)`. LLVM must produce exactly what the program says unless it is told reordering is allowed. The `ikj` loop has no reduction: each iteration `c[i][j] += x * b[k][j]` updates a different element, so the iterations are independent and vectorizing them reorders nothing.
 
@@ -98,7 +99,7 @@ For `ikj` it says `vectorized loop` (width 2 on plain x86-64, which has 128-bit 
 
 ## Reading the assembly
 
-Here are the two inner loops from `clang -O3 -march=native` (`mca.py --loops`), the ijk order's first, then ikj's:
+Here are the two inner loops from `clang -O3 -march=sapphirerapids` (`mca.py --loops`), the ijk order's first, then ikj's:
 
 ```text
 --8<-- "docs/part37/code/loops_out.txt:3:55"
@@ -110,7 +111,7 @@ Here are the two inner loops from `clang -O3 -march=native` (`mca.py --loops`), 
 
 ## What `llvm-mca` predicts, and where the prediction fails
 
-`llvm-mca` takes a block of assembly and simulates how the CPU's pipeline would execute it, many times, and reports cycles. It models the **core** (instruction latencies, issue ports, dispatch width). It assumes every load hits the L1 cache: **it does not model the memory system.** `mca.py` runs each variant's hot loop through it (`-mcpu=native`, which on this machine is `sapphirerapids`) and divides by the multiply-adds per iteration:
+`llvm-mca` takes a block of assembly and simulates how the CPU's pipeline would execute it, many times, and reports cycles. It models the **core** (instruction latencies, issue ports, dispatch width). It assumes every load hits the L1 cache: **it does not model the memory system.** `mca.py` runs each variant's hot loop through it (`-mcpu=sapphirerapids`) and divides by the multiply-adds per iteration:
 
 ```text
 --8<-- "docs/part37/code/mca_out.txt"
@@ -124,7 +125,7 @@ Here are the two inner loops from `clang -O3 -march=native` (`mca.py --loops`), 
 
 ## Which Mountain Goat operations vectorize?
 
-`ops_table.sh` compiles each one-operation program in `ops/` on 64 × 64 matrices with `clang -O3 -march=native` and counts, in the assembly, packed arithmetic instructions (`vaddpd`, `vmulpd`, `vmaxpd`, `vsqrtpd`, `vcmppd`, …: four doubles at once), scalar ones (`vaddsd`, …), gathers, and library calls. It counts **instructions**; it says whether the compiler vectorized, not whether that was faster.
+`ops_table.sh` compiles each one-operation program in `ops/` on 64 × 64 matrices with `clang -O3 -march=sapphirerapids` and counts, in the assembly, packed arithmetic instructions (`vaddpd`, `vmulpd`, `vmaxpd`, `vsqrtpd`, `vcmppd`, …: four doubles at once), scalar ones (`vaddsd`, …), gathers, and library calls. It counts **instructions**; it says whether the compiler vectorized, not whether that was faster.
 
 ```text
 --8<-- "docs/part37/code/ops_table_out.txt"
@@ -134,6 +135,18 @@ Here are the two inner loops from `clang -O3 -march=native` (`mca.py --loops`), 
 - **`exp` and `log` are not vectorized**: no packed arithmetic at all, and the assembly **calls the C library's `exp` and `log`** once per element (clang has no vector version of them to call). Softmax (Chapter 29), and so every attention head in Chapters 30 to 36, uses `exp`.
 - **`transpose` has no arithmetic**: it is 16 gathers and moves.
 - **The row reductions** (`row_sum`, `row_mean`, `row_max`) have **no scalar adds** and use 64 gathers each, which is the opposite of what the matrix product's reduction did. The reason is not established here: the assembly (64 gathers feeding 64 packed adds, no scalar adds) is consistent with LLVM keeping each row's addition order exactly as written and vectorizing **across rows** (four rows' running sums in one register, gathered from four rows), which reorders nothing, but the transformation was not identified (the IR was not read for it). The same permission question does not arise when each lane is a different row. `col_sum` adds whole rows, so it vectorizes without gathers.
+
+## Is this specific to one CPU? Yes, in the details
+
+The first CI run of this chapter's test **failed**, on a different CPU from the one used here, while every other test passed. The compiler's choices depend on the target CPU, so the scripts now pin it (`sapphirerapids`; `CPU=native ./walk.sh` overrides) and the chapter's claims are claims *about that target*. `cpu_dependence.py` compiles the same IR for four CPUs (compilation only: nothing is run) and shows how much changes:
+
+```text
+--8<-- "docs/part37/code/cpu_dependence_out.txt"
+```
+
+- **What does not depend on the CPU, in these four:** `ijk` is not vectorized, `ikj` is (width 4), and `ijk` with the `reassoc` flag is (width 4). The reduction story holds everywhere tried.
+- **What does:** the **gathers**. On `sapphirerapids` and `skylake-avx512` the vectorized ijk loop and `row_sum` use `vgather` instructions (16 and 64). On `haswell` and `znver3` there are **none**, although both CPUs have AVX2 and the vectorizer still vectorizes: it fills the vectors with scalar loads instead (LLVM treats gathers as slow on those CPUs; the exact mechanism in the assembly was not read for them). So the chapter's inference "the vectorized ijk is no faster because it gathers" was tested only on the Intel targets and the measurement was made on an Intel machine; for the other two CPUs only the instruction mix, not a timing, is known.
+- **The fused multiply-add count differs** (16, 16, 16 and 64 `vfmadd` for the same loop), and so do `llvm-mca`'s cycles per multiply-add (ijk 3.0 to 4.0, ijk with `reassoc` 0.20 to 0.32, ikj 0.29 to 0.45): the *ranking* is the same on all four (ikj and reassoc'd ijk far below ijk), the numbers are not.
 
 ## Tests
 
@@ -158,7 +171,7 @@ Two new `lit` files in `test/llvm37/` (the suite is now 146 tests; no `verifiers
 --8<-- "docs/part37/code/claims_mutation_out.txt"
 ```
 
-All six are caught, each by the checks that should depend on the input that was broken: the `ijk` program built in the other order fails the three ijk claims; leaving out `reassoc` fails the "vectorized" claim and the gather claim; replacing `-ffast-math` with `-O1` (a flag that does change the assembly) fails the byte-for-byte claim; `nsz` in place of `contract` fails the fused-multiply-add claim; `opt` without a target fails both vectorization claims. One result was a surprise and is worth reading: **removing AVX (`-mno-avx`)** fails five checks, including "ijk with `reassoc` is vectorized": with only SSE2 the vectorizer declines the strided reduction loop that it vectorizes with AVX2's gathers (the reason was not investigated; cost model or missing gathers are the candidates). The practical lesson is that **these claims describe an x86-64 machine with AVX2 or newer** (the test uses `-march=native`), and would need different expected values elsewhere.
+All six are caught, each by the checks that should depend on the input that was broken: the `ijk` program built in the other order fails the three ijk claims; leaving out `reassoc` fails the "vectorized" claim and the gather claim; replacing `-ffast-math` with `-O1` (a flag that does change the assembly) fails the byte-for-byte claim; `nsz` in place of `contract` fails the fused-multiply-add claim; `opt` without a target fails both vectorization claims. One result was a surprise and is worth reading: **removing AVX (`-mno-avx`)** fails five checks, including "ijk with `reassoc` is vectorized": with only SSE2 the vectorizer declines the strided reduction loop that it vectorizes with AVX (the reason was not investigated; the cost model or the missing gather instructions are the candidates). The practical lesson is that **these claims describe the `sapphirerapids` target** (the checks pin `sapphirerapids`), and would need different expected values for other targets, as the CPU section shows.
 
 The full suite:
 
@@ -168,7 +181,7 @@ The full suite:
 
 ## Limits and what is not established
 
-- **One machine, one LLVM.** An Intel Xeon (`sapphirerapids` in LLVM's naming) at 2.1 GHz, LLVM 18.1.3, clang 18.1.3. Vector widths, the choice of 256-bit registers, `llvm-mca`'s numbers and the benchmark all depend on them. The checks assume AVX2 or newer.
+- **One machine, one LLVM.** An Intel Xeon (`sapphirerapids` in LLVM's naming) at 2.1 GHz, LLVM 18.1.3, clang 18.1.3. Vector widths, the choice of 256-bit registers, `llvm-mca`'s numbers and the benchmark all depend on them. The checks pin `sapphirerapids`; the CPU section shows that gathers, fused multiply-adds and `llvm-mca` numbers differ on other targets.
 - **"Memory-bound" is inferred, not measured.** The explanation for the vectorized ijk being no faster is gathers in the assembly plus unchanged timings; no hardware counters (cache misses, TLB misses) were read.
 - **The benchmark is the Chapter 24 harness with its noise.** Three passes, one pinned core, spreads of up to about 30% between passes at N = 256 (for example ikj's 9.2 to 11.7 GFLOP/s); the contract result at N = 512 is consistent across passes, the one at N = 256 is not.
 - **`llvm-mca` is a core model.** It ignores the memory system and assumes perfect branch prediction; the page shows it ranking correctly and over-predicting the gain from vectorizing ijk.

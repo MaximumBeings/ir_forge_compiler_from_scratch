@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 330" role="img" aria-labelledby="t d">
+  <title id="t">A mountain goat on a mountain</title>
+  <desc id="d">A white mountain goat with curved horns and a beard stands on a rocky ledge near the summit of a snow-capped mountain, with a smaller peak behind.</desc>
+  <!-- back peak -->
+  <polygon points="40,320 200,150 270,205 330,120 470,320" fill="#8a97a8"/>
+  <polygon points="330,120 300,160 322,152 338,176 356,150 372,168" fill="#f4f7fb"/>
+  <!-- main mountain -->
+  <polygon points="250,320 470,110 540,170 610,60 790,320" fill="#5f6e82"/>
+  <polygon points="610,60 575,110 598,102 615,132 636,100 662,124" fill="#f4f7fb"/>
+  <polygon points="470,110 440,150 462,142 480,166 500,138" fill="#f4f7fb"/>
+  <!-- shaded face and ridges -->
+  <polygon points="610,60 662,124 700,200 650,320 560,320 600,200 575,110" fill="#4b5a6e"/>
+  <polyline points="470,110 505,205 470,320" fill="none" stroke="#4b5a6e" stroke-width="3" stroke-linejoin="round"/>
+  <polyline points="540,170 560,240 535,320" fill="none" stroke="#4b5a6e" stroke-width="3" stroke-linejoin="round"/>
+  <!-- the ledge: a rock shelf jutting out of the right-hand slope -->
+  <polygon points="545,190 772,190 748,206 690,214 640,250 545,236" fill="#3d4a5c"/>
+  <polygon points="545,190 772,190 768,194 545,196" fill="#6f7f94"/>
+  <g transform="translate(-78 -57) scale(1.3)">
+  <!-- goat: legs, behind then front -->
+  <g stroke="#2b3441" stroke-width="2.2" stroke-linejoin="round">
+    <polygon points="540,170 549,170 548,188 541,188" fill="#e8edf4"/>
+    <polygon points="572,170 581,170 582,188 575,188" fill="#e8edf4"/>
+    <!-- body -->
+    <ellipse cx="560" cy="150" rx="42" ry="22" fill="#fbfcfe"/>
+    <!-- front legs -->
+    <polygon points="536,160 546,160 545,188 538,188" fill="#fbfcfe"/>
+    <polygon points="574,160 584,160 586,188 579,188" fill="#fbfcfe"/>
+    <!-- hooves -->
+    <rect x="537" y="186" width="9" height="4" fill="#2b3441"/>
+    <rect x="578" y="186" width="9" height="4" fill="#2b3441"/>
+    <rect x="540" y="186" width="9" height="4" fill="#2b3441"/>
+    <rect x="574" y="186" width="9" height="4" fill="#2b3441"/>
+    <!-- neck and head -->
+    <polygon points="594,140 612,118 628,128 616,150" fill="#fbfcfe"/>
+    <polygon points="610,118 636,114 646,128 630,136 620,132" fill="#fbfcfe"/>
+    <!-- beard -->
+    <polygon points="634,134 640,160 628,140" fill="#e8edf4"/>
+    <!-- ear -->
+    <polygon points="614,118 604,112 612,126" fill="#e8edf4"/>
+  </g>
+  <!-- horns -->
+  <path d="M618 116 C 612 96, 622 84, 632 80" fill="none" stroke="#2b3441" stroke-width="4" stroke-linecap="round"/>
+  <path d="M624 114 C 622 94, 634 84, 644 84" fill="none" stroke="#2b3441" stroke-width="4" stroke-linecap="round"/>
+  <!-- eye and nose -->
+  <circle cx="632" cy="124" r="2" fill="#2b3441"/>
+  <circle cx="645" cy="126" r="1.8" fill="#2b3441"/>
+  <!-- tail -->
+  <path d="M520 144 C 512 138, 510 132, 514 128" fill="none" stroke="#2b3441" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  <!-- sun-lit rocks -->
+  <g fill="#7b8a9e"><polygon points="300,320 318,296 340,320"/><polygon points="660,320 690,286 722,320"/></g>
+</svg>

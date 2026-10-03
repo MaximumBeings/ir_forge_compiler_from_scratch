@@ -1,4 +1,4 @@
-llvm-mca-18, -mcpu=native (= sapphirerapids), 100 iterations of the loop body; dynamic sizes (examples/03_matmul_dynamic.mg), clang -O3 -march=native
+llvm-mca-18, -mcpu=sapphirerapids, 100 iterations of the loop body; dynamic sizes (examples/03_matmul_dynamic.mg), clang -O3 -march=sapphirerapids
 variant                                    instrs mul-adds cycles/iter  cycles per mul-add
 ijk (the default order)                        34        8        24.1                3.02
 ijk, reassoc on every fadd                     15       16         3.2                0.20

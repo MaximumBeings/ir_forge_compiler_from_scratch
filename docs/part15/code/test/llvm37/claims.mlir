@@ -1,6 +1,6 @@
 // Chapter 37: every claim the chapter makes about what LLVM does with Mountain Goat's loops is tested by running LLVM's tools: the IR's shape, what `opt` does pass by
 // pass, the vectorizer's stated reasons for ijk and ikj (and the effect of the reassoc flag), whether -ffast-math changes a .ll file (it does not), which operations
-// vectorize, and what the backend and llvm-mca say. The expected values are those of an x86-64 machine with AVX2 or newer (the checks use -march=native).
+// vectorize, and what the backend and llvm-mca say. The target CPU is pinned (sapphirerapids) because the vectorizer's choices depend on it: the first CI run, on another CPU, failed this test.
 // RUN: python3 %ch37/check_llvm.py | %FileCheck %s
 // CHECK: -- 1. reading the IR
 // CHECK: ok   the 2x2 add: one fadd, one malloc

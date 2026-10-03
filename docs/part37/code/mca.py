@@ -5,6 +5,7 @@ by the number of multiply-adds in one iteration. llvm-mca assumes every load hit
 Usage: mca.py [--loops]   Output: mca_out.txt (with --loops: loops_out.txt, the assembly of the ijk and ikj hot loops)"""
 import os, re, subprocess, sys, tempfile
 here = os.path.dirname(os.path.abspath(__file__)); mgc = os.path.join(here, "..", "..", "part32", "code", "mgc")
+CPU = os.environ.get("MCA_CPU", "sapphirerapids")      # pinned: the result must not depend on the machine running the script
 work = os.path.join(here, "work", "mca"); os.makedirs(work, exist_ok=True)
 SRC = os.path.join(here, "examples", "03_matmul_dynamic.mg")
 def build(name, order, edit):
@@ -13,7 +14,7 @@ def build(name, order, edit):
     ll = os.path.join(d, "03_matmul_dynamic.ll"); text = open(ll).read()
     for a, b in edit: text = text.replace(a, b)
     open(ll, "w").write(text)
-    s = os.path.join(d, "mm.s"); subprocess.run(["clang-18", "-O3", "-march=native", "-S", ll, "-o", s], check=True, capture_output=True)
+    s = os.path.join(d, "mm.s"); subprocess.run(["clang-18", "-O3", f"-march={CPU}", "-S", ll, "-o", s], check=True, capture_output=True)
     return s
 def lanes(x): return 8 if "zmm" in x else 4 if "ymm" in x else 2 if re.search(r"pd\b", x) and "xmm" in x else 1
 def hot_loop(path):
@@ -36,15 +37,13 @@ def analyse(name, order, edit=()):
     body = hot_loop(build(name, order, edit)); macs = sum(lanes(x) for x in body if re.search(r"\bv(mul|fmadd)", x))
     asm = "# LLVM-MCA-BEGIN\n" + "\n".join(body) + "\n# LLVM-MCA-END\n"
     with tempfile.NamedTemporaryFile("w", suffix=".s", delete=False) as f: f.write(asm); p = f.name
-    out = subprocess.run(["llvm-mca-18", "-mcpu=native", "-iterations=100", p], capture_output=True, text=True).stdout; os.unlink(p)
+    out = subprocess.run(["llvm-mca-18", f"-mcpu={CPU}", "-iterations=100", p], capture_output=True, text=True).stdout; os.unlink(p)
     cyc = int(re.search(r"Total Cycles:\s+(\d+)", out).group(1)); thr = float(re.search(r"Block RThroughput:\s+([\d.]+)", out).group(1))
     return len(body), macs, cyc / 100, thr
 def main():
     rows = [("ijk (the default order)", "ijk", ()), ("ijk, reassoc on every fadd", "ijk", [("fadd double", "fadd reassoc double")]),
             ("ikj", "ikj", ()), ("ikj, contract on every fmul and fadd", "ikj", [("fadd double", "fadd contract double"), ("fmul double", "fmul contract double")])]
-    cpu = subprocess.run(["clang-18", "-march=native", "-###", "-x", "c", "-c", os.devnull], capture_output=True, text=True).stderr
-    cpu = re.search(r'target-cpu" "([^"]+)"', cpu).group(1)
-    print(f"llvm-mca-18, -mcpu=native (= {cpu}), 100 iterations of the loop body; dynamic sizes (examples/03_matmul_dynamic.mg), clang -O3 -march=native")
+    print(f"llvm-mca-18, -mcpu={CPU}, 100 iterations of the loop body; dynamic sizes (examples/03_matmul_dynamic.mg), clang -O3 -march={CPU}")
     print(f"{'variant':<42} {'instrs':>6} {'mul-adds':>8} {'cycles/iter':>11} {'cycles per mul-add':>19}")
     if "--loops" in sys.argv:          # print the hot loop of each variant instead of analysing it
         for label, order, edit in rows[:3:2]:

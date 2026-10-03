@@ -1,5 +1,7 @@
 # Appendix A. Mountain Goat Language Reference
 
+![Mountain goats on the mountain drawn as a blueprint](../assets/goats/appx-a.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
+
 This appendix is the whole language on one page, in the order a reference is read: what a program is made of, the grammar, the types, every operator and function with its shape rule, and the errors the front end gives. The *Language Tour* page teaches the same material by example; this page is for looking things up. The grammar and the lists of built-in functions come from the front end's own header (`docs/part44/code/mgfront.py`); every snippet in the last section was run through the real compiler, and `appendixA/code/verify_reference.py` fails if any result differs from what is stated here.
 
 !!! tip "Compile and run"

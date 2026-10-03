@@ -1,5 +1,7 @@
 # Appendix C. Introduction to LLVM IR and x86-64 Assembly
 
+![Mountain goats in space helmets on a moon of Saturn](../assets/goats/appx-c.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
+
 The last stage of every compiler in this book is **LLVM**: it takes the LLVM IR text that MLIR prints (Appendix B, Stage 4) and turns it into machine code. Chapter 37 reads that stage closely; this appendix is the short reading guide you would want before it. One small C function is followed through three forms (unoptimised IR, optimised IR, x86-64 assembly), and every instruction that appears is explained. Everything shown was produced by `clang-18` on the machine that built this book (x86-64 Linux).
 
 !!! tip "Compile and run"

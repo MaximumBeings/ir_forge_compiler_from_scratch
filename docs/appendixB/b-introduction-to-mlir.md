@@ -1,5 +1,7 @@
 # Appendix B. Introduction to MLIR
 
+![Mountain goats in space helmets on Mercury](../assets/goats/appx-b.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
+
 Chapters 1 to 46 use MLIR constantly and explain each piece where it first appears. This appendix collects the ideas in one place, in the order you would learn them if you started here: what MLIR is, what one operation looks like, what a dialect and a pass are, and then one real program followed down through every stage the compiler runs. Every listing was produced by running the tool named above it (LLVM 18's `mlir-opt-18` and `mlir-translate-18`, and this book's own `mg-opt`).
 
 !!! tip "Compile and run"

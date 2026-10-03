@@ -1,5 +1,7 @@
 # Appendix E. Glossary and Command Reference
 
+![Mountain goats in space helmets on Io, a moon of Jupiter](../assets/goats/appx-e.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
+
 The first half is a glossary of the terms the book uses, each with the chapter that explains it; the second half lists, in one place, the commands, options and passes you can run. The chapter index at the end is generated from the chapter pages. The pass list and the usage texts were produced by running the tools themselves (`appendixE/code/list_passes.sh`).
 
 ## E.1 Glossary

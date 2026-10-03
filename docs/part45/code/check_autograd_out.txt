@@ -1,0 +1,14 @@
+-- 1. every rule, against finite differences of an independent evaluation
+  ok   all 10 programs: the generated gradients match finite differences in every one of 112 matrix elements
+-- 2. ties
+  ok   col_sum(row_max(m)) for m = [[1,3,3],[2,2,0]]: the gradient is [[0, .5, .5], [.5, .5, 0]]
+-- 3. the hand-derived backward passes of Chapters 33, 34 and 35
+  ok   Chapter 33's attention classifier: loss and 4 gradient matrices (48 elements) equal the hand-derived ones
+  ok   Chapter 34's layer normalisation: loss and 1 gradient matrices (4 elements) equal the hand-derived ones
+  ok   Chapter 35's transformer block: loss and 16 gradient matrices (648 elements) equal the hand-derived ones
+-- 4. training with the generated gradients
+  ok   10 gradient-descent steps (lr 3.0) on Chapter 33's classifier with the GENERATED gradients: loss 1.60134 1.51356 0.625597 0.273815 after 0, 1, 5, 10 steps, the same as Chapter 33's hand-derived training (1.60134 1.51356 0.625597 0.273815); the loss fell at every step
+-- 5. refusals
+  ok   a non-1x1 loss, an unknown name, an unused matrix and a loss that is flat in a matrix are refused with a message
+  ok   a program that is not rank 2 (Chapter 28's) is refused with a message: autograd: rank 3 tensors are not supported
+all checks pass

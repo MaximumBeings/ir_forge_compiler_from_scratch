@@ -1,0 +1,5 @@
+program                                        let statements  source bytes  instructions executed
+Chapter 33 classifier          hand-derived                 7        12,602              8,077,504
+Chapter 33 classifier          generated                  103        21,000              3,875,248
+Chapter 35 transformer block   hand-derived                75       192,514             41,048,294
+Chapter 35 transformer block   generated                  307       288,339             45,533,249

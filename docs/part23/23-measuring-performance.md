@@ -1,6 +1,6 @@
 # 23. Measuring Performance: Does Any of It Make the Code Fast?
 
-![Mountain goats on the mountain drawn as a blueprint](../assets/goats/ch-23.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
+![Mountain goats in space helmets on Triton, a moon of Neptune](../assets/goats/ch-23.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
 
 **What you will understand:** how to measure a compiler's output honestly, and what the measurements say about Mountain Goat's matrix product. Every chapter so far said "no performance claim is made". This chapter makes some, carefully: it times one operation under different compiler settings and loop transforms, compares it with hand-written C++, shows the noise in its own numbers, and looks at the machine code to explain one result. It also finds, on the way, a bug in the driver that had been there since Chapter 20.
 

@@ -1,6 +1,6 @@
 # 27. Tensor Contractions as Matrix Products
 
-![Mountain goats on the mountain in black and white](../assets/goats/ch-27.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
+![Mountain goats in space helmets on Mercury](../assets/goats/ch-27.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
 
 **What you will understand:** what a tensor contraction is, why every contraction is "a matrix multiply in disguise", and how to take the disguise off: rearrange the axes of two tensors of any rank so that the entire contraction becomes a single matrix product, which is the one operation Mountain Goat is built around. The matrix product is Mountain Goat's compiled `@`; the axis bookkeeping around it is C++. The result is compared, bit for bit, with the definition of a contraction written out directly, on the worked examples of the *Tensor Contractions (CPU)* appendix of the companion book *CUDA From First Principles*, plus seven more cases.
 

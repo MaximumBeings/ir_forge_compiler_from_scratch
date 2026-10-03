@@ -1,6 +1,6 @@
 # 6. Real Bufferization: Closing Chapter 4's Own Honest Gap
 
-![Mountain goats on the mountain in a storm](../assets/goats/ch-06.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
+![Mountain goats in space helmets on Mercury](../assets/goats/ch-06.svg){ style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:6px" }
 
 **What you will understand:** how to make MLIR's own real, built-in `--one-shot-bufferize` pass genuinely succeed on a custom dialect, by implementing the real `BufferizableOpInterface` -- the exact extension point Chapter 4 named but did not use, when it ran into a real, honest failure (`error: op was not bufferized`) and deferred the fix. This chapter closes that gap for real, and the result is a second, entirely independent way to get Mountain Goat's own tensor IR down to memrefs -- not a replacement for Chapter 4's hand-written pass, a second real path, compared directly against the first.
 

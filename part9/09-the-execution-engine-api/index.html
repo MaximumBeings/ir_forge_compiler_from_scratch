@@ -2322,6 +2322,8 @@
 
 
 <h1 id="9-mlirs-own-real-c-executionengine-api-called-in-process">9. MLIR's Own Real C++ <code>ExecutionEngine</code> API, Called In-Process<a class="headerlink" href="#9-mlirs-own-real-c-executionengine-api-called-in-process" title="Permanent link">&para;</a></h1>
+<p style="text-align:center"><img src="../assets/goats/ch-09.svg" alt="Mountain goats on the mountain in spring" style="max-width:100%;height:auto;border-radius:6px"></p>
+
 <p><strong>What you will understand:</strong> a third, genuinely different way to run a real Mountain Goat program -- not <code>mlir-cpu-runner-18</code>'s CLI (Chapters 5 through 7), not an ahead-of-time compiled, standalone executable (Chapter 8), but MLIR's own real C++ <code>mlir::ExecutionEngine</code> class, driven directly from a small, hand-written host program that JIT-compiles and invokes Mountain Goat code in-process. This chapter also recounts, honestly, a real multi-step debugging process -- two genuine, non-obvious calling-convention rules this book's own first attempts got wrong, each one found only by crashing, inspecting registers, and fixing it for real.</p>
 <p><strong>What you need to know first:</strong> Chapter 1's own "unpacked memref descriptor" convention and Chapter 8's own struct-return convention for <code>_mlir_ciface_</code> wrappers. This chapter's own new ground: <code>mlir::ExecutionEngine</code>'s own real, separate packed-argument calling convention, genuinely different from both.</p>
 <div class="admonition tip">

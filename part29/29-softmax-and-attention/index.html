@@ -2490,6 +2490,8 @@
 
 
 <h1 id="29-softmax-and-attention">29. Softmax and Attention<a class="headerlink" href="#29-softmax-and-attention" title="Permanent link">&para;</a></h1>
+<p style="text-align:center"><img src="../assets/goats/ch-29.svg" alt="Mountain goats on the mountain in a storm" style="max-width:100%;height:auto;border-radius:6px"></p>
+
 <p><strong>What you will understand:</strong> how a Mountain Goat program computes <strong>softmax</strong> (turning scores into probabilities) and <strong>scaled dot-product attention</strong>, the operation at the heart of a transformer. The one thing the language lacked was an exponential, so this chapter adds a single new operation, <code>exp</code>, and then writes everything else with what already existed: the matrix product, reductions, broadcasting, <code>transpose</code>. Along the way it shows a real numerical trap (the textbook softmax produces <code>nan</code> on large scores), the one-line fix, causal masking, and a complete self-attention block, each checked against an independent Python implementation.</p>
 <p><strong>What you need to know first:</strong> Chapter 22 (reductions such as <code>row_max</code> and <code>row_sum</code>, and broadcasting a size-1 axis), Chapter 21 (<code>@</code>, <code>transpose</code>) and the language tour. Chapter 28 is not needed (everything here is rank 2).</p>
 <div class="admonition tip">

@@ -2730,6 +2730,8 @@
 
 
 <h1 id="22-broadcasting-reductions-and-relu-enough-operations-for-a-neural-network-layer">22. Broadcasting, Reductions and relu: Enough Operations for a Neural-Network Layer<a class="headerlink" href="#22-broadcasting-reductions-and-relu-enough-operations-for-a-neural-network-layer" title="Permanent link">&para;</a></h1>
+<p style="text-align:center"><img src="../assets/goats/ch-22.svg" alt="Mountain goats on the mountain in black and white" style="max-width:100%;height:auto;border-radius:6px"></p>
+
 <p><strong>What you will understand:</strong> how to express "add this row to every row", "total each column" and "clamp negatives to zero", the three ideas (broadcasting, reduction, an activation function) that turn matrix arithmetic into a neural-network layer. You will see how each becomes loops, why broadcasting is a rule about shapes and not new arithmetic, what a reduction does to a shape, and why a test suite can pass while a real bug hides in it.</p>
 <p><strong>What you need to know first:</strong> the <a href="../../tour/language-tour/">language tour</a> (syntax and shapes), Chapter 21 (the elementwise operations and <code>@</code>), and Chapters 13 and 14 for what <code>?</code> means and what is checked at run time.</p>
 <div class="admonition tip">

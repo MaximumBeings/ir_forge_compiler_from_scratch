@@ -2512,6 +2512,8 @@
 
 
 <h1 id="32-does-it-generalize-held-out-data-overfitting-weight-decay-and-greedy-generation">32. Does It Generalize? Held-Out Data, Overfitting, Weight Decay and Greedy Generation<a class="headerlink" href="#32-does-it-generalize-held-out-data-overfitting-weight-decay-and-greedy-generation" title="Permanent link">&para;</a></h1>
+<p style="text-align:center"><img src="../assets/goats/ch-32.svg" alt="Mountain goats on the mountain in spring" style="max-width:100%;height:auto;border-radius:6px"></p>
+
 <p><strong>What you will understand:</strong> the difference between a model that <em>fits</em> its data and one that <em>generalizes</em>, shown on the bigram model of Chapter 31. Chapter 31 measured the model only on the pairs it trained on. Here some pairs are <strong>held out</strong>, and the held-out loss shows what the training loss hid: the model gets steadily better on its training pairs while getting steadily <strong>worse</strong> on pairs it has not seen, until it is worse than a model that knows nothing. <strong>Weight decay</strong> (a penalty on large weights) fixes most of it, at a price, and a penalty that is too strong for the learning rate does not merely fail: it blows up. Finally the model <strong>generates</strong> text, by repeatedly choosing its most likely next token, which needs one new operation: a comparison, <code>ge</code>.</p>
 <p><strong>What you need to know first:</strong> Chapter 31 (the bigram model, cross-entropy loss and its hand-derived gradient). Nothing else is new except the comparison <code>ge</code>.</p>
 <div class="admonition tip">

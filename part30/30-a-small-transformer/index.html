@@ -2478,6 +2478,8 @@
 
 
 <h1 id="30-a-small-transformer">30. A Small Transformer<a class="headerlink" href="#30-a-small-transformer" title="Permanent link">&para;</a></h1>
+<p style="text-align:center"><img src="../assets/goats/ch-30.svg" alt="Mountain goats on the mountain above a desert" style="max-width:100%;height:auto;border-radius:6px"></p>
+
 <p><strong>What you will understand:</strong> what a transformer actually computes, by reading one written in Mountain Goat: token embeddings, positions, <strong>layer normalization</strong>, <strong>multi-head causal self-attention</strong>, a <strong>feed-forward network</strong>, <strong>residual connections</strong>, and a final softmax that gives next-token probabilities. The model is two blocks deep and small enough that every number can be inspected. Mountain Goat gets one new operation, <code>sqrt</code>; everything else is Chapters 21 to 29. The program is checked against an independent Python implementation at every stage, and against properties any correct transformer must have: <strong>causality</strong> (the future cannot influence the past), <strong>permutation equivariance</strong> (without positions, reordering the tokens reorders the outputs), normalized layer-norm rows, and no overflow when scores are huge.</p>
 <p><strong>What you need to know first:</strong> Chapter 29 (softmax and attention, which this chapter builds on without re-deriving), Chapter 22 (reductions and broadcasting) and the language tour. If the word "transformer" is new, read the section "What a transformer is" below first; it assumes only the matrix operations you have already seen.</p>
 <div class="admonition tip">

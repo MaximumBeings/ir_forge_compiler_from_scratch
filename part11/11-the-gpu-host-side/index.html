@@ -2422,6 +2422,8 @@
 
 
 <h1 id="11-the-gpu-host-side-device-memory-real-runtime-calls-and-a-stub-device">11. The GPU Host Side: Device Memory, Real Runtime Calls, and a Stub "Device"<a class="headerlink" href="#11-the-gpu-host-side-device-memory-real-runtime-calls-and-a-stub-device" title="Permanent link">&para;</a></h1>
+<p style="text-align:center"><img src="../assets/goats/ch-11.svg" alt="Mountain goats on the mountain at night" style="max-width:100%;height:auto;border-radius:6px"></p>
+
 <p><strong>What you will understand:</strong> what has to surround a GPU kernel on the host before it can run (allocating device memory, copying inputs in and the result out, loading the kernel module, launching it with a grid, and cleaning up) and how MLIR 18's real passes turn those steps into calls to a GPU runtime (<code>mgpuMemAlloc</code>, <code>mgpuModuleLoadJIT</code>, <code>mgpuLaunchKernel</code>, ...). This chapter closes the "what is still missing" list Chapter 10 ended with, as far as this sandbox allows, and it is explicit about the one thing it still cannot do: run the PTX. Every file, script and output below is embedded from the repository.</p>
 <p><strong>What you need to know first:</strong> Chapter 10's kernel (<code>gpu.module @add_tensors_kernel</code>, 2 blocks x 2 threads, 23 parameters) and Chapter 8's harness (the same <code>Memref2D</code> struct-return convention). New ground: the async form of <code>gpu</code> ops, and where in the pipeline <code>gpu.launch_func</code> actually becomes runtime calls.</p>
 <div class="admonition tip">

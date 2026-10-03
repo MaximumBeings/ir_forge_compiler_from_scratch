@@ -2373,7 +2373,7 @@ Every listing and output on this page comes from these commands. Times are from 
 <p><code>mutation.py</code> writes broken copies of the driver and expects the checker to fail on each. "Caught" is good; "NOT CAUGHT" would be a gap. Nothing on this page is a failing test.</p>
 </div>
 <h2 id="what-an-outlined-call-costs-exact-instructions">What an outlined call costs: exact instructions<a class="headerlink" href="#what-an-outlined-call-costs-exact-instructions" title="Permanent link">&para;</a></h2>
-<p><code>valgrind --tool=callgrind</code> counts every instruction an executable runs, and the count does not change from run to run. Each program is built twice (loops lowered last to first; with and without <code>--outline</code>) and run under it. "Calls" is the number of calls to outlined functions in the program (its <code>main</code> is straight-line, so each runs once):</p>
+<p><code>valgrind --tool=callgrind</code> counts every instruction an executable runs, and the count is repeatable on one setup. (It is not identical between setups: the same program counted 488,922,861 instructions when I ran it from my shell and 488,823,421 under the test suite, 0.02% apart, because the dynamic loader's work depends on the environment. That is why the checker prints rounded figures.) Each program is built twice (loops lowered last to first; with and without <code>--outline</code>) and run under it. "Calls" is the number of calls to outlined functions in the program (its <code>main</code> is straight-line, so each runs once):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>program          clang   plain instructions  outlined instructions        extra   ratio   calls  extra per call
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>ch35 10 steps      -O0          488,922,880            488,988,930       66,050   1.000   1,928            34.3
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>ch35 10 steps      -O2           91,858,303             99,373,277    7,514,974   1.082   1,928          3897.8
@@ -2531,8 +2531,8 @@ Every listing and output on this page comes from these commands. Times are from 
 <a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>  ok   Chapter 35&#39;s 10-step training program: 80 outlined functions by default, 0 with --no-outline
 <a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>  ok   and it prints the same 1842 characters either way
 <a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>-- 5. what outlining costs at run time, in exact instructions (callgrind, clang -O0)
-<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>  ok   Chapter 35&#39;s 10-step program: 488,922,861 instructions plain, 488,988,883 outlined: 0.0135% more
-<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>  ok   the 1,928 calls cost 34 extra instructions each (a call, the arguments, the return)
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>  ok   Chapter 35&#39;s 10-step program: about 490 million instructions plain, 0.01% more outlined
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>  ok   the 1,928 calls cost about 30 extra instructions each (a call, the arguments, the return)
 <a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>all checks pass
 </code></pre></div>
 <h3 id="are-the-checks-good-enough-seven-wrong-drivers">Are the checks good enough? Seven wrong drivers.<a class="headerlink" href="#are-the-checks-good-enough-seven-wrong-drivers" title="Permanent link">&para;</a></h3>

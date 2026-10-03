@@ -58,6 +58,6 @@ def instr(exe):
     cg = exe + ".cg"; subprocess.run(["valgrind", "--tool=callgrind", f"--callgrind-out-file={cg}", exe], capture_output=True); return int(re.search(r"summary: (\d+)", open(cg).read()).group(1))
 mgc("build", big, "-o", W + "/b_out"); mgc("build", big, "-o", W + "/b_plain", "--no-outline")
 calls = len(re.findall(r"call void @mg_outlined", open(k1 + "/03_train_10_steps.ll").read())); ia, ib = instr(W + "/b_plain"), instr(W + "/b_out")
-report(0 <= ib - ia and (ib - ia) / ia < 0.001, "Chapter 35's 10-step program: %s instructions plain, %s outlined: %.4f%% more" % (f"{ia:,}", f"{ib:,}", 100 * (ib - ia) / ia), f"{ia} {ib}")
-report(calls > 1000 and 20 <= (ib - ia) / calls <= 60, "the %s calls cost %.0f extra instructions each (a call, the arguments, the return)" % (f"{calls:,}", (ib - ia) / calls), f"{calls} calls, {ib - ia} extra")
+report(0 <= ib - ia and (ib - ia) / ia < 0.001, "Chapter 35's 10-step program: about %d million instructions plain, %.2f%% more outlined" % (round(ia / 1e6, -1), 100 * (ib - ia) / ia), f"{ia} {ib}")
+report(calls > 1000 and 20 <= (ib - ia) / calls <= 60, "the %s calls cost about %d extra instructions each (a call, the arguments, the return)" % (f"{calls:,}", round((ib - ia) / calls, -1)), f"{calls} calls, {ib - ia} extra")
 print("all checks pass" if not failures else f"{failures} CHECK(S) FAILED"); sys.exit(1 if failures else 0)

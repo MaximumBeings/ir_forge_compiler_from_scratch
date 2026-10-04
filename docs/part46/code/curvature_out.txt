@@ -1,17 +1,17 @@
+=== output matrix wo0 alone: 15 parameters ===
 power iteration: lambda_k = v . (H v) with v normalised after every step
-  iteration  1: lambda = 0.000103
-  iteration  2: lambda = 0.019017
-  iteration  3: lambda = 0.019734
-  iteration  5: lambda = 0.020322
-  iteration 10: lambda = 0.020905
-  iteration 20: lambda = 0.021089
-  iteration 40: lambda = 0.021149
-  iteration 60: lambda = 0.021162
-  iteration 80: lambda = 0.021165
-(the run stopped at convergence if a line says so above; otherwise it hit the 80-iteration cap and lambda_max is a lower estimate)
-largest curvature of the loss along the 15 output weights at the initial point: lambda_max = 0.021165   (2 / lambda_max = 94.4958)
+  iteration   1: lambda = 0.000103
+  iteration   2: lambda = 0.019017
+  iteration   3: lambda = 0.019734
+  iteration   5: lambda = 0.020322
+  iteration  10: lambda = 0.020905
+  iteration  20: lambda = 0.021089
+  iteration  40: lambda = 0.021149
+  iteration  60: lambda = 0.021162
+  iteration  80: lambda = 0.021165
+NOT converged after 80 iterations (a lower estimate): lambda_max = 0.021165   (2 / lambda_max = 94.4958)
 
-gradient descent on wo0 only (the other weights fixed), 30 steps, from the initial point; lr as a multiple of 2/lambda_max:
+gradient descent on wo0, 30 steps, from the initial point; lr as a multiple of 2/lambda_max:
  multiple       lr  loss at step 0     step 1    step 10    step 30  loss rose at some step?
      0.25   23.624         1.60134     1.2626   0.880497   0.759974  no
       0.5   47.248         1.60134    1.07664   0.799548   0.692895  no
@@ -19,3 +19,26 @@ gradient descent on wo0 only (the other weights fixed), 30 steps, from the initi
       1.1  103.945         1.60134    1.05035    1.30967   0.888051  yes
       2.0  188.992         1.60134    1.41343    2.42612    1.50375  yes
       5.0  472.479         1.60134    3.04906    5.43126    3.22149  yes
+
+=== all four trainable matrices together (what Chapter 33 trains): 48 parameters ===
+power iteration: lambda_k = v . (H v) with v normalised after every step
+  iteration   1: lambda = 0.003292
+  iteration   2: lambda = 0.038482
+  iteration   3: lambda = 0.063697
+  iteration   5: lambda = 0.107971
+  iteration  10: lambda = 0.186054
+  iteration  20: lambda = 0.241602
+  iteration  40: lambda = 0.253219
+  iteration  60: lambda = 0.253704
+  iteration  80: lambda = 0.253746
+NOT converged after 80 iterations (a lower estimate): lambda_max = 0.253746   (2 / lambda_max = 7.8819)
+
+gradient descent on q0, wk0, wv0, wo0, 30 steps, from the initial point; lr as a multiple of 2/lambda_max:
+ multiple       lr  loss at step 0     step 1    step 10    step 30  loss rose at some step?
+     0.25    1.970         1.60134     1.5439   0.421018   0.127913  no
+      0.5    3.941         1.60134    1.48567    0.21387  0.0258758  no
+      0.9    7.094         1.60134    1.39147   0.114951 0.00369449  no
+      1.1    8.670         1.60134     1.3442    381.744 2.04801e+24  yes
+      2.0   15.764         1.60134    1.13578 4.59341e+11 1.74762e+42  yes
+      5.0   39.410         1.60134   0.644762 1.52365e+18 1.56118e+72  yes
+

@@ -1564,11 +1564,11 @@ Worked answer: a test that has never failed has not been shown to test anything.
 
 5. What does a Hessian's largest eigenvalue tell you about the learning rate, and how well did that hold here?
 
-    **Answer.** For a quadratic loss, gradient descent converges iff `lr < 2/λ`. For Chapter 33's non-quadratic loss with respect to `wo0`, the loss never rose at 0.25 and 0.5 times `2/λ`, but rose at some step already at 0.9 times, and ended above its start at 5 times. The rule held loosely, as a local guide; λ was also not fully converged (a lower bound), so `2/λ` is an upper bound on that estimate.
+    **Answer.** For a quadratic loss, gradient descent converges iff `lr < 2/λ`. For Chapter 33's loss with respect to all four trainable matrices, the loss fell at every step at 0.25, 0.5 and 0.9 times `2/λ` and exploded at 1.1 times: a sharp threshold, with Chapter 33's learning rate 3.0 at about 0.76 of it. For the output matrix `wo0` alone the rule held loosely (the loss rose at some step already at 0.9 times). Both λ estimates had not fully converged (lower bounds), so `2/λ` is an upper bound on each.
 
 6. Name three things this chapter does not establish.
 
-    **Answer.** Any of: the full 15 × 15 Hessian or its eigenvalues by another method; the curvature of all of Chapter 33's weights together; third derivatives; the cost of the double-differentiated program; behaviour exactly at a kink; coverage of the sum-spread rule by this checker; learning-rate behaviour beyond one run from one starting point.
+    **Answer.** Any of: the full Hessian or its eigenvalues by another method; third derivatives; the cost of the double-differentiated program; behaviour exactly at a kink; coverage of the sum-spread rule by this checker; learning-rate behaviour beyond one run from one starting point.
 
 ---
 

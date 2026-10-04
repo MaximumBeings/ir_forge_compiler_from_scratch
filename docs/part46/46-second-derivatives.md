@@ -9,17 +9,17 @@
 !!! tip "Compile and run"
     ```sh
     cd docs/part46/code                                  # plain Python 3; needs the Chapter 44 build (../../part44/code/build.sh) for mgc
-    ./hvp.py examples/s01_cubic.mg --wrt x --vec "[[1,0,0],[0,0,0]]" > hvp_example_generated.mg   # differentiate the backward pass
+    ./hvp.py examples/s01_cubic.mg --wrt x --vec "[[1,0,0],[0,0,0]]" > hvp_example_generated.mg   # differentiate the backward pass (several matrices: --wrt a,b --vec "<va>;<vb>")
     ./mgc run hvp_example_generated.mg                   # run it
     ./check_hvp.py > check_hvp_out.txt                   # the checks of this page (about 20 seconds)
-    ./curvature.py > curvature_out.txt                   # power iteration and the learning-rate table (about 3 minutes)
+    ./curvature.py > curvature_out.txt                   # power iteration and the learning-rate tables, one matrix and all four (about 6 minutes)
     ./mutation.py > mutation_out.txt                     # 11 WRONG versions of autograd.py the checker must catch (about 4 minutes)
     cd ../../part15/code && ./run_lit.sh                 # the whole test suite
     ```
     Every listing and output on this page comes from these commands.
 
 !!! note "Why this page shows a mutation run, and why 'caught' is the wanted result"
-    `mutation.py` writes broken versions of `autograd.py` and expects the checker to fail on each. "Caught" is good; "NOT CAUGHT" would be a gap. One mutant is not caught, and the page says why.
+    `mutation.py` writes broken versions of `autograd.py` and expects the checker to fail on each. "Caught" is good; "NOT CAUGHT" would be a gap. One mutant is missed by this chapter's checker and caught by Chapter 45's, and the page says why.
 
 ## The idea
 
@@ -57,12 +57,13 @@ Nothing in `autograd.py` had to change for this. The backward pass it writes use
 
 ## Does it give the right Hessian products?
 
-`check_hvp.py` runs four groups of checks. The reference for the first group is not `autograd.py` at all: it is the **full Hessian from four-point central differences** of the loss, evaluated by `reference.py`'s plain-Python evaluator (step 10⁻⁴), multiplied by `v`.
+`check_hvp.py` runs five groups of checks. The reference for the first group is not `autograd.py` at all: it is the **full Hessian from four-point central differences** of the loss, evaluated by `reference.py`'s plain-Python evaluator (step 10⁻⁴), multiplied by `v`.
 
 1. **Eight small programs, three random directions each.** `s01` cubic and exp; `s02` a matrix product squared; `s03` softmax cross-entropy (`log`, `exp`, `row_max`); `s04` layer normalisation (`sqrt`, division, means); `s05` division, log and sqrt; `s06` relu squared; `s07` relu times exp (here the relu mask matters at both orders); `s08` a reshaped product squared. `H v` from the compiled double-differentiated program must match in every element.
 2. **Symmetry.** A Hessian is symmetric: `wᵀ(H v) = vᵀ(H w)`. Two different compiled programs compute the two sides; a wrong rule typically breaks this.
 3. **The first print.** The program's first print is `sum(g * v)`; it must equal the directional derivative of the loss along `v`, computed by a finite difference of the loss.
 4. **Chapter 33's classifier**, with respect to its 15 output weights `wo0` (a 3 × 5 matrix), against the 15 × 15 finite-difference Hessian times a direction.
+5. **Several matrices at once.** `hvp.py --wrt a,b --vec "<va>;<vb>"` differentiates `sum(g_a * v_a) + sum(g_b * v_b)` with respect to both, so the answer for each matrix includes the **blocks between different matrices**. For the matrix-product program `s02` (12 parameters in `a` and `b`) both result matrices must equal the 12 × 12 finite-difference Hessian times the stacked direction; a missing direction matrix is refused with a message.
 
 ```text
 --8<-- "docs/part46/code/check_hvp_out.txt"
@@ -76,17 +77,17 @@ The comparisons are at 10⁻⁵ relative (10⁻⁴ for Chapter 33, whose referen
 --8<-- "docs/part46/code/mutation_out.txt"
 ```
 
-Ten are caught and one is **not**:
+Ten are caught by this chapter's checker; the eleventh is caught only by Chapter 45's:
 
 - **The two second-order-only mutants.** A mutant that lets the gradient flow through `ge` leaves every first-order gradient of Chapter 45 unchanged (a first-order backward pass contains no `ge` to differentiate) and is caught only here, by the relu programs. The same is true of a relu mask built as `ge(x, x)` (always 1): in `relu(x)²` the relu output is already zero where the mask matters, so the first version of this test **did not catch it**; adding `s07` (relu times exp) did. A test function has to be sensitive to the thing under test.
-- **Not caught: the sum rule that forgets to spread the gradient over the summed axis** (`add_adj(x, g)` instead of `ones * g`). It is caught by Chapter 45's checker (a reshape program fails to compile because the adjoint has the wrong shape), but at second order it is **equivalent** for every program here: Mountain Goat broadcasts a 1 × 1 or N × 1 adjoint when it meets a product or quotient, and every backward pass of a sum in these programs meets one. `s08` was added to try to expose it and does not. This checker therefore does not cover that rule, and the chapter does not claim it does.
+- **Caught by Chapter 45's checker, not by this one: the sum rule that forgets to spread the gradient over the summed axis** (`add_adj(x, g)` instead of `ones * g`). At second order it is **equivalent** for every program here: Mountain Goat broadcasts a 1 × 1 or N × 1 adjoint when it meets a product or quotient, and every backward pass of a sum in these programs meets one. `s08` was added to try to expose it and does not. `mutation.py` therefore runs any mutant this checker misses through Chapter 45's first-order checker too, and that one catches it (a reshape program no longer compiles, because the adjoint has the wrong shape). The two checkers together cover the rule; this one alone does not, and the page does not claim it does.
 - Two mutants are caught because the generated program fails to compile or fails the dependence test, rather than by a wrong number.
 
 ## What it is good for: how sharp is the loss?
 
 The largest eigenvalue `λ` of the Hessian says how fast the gradient can change along the worst direction. For a **quadratic** loss, gradient descent with learning rate `lr` converges when `lr < 2/λ` and diverges when it exceeds it. A matrix-vector product is all that **power iteration** needs: start from any `v`, repeat `v ← H v / |H v|`, and `vᵀ H v` converges to the largest eigenvalue in magnitude.
 
-`curvature.py` does that for Chapter 33's classifier with respect to `wo0`, each iteration being one compiled program run, then runs 30 real gradient-descent steps (`--descend 30` of Chapter 45, on `wo0` only, the other weights fixed) at several multiples of `2/λ`:
+`curvature.py` does that for Chapter 33's classifier twice: first with respect to the output matrix `wo0` alone (15 parameters), then with respect to **all four trainable matrices together** (`q0`, `wk0`, `wv0`, `wo0`: 48 parameters, the cross-matrix blocks included, which is what `hvp.py --wrt q0,wk0,wv0,wo0` computes), which is the problem Chapter 33 actually trains at learning rate 3.0. Each iteration is one compiled program run. After each estimate it runs 30 real gradient-descent steps (`--descend 30` of Chapter 45) at several multiples of `2/λ`:
 
 ```text
 --8<-- "docs/part46/code/curvature_out.txt"
@@ -94,11 +95,10 @@ The largest eigenvalue `λ` of the Hessian says how fast the gradient can change
 
 Reading it:
 
-- **The estimate has not converged.** After the cap of 80 iterations the value is still creeping up (0.020905 at iteration 10, 0.021089 at 20, 0.021149 at 40, 0.021162 at 60, 0.021165 at 80). It is a **lower bound** for the largest eigenvalue near 0.0212, and `2/λ` is therefore an upper bound near 94.5. I did not compute the 15 × 15 eigenvalue by another method, so this value is not independently confirmed (the Hessian-vector products it is built from are, by the checks above).
-- **Well below `2/λ` the loss falls at every step** (multiples 0.25 and 0.5: no step increased the loss).
-- **Near and above `2/λ` the loss rises at some step** (0.9, 1.1, 2 and 5 times): at 0.9, one step *below* the quadratic threshold, the loss already rose (1.015 after one step, 1.048 after ten) before falling to 0.751 by step 30; at 5 times it ends at 3.22, above its starting value 1.60. The classifier's loss is not quadratic, and the curvature at the starting point is only a local guide, so a prediction that is exact for quadratics held here only loosely: the rise began a little before the threshold.
-- **A large learning rate is not necessarily a bad one for the final loss.** At 0.9 and 1.1 times `2/λ` the loss after 30 steps (0.751 and 0.888) was lower than at 0.25 times (0.760), though not lower than at 0.5 times (0.693), and the path to it was not monotone. This table is about what happened in this one run from this one starting point; it is not a recommendation.
-- **This is `wo0` alone.** Chapter 33 trained all four weight matrices together at learning rate 3.0; the curvature of the combined problem was not measured. `hvp.py` differentiates with respect to one named matrix; a joint product would need a small extension.
+- **Neither estimate has converged**: after the cap of 80 iterations both are still creeping up (for all four matrices: 0.2416 at iteration 20, 0.2532 at 40, 0.2537 at 60, 0.2537 at 80). They are **lower bounds** for the largest eigenvalue, near 0.0212 for `wo0` alone and near 0.254 for all four, so `2/λ` is an upper bound, near 94.5 and near 7.88. I did not compute the eigenvalues by another method, so the values are not independently confirmed (the Hessian-vector products they are built from are, by the checks above).
+- **For the real problem (all four matrices) the quadratic rule held sharply.** At 0.25, 0.5 and 0.9 times `2/λ` the loss fell at **every one of 30 steps** (to 0.128, 0.026 and 0.0037 at step 30). At 1.1 times it exploded: 381.7 at step 10 and 2 × 10²⁴ at step 30; at 2 and 5 times it was worse. The threshold is a cliff at about 7.9, and **Chapter 33's learning rate of 3.0 is about 0.76 of it**: comfortably below, which is consistent with Chapter 33's training behaving well. (It does not say 3.0 is the best learning rate; the loss falls faster at 0.9 times.)
+- **For `wo0` alone the rule held only loosely.** The loss never rose at 0.25 and 0.5 times `2/λ`, but it rose at some step already at 0.9 times (1.015 after one step, 1.048 after ten, then down to 0.751), and at 5 times it ended above its starting value. With the other weights fixed the loss is far from quadratic (softmax saturation), and the curvature at the starting point is only a local guide.
+- **A step beyond the threshold is not always fatal at the end of 30 steps** for `wo0` alone (1.1 times ends at 0.888, lower than the start), though the path was not monotone; for all four matrices it was.
 
 ## Tests
 
@@ -106,13 +106,13 @@ One new `lit` file `test/hvp46/check.mlir` (the suite is now 158 tests) runs `ch
 
 ## Limits and what is not established
 
-- **One matrix at a time.** `hvp.py --wrt` takes one name. The Hessian blocks between different matrices are not computed.
-- **Hessian-vector products, not the Hessian.** The full matrix could be built from `n` products with unit vectors; I did not do that, and `check_hvp.py` uses the finite-difference Hessian only as a reference.
+- **The Hessian blocks are computed through products only.** With several matrices `hvp.py` returns each matrix's block row times the stacked direction; it never forms the Hessian, and `check_hvp.py` builds the finite-difference Hessian for one program (`s02`, 12 parameters) and one matrix (`wo0`, 15 parameters), not for the 48-parameter problem of the curvature study.
+- **Hessian-vector products, not the Hessian.** The full matrix could be built from `n` products with unit vectors; I did not do that.
 - **The reference is finite differences at a moderate step** (10⁻⁴ for the small programs, 10⁻³ for Chapter 33) and the compiled programs print six digits, so agreement is to about 10⁻⁵ to 10⁻⁴, not to the last bit.
 - **Kinks.** `relu` and `row_max` have no second derivative at their kinks. The test inputs are away from them; behaviour exactly at a kink is whatever the rules give (zero for relu's mask) and is not claimed to be meaningful.
-- **The learning-rate experiment is one run** from one starting point, with the largest eigenvalue not converged. It is an illustration of how a Hessian-vector product is used, not a study of learning rates.
+- **The learning-rate experiment is one run** from one starting point, and **neither largest eigenvalue has converged** (lower bounds, 80 iterations); the sharp threshold for all four matrices was observed at six multiples of `2/λ`, not mapped finely between 0.9 and 1.1 times. It illustrates how a Hessian-vector product is used; it is not a study of learning rates.
 - **Cost and size.** The generated double-differentiated program for Chapter 33's classifier is much larger than the first-order one; I measured correctness, not its cost. Third derivatives were not tried.
-- **The sum-spread rule is not covered by this checker** (see the mutation run); Chapter 45's checker covers it.
+- **The sum-spread rule is covered only by Chapter 45's checker** (see the mutation run), not by this one.
 
 ## Reproducing
 
@@ -126,9 +126,9 @@ cd ../../part15/code && ./run_lit.sh          # 158 tests
 ## Chapter summary
 
 - The program Chapter 45 generates is an ordinary Mountain Goat program, so it can be differentiated again. Differentiating the scalar `sum(g * v)` gives the **Hessian-vector product** `H v` without forming the Hessian. `hvp.py` is a three-step wrapper around the unchanged `autograd.py`.
-- It matches the full finite-difference Hessian times `v` in all 156 elements of eight small programs (three directions each), is symmetric, reproduces the directional derivative of the loss, and agrees on Chapter 33's 15 output weights.
-- Ten of eleven wrong versions are caught, including two that first-order checks cannot see. One is not caught, because for the programs tested it makes no difference; the page says so.
-- Power iteration on Hessian-vector products estimates the sharpest curvature of Chapter 33's loss along its output weights (at least 0.0212, not converged), and real descent runs rise above the loss only near and beyond the `2/λ` guide: a quadratic rule of thumb that held loosely for this non-quadratic loss.
+- It matches the full finite-difference Hessian times `v` in all 156 elements of eight small programs (three directions each), also across several matrices at once (cross blocks included), is symmetric, reproduces the directional derivative of the loss, and agrees on Chapter 33's 15 output weights.
+- Ten of eleven wrong versions are caught by this chapter's checker, including two that first-order checks cannot see; the eleventh makes no difference at second order and is caught by Chapter 45's checker instead.
+- Power iteration on Hessian-vector products estimates the sharpest curvature of Chapter 33's loss (at least 0.254 for all four trainable matrices together, 0.0212 for the output matrix alone; neither converged). For all four matrices the `2/λ` rule of thumb held sharply: no step rose at 0.9 times, the loss exploded at 1.1 times, and Chapter 33's learning rate 3.0 is about 0.76 times the threshold; for the output matrix alone it held only loosely.
 
 ## Self-check questions
 
@@ -157,9 +157,9 @@ Each answer is collapsed; try the question first.
 5. What does a Hessian's largest eigenvalue tell you about the learning rate, and how well did that hold here?
 
     ??? note "Answer"
-        For a quadratic loss, gradient descent converges iff `lr < 2/λ`. For Chapter 33's non-quadratic loss with respect to `wo0`, the loss never rose at 0.25 and 0.5 times `2/λ`, but rose at some step already at 0.9 times, and ended above its start at 5 times. The rule held loosely, as a local guide; λ was also not fully converged (a lower bound), so `2/λ` is an upper bound on that estimate.
+        For a quadratic loss, gradient descent converges iff `lr < 2/λ`. For Chapter 33's loss with respect to all four trainable matrices, the loss fell at every step at 0.25, 0.5 and 0.9 times `2/λ` and exploded at 1.1 times: a sharp threshold, with Chapter 33's learning rate 3.0 at about 0.76 of it. For the output matrix `wo0` alone the rule held loosely (the loss rose at some step already at 0.9 times). Both λ estimates had not fully converged (lower bounds), so `2/λ` is an upper bound on each.
 
 6. Name three things this chapter does not establish.
 
     ??? note "Answer"
-        Any of: the full 15 × 15 Hessian or its eigenvalues by another method; the curvature of all of Chapter 33's weights together; third derivatives; the cost of the double-differentiated program; behaviour exactly at a kink; coverage of the sum-spread rule by this checker; learning-rate behaviour beyond one run from one starting point.
+        Any of: the full Hessian or its eigenvalues by another method; third derivatives; the cost of the double-differentiated program; behaviour exactly at a kink; coverage of the sum-spread rule by this checker; learning-rate behaviour beyond one run from one starting point.

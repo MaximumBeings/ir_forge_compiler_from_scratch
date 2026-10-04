@@ -164,7 +164,7 @@ One new `lit` file `test/autograd45/check.mlir` (the suite is now 157 tests). Th
 - **No gradient through comparisons.** `ge` gives 0, so a loss that depends on a parameter only through a comparison is refused ("does not depend"), and a loss that mixes a smooth path with a comparison differentiates the smooth part only.
 - **Agreement with the hand-derived gradients is at six printed digits**, not bitwise; the independent finite-difference reference covers only ten small programs (112 elements), because the big ones are too slow to evaluate in plain Python.
 - **No checkpointing, no sparsity, no simplification:** the generated program is larger and slower than a hand-tuned one (11% more instructions on the transformer block) and keeps every intermediate alive.
-- **Second derivatives were not tried.** The output is an ordinary Mountain Goat program, so it could in principle be differentiated again; I did not test that.
+- **Second derivatives:** the output is an ordinary Mountain Goat program, so it can be differentiated again; Chapter 46 does exactly that (Hessian-vector products) and tests it.
 - **Large programs compile slowly:** the generated 200-step training programs of Chapters 35 and 36 were not attempted (at `-O2` even the hand-derived 200-step program takes over 29 minutes to compile, Chapter 44).
 
 ## Reproducing

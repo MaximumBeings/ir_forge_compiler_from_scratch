@@ -113,7 +113,7 @@ Chapter 35 found its 200-step training run chaotic: a change in the last bit gro
 --8<-- "docs/part44/code/training_sensitivity_out.txt"
 ```
 
-All four pairs print identical numbers at six digits. **That does not show the bits are the same** (I printed no more than six digits, and with `-march=native` the matrix-product test above shows the bits do change), and 10 steps is far from where Chapter 35's chaos appears. The 200-step experiment I wanted is **not** here: at `-O2`, `clang` was still compiling the 200-step Chapter 35 program after 29 minutes and I stopped it. (That also bounds Chapter 43's compile-time claim for `-O2`: it was measured on the 10-step programs only.) So the honest statement is: the flag did not change a 10-step run's printed output; whether it changes a 200-step run is **not established**.
+All four pairs print identical numbers at six digits. **That does not show the bits are the same** (I printed no more than six digits, and with `-march=native` the matrix-product test above shows the bits do change), and 10 steps is far from where Chapter 35's chaos appears. The 200-step experiment I wanted is **not** here: at `-O2`, `clang` was still compiling the 200-step Chapter 35 program after 29 minutes and I stopped it; a later attempt at `-O1 -march=native` (`train200.py`, plain and `--fast-math` compiled side by side) also had not finished after 40 minutes (`train200_out.txt`). (That also bounds Chapter 43's compile-time claim for `-O2`: it was measured on the 10-step programs only.) So the honest statement is: the flag did not change a 10-step run's printed output; whether it changes a 200-step run is **not established**.
 
 ## Tests
 
@@ -147,7 +147,7 @@ All eight are caught, and which check catches which is informative:
 - **The speed-up is one case**: ikj with `-O3 -march=native`, 17% to 24%, from fused multiply-add. The dot-product vectorization that motivated the chapter gave **no reproducible speed-up** here, probably because of the run-time stride check (not shown to be the whole story). Static sizes were not benchmarked.
 - **One machine**, pinned to one core, 7 trials per cell, two passes. Ratios between 0.9 and 1.4 in the noise-sized cells show how much the machine itself moves.
 - **Bits change with `-march=native`** (88% to 89% of the matrix-product results). Whether that matters is up to the program; the book's programs printed the same at six digits, which is weaker than "the same".
-- **The 200-step training run was not tested** (compile time at `-O2` over 29 minutes, stopped); chaos is therefore untested with this flag.
+- **The 200-step training run was not tested** (compile time over 29 minutes at `-O2` and over 40 minutes at `-O1`, stopped both times); chaos is therefore untested with this flag.
 - **The negative control is one program.** It shows `nnan` can change an answer, not how often; the flags `ninf`, `nsz`, `arcp` and `afn` were not studied one by one.
 - **The pass sets the same flags on every floating-point operation** of the module. It does not choose per loop or per operation, which LLVM allows and a real compiler might want (for example, only on sums).
 - **`math` operations (`exp`, `sqrt`, `log`) are not touched**: they become library calls, and the `math` dialect's own flags are not set here.
@@ -209,4 +209,4 @@ Each answer is collapsed; try the question first.
 7. Name three things this chapter does not establish.
 
     ??? note "Answer"
-        Any of: whether the flag changes a 200-step training run (the `-O2` compile did not finish in 29 minutes); the speed for statically known sizes; how often `nnan` changes an answer (one program only); the effect of the other flags (`ninf`, `nsz`, `arcp`, `afn`); why the timings of the ijk builds differ at all when their results are bit-identical; per-operation instead of module-wide flags.
+        Any of: whether the flag changes a 200-step training run (neither the `-O2` compile in 29 minutes nor the `-O1` compile in 40 minutes finished); the speed for statically known sizes; how often `nnan` changes an answer (one program only); the effect of the other flags (`ninf`, `nsz`, `arcp`, `afn`); why the timings of the ijk builds differ at all when their results are bit-identical; per-operation instead of module-wide flags.

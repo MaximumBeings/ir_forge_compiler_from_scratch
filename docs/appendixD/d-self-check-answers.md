@@ -1504,7 +1504,7 @@ Worked answer: a test that has never failed has not been shown to test anything.
 
 7. Name three things this chapter does not establish.
 
-    **Answer.** Any of: whether the flag changes a 200-step training run (the `-O2` compile did not finish in 29 minutes); the speed for statically known sizes; how often `nnan` changes an answer (one program only); the effect of the other flags (`ninf`, `nsz`, `arcp`, `afn`); why the timings of the ijk builds differ at all when their results are bit-identical; per-operation instead of module-wide flags.
+    **Answer.** Any of: whether the flag changes a 200-step training run (neither the `-O2` compile in 29 minutes nor the `-O1` compile in 40 minutes finished); the speed for statically known sizes; how often `nnan` changes an answer (one program only); the effect of the other flags (`ninf`, `nsz`, `arcp`, `afn`); why the timings of the ijk builds differ at all when their results are bit-identical; per-operation instead of module-wide flags.
 
 ---
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """READ THIS FIRST: this script deliberately BREAKS autograd.py (one rule at a time, in a copy named _mutant_autograd.py, removed at the end) and runs check_hvp.py against each broken copy through
-CHK_AUTOGRAD. It expects the checker to FAIL every time; "caught" is the wanted result, "NOT CAUGHT" would be a gap. The first mutants are ones the FIRST-order checks of Chapter 45 cannot see:
+CHK_AUTOGRAD. It expects the checker to FAIL every time (a mutant that this chapter's second-order checker misses is also tried on Chapter 45's first-order checker); "caught" is the wanted result, "NOT CAUGHT" would be a gap. The first mutants are ones the FIRST-order checks of Chapter 45 cannot see:
 the gradient of a loss is unchanged by them, only the gradient of the gradient is wrong. Output: mutation_out.txt   (about 4 minutes)"""
 import os, subprocess, sys
 here = os.path.dirname(os.path.abspath(__file__)); orig = open(os.path.join(here, "autograd.py")).read(); mut = os.path.join(here, "_mutant_autograd.py")
@@ -27,7 +27,11 @@ try:
         CURRENT = orig.replace(old, new, 1); r = check(); fails = [l.strip()[5:].strip() for l in r.stdout.split("\n") if l.strip().startswith("FAIL")]
         if r.returncode != 0 and not fails: print(f"{label}: caught (the checker did not finish: {(r.stderr or r.stdout).strip().splitlines()[-1][:110]})")
         elif fails: print(f"{label}: caught by {len(fails)} failing check(s):\n      " + "\n      ".join(f[:130] for f in fails))
-        else: print(f"{label}: NOT CAUGHT")
+        else:
+            r1 = subprocess.run([sys.executable, os.path.join(here, "..", "..", "part45", "code", "check_autograd.py")], capture_output=True, text=True, env=dict(os.environ, CHK_AUTOGRAD=mut))
+            f1 = [l.strip()[5:].strip() for l in r1.stdout.split("\n") if l.strip().startswith("FAIL")]
+            if r1.returncode != 0: print(f"{label}: NOT caught by this chapter's checker, but CAUGHT by Chapter 45's first-order checker ({str(len(f1)) + ' failing check(s)' if f1 else 'its checker could not finish: the generated program does not compile'}): the two checkers together cover it")
+            else: print(f"{label}: NOT CAUGHT by either checker")
         sys.stdout.flush()
 finally:
     if os.path.exists(mut): os.remove(mut)

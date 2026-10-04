@@ -60,4 +60,30 @@ print("-- 4. Chapter 33's classifier, output matrix wo0 (15 parameters)")
 p33 = os.path.join(here, "..", "..", "part45", "code", "examples", "h33_attention.mg"); H, shape, *_ = fd_hessian(p33, "wo0", h=1e-3); v = directions(shape, 33)[0]
 got_loss, got = hvp(p33, "wo0", v); want = apply(H, v, shape)
 report(close(got, want, rel=1e-4, absolute=1e-5), "H v for Chapter 33's wo0 (3x5) equals the finite-difference Hessian times v to 1e-4 (step 1e-3 limits that reference)", str(got) + " vs " + str(want))
+print("-- 5. several matrices at once: the blocks BETWEEN matrices")
+def joint(path, names, vs):
+    import autograd as A
+    text = subprocess.run([A.MGC, "mlir", path], capture_output=True, text=True).stdout; ops = A.flatten(A.parse(text)); loss = [o for o in ops if o.op == "print"][0].args[0]
+    found = A.name_constants(ops, A.source_lets(path)); cs = [next(o for o in ops if o.res == found[n]) for n in names]; bases = [[[float(x) for x in r] for r in c.attrs["data"]] for c in cs]
+    cells = [(k, i, j) for k, b in enumerate(bases) for i in range(len(b)) for j in range(len(b[0]))]; h = 1e-4
+    def L(shifts):
+        ms = [[r[:] for r in b] for b in bases]
+        for (k, i, j), d in shifts: ms[k][i][j] += d
+        return reference.evaluate(ops, loss, {c.res: m for c, m in zip(cs, ms)})[0][0]
+    n = len(cells); H = [[0.0] * n for _ in range(n)]
+    for p in range(n):
+        for q in range(p, n):
+            H[p][q] = H[q][p] = (L([(cells[p], h), (cells[q], h)]) - L([(cells[p], h), (cells[q], -h)]) - L([(cells[p], -h), (cells[q], h)]) + L([(cells[p], -h), (cells[q], -h)])) / (4 * h * h)
+    flat = [vs[k][i][j] for k, i, j in cells]; hv = [sum(H[p][q] * flat[q] for q in range(n)) for p in range(n)]
+    out = [[[0.0] * len(b[0]) for _ in b] for b in bases]
+    for p, (k, i, j) in enumerate(cells): out[k][i][j] = hv[p]
+    return out
+sp = os.path.join(here, "examples", "s02_matmul_tanhish.mg"); vs = [directions((2, 3), 7)[0], directions((3, 2), 8)[0]]
+env = dict(os.environ)
+if AG: env["CH46_AUTOGRAD"] = AG
+r = subprocess.run([sys.executable, HVP, sp, "--wrt", "a,b", "--vec", ";".join(lit(v) for v in vs)], capture_output=True, text=True, env=env); jp = os.path.join(W, "joint.mg"); open(jp, "w").write(r.stdout); m = run_matrices(jp)
+want = joint(sp, ["a", "b"], vs)
+report(len(m) == 3 and close(m[1], want[0], rel=1e-5, absolute=1e-6) and close(m[2], want[1], rel=1e-5, absolute=1e-6), "wrt a and b together: both blocks of H (v_a, v_b), cross terms included, equal the finite-difference Hessian over all 12 parameters times (v_a, v_b)", str(m[1:]) + " vs " + str(want))
+r0 = subprocess.run([sys.executable, HVP, sp, "--wrt", "a,b", "--vec", lit(vs[0])], capture_output=True, text=True, env=env)
+report(r0.returncode != 0 and "2 names but 1 direction" in r0.stderr, "a missing direction matrix is refused with a message")
 print("all checks pass" if not failures else f"{failures} CHECK(S) FAILED"); sys.exit(1 if failures else 0)

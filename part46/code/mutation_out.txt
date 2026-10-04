@@ -5,11 +5,12 @@ ge: the gradient flows through a comparison (second-order only: the first-order 
 relu: the mask is applied with ge against the input itself instead of zero: caught by 2 failing check(s):
       all 8 programs x 3 directions: H v from the compiled double-differentiated program equals H (four-point finite differences) times 
       the program's first print, sum(g * v), equals the finite-difference directional derivative of the loss along v
-mul: each operand's gradient uses its own value: caught by 4 failing check(s):
+mul: each operand's gradient uses its own value: caught by 5 failing check(s):
       all 8 programs x 3 directions: H v from the compiled double-differentiated program equals H (four-point finite differences) times 
       symmetry: w' (H v) = v' (H w) for every program (computed with two compiled programs)
       the program's first print, sum(g * v), equals the finite-difference directional derivative of the loss along v
       H v for Chapter 33's wo0 (3x5) equals the finite-difference Hessian times v to 1e-4 (step 1e-3 limits that reference)
+      wrt a and b together: both blocks of H (v_a, v_b), cross terms included, equal the finite-difference Hessian over all 12 parameter
 div: the denominator's gradient divides by b, not by b squared: caught by 3 failing check(s):
       all 8 programs x 3 directions: H v from the compiled double-differentiated program equals H (four-point finite differences) times 
       the program's first print, sum(g * v), equals the finite-difference directional derivative of the loss along v
@@ -25,9 +26,9 @@ log: the gradient multiplies by x instead of dividing: caught by 3 failing check
 sqrt: the factor 2 is forgotten: caught by 2 failing check(s):
       all 8 programs x 3 directions: H v from the compiled double-differentiated program equals H (four-point finite differences) times 
       the program's first print, sum(g * v), equals the finite-difference directional derivative of the loss along v
-matmul: the left gradient does not transpose b: caught (the checker did not finish: RuntimeError: /tmp/tmp5r6k5jxo.mg:18: error: cannot multiply (matmul) shapes 2x2 and 3x2: inner dimensions dif)
+matmul: the left gradient does not transpose b: caught (the checker did not finish: RuntimeError: /tmp/tmpoqh2o7ck.mg:18: error: cannot multiply (matmul) shapes 2x2 and 3x2: inner dimensions dif)
 a value used twice: the second contribution replaces the first: caught (the checker did not finish: RuntimeError: autograd: the loss does not depend on z)
-sum: the gradient is not broadcast over the reduced axis: NOT CAUGHT
+sum: the gradient is not broadcast over the reduced axis: NOT caught by this chapter's checker, but CAUGHT by Chapter 45's first-order checker (its checker could not finish: the generated program does not compile): the two checkers together cover it
 broadcast: the gradient of a column vector is summed over the wrong axis: caught by 3 failing check(s):
       all 8 programs x 3 directions: H v from the compiled double-differentiated program equals H (four-point finite differences) times 
       symmetry: w' (H v) = v' (H w) for every program (computed with two compiled programs)

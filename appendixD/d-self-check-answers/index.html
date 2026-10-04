@@ -4651,7 +4651,7 @@
 </li>
 <li>
 <p>Name three things this chapter does not establish.</p>
-<p><strong>Answer.</strong> Any of: whether the flag changes a 200-step training run (the <code>-O2</code> compile did not finish in 29 minutes); the speed for statically known sizes; how often <code>nnan</code> changes an answer (one program only); the effect of the other flags (<code>ninf</code>, <code>nsz</code>, <code>arcp</code>, <code>afn</code>); why the timings of the ijk builds differ at all when their results are bit-identical; per-operation instead of module-wide flags.</p>
+<p><strong>Answer.</strong> Any of: whether the flag changes a 200-step training run (neither the <code>-O2</code> compile in 29 minutes nor the <code>-O1</code> compile in 40 minutes finished); the speed for statically known sizes; how often <code>nnan</code> changes an answer (one program only); the effect of the other flags (<code>ninf</code>, <code>nsz</code>, <code>arcp</code>, <code>afn</code>); why the timings of the ijk builds differ at all when their results are bit-identical; per-operation instead of module-wide flags.</p>
 </li>
 </ol>
 <hr />
@@ -4709,11 +4709,11 @@
 </li>
 <li>
 <p>What does a Hessian's largest eigenvalue tell you about the learning rate, and how well did that hold here?</p>
-<p><strong>Answer.</strong> For a quadratic loss, gradient descent converges iff <code>lr &lt; 2/λ</code>. For Chapter 33's non-quadratic loss with respect to <code>wo0</code>, the loss never rose at 0.25 and 0.5 times <code>2/λ</code>, but rose at some step already at 0.9 times, and ended above its start at 5 times. The rule held loosely, as a local guide; λ was also not fully converged (a lower bound), so <code>2/λ</code> is an upper bound on that estimate.</p>
+<p><strong>Answer.</strong> For a quadratic loss, gradient descent converges iff <code>lr &lt; 2/λ</code>. For Chapter 33's loss with respect to all four trainable matrices, the loss fell at every step at 0.25, 0.5 and 0.9 times <code>2/λ</code> and exploded at 1.1 times: a sharp threshold, with Chapter 33's learning rate 3.0 at about 0.76 of it. For the output matrix <code>wo0</code> alone the rule held loosely (the loss rose at some step already at 0.9 times). Both λ estimates had not fully converged (lower bounds), so <code>2/λ</code> is an upper bound on each.</p>
 </li>
 <li>
 <p>Name three things this chapter does not establish.</p>
-<p><strong>Answer.</strong> Any of: the full 15 × 15 Hessian or its eigenvalues by another method; the curvature of all of Chapter 33's weights together; third derivatives; the cost of the double-differentiated program; behaviour exactly at a kink; coverage of the sum-spread rule by this checker; learning-rate behaviour beyond one run from one starting point.</p>
+<p><strong>Answer.</strong> Any of: the full Hessian or its eigenvalues by another method; third derivatives; the cost of the double-differentiated program; behaviour exactly at a kink; coverage of the sum-spread rule by this checker; learning-rate behaviour beyond one run from one starting point.</p>
 </li>
 </ol>
 <hr />
